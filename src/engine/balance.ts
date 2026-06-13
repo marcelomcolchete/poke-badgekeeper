@@ -6,6 +6,26 @@
 // Apenas knobs de tuning moram aqui; regras ESTRUTURAIS ficam em constants.ts.
 // Os testes da engine validam invariantes/intervalos, não estes valores específicos.
 
+import type { Rarity } from '../types/index.ts'
+
+/** Peso de cada raridade no sorteio de captura/preparação (PLAN §4.5). */
+export const RARITY_DRAW_WEIGHT: Record<Rarity, number> = {
+  common: 40,
+  uncommon: 30,
+  rare: 15,
+  epic: 10,
+  legend: 5,
+}
+
+/** Fator de XP por raridade: mais raro sobe de nível mais devagar (PLAN §4.5). */
+export const RARITY_XP_RATE: Record<Rarity, number> = {
+  common: 1,
+  uncommon: 0.9,
+  rare: 0.8,
+  epic: 0.7,
+  legend: 0.5,
+}
+
 /** XP §4.1: XP para subir do nível L → L+1 = base × L. */
 export const XP_TO_NEXT_BASE = 100
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { LEVEL_MAX } from './constants.ts'
+import { RARITY_XP_RATE } from './balance.ts'
 import { createRng } from './rng.ts'
 import { getSpecies } from '../data/pokemon/index.ts'
 import {
@@ -8,6 +9,7 @@ import {
   createPokemon,
   evolveToLevel,
   pendingPoints,
+  rarityXpRate,
   totalAllocated,
   xpToNext,
 } from './leveling.ts'
@@ -64,11 +66,26 @@ describe('pendingPoints / allocatePoint', () => {
   })
 
   it('alocar em Resistência aumenta o HP máximo', () => {
-    const base = createPokemon({ id: 'r', speciesId: 95, level: 1, rng: rng() })
+    const base = createPokemon({ id: 'r', speciesId: 7, level: 1, rng: rng() }) // Squirtle (comum, evolui no 3)
     const leveled = addXp(base, xpToNext(1)).pokemon // nível 2, 1 ponto pendente
     const before = leveled.maxHp
     const buffed = allocatePoint(leveled, 'resistencia')
     expect(buffed.maxHp).toBeGreaterThanOrEqual(before)
+  })
+})
+
+describe('XP por raridade (PLAN §4.5)', () => {
+  it('rarityXpRate casa com a tabela da raridade da espécie', () => {
+    expect(rarityXpRate(95)).toBe(RARITY_XP_RATE[getSpecies(95).rarity])
+    expect(rarityXpRate(7)).toBe(RARITY_XP_RATE.common)
+  })
+
+  it('o mesmo XP rende menos progresso para um Pokémon mais raro', () => {
+    const common = createPokemon({ id: 'c', speciesId: 7, level: 1, rng: rng() }) // comum (1.0)
+    const legend = createPokemon({ id: 'l', speciesId: 150, level: 1, rng: rng() }) // lendário (0.5)
+    expect(addXp(common, xpToNext(1)).levelsGained).toBeGreaterThan(
+      addXp(legend, xpToNext(1)).levelsGained,
+    )
   })
 })
 

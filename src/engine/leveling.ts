@@ -6,7 +6,7 @@ import { ATTR_KEYS, type AttrKey, type Attrs, type Pokemon } from '../types/inde
 import type { Rng } from './rng.ts'
 import { getSpecies } from '../data/pokemon/index.ts'
 import { HP_MIN, LEVEL_MAX, LEVEL_MIN } from './constants.ts'
-import { XP_TO_NEXT_BASE } from './balance.ts'
+import { RARITY_XP_RATE, XP_TO_NEXT_BASE } from './balance.ts'
 import { maxHpOf, recomputeMaxHp, zeroAttrs } from './attributes.ts'
 import { clamp } from './math.ts'
 
@@ -105,12 +105,18 @@ export interface XpResult {
   levelsGained: number
 }
 
+/** XP efetivo após a taxa de raridade: mais raro ganha XP mais devagar (PLAN §4.5). */
+export function rarityXpRate(speciesId: number): number {
+  return RARITY_XP_RATE[getSpecies(speciesId).rarity]
+}
+
 /**
- * Acrescenta XP, sobe de nível enquanto houver limiar (até 10) e aplica evoluções.
- * NÃO aloca os pontos do level-up (ficam pendentes para o modal do jogador) — PLAN §4.1.
+ * Acrescenta XP (escalado pela raridade), sobe de nível enquanto houver limiar (até
+ * 10) e aplica evoluções. NÃO aloca os pontos do level-up (ficam pendentes) — PLAN §4.1.
  */
 export function addXp(p: Pokemon, amount: number): XpResult {
-  let xp = p.xp + Math.max(0, amount)
+  const gained = Math.max(0, Math.floor(amount * rarityXpRate(p.speciesId)))
+  let xp = p.xp + gained
   let level = p.level
   while (level < LEVEL_MAX && xp >= xpToNext(level)) {
     xp -= xpToNext(level)

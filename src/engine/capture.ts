@@ -15,6 +15,7 @@ import {
 } from './constants.ts'
 import { BASE_SEARCH_MS, KEEN_EYE_SEARCH_FACTOR } from './balance.ts'
 import { createPokemon } from './leveling.ts'
+import { pickByRarity } from './rarity.ts'
 import { effectiveAttr } from './attributes.ts'
 import { clamp } from './math.ts'
 
@@ -52,9 +53,9 @@ function candidatePool(gymTypes: readonly PokemonType[], level: number): Species
 function rollOne(rng: Rng, gymTypes: readonly PokemonType[], level: number): Species | null {
   const type = rng.pick(gymTypes)
   const byType = wildCandidates(type, level)
-  if (byType.length > 0) return rng.pick(byType)
+  if (byType.length > 0) return pickByRarity(rng, byType)
   const pool = candidatePool(gymTypes, level)
-  return pool.length > 0 ? rng.pick(pool) : null
+  return pool.length > 0 ? pickByRarity(rng, pool) : null
 }
 
 /** Sorteia 3 candidatos dos tipos do ginásio (podem repetir espécies do roster) — PLAN §4.5. */

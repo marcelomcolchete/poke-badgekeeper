@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { ATTR_KEYS, POKEMON_TYPES } from '../types/index.ts'
+import { ATTR_KEYS, POKEMON_TYPES, RARITIES } from '../types/index.ts'
+import type { Attrs } from '../types/index.ts'
 import {
   LEVEL_MAX,
   LEVEL_MIN,
@@ -14,6 +15,8 @@ import { MISSION_TEMPLATES } from './missionTemplates.ts'
 import { PASSIVES } from './passives.ts'
 
 const TYPE_SET = new Set<string>(POKEMON_TYPES)
+const RARITY_SET = new Set<string>(RARITIES)
+const attrTotal = (a: Attrs): number => ATTR_KEYS.reduce((sum, k) => sum + a[k], 0)
 
 describe('espécies da Gen 1', () => {
   const species = allSpecies()
@@ -59,11 +62,24 @@ describe('espécies da Gen 1', () => {
     expect(getSpecies(4).evolvesTo?.id).toBe(5)
   })
 
+  it('toda espécie tem raridade válida', () => {
+    for (const s of species) expect(RARITY_SET.has(s.rarity)).toBe(true)
+  })
+
+  it('a forma evoluída sempre tem total de atributos maior que a anterior (§4.1)', () => {
+    for (const s of species) {
+      if (!s.evolvesTo) continue
+      const evolved = getSpecies(s.evolvesTo.id)
+      expect(attrTotal(evolved.baseAttrs)).toBeGreaterThan(attrTotal(s.baseAttrs))
+    }
+  })
+
   it('wildCandidates filtra por nível de evolução', () => {
-    // Venusaur (3) evolui no nível 6 → não aparece num sorteio nível 3.
-    const low = wildCandidates('grass', 3).map((s) => s.id)
+    // Venusaur (3) só surge a partir do nível em que evolui → fora de um sorteio nível baixo.
+    const venusaurLevel = getSpecies(3).minWildLevel
+    const low = wildCandidates('grass', venusaurLevel - 1).map((s) => s.id)
     expect(low).not.toContain(3)
-    const high = wildCandidates('grass', 9).map((s) => s.id)
+    const high = wildCandidates('grass', venusaurLevel).map((s) => s.id)
     expect(high).toContain(3)
   })
 })
