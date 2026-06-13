@@ -1,56 +1,43 @@
-import { useEffect, useState } from 'react'
-import { Hud } from './components/Hud/Hud.tsx'
+// Shell do jogo (PLAN §3/§5): liga estado+relógio e roteia pela fase da run.
+// A engine/o reducer permanecem puros; os hooks cuidam de save e tempo real.
+
 import { createInitialState } from './engine/state.ts'
-import type { GameState } from './engine/state.ts'
-import { loadGame, saveGame } from './persistence/saveLoad.ts'
-import { TOTAL_DAYS } from './engine/constants.ts'
-import type { GameSpeed } from './types/index.ts'
+import { clearSave } from './persistence/saveLoad.ts'
+import { useGameState } from './game/useGameState.ts'
+import { useGameClock } from './game/useGameClock.ts'
+import { NewGameScreen } from './components/screens/NewGameScreen.tsx'
+import { MorningScreen } from './components/screens/MorningScreen.tsx'
+import { SummaryScreen } from './components/screens/SummaryScreen.tsx'
+import { DayScreen } from './components/day/DayScreen.tsx'
 import styles from './App.module.css'
 
-/**
- * Shell mínimo da Fase 0: prova que o projeto roda (Vite + React + CSS Modules),
- * exercitando a engine (estado inicial), a persistência (autosave) e a paleta retrô.
- * O mapa da cidade, popups e demais telas chegam nas Fases 3–4.
- */
+function freshState() {
+  return createInitialState(Math.floor(Date.now()))
+}
+
 export default function App() {
-  const [state, setState] = useState<GameState>(
-    () => loadGame() ?? createInitialState(Math.floor(Date.now())),
-  )
+  const [state, dispatch] = useGameState(freshState)
+  useGameClock(state, dispatch)
 
-  useEffect(() => {
-    saveGame(state, Date.now())
-  }, [state])
-
-  const setSpeed = (speed: GameSpeed) => {
-    setState((prev) => ({ ...prev, clock: { ...prev.clock, speed } }))
+  const restart = (): void => {
+    clearSave()
+    window.location.reload()
   }
+
+  const needsSetup = state.gym.types.length === 0
 
   return (
     <div className={styles.app}>
       <div className={styles.frame}>
-        <Hud
-          day={state.run.day}
-          totalDays={TOTAL_DAYS}
-          elapsedMs={state.clock.dayElapsedMs}
-          dayLengthMs={state.clock.dayLengthMs}
-          speed={state.clock.speed}
-          gold={state.gold}
-          stars={state.approval.stars}
-          onSpeedChange={setSpeed}
-        />
-
-        <div className={styles.stage}>
-          <span className={styles.badge}>FASE 0 — SCAFFOLD</span>
-          <span className={styles.title}>Poke BadgeKeeper</span>
-          <span className={styles.subtitle}>
-            Engine, persistência e estilo prontos. O mapa da cidade vem nas próximas fases.
-          </span>
-        </div>
-
-        <div className={styles.dialog}>
-          Bem-vindo, novo líder de ginásio! Você tem 10 dias para provar seu valor em Pewter.
-          <span className={styles.cursor}>▼</span>
-        </div>
+        {needsSetup ? (
+          <NewGameScreen state={state} dispatch={dispatch} />
+        ) : state.run.phase === 'SUMMARY' ? (
+          <SummaryScreen state={state} dispatch={dispatch} onRestart={restart} />
+        ) : state.run.phase === 'DAY' ? (
+          <DayScreen state={state} dispatch={dispatch} onRestart={restart} />
+        ) : (
+          <MorningScreen state={state} dispatch={dispatch} />
+        )}
       </div>
     </div>
   )
