@@ -29,10 +29,24 @@ export const LEVEL_MAX = 10
 export const HP_MIN = 1
 export const HP_MAX = 10
 
-/** Aprovação: estrelas de 1 a 5, começa em 1 (PLAN §4.7). */
+/** Aprovação: estrelas de 1 a 5, começa em 1, passo de 0,5; efetivado se > 3 (PLAN §4.7). */
 export const STARS_MIN = 1
 export const STARS_MAX = 5
 export const STARS_START = 1
+export const STARS_STEP = 0.5
+export const STARS_HIRE_THRESHOLD = 3
+
+/** Defesa: vantagem de tipo ×1,5, desvantagem ×0,5; perdedor de cada duelo perde 1 HP (PLAN §4.4). */
+export const TYPE_ADVANTAGE_MULT = 1.5
+export const TYPE_DISADVANTAGE_MULT = 0.5
+export const HP_LOSS_PER_DEFENSE_LOSS = 1
+
+/** Falha de missão: dano inteiro com mínimo de 1 (PLAN §4.2). */
+export const MIN_FAILURE_DAMAGE = 1
+
+/** Captura: 3 candidatos por encontro; nível do selvagem = dia ± 1 (PLAN §4.5). */
+export const CAPTURE_CHOICES = 3
+export const WILD_LEVEL_VARIANCE = 1
 
 /** Versão do schema de save e chave do localStorage (PLAN §5). */
 export const SAVE_VERSION = 1
