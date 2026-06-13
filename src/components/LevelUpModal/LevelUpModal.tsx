@@ -7,10 +7,10 @@ import type { Dispatch } from 'react'
 import { ATTR_KEYS, type Pokemon } from '../../types/index.ts'
 import type { GameAction } from '../../game/actions.ts'
 import { pendingPoints } from '../../engine/leveling.ts'
-import { getSpecies } from '../../data/pokemon/index.ts'
 import { ATTR_PER_POINT } from '../../engine/constants.ts'
 import { PokemonCard } from '../PokemonCard/PokemonCard.tsx'
 import { ATTR_LABEL_PT } from '../common/visual.ts'
+import { displayNameOf } from '../common/naming.ts'
 import styles from './LevelUpModal.module.css'
 
 interface Props {
@@ -20,7 +20,7 @@ interface Props {
 
 export function LevelUpModal({ pokemon, dispatch }: Props) {
   const pending = pendingPoints(pokemon)
-  const name = getSpecies(pokemon.speciesId).displayName
+  const name = displayNameOf(pokemon)
 
   return (
     <div className={styles.backdrop} role="dialog" aria-label="Subiu de nível">

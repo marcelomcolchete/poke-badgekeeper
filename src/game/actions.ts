@@ -22,6 +22,8 @@ export type GameAction =
   | { type: 'CAPTURE_PICK'; searcherId: string; speciesId: number }
   /** No encontro: não pega nenhum e encerra a exploração — a área some do dia. */
   | { type: 'CAPTURE_DISMISS'; searcherId: string }
+  /** Define/limpa o apelido de um Pokémon (renomear na captura) — PLAN §4.5. */
+  | { type: 'RENAME_POKEMON'; pokemonId: string; nickname: string }
   /** Compra no mercado (manhã) — PLAN §4.6. */
   | { type: 'BUY_ITEM'; itemId: string; quantity?: number }
   /** Usa um item (Potion/Revive…) num Pokémon do roster — PLAN §4.6. */

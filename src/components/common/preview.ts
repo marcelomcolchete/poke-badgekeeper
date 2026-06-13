@@ -19,6 +19,9 @@ export function previewPokemon(speciesId: number, level: number): Pokemon {
     maxHp: 0,
     status: 'idle',
     passives: [],
+    // Preview de candidato: o sexo só é sorteado de fato na captura.
+    gender: 'genderless',
+    nickname: null,
   }
   const maxHp = maxHpOf(draft)
   return { ...draft, maxHp, currentHp: maxHp }

@@ -59,6 +59,11 @@
   line-height: 1.2;
 }
 
+.gender {
+  margin-left: 4px;
+  font-weight: bold;
+}
+
 .meta {
   display: flex;
   align-items: center;

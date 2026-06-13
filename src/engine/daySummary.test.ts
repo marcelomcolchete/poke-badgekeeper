@@ -41,6 +41,7 @@ describe('buildDaySummary', () => {
   it('MVP é quem concluiu mais missões (só conta sucesso)', () => {
     const s = buildDaySummary(baseInput())
     expect(s.mvpId).toBe('a') // 'a' em 2 sucessos, 'b' em 1, 'c' só na falha
+    expect(s.mvpMissions).toBe(2)
   })
 
   it('sem missões concluídas → MVP null', () => {
@@ -49,6 +50,7 @@ describe('buildDaySummary', () => {
       missionResults: [{ templateId: 'x', success: false, teamIds: ['z'] }],
     })
     expect(s.mvpId).toBeNull()
+    expect(s.mvpMissions).toBe(0)
     expect(s.missionsCompleted).toBe(0)
   })
 

@@ -65,6 +65,7 @@ export const DRAFT_CHOICES = 3
  * v5: grafo de deslocamento + viagem ida/volta. v6: ouro inicial 500, fase GAMEOVER e
  * âncoras de exibição das missões (separadas dos pontos de parada). v7: captura 1×/dia
  * com horário de surgimento (captureSpotSpawnsAtMs). v8: defesa com log de duelos +
- * inimigos com espécie, ouro de defesa por batalha (+bônus 30%) e fim do dia por retorno. */
-export const SAVE_VERSION = 8
+ * inimigos com espécie, ouro de defesa por batalha (+bônus 30%) e fim do dia por retorno.
+ * v9: sexo (gender) e apelido (nickname) por Pokémon. */
+export const SAVE_VERSION = 9
 export const SAVE_KEY = 'poke-badgekeeper:save'

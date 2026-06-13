@@ -1,8 +1,15 @@
 .screen {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   align-items: stretch;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }
 
 .title {
@@ -33,43 +40,137 @@
   color: var(--c-hp-low);
 }
 
-.rows {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+/* ---- Card de destaque (MVP) ---- */
+.mvp {
+  position: relative;
   background: var(--c-panel);
-  border: 3px solid var(--c-panel-border);
+  border: 3px solid var(--c-hud-accent);
   border-radius: var(--radius-pixel);
-  padding: 10px 12px;
+  padding: 16px 12px 12px;
+  box-shadow: 0 0 0 2px var(--c-panel) inset;
 }
 
-.row {
+.mvpBadge {
+  position: absolute;
+  top: -11px;
+  left: 12px;
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--c-ink);
+  background: var(--c-hud-accent);
+  border: 2px solid var(--c-ink);
+  border-radius: var(--radius-pixel);
+  padding: 2px 6px;
+}
+
+.mvpRow {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  font-family: var(--font-text);
-  font-size: 18px;
+  gap: 14px;
+}
+
+.mvpSprite {
+  width: 72px;
+  height: 72px;
+  image-rendering: pixelated;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.mvpInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.mvpName {
+  font-family: var(--font-pixel);
+  font-size: 12px;
   color: var(--c-ink);
-  padding: 3px 0;
-  border-bottom: 1px dotted #c9c2a6;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-.row:last-child {
-  border-bottom: none;
+.mvpGender {
+  font-weight: bold;
 }
 
-.rowLabel {
+.mvpLevel {
+  font-family: var(--font-text);
+  font-size: 14px;
   color: var(--c-ink-muted);
 }
 
-.rowValue {
+.mvpTypes {
+  display: flex;
+  gap: 4px;
+}
+
+.mvpDeed {
+  font-family: var(--font-text);
+  font-size: 16px;
+  color: var(--c-ink-muted);
+}
+
+.mvpEmpty {
+  border-color: var(--c-panel-border);
+}
+
+.mvpEmptyText {
+  font-family: var(--font-text);
+  font-size: 16px;
+  color: var(--c-ink-muted);
+}
+
+/* ---- Grade de estatísticas ---- */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: var(--c-panel);
+  border: 3px solid var(--c-panel-border);
+  border-radius: var(--radius-pixel);
+  padding: 10px 6px;
+}
+
+.tileIcon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.tileValue {
+  font-family: var(--font-pixel);
+  font-size: 13px;
+  color: var(--c-ink);
   font-variant-numeric: tabular-nums;
 }
 
-.rowAccent {
+.tileLabel {
+  font-family: var(--font-text);
+  font-size: 13px;
+  color: var(--c-ink-muted);
+}
+
+.tileAccent {
+  border-color: #b8860b;
+}
+
+.tileAccent .tileValue {
   color: #b8860b;
-  font-variant-numeric: tabular-nums;
+}
+
+.tileDanger .tileValue {
+  color: var(--c-hp-low);
 }
 
 .primary {

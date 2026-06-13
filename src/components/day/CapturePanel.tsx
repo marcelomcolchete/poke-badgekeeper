@@ -1,6 +1,7 @@
 // Captura (PLAN §4.5): escolher quem procura, acompanhar a busca e resolver o
 // encontro (capturar 1 / trazer de volta / seguir procurando).
 
+import { useState } from 'react'
 import type { Dispatch } from 'react'
 import type { GameState } from '../../engine/state.ts'
 import type { GameAction } from '../../game/actions.ts'
@@ -9,6 +10,7 @@ import { MAX_ROSTER_SIZE } from '../../engine/constants.ts'
 import { PokemonCard } from '../PokemonCard/PokemonCard.tsx'
 import { previewPokemon } from '../common/preview.ts'
 import { Overlay } from '../common/Overlay.tsx'
+import { RenameModal } from './RenameModal.tsx'
 import styles from './Panels.module.css'
 
 interface Props {
@@ -22,6 +24,25 @@ export function CapturePanel({ state, dispatch, spotIndex, onClose }: Props) {
   const encounter = state.encounters.find((e) => e.spotIndex === spotIndex)
   const searching = state.captureSearches.some((c) => c.spotIndex === spotIndex)
   const full = rosterIsFull(state.roster)
+  // Após capturar, abre o modal de apelido para o Pokémon recém-pego (último capturado).
+  const [awaitingRename, setAwaitingRename] = useState(false)
+  const lastCapturedId = state.today.capturedIds.at(-1) ?? null
+  const justCaught = awaitingRename
+    ? state.roster.find((p) => p.id === lastCapturedId) ?? null
+    : null
+
+  if (justCaught) {
+    return (
+      <RenameModal
+        pokemon={justCaught}
+        dispatch={dispatch}
+        onDone={() => {
+          setAwaitingRename(false)
+          onClose()
+        }}
+      />
+    )
+  }
 
   return (
     <Overlay title="ÁREA DE CAPTURA" onClose={onClose}>
@@ -43,7 +64,7 @@ export function CapturePanel({ state, dispatch, spotIndex, onClose }: Props) {
                     ? undefined
                     : () => {
                         dispatch({ type: 'CAPTURE_PICK', searcherId: encounter.searcherId, speciesId: id })
-                        onClose()
+                        setAwaitingRename(true)
                       }
                 }
               />

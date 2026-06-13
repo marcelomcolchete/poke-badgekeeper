@@ -116,6 +116,14 @@ export function capturePick(s: GameState, searcherId: string, speciesId: number)
   consumeSpot(s, encounter.spotIndex)
 }
 
+/** Define o apelido de um Pokémon (vazio = volta a usar o nome da espécie) — PLAN §4.5. */
+export function renamePokemon(s: GameState, pokemonId: string, nickname: string): void {
+  const mon = findMon(s, pokemonId)
+  if (!mon) return
+  const trimmed = nickname.trim().slice(0, 16)
+  replaceMon(s, { ...mon, nickname: trimmed.length > 0 ? trimmed : null })
+}
+
 /** Não pega nenhum: encerra a área do dia e traz o procurador de volta — PLAN §4.5. */
 export function captureDismiss(s: GameState, searcherId: string): void {
   const encounter = popEncounter(s, searcherId)

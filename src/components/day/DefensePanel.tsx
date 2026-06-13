@@ -13,6 +13,7 @@ import { getSpecies } from '../../data/pokemon/index.ts'
 import { TypeBadge } from '../common/TypeBadge.tsx'
 import { PokemonCard } from '../PokemonCard/PokemonCard.tsx'
 import { Overlay } from '../common/Overlay.tsx'
+import { displayNameOf } from '../common/naming.ts'
 import styles from './Panels.module.css'
 
 interface Props {
@@ -125,7 +126,7 @@ function BattleView({
 
   const nameOf = (id: string): string => {
     const mon = state.roster.find((p) => p.id === id)
-    return mon ? getSpecies(mon.speciesId).displayName : id
+    return mon ? displayNameOf(mon) : id
   }
   const enemyNameOf = (enemy: EnemyUnit): string =>
     enemy.speciesId !== undefined ? getSpecies(enemy.speciesId).displayName : 'o desafiante'
