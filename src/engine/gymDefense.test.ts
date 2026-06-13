@@ -7,6 +7,7 @@ import {
   canDefend,
   duelWinProbability,
   effectiveBattle,
+  enemySquadSizeForDay,
   generateDefenseEnemies,
   resolveDefense,
   typeAdvantageMultiplier,
@@ -122,5 +123,37 @@ describe('generateDefenseEnemies', () => {
     expect(generateDefenseEnemies(createRng(3), 5, 3)).toEqual(
       generateDefenseEnemies(createRng(3), 5, 3),
     )
+  })
+
+  it('atribui uma espécie a cada invasor (para exibir na batalha)', () => {
+    for (const e of generateDefenseEnemies(createRng(7), 5, 4)) {
+      expect(typeof e.speciesId).toBe('number')
+    }
+  })
+})
+
+describe('enemySquadSizeForDay (PLAN §4.8)', () => {
+  it('dia 1 = no máximo 1 invasor', () => {
+    for (let seed = 0; seed < 20; seed++) {
+      expect(enemySquadSizeForDay(createRng(seed), 1)).toBeLessThanOrEqual(1)
+    }
+  })
+
+  it('dia 5 fica na faixa 3–4', () => {
+    for (let seed = 0; seed < 20; seed++) {
+      const size = enemySquadSizeForDay(createRng(seed), 5)
+      expect(size).toBeGreaterThanOrEqual(3)
+      expect(size).toBeLessThanOrEqual(4)
+    }
+  })
+
+  it('dia 10 = no mínimo 6 invasores', () => {
+    for (let seed = 0; seed < 20; seed++) {
+      expect(enemySquadSizeForDay(createRng(seed), 10)).toBeGreaterThanOrEqual(6)
+    }
+  })
+
+  it('é determinística para a mesma seed', () => {
+    expect(enemySquadSizeForDay(createRng(9), 7)).toBe(enemySquadSizeForDay(createRng(9), 7))
   })
 })

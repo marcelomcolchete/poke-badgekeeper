@@ -7,6 +7,7 @@ import type { GameSpeed } from '../types/index.ts'
 import type { GameState } from '../engine/state.ts'
 import { emptyTally } from '../engine/state.ts'
 import { TOTAL_DAYS } from '../engine/constants.ts'
+import { ALL_DEFENSES_WON_BONUS } from '../engine/balance.ts'
 import { applyApproval, dailyGoalMet } from '../engine/approval.ts'
 import { buildDaySummary, toDayLog } from '../engine/daySummary.ts'
 import { expireMission, freeOnReturn, resolveMissionNow } from './missionFlow.ts'
@@ -39,6 +40,7 @@ export function advancePhase(s: GameState): void {
 /** Fecha o dia: resolve pendências, ajusta estrelas e registra o histórico (PLAN §4.7). */
 export function finalizeDay(s: GameState): void {
   resolveLeftovers(s)
+  applyAllDefensesBonus(s)
 
   const starsBefore = s.approval.stars
   s.today.starsBefore = starsBefore
@@ -61,6 +63,15 @@ export function finalizeDay(s: GameState): void {
   s.history.push(toDayLog(summary))
   s.run.phase = 'SUMMARY'
   s.clock.speed = 0
+}
+
+/** Bônus de +30% sobre o ouro de defesas se TODAS as defesas do dia foram vencidas (PLAN §4.6). */
+function applyAllDefensesBonus(s: GameState): void {
+  const { defensesTotal, defensesWon, defenseGold } = s.today
+  if (defensesTotal === 0 || defensesWon < defensesTotal || defenseGold <= 0) return
+  const bonus = Math.round(defenseGold * ALL_DEFENSES_WON_BONUS)
+  s.gold += bonus
+  s.today.goldEarned += bonus
 }
 
 /** Expira missões/defesas em aberto e força resolução/retorno das que estão em andamento. */

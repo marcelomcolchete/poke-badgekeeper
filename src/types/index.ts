@@ -102,4 +102,6 @@ export interface MapPos {
 export interface EnemyUnit {
   battle: number
   types: PokemonType[]
+  /** Espécie do invasor — usada só para exibir o sprite na batalha (pode faltar em dados antigos/testes). */
+  speciesId?: number
 }

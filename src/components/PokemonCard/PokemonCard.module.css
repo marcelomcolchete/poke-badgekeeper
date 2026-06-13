@@ -94,26 +94,29 @@
   white-space: nowrap;
 }
 
-.attrs {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 3px 6px;
-}
-
-.attr {
+.radarBox {
   display: flex;
-  justify-content: space-between;
-  gap: 4px;
-  font-size: 14px;
-  border-bottom: 1px dotted #c9c2a6;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
 }
 
-.attrLabel {
+.radarBox svg {
+  width: 150px;
+  max-width: 100%;
+}
+
+.total {
+  font-family: var(--font-pixel);
+  font-size: 8px;
   color: var(--c-ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.attrValue {
-  font-variant-numeric: tabular-nums;
+.total b {
+  color: var(--c-ink);
+  font-size: 10px;
 }
 
 .foot {

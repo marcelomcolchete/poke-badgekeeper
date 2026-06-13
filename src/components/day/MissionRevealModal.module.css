@@ -1,0 +1,74 @@
+.reveal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.radarWrap {
+  position: relative;
+  width: 260px;
+  max-width: 100%;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.dot {
+  fill: var(--c-hud-accent);
+  stroke: var(--c-ink);
+  stroke-width: 2;
+}
+
+.win {
+  fill: #4f9e3f;
+}
+
+.lose {
+  fill: #e0683c;
+}
+
+.verdict {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  line-height: 1.4;
+  text-align: center;
+  color: var(--c-ink-muted);
+  margin: 0;
+}
+
+.winText {
+  color: var(--c-grass-dark);
+}
+
+.loseText {
+  color: var(--c-hp-low);
+}
+
+.chance {
+  font-family: var(--font-text);
+  font-size: 16px;
+  color: var(--c-ink-muted);
+  margin: 0;
+}
+
+.continue {
+  width: 100%;
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  color: var(--c-ink);
+  background: var(--c-hud-accent);
+  border: 3px solid var(--c-ink);
+  border-radius: var(--radius-pixel);
+  padding: 12px;
+}
+
+.continue:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

@@ -115,3 +115,85 @@
   border-radius: 4px;
   padding: 9px 6px;
 }
+
+/* Modal de batalha de ginásio (cadeia de duelos animada) — PLAN §4.4. */
+.battle {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.battleSide {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.battleLabel {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--c-ink-muted);
+}
+
+.battleRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  background: var(--c-panel);
+  border: 3px solid var(--c-panel-border);
+  border-radius: var(--radius-pixel);
+  padding: 6px 8px;
+  min-height: 56px;
+}
+
+.fighter {
+  width: 44px;
+  height: 44px;
+  image-rendering: pixelated;
+  background: #e9e4cf;
+  border: 2px solid var(--c-panel-border);
+  border-radius: 4px;
+}
+
+.defeated {
+  filter: grayscale(1) brightness(0.7);
+  opacity: 0.5;
+}
+
+.duelLog {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-text);
+  font-size: 16px;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.duelWin {
+  color: var(--c-grass-dark);
+}
+
+.duelLose {
+  color: var(--c-hp-low);
+}
+
+.result {
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  text-align: center;
+  margin: 4px 0;
+}
+
+.resultWin {
+  color: var(--c-grass-dark);
+}
+
+.resultLose {
+  color: var(--c-hp-low);
+}

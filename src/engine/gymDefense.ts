@@ -8,16 +8,24 @@ import type { Rng } from './rng.ts'
 
 export type { EnemyUnit }
 import { singleTypeMultiplier } from '../data/typeChart.ts'
+import { speciesByType } from '../data/pokemon/index.ts'
 import {
   ATTR_MAX,
   HP_LOSS_PER_DEFENSE_LOSS,
   MIN_DEFENSE_SQUAD,
+  TOTAL_DAYS,
   TYPE_ADVANTAGE_MULT,
   TYPE_DISADVANTAGE_MULT,
 } from './constants.ts'
-import { ENEMY_BASE_BATTLE, ENEMY_BATTLE_PER_DAY } from './balance.ts'
+import {
+  ENEMY_BASE_BATTLE,
+  ENEMY_BATTLE_PER_DAY,
+  ENEMY_SQUAD_DAY1,
+  ENEMY_SQUAD_DAY10,
+  ENEMY_SQUAD_JITTER_FROM_DAY,
+} from './balance.ts'
 import { applyDamage, effectiveAttr } from './attributes.ts'
-import { clamp } from './math.ts'
+import { clamp, lerp } from './math.ts'
 
 /** ≥1 Pokémon disponível para abrir uma defesa (PLAN §4.4). */
 export function canDefend(squad: readonly Pokemon[]): boolean {
@@ -54,13 +62,30 @@ export function duelWinProbability(attackerBattleEff: number, defenderBattleEff:
   return clamp(attackerBattleEff / defenderBattleEff, 0, 1)
 }
 
-/** Inimigos efêmeros da defesa, com Batalha escalando pelo dia (PLAN §4.4/§4.8). */
+/**
+ * Tamanho do esquadrão inimigo escalando com o dia (PLAN §4.8): interpola 1→6 ao longo
+ * dos 10 dias; do dia 5 em diante sorteia centro..centro+1. Dia 1 = 1; dia 10 = 6.
+ */
+export function enemySquadSizeForDay(rng: Rng, day: number): number {
+  const t = clamp((day - 1) / (TOTAL_DAYS - 1), 0, 1)
+  const center = clamp(Math.round(lerp(ENEMY_SQUAD_DAY1, ENEMY_SQUAD_DAY10, t)), ENEMY_SQUAD_DAY1, ENEMY_SQUAD_DAY10)
+  const hi = day >= ENEMY_SQUAD_JITTER_FROM_DAY ? Math.min(center + 1, ENEMY_SQUAD_DAY10) : center
+  return rng.int(center, hi)
+}
+
+/** Inimigos efêmeros da defesa, com Batalha escalando pelo dia e uma espécie p/ exibir (PLAN §4.4/§4.8). */
 export function generateDefenseEnemies(rng: Rng, day: number, size: number): EnemyUnit[] {
   const battle = Math.min(ENEMY_BASE_BATTLE + ENEMY_BATTLE_PER_DAY * (day - 1), ATTR_MAX)
-  return Array.from({ length: size }, () => ({
-    battle,
-    types: [rng.pick(POKEMON_TYPES)],
-  }))
+  return Array.from({ length: size }, () => {
+    const type = rng.pick(POKEMON_TYPES)
+    const pool = speciesByType(type)
+    const species = pool.length > 0 ? rng.pick(pool) : null
+    return {
+      battle,
+      types: species ? [...species.types] : [type],
+      speciesId: species?.id,
+    }
+  })
 }
 
 export interface DuelLog {

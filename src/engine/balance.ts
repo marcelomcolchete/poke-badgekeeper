@@ -48,8 +48,11 @@ export const AGILITY_TIME_REDUCTION_PER_POINT = 0.005
 export const BASE_SEARCH_MS = 30_000
 export const KEEN_EYE_SEARCH_FACTOR = 0.5
 
-/** Economia §4.6: ouro base por defesa de ginásio vencida. */
+/** Economia §4.6: ouro base por defesa de ginásio (ganho mesmo perdendo a batalha). */
 export const GOLD_BASE_PER_DEFENSE = 100
+
+/** Economia §4.6: bônus sobre o ouro de defesas se TODAS forem vencidas no dia (+30%). */
+export const ALL_DEFENSES_WON_BONUS = 0.3
 
 /** Aprovação §4.7: fração das missões do dia que define a meta (metade, arredondando p/ cima). */
 export const MISSION_GOAL_FRACTION = 0.5
@@ -71,9 +74,13 @@ export const DEFENSE_LIFETIME_MS = 40_000
 export const ENEMY_BASE_BATTLE = 25
 export const ENEMY_BATTLE_PER_DAY = 4
 
-/** Defesa §4.4: tamanho do esquadrão inimigo (sorteado por evento). */
-export const ENEMY_SQUAD_MIN = 3
-export const ENEMY_SQUAD_MAX = 6
+/**
+ * Defesa §4.4/§4.8: o esquadrão inimigo cresce com o dia. Âncoras da escala 1→10:
+ * dia 1 = no máx. 1 Pokémon; dia 10 = no mín. 6. A partir do dia 5 há +1 de variação.
+ */
+export const ENEMY_SQUAD_DAY1 = 1
+export const ENEMY_SQUAD_DAY10 = 6
+export const ENEMY_SQUAD_JITTER_FROM_DAY = 5
 
 /** Leveling §4.1: XP concedido a cada Pokémon do time numa missão bem-sucedida. */
 export const MISSION_XP_REWARD = 120

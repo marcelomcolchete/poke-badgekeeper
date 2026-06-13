@@ -119,6 +119,7 @@ describe('fluxo de defesa (PLAN §4.4/§4.6)', () => {
       status: 'active',
       squadIds: [],
       enemies,
+      duels: [],
     }
   }
 
@@ -289,5 +290,83 @@ describe('ciclo do dia headless (PLAN §3)', () => {
     expect(s.run.phase).toBe('MORNING')
     expect(s.missions).toHaveLength(0)
     expect(s.roster.every((p) => p.currentHp === p.maxHp && p.status === 'idle')).toBe(true)
+  })
+})
+
+describe('economia da defesa (PLAN §4.6, ajuste)', () => {
+  function defense(enemies: EnemyUnit[]): DefenseEvent {
+    return {
+      id: 'd1',
+      pos: { x: 0.5, y: 0.2 },
+      spawnAtMs: 0,
+      expiresAtMs: 40_000,
+      status: 'active',
+      squadIds: [],
+      enemies,
+      duels: [],
+    }
+  }
+
+  it('paga ouro por batalhar (vencendo ou perdendo) e registra defenseGold', () => {
+    const enemies: EnemyUnit[] = [
+      { battle: 100, types: ['normal'] },
+      { battle: 100, types: ['normal'] },
+      { battle: 100, types: ['normal'] },
+    ]
+    let s = dayState({ roster: [strong('a')], defenses: [defense(enemies)] })
+    s.today.defensesTotal = 1
+    const before = s.gold
+    s = reducer(s, { type: 'ASSIGN_DEFENSE', defenseId: 'd1', squadIds: ['a'] })
+    expect(['won', 'lost']).toContain(s.defenses[0]?.status)
+    expect(s.gold).toBeGreaterThan(before)
+    expect(s.today.defenseGold).toBeGreaterThan(0)
+    expect(s.defenses[0]?.duels.length).toBeGreaterThan(0)
+  })
+
+  it('vencer TODAS as defesas do dia rende +30% sobre o ouro de defesa', () => {
+    let s = dayState({ roster: [strong('a')] })
+    s.gold = 200
+    s.today.defensesTotal = 1
+    s.today.defensesWon = 1
+    s.today.defenseGold = 200
+    s.today.goldEarned = 200
+    s = reducer(s, { type: 'ADVANCE_PHASE' }) // DAY → SUMMARY (finalizeDay aplica o bônus)
+    expect(s.run.phase).toBe('SUMMARY')
+    expect(s.gold).toBe(260) // 200 + 30%
+  })
+
+  it('sem dia perfeito não há bônus', () => {
+    let s = dayState({ roster: [strong('a')] })
+    s.gold = 200
+    s.today.defensesTotal = 2
+    s.today.defensesWon = 1
+    s.today.defenseGold = 200
+    s.today.goldEarned = 200
+    s = reducer(s, { type: 'ADVANCE_PHASE' })
+    expect(s.gold).toBe(200)
+  })
+})
+
+describe('fim do dia por retorno (PLAN §3, ajuste)', () => {
+  it('não fecha no tempo enquanto um Pokémon ainda volta; fecha quando chega', () => {
+    const mon: Pokemon = { ...strong('a'), status: 'returning' }
+    const mission = controlledMission({
+      status: 'returning',
+      teamIds: ['a'],
+      result: 'success',
+      acceptedAtMs: 0,
+      arriveAtMs: 100_000,
+      resolveAtMs: 170_000,
+      returnEndsAtMs: 200_000, // termina o retorno DEPOIS do fim do dia (180s)
+    })
+    let s = dayState({ roster: [mon], missions: [mission] })
+
+    s = reducer(s, { type: 'TICK', deltaMs: 185_000 }) // passa do fim do dia, antes do retorno
+    expect(s.run.phase).toBe('DAY')
+    expect(s.roster[0]?.status).toBe('returning')
+
+    s = reducer(s, { type: 'TICK', deltaMs: 20_000 }) // 205s: retorno concluído
+    expect(s.roster[0]?.status).toBe('idle')
+    expect(s.run.phase).toBe('SUMMARY')
   })
 })
