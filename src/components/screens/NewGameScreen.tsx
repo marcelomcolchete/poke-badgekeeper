@@ -1,4 +1,4 @@
-// Fluxo de novo jogo (PLAN §3): inicial do tipo primário + duas rodadas de
+// Fluxo de novo jogo (PLAN §3): inicial do tipo primário + uma rodada de
 // "sorteia 3 tipos → escolhe 1 → sorteia 3 recrutas → escolhe 1".
 
 import { useMemo, useState } from 'react'
@@ -51,7 +51,7 @@ export function NewGameScreen({ state, dispatch }: { state: GameState; dispatch:
     const extras = [...chosenExtras, speciesId]
     setChosenTypes(types)
     setChosenExtras(extras)
-    setStage(stage.round === 0 ? { kind: 'type', round: 1 } : { kind: 'confirm' })
+    setStage({ kind: 'confirm' })
   }
   const confirm = (): void => {
     dispatch({
@@ -73,7 +73,7 @@ export function NewGameScreen({ state, dispatch }: { state: GameState; dispatch:
 
       {stage.kind === 'intro' && (
         <Section
-          hint={`Seu inicial é um Pokémon de ${TYPE_LABEL_PT[city.primaryType]}, nível ${STARTER_LEVEL}. Em seguida você escolhe os outros 2 tipos do ginásio.`}
+          hint={`Seu inicial é um Pokémon de ${TYPE_LABEL_PT[city.primaryType]}, nível ${STARTER_LEVEL}. Em seguida você escolhe mais 1 tipo do ginásio.`}
         >
           <div className={styles.single}>
             <PokemonCard pokemon={previewPokemon(city.starterSpeciesId, STARTER_LEVEL)} />
@@ -85,7 +85,7 @@ export function NewGameScreen({ state, dispatch }: { state: GameState; dispatch:
       )}
 
       {stage.kind === 'type' && (
-        <Section hint={`Rodada ${stage.round + 1} de 2 — escolha um tipo para o ginásio.`}>
+        <Section hint="Escolha o tipo secundário do ginásio.">
           <div className={styles.typeGrid}>
             {typeChoices.map((type) => (
               <button

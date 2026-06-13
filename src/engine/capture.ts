@@ -1,5 +1,5 @@
 // Captura: busca por Percepção, nível do selvagem (dia ± 1), sorteio de 3 candidatos
-// com filtro de evolução e teto de 9 no roster (PLAN §4.5).
+// com filtro de evolução e teto de 6 no roster (PLAN §4.5).
 
 import type { Pokemon, PokemonType } from '../types/index.ts'
 import type { Rng } from './rng.ts'
@@ -23,7 +23,7 @@ export function rosterIsFull(roster: readonly Pokemon[]): boolean {
   return roster.length >= MAX_ROSTER_SIZE
 }
 
-/** Com o roster cheio (9), a captura fica bloqueada (PLAN §4.5). */
+/** Com o roster cheio (6), a captura fica bloqueada (PLAN §4.5). */
 export function captureAvailable(roster: readonly Pokemon[]): boolean {
   return !rosterIsFull(roster)
 }
@@ -91,9 +91,9 @@ export interface CaptureSpec {
   id: string
 }
 
-/** Captura o candidato escolhido, devolvendo o NOVO roster. Lança se já houver 9 (PLAN §4.5). */
+/** Captura o candidato escolhido, devolvendo o NOVO roster. Lança se já houver 6 (PLAN §4.5). */
 export function captureWild(spec: CaptureSpec): Pokemon[] {
-  if (rosterIsFull(spec.roster)) throw new Error('Roster cheio (máx. 9)')
+  if (rosterIsFull(spec.roster)) throw new Error('Roster cheio (máx. 6)')
   const caught = createPokemon({
     id: spec.id,
     speciesId: spec.species.id,

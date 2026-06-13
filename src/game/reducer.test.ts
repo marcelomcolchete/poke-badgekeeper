@@ -3,6 +3,7 @@ import type { DefenseEvent, GameState, MissionInstance } from '../engine/state.t
 import { createInitialState } from '../engine/state.ts'
 import type { EnemyUnit, Pokemon, PokemonType } from '../types/index.ts'
 import { makeAttrs, makeMon } from '../engine/testkit.ts'
+import { MAX_ROSTER_SIZE } from '../engine/constants.ts'
 import { reducer } from './reducer.ts'
 import { autoSeedRun } from './setup.ts'
 
@@ -114,10 +115,18 @@ describe('fluxo de defesa (PLAN §4.4/§4.6)', () => {
     expect(s.roster.every((p) => p.status === 'idle')).toBe(true)
   })
 
-  it('esquadrão com menos de 3 é rejeitado', () => {
+  it('esquadrão vazio é rejeitado', () => {
     let s = dayState({ roster: [strong('a'), strong('b')], defenses: [defense([{ battle: 1, types: ['normal'] }])] })
-    s = reducer(s, { type: 'ASSIGN_DEFENSE', defenseId: 'd1', squadIds: ['a', 'b'] })
+    s = reducer(s, { type: 'ASSIGN_DEFENSE', defenseId: 'd1', squadIds: [] })
     expect(s.defenses[0]?.status).toBe('active')
+  })
+
+  it('aceita defender com 1 Pokémon', () => {
+    const weak: EnemyUnit[] = [{ battle: 1, types: ['normal'] }]
+    let s = dayState({ roster: [strong('a'), strong('b')], defenses: [defense(weak)] })
+    s.today.defensesTotal = 1
+    s = reducer(s, { type: 'ASSIGN_DEFENSE', defenseId: 'd1', squadIds: ['a'] })
+    expect(s.defenses[0]?.status).toBe('won')
   })
 })
 
@@ -151,8 +160,8 @@ describe('fluxo de captura (PLAN §4.5)', () => {
     expect(kept.captureSearches).toHaveLength(1)
   })
 
-  it('roster cheio (9) bloqueia a busca', () => {
-    const full = Array.from({ length: 9 }, (_, i) => strong(`r${i}`))
+  it('roster cheio bloqueia a busca', () => {
+    const full = Array.from({ length: MAX_ROSTER_SIZE }, (_, i) => strong(`r${i}`))
     let s = dayState({ roster: full })
     s = reducer(s, { type: 'START_SEARCH', searcherId: 'r0', spotIndex: 0 })
     expect(s.captureSearches).toHaveLength(0)
@@ -195,7 +204,7 @@ describe('ciclo do dia headless (PLAN §3)', () => {
     let s = autoSeedRun(SEED)
     expect(s.run.phase).toBe('MORNING')
     expect(s.roster).toHaveLength(1)
-    expect(s.gym.types).toHaveLength(3)
+    expect(s.gym.types).toHaveLength(2)
 
     s = reducer(s, { type: 'ADVANCE_PHASE' })
     expect(s.run.phase).toBe('DAY')

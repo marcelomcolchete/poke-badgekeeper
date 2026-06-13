@@ -5,7 +5,7 @@ import type { Pokemon } from '../types/index.ts'
 import type { DefenseEvent, GameState } from '../engine/state.ts'
 import { canDefend, resolveDefense } from '../engine/gymDefense.ts'
 import { goldForDefense } from '../engine/economy.ts'
-import { findMon, replaceMon, takeRng } from './runtime.ts'
+import { findMon, replaceMon, settleFaint, takeRng } from './runtime.ts'
 
 /** Promove a defesa a 'active' (símbolo no ginásio) e conta no total do dia (PLAN §3.1). */
 export function spawnDefense(s: GameState, defense: DefenseEvent, nowMs: number): void {
@@ -27,7 +27,7 @@ function squadOf(s: GameState, ids: readonly string[]): Pokemon[] {
 }
 
 /**
- * Atribui o esquadrão (≥3 disponíveis) e resolve a cadeia de duelos 1v1 na hora.
+ * Atribui o esquadrão (≥1 disponível) e resolve a cadeia de duelos 1v1 na hora.
  * Vitória rende ouro ∝ Carisma; perdedores de duelo perdem 1 HP (PLAN §4.4/§4.6).
  */
 export function assignDefense(s: GameState, defenseId: string, squadIds: string[]): void {
@@ -38,7 +38,7 @@ export function assignDefense(s: GameState, defenseId: string, squadIds: string[
 
   const resolution = resolveDefense(takeRng(s), squad, defense.enemies)
   for (const member of resolution.squad) {
-    replaceMon(s, { ...member, status: member.currentHp <= 0 ? 'fainted' : 'idle' })
+    replaceMon(s, settleFaint(s, member))
   }
 
   defense.squadIds = squad.map((p) => p.id)

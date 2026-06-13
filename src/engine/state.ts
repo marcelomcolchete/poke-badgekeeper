@@ -119,6 +119,8 @@ export interface DayTally {
   goldEarned: number
   /** Estrelas no início do dia (preenchido no fechamento) — para o resumo. */
   starsBefore: number
+  /** Fossil já reviveu alguém hoje? (efeito 1×/dia). */
+  fossilUsed: boolean
 }
 
 export interface DayLog {
@@ -138,9 +140,13 @@ export interface GameState {
   defenses: DefenseEvent[]
   captureSearches: CaptureSearch[]
   encounters: CaptureEncounter[]
+  /** Áreas verdes com captura ativa hoje (2 sorteadas) — origem dos spots no mapa. */
+  captureSpots: MapPos[]
   approval: Approval
   gold: number
   inventory: ItemStack[]
+  /** Itens/passivas permanentes da run (ex.: 'fossil' do museu). */
+  runItems: string[]
   today: DayTally
   history: DayLog[]
   /** Contador determinístico de ids de entidades (eventos/Pokémon). */
@@ -157,6 +163,7 @@ export function emptyTally(): DayTally {
     capturedIds: [],
     goldEarned: 0,
     starsBefore: 0,
+    fossilUsed: false,
   }
 }
 
@@ -171,9 +178,11 @@ export function createInitialState(seed: number): GameState {
     defenses: [],
     captureSearches: [],
     encounters: [],
+    captureSpots: [],
     approval: { stars: STARS_START, dailyGoalMet: false },
     gold: 0,
     inventory: [],
+    runItems: [],
     today: emptyTally(),
     history: [],
     nextId: 1,

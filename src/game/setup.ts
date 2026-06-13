@@ -3,14 +3,14 @@
 // autoSeedRun é um atalho PROVISÓRIO para rodar headless/testes — o fluxo
 // interativo de novo jogo (sorteio de tipos + inicial, §3) chega na Fase 4.
 
-import type { PokemonType } from '../types/index.ts'
+import type { MapPos, PokemonType } from '../types/index.ts'
 import type { CityData } from '../data/types.ts'
 import { LEVEL_MIN } from '../engine/constants.ts'
 import type { DefenseEvent, GameState } from '../engine/state.ts'
 import { POKEMON_TYPES } from '../types/index.ts'
 import { createInitialState } from '../engine/state.ts'
-import { getCity } from '../data/cities.ts'
-import { buildDaySchedule, type SpawnSlot } from '../engine/timeline.ts'
+import { getCity, sitesForCategory } from '../data/cities.ts'
+import { buildDaySchedule, type DefenseSlot } from '../engine/timeline.ts'
 import { createMissionInstance } from '../engine/missions.ts'
 import { generateDefenseEnemies } from '../engine/gymDefense.ts'
 import { createPokemon } from '../engine/leveling.ts'
@@ -28,27 +28,35 @@ import { takeId, takeRng } from './runtime.ts'
 export function setupDay(s: GameState): void {
   const city = getCity(s.run.cityIndex)
   const schedule = buildDaySchedule(s.run.seed, s.run.day, city)
-  s.missions = schedule.missions.map((slot) =>
-    createMissionInstance({
+  s.missions = schedule.missions.map((slot) => {
+    const sites = sitesForCategory(city.sites, slot.category)
+    const pos = sites[slot.siteIndex % sites.length] ?? city.sites.gym
+    return createMissionInstance({
       id: takeId(s, 'm'),
       rng: createRng(slot.seed),
-      anchors: city.missionAnchors,
-      anchorIndex: slot.anchorIndex,
+      category: slot.category,
+      pos,
       spawnAtMs: slot.atMs,
       lifetimeMs: MISSION_LIFETIME_MS,
-    }),
-  )
+      templateId: slot.templateId,
+    })
+  })
   s.defenses = schedule.defenses.map((slot) => buildDefense(s, slot, city))
+  // Captura só nas áreas verdes sorteadas para hoje (#3).
+  s.captureSpots = schedule.captureSiteIndices
+    .map((i) => city.sites.green[i])
+    .filter((g): g is MapPos => g !== undefined)
+    .map((g) => ({ ...g }))
   s.clock.dayElapsedMs = 0
   s.clock.speed = 1
 }
 
-function buildDefense(s: GameState, slot: SpawnSlot, city: CityData): DefenseEvent {
+function buildDefense(s: GameState, slot: DefenseSlot, city: CityData): DefenseEvent {
   const rng = createRng(slot.seed)
   const size = rng.int(ENEMY_SQUAD_MIN, ENEMY_SQUAD_MAX)
   return {
     id: takeId(s, 'd'),
-    pos: { ...city.gymPos },
+    pos: { ...city.sites.gym },
     spawnAtMs: slot.atMs,
     expiresAtMs: slot.atMs + DEFENSE_LIFETIME_MS,
     status: 'scheduled',
@@ -58,12 +66,12 @@ function buildDefense(s: GameState, slot: SpawnSlot, city: CityData): DefenseEve
 }
 
 function pickExtraTypes(rng: Rng, primary: PokemonType): PokemonType[] {
-  return rng.shuffle(POKEMON_TYPES.filter((t) => t !== primary)).slice(0, 2)
+  return rng.shuffle(POKEMON_TYPES.filter((t) => t !== primary)).slice(0, 1)
 }
 
 /**
- * Bootstrap PROVISÓRIO de uma run na cidade 0: define os 3 tipos do ginásio
- * (primário + 2 sorteados) e o inicial nível 3. Substituído pelo fluxo
+ * Bootstrap PROVISÓRIO de uma run na cidade 0: define os 2 tipos do ginásio
+ * (primário + 1 sorteado) e o inicial nível 3. Substituído pelo fluxo
  * interativo de novo jogo na Fase 4 (PLAN §3).
  */
 export function autoSeedRun(seed: number): GameState {
@@ -78,8 +86,8 @@ export function autoSeedRun(seed: number): GameState {
 }
 
 /**
- * Conclui o fluxo interativo de novo jogo (PLAN §3): grava os 3 tipos do ginásio
- * e monta o roster inicial — inicial nível 3 + 2 recrutas nível 1.
+ * Conclui o fluxo interativo de novo jogo (PLAN §3): grava os 2 tipos do ginásio
+ * e monta o roster inicial — inicial nível 3 + 1 recruta nível 1.
  */
 export function startRun(
   s: GameState,

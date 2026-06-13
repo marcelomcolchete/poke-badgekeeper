@@ -2,8 +2,11 @@ import { describe, expect, it } from 'vitest'
 import type { Attrs } from '../types/index.ts'
 import type { MissionTemplate } from '../data/types.ts'
 import { createRng } from './rng.ts'
+import { CATEGORY_RULES } from './balance.ts'
 import {
   createMissionInstance,
+  effectiveDanger,
+  effectiveRequirement,
   executionMs,
   missionDurationMs,
   missionFailureDamage,
@@ -18,6 +21,7 @@ function template(requirement: Attrs, danger = 4): MissionTemplate {
     id: 'tpl',
     name: 'Teste',
     themeIcon: '❓',
+    category: 'freeArea',
     requirement,
     baseTravelMs: 20_000,
     baseExecutionMs: 30_000,
@@ -100,6 +104,41 @@ describe('resolveMission (PLAN §4.2)', () => {
   })
 })
 
+describe('regras por categoria (dificuldade/efeitos)', () => {
+  it('center/mart endurecem a exigência; house/freeArea aliviam', () => {
+    const tpl = template(makeAttrs({}, 40))
+    expect(effectiveRequirement(tpl, CATEGORY_RULES.center).batalha).toBeGreaterThan(40)
+    expect(effectiveRequirement(tpl, CATEGORY_RULES.mart).batalha).toBeGreaterThan(40)
+    expect(effectiveRequirement(tpl, CATEGORY_RULES.house).batalha).toBeLessThan(40)
+    expect(effectiveRequirement(tpl, CATEGORY_RULES.freeArea).batalha).toBeLessThan(40)
+  })
+
+  it('museu é a categoria mais difícil (maior exigência efetiva)', () => {
+    const tpl = template(makeAttrs({}, 40))
+    const museum = effectiveRequirement(tpl, CATEGORY_RULES.museum).batalha
+    const center = effectiveRequirement(tpl, CATEGORY_RULES.center).batalha
+    expect(museum).toBeGreaterThan(center)
+  })
+
+  it('exigência efetiva fica capada em 100 por eixo', () => {
+    const tpl = template(makeAttrs({}, 90))
+    expect(effectiveRequirement(tpl, CATEGORY_RULES.center).batalha).toBeLessThanOrEqual(100)
+  })
+
+  it('perigo efetivo nunca cai abaixo de 1', () => {
+    const tpl = template(makeAttrs({}, 20), 1)
+    expect(effectiveDanger(tpl, CATEGORY_RULES.freeArea)).toBeGreaterThanOrEqual(1)
+  })
+
+  it('mesma equipe: categoria difícil reduz a P de sucesso', () => {
+    const team = [makeMon({ baseAttrs: makeAttrs({}, 30) })]
+    const tpl = template(makeAttrs({}, 60))
+    const pHard = resolveMission(fixedRng(0.5), team, tpl, CATEGORY_RULES.center).pSuccess
+    const pEasy = resolveMission(fixedRng(0.5), team, tpl, CATEGORY_RULES.freeArea).pSuccess
+    expect(pEasy).toBeGreaterThan(pHard)
+  })
+})
+
 describe('tempos de viagem/execução (PLAN §4.3)', () => {
   it('mais Agilidade = menos viagem', () => {
     const slow = [makeMon({ baseAttrs: makeAttrs({ agilidade: 10 }) })]
@@ -131,23 +170,35 @@ describe('tempos de viagem/execução (PLAN §4.3)', () => {
 })
 
 describe('createMissionInstance (PLAN §3.1)', () => {
-  it('é determinística e respeita âncora/timer', () => {
-    const anchors = [{ x: 0.1, y: 0.2 }, { x: 0.3, y: 0.4 }]
+  it('é determinística e respeita sítio/timer', () => {
+    const pos = { x: 0.3, y: 0.4 }
     const spec = {
       id: 'm1',
-      rng: createRng(7),
-      anchors,
-      anchorIndex: 1,
+      category: 'freeArea' as const,
+      pos,
       spawnAtMs: 5_000,
       lifetimeMs: 20_000,
     }
     const inst = createMissionInstance({ ...spec, rng: createRng(7) })
     const same = createMissionInstance({ ...spec, rng: createRng(7) })
     expect(inst).toEqual(same)
-    expect(inst.pos).toEqual(anchors[1])
+    expect(inst.pos).toEqual(pos)
     expect(inst.spawnAtMs).toBe(5_000)
     expect(inst.expiresAtMs).toBe(25_000)
     expect(inst.status).toBe('scheduled')
     expect(inst.teamIds).toEqual([])
+  })
+
+  it('usa templateId fixo quando informado (missão de museu)', () => {
+    const inst = createMissionInstance({
+      id: 'm2',
+      rng: createRng(1),
+      category: 'museum',
+      pos: { x: 0.5, y: 0.1 },
+      spawnAtMs: 0,
+      lifetimeMs: 20_000,
+      templateId: 'museum-fossil',
+    })
+    expect(inst.templateId).toBe('museum-fossil')
   })
 })

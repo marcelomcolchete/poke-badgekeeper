@@ -1,6 +1,7 @@
 // Mapa da cidade na fase Dia (PLAN §3.1): missões como popups com timer, áreas de
 // captura fixas e o símbolo de defesa sobre o ginásio. Posições normalizadas (0–1).
 
+import type { CSSProperties, MouseEvent } from 'react'
 import type { MapPos } from '../../types/index.ts'
 import type { DefenseEvent, GameState, MissionInstance } from '../../engine/state.ts'
 import { getCity } from '../../data/cities.ts'
@@ -17,6 +18,16 @@ interface Props {
 
 function posStyle(p: MapPos): { left: string; top: string } {
   return { left: `${p.x * 100}%`, top: `${p.y * 100}%` }
+}
+
+// Dev picker (PLAN §3.1): em desenvolvimento, clicar no mapa loga a coordenada
+// normalizada (0–1) no console — usado para calibrar as âncoras de cada cidade.
+function logPickedPos(e: MouseEvent<HTMLDivElement>): void {
+  if (!import.meta.env.DEV) return
+  const rect = e.currentTarget.getBoundingClientRect()
+  const x = (e.clientX - rect.left) / rect.width
+  const y = (e.clientY - rect.top) / rect.height
+  console.log(`{ x: ${x.toFixed(2)}, y: ${y.toFixed(2)} },`)
 }
 
 function timerFraction(event: { spawnAtMs: number; expiresAtMs: number }, now: number): number {
@@ -36,11 +47,22 @@ export function CityMap({ state, onMission, onDefense, onSpot }: Props) {
   const activeDefense = state.defenses.find((d) => d.status === 'active')
   const missions = state.missions.filter((m) => m.status === 'available')
 
-  return (
-    <div className={styles.map}>
-      <div className={styles.path} />
+  // A imagem é a régua: --map-aspect dita a proporção/altura máxima do contêiner,
+  // independente das dimensões nativas de cada arte.
+  const mapStyle = { '--map-aspect': `${city.mapW} / ${city.mapH}` } as CSSProperties
 
-      <div className={styles.anchor} style={posStyle(city.gymPos)}>
+  return (
+    <div className={styles.map} style={mapStyle} onClick={logPickedPos}>
+      <img
+        className={styles.bg}
+        src={city.mapImage}
+        width={city.mapW}
+        height={city.mapH}
+        alt={`Mapa de ${city.name}`}
+        draggable={false}
+      />
+
+      <div className={styles.anchor} style={posStyle(city.sites.gym)}>
         {activeDefense ? (
           <DefenseMarker defense={activeDefense} now={now} onClick={() => onDefense(activeDefense.id)} />
         ) : (
@@ -50,7 +72,7 @@ export function CityMap({ state, onMission, onDefense, onSpot }: Props) {
         )}
       </div>
 
-      {city.captureSpots.map((spot, i) => {
+      {state.captureSpots.map((spot, i) => {
         const ready = state.encounters.some((e) => e.spotIndex === i)
         const searching = state.captureSearches.some((c) => c.spotIndex === i)
         return (

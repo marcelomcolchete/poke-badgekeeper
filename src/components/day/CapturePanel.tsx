@@ -5,6 +5,7 @@ import type { Dispatch } from 'react'
 import type { GameState } from '../../engine/state.ts'
 import type { GameAction } from '../../game/actions.ts'
 import { rosterIsFull } from '../../engine/capture.ts'
+import { MAX_ROSTER_SIZE } from '../../engine/constants.ts'
 import { PokemonCard } from '../PokemonCard/PokemonCard.tsx'
 import { previewPokemon } from '../common/preview.ts'
 import { Overlay } from '../common/Overlay.tsx'
@@ -26,7 +27,9 @@ export function CapturePanel({ state, dispatch, spotIndex, onClose }: Props) {
     <Overlay title="ÁREA DE CAPTURA" onClose={onClose}>
       {encounter ? (
         <div className={styles.capture}>
-          <p className={styles.hint}>Apareceram 3 Pokémon (nível {encounter.level})!</p>
+          <p className={styles.hint}>
+            Apareceram 3 Pokémon (nível {encounter.level})! Capture um ou continue explorando.
+          </p>
           <div className={styles.picker}>
             {encounter.candidateSpeciesIds.map((id, i) => (
               <PokemonCard
@@ -44,7 +47,9 @@ export function CapturePanel({ state, dispatch, spotIndex, onClose }: Props) {
               />
             ))}
           </div>
-          {full && <p className={styles.warn}>Roster cheio (9) — liberte espaço para capturar.</p>}
+          {full && (
+            <p className={styles.warn}>Roster cheio ({MAX_ROSTER_SIZE}) — liberte espaço para capturar.</p>
+          )}
           <div className={styles.captureActions}>
             <button
               type="button"
@@ -54,7 +59,7 @@ export function CapturePanel({ state, dispatch, spotIndex, onClose }: Props) {
                 onClose()
               }}
             >
-              Seguir procurando
+              Continuar explorando
             </button>
             <button
               type="button"
@@ -64,17 +69,19 @@ export function CapturePanel({ state, dispatch, spotIndex, onClose }: Props) {
                 onClose()
               }}
             >
-              Trazer de volta
+              Encerrar exploração
             </button>
           </div>
         </div>
       ) : searching ? (
-        <p className={styles.hint}>Procurando Pokémon… aguarde o encontro surgir aqui.</p>
+        <p className={styles.hint}>Explorando… aguarde o encontro surgir aqui.</p>
       ) : full ? (
-        <p className={styles.warn}>Roster cheio (9) — captura indisponível até liberar espaço.</p>
+        <p className={styles.warn}>
+          Roster cheio ({MAX_ROSTER_SIZE}) — captura indisponível até liberar espaço.
+        </p>
       ) : (
         <div className={styles.capture}>
-          <p className={styles.hint}>Quem vai procurar? Maior Percepção encontra mais rápido.</p>
+          <p className={styles.hint}>Quem vai explorar? Maior Percepção encontra mais rápido.</p>
           <div className={styles.picker}>
             {state.roster.map((mon) => (
               <PokemonCard

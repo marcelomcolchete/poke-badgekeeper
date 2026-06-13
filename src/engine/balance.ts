@@ -6,7 +6,7 @@
 // Apenas knobs de tuning moram aqui; regras ESTRUTURAIS ficam em constants.ts.
 // Os testes da engine validam invariantes/intervalos, não estes valores específicos.
 
-import type { Rarity } from '../types/index.ts'
+import type { MissionCategory, Rarity } from '../types/index.ts'
 
 /** Peso de cada raridade no sorteio de captura/preparação (PLAN §4.5). */
 export const RARITY_DRAW_WEIGHT: Record<Rarity, number> = {
@@ -65,6 +65,49 @@ export const ENEMY_SQUAD_MAX = 6
 
 /** Leveling §4.1: XP concedido a cada Pokémon do time numa missão bem-sucedida. */
 export const MISSION_XP_REWARD = 120
+
+/**
+ * Regras por categoria de missão (PROVISÓRIAS) — onde nasce, dificuldade e recompensa.
+ * reqMult escala a exigência (>1 = mais difícil; <1 = mais fácil); dangerMult escala
+ * o dano em falha; healOnSuccess cura o time; goldOnSuccess rende ouro no sucesso.
+ */
+export interface CategoryRules {
+  reqMult: number
+  dangerMult: number
+  healOnSuccess: boolean
+  goldOnSuccess: number
+}
+
+export const CATEGORY_RULES: Record<MissionCategory, CategoryRules> = {
+  center: { reqMult: 1.25, dangerMult: 1.2, healOnSuccess: true, goldOnSuccess: 0 },
+  mart: { reqMult: 1.25, dangerMult: 1.2, healOnSuccess: false, goldOnSuccess: 150 },
+  house: { reqMult: 0.85, dangerMult: 0.85, healOnSuccess: false, goldOnSuccess: 0 },
+  freeArea: { reqMult: 0.85, dangerMult: 0.85, healOnSuccess: false, goldOnSuccess: 0 },
+  // Museu: a mais difícil da run (+50% de exigência) — recompensa rara (Fossil).
+  museum: { reqMult: 1.5, dangerMult: 1.2, healOnSuccess: false, goldOnSuccess: 0 },
+}
+
+/**
+ * Pool ponderado das categorias sorteadas a cada dia (museu é especial, fora daqui).
+ * Áreas verdes são as mais comuns; centro/mart, mais raros.
+ */
+export const DAILY_CATEGORY_POOL: MissionCategory[] = [
+  'freeArea',
+  'freeArea',
+  'freeArea',
+  'freeArea',
+  'house',
+  'house',
+  'center',
+  'mart',
+]
+
+/** Captura §4.5: quantas áreas verdes recebem captura por dia (sorteadas). */
+export const CAPTURE_SPOTS_PER_DAY = 2
+
+/** Museu: a missão única da run cai num dia sorteado nesta faixa (evita os extremos). */
+export const MUSEUM_DAY_MIN = 3
+export const MUSEUM_DAY_MAX = 8
 
 /** Itens §4.6: cura/revive (HP é 1–10, então poucos pontos já contam). */
 export const POTION_HEAL = 3

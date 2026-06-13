@@ -4,7 +4,7 @@
 import type { AttrKey, GameSpeed, PokemonType } from '../types/index.ts'
 
 export type GameAction =
-  /** Inicia a run: define os 3 tipos do ginásio, o inicial e os 2 recrutas — PLAN §3. */
+  /** Inicia a run: define os 2 tipos do ginásio, o inicial e o recruta — PLAN §3. */
   | { type: 'START_RUN'; gymTypes: PokemonType[]; starterSpeciesId: number; extraSpeciesIds: number[] }
   /** Define a velocidade do relógio (0 pausa, 1/2/3) — efeito real no game clock. */
   | { type: 'SET_SPEED'; speed: GameSpeed }
@@ -14,15 +14,15 @@ export type GameAction =
   | { type: 'ADVANCE_PHASE' }
   /** Aceita uma missão disponível, despachando o time (1–6) — PLAN §3.1/§4.2. */
   | { type: 'ACCEPT_MISSION'; missionId: string; teamIds: string[] }
-  /** Atribui o esquadrão (≥3) a uma defesa ativa; resolve na hora — PLAN §4.4. */
+  /** Atribui o esquadrão (≥1) a uma defesa ativa; resolve na hora — PLAN §4.4. */
   | { type: 'ASSIGN_DEFENSE'; defenseId: string; squadIds: string[] }
-  /** Manda um Pokémon procurar numa área de captura — PLAN §4.5. */
+  /** Manda um Pokémon explorar uma área de captura — PLAN §4.5. */
   | { type: 'START_SEARCH'; searcherId: string; spotIndex: number }
   /** No encontro: captura o candidato escolhido — PLAN §4.5. */
   | { type: 'CAPTURE_PICK'; searcherId: string; speciesId: number }
-  /** No encontro: não pega nenhum e traz o Pokémon de volta (fica idle). */
+  /** No encontro: não pega nenhum e encerra a exploração — o Pokémon fica idle. */
   | { type: 'CAPTURE_DISMISS'; searcherId: string }
-  /** No encontro: não pega nenhum e segue procurando (novo encontro depois). */
+  /** No encontro: não pega nenhum e continua explorando (novo encontro depois). */
   | { type: 'CAPTURE_KEEP'; searcherId: string }
   /** Compra no mercado (manhã) — PLAN §4.6. */
   | { type: 'BUY_ITEM'; itemId: string; quantity?: number }

@@ -19,7 +19,7 @@ import { ENEMY_BASE_BATTLE, ENEMY_BATTLE_PER_DAY } from './balance.ts'
 import { applyDamage, effectiveAttr } from './attributes.ts'
 import { clamp } from './math.ts'
 
-/** ≥3 Pokémon disponíveis para abrir uma defesa (PLAN §4.4). */
+/** ≥1 Pokémon disponível para abrir uma defesa (PLAN §4.4). */
 export function canDefend(squad: readonly Pokemon[]): boolean {
   return squad.length >= MIN_DEFENSE_SQUAD
 }

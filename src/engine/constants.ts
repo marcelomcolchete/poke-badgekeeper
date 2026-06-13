@@ -8,11 +8,11 @@ export const TOTAL_DAYS = 10
 /** Duração de um dia em tempo de jogo (PLAN §4.3). */
 export const DAY_LENGTH_MS = 180_000
 
-/** Roster: 1–9 Pokémon; despacho de 1–6; defesa exige ≥3 (PLAN §3 / §4.4 / §4.5). */
-export const MAX_ROSTER_SIZE = 9
+/** Roster: 1–6 Pokémon; despacho de 1–6; defesa exige ≥1 (PLAN §3 / §4.4 / §4.5). */
+export const MAX_ROSTER_SIZE = 6
 export const MIN_DISPATCH = 1
 export const MAX_DISPATCH = 6
-export const MIN_DEFENSE_SQUAD = 3
+export const MIN_DEFENSE_SQUAD = 1
 
 /** Atributos: mínimo 10, máximo natural por espécie 50, teto efetivo 100 (PLAN §4.1). */
 export const ATTR_MIN = 10
@@ -54,6 +54,6 @@ export const WILD_LEVEL_VARIANCE = 1
 /** Novo jogo: sorteia 3 tipos / 3 recrutas por rodada de escolha (PLAN §3). */
 export const DRAFT_CHOICES = 3
 
-/** Versão do schema de save e chave do localStorage (PLAN §5). v2: runtime do dia (Fase 3). */
-export const SAVE_VERSION = 2
+/** Versão do schema de save e chave do localStorage (PLAN §5). v3: sítios + missões por categoria + Fossil. */
+export const SAVE_VERSION = 3
 export const SAVE_KEY = 'poke-badgekeeper:save'

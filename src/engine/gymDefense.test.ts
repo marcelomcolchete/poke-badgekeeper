@@ -14,9 +14,9 @@ import {
 import { fixedRng, makeAttrs, makeMon } from './testkit.ts'
 
 describe('canDefend', () => {
-  it('exige ≥3 Pokémon', () => {
-    expect(canDefend([makeMon(), makeMon()])).toBe(false)
-    expect(canDefend([makeMon(), makeMon(), makeMon()])).toBe(true)
+  it('exige ≥1 Pokémon', () => {
+    expect(canDefend([])).toBe(false)
+    expect(canDefend([makeMon()])).toBe(true)
   })
 })
 

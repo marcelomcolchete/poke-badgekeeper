@@ -36,3 +36,17 @@ export function replaceMon(s: GameState, updated: Pokemon): void {
   const index = s.roster.findIndex((p) => p.id === updated.id)
   if (index >= 0) s.roster[index] = updated
 }
+
+/**
+ * Resolve o estado pós-combate de um Pokémon: se desmaiou (HP ≤ 0) e a passiva
+ * Fossil ainda não foi usada hoje, revive-o com HP cheio (1×/dia) — PLAN §4.6 (#5).
+ * Caso contrário, fica 'fainted'; vivo vira 'idle'. Não grava no roster (devolve cópia).
+ */
+export function settleFaint(s: GameState, mon: Pokemon): Pokemon {
+  if (mon.currentHp > 0) return { ...mon, status: 'idle' }
+  if (s.runItems.includes('fossil') && !s.today.fossilUsed) {
+    s.today.fossilUsed = true
+    return { ...mon, currentHp: mon.maxHp, status: 'idle' }
+  }
+  return { ...mon, status: 'fainted' }
+}

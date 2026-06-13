@@ -66,6 +66,25 @@ export interface Pokemon {
   passives: string[]
 }
 
+/** Tipos de sítio no mapa da cidade — definem ONDE cada evento/missão pode surgir. */
+export const SITE_KINDS = ['gym', 'center', 'mart', 'museum', 'house', 'green'] as const
+
+export type SiteKind = (typeof SITE_KINDS)[number]
+
+/** Categoria temática de uma missão; cada uma só nasce no seu tipo de sítio. */
+export const MISSION_CATEGORIES = ['center', 'mart', 'house', 'freeArea', 'museum'] as const
+
+export type MissionCategory = (typeof MISSION_CATEGORIES)[number]
+
+/** Sítio onde cada categoria de missão surge no mapa. */
+export const CATEGORY_SITE: Record<MissionCategory, SiteKind> = {
+  center: 'center',
+  mart: 'mart',
+  house: 'house',
+  freeArea: 'green',
+  museum: 'museum',
+}
+
 /** Fase do dia (PLAN §3 / §5). */
 export type GamePhase = 'MORNING' | 'DAY' | 'CAPTURE' | 'SUMMARY'
 

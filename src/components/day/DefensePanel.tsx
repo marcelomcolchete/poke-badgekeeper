@@ -1,4 +1,4 @@
-// Atribuição da defesa de ginásio (PLAN §4.4): escolha do esquadrão (≥3) para a
+// Atribuição da defesa de ginásio (PLAN §4.4): escolha do esquadrão (≥1) para a
 // cadeia de duelos 1v1. A resolução acontece na hora, no reducer.
 
 import { useState } from 'react'
