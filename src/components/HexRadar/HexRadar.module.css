@@ -1,0 +1,41 @@
+.radar {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--c-panel);
+  border: 3px solid var(--c-panel-border);
+  border-radius: var(--radius-pixel);
+}
+
+.grid {
+  fill: none;
+  stroke: #cfc8ac;
+  stroke-width: 1;
+}
+
+.spoke {
+  stroke: #cfc8ac;
+  stroke-width: 1;
+}
+
+.label {
+  fill: var(--c-ink-muted);
+  font-family: var(--font-pixel);
+  font-size: 8px;
+}
+
+/* Exigência da missão (o alvo a cobrir) */
+.requirement {
+  fill: #e0683c;
+  fill-opacity: 0.28;
+  stroke: #b5371f;
+  stroke-width: 2;
+}
+
+/* Cobertura do time (capada em 100 por eixo) */
+.team {
+  fill: #4f9e3f;
+  fill-opacity: 0.42;
+  stroke: #2f6e20;
+  stroke-width: 2.5;
+}

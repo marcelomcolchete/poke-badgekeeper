@@ -1,0 +1,74 @@
+.typeBadge {
+  display: inline-block;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.45);
+  padding: 3px 5px;
+  border: 2px solid var(--c-ink);
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.hp {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-text);
+  font-size: 15px;
+  color: var(--c-ink);
+}
+
+.hpLabel {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: var(--c-hud-accent);
+  background: var(--c-ink);
+  padding: 2px 3px;
+  border-radius: 3px;
+}
+
+.hpTrack {
+  position: relative;
+  width: 64px;
+  height: 8px;
+  background: var(--c-hp-track);
+  border: 2px solid var(--c-ink);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.hpFill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  transition: width 200ms steps(6);
+}
+
+.hpText {
+  font-variant-numeric: tabular-nums;
+  min-width: 34px;
+}
+
+.stars {
+  position: relative;
+  display: inline-block;
+  line-height: 1;
+  font-size: 22px;
+  white-space: nowrap;
+}
+
+.starsOff {
+  color: var(--c-star-off);
+}
+
+.starsOn {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  color: var(--c-star-on);
+}
