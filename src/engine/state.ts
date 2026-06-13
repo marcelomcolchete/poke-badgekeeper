@@ -10,7 +10,7 @@ import type {
   Pokemon,
   PokemonType,
 } from '../types/index.ts'
-import { DAY_LENGTH_MS, STARS_START } from './constants.ts'
+import { DAY_LENGTH_MS, STARS_START, STARTING_GOLD } from './constants.ts'
 
 export interface RunInfo {
   /** Índice da cidade atual de Kanto (0..7). */
@@ -173,8 +173,10 @@ export interface GameState {
   /** Procuradores voltando ao ginásio após o encontro (PLAN §4.5). */
   captureReturns: CaptureReturn[]
   encounters: CaptureEncounter[]
-  /** Pontos de grama (ids do grafo) com captura ativa hoje (2 sorteados) — spots no mapa. */
+  /** Pontos de grama (ids do grafo) com captura ativa hoje (1×/dia) — spots no mapa. */
   captureSpots: string[]
+  /** Horário (ms de jogo) em que cada spot de captura surge no mapa — alinhado a captureSpots. */
+  captureSpotSpawnsAtMs: number[]
   approval: Approval
   gold: number
   inventory: ItemStack[]
@@ -214,8 +216,9 @@ export function createInitialState(seed: number): GameState {
     captureReturns: [],
     encounters: [],
     captureSpots: [],
+    captureSpotSpawnsAtMs: [],
     approval: { stars: STARS_START, dailyGoalMet: false },
-    gold: 0,
+    gold: STARTING_GOLD,
     inventory: [],
     runItems: [],
     today: emptyTally(),

@@ -1,7 +1,7 @@
 .backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(8, 10, 30, 0.72);
+  background: var(--c-backdrop);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -15,8 +15,8 @@
   max-height: 100%;
   display: flex;
   flex-direction: column;
-  background: #2a2f7a;
-  border: 3px solid #10133a;
+  background: var(--c-overlay-frame);
+  border: 3px solid var(--c-overlay-frame-border);
   border-radius: 12px;
   padding: 8px;
 }
@@ -41,9 +41,9 @@
 .close {
   font-family: var(--font-pixel);
   font-size: 10px;
-  color: #fff;
-  background: #1b2061;
-  border: 2px solid #5159c9;
+  color: var(--c-btn-text);
+  background: var(--c-btn-bg);
+  border: 2px solid var(--c-btn-border);
   border-radius: 4px;
   padding: 4px 6px;
   line-height: 1;
@@ -52,7 +52,7 @@
 .content {
   overflow-y: auto;
   background: var(--c-grass);
-  border: 3px solid #10133a;
+  border: 3px solid var(--c-overlay-frame-border);
   border-radius: var(--radius-pixel);
   padding: 10px;
 }

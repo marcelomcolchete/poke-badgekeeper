@@ -28,7 +28,9 @@ export function CapturePanel({ state, dispatch, spotIndex, onClose }: Props) {
       {encounter ? (
         <div className={styles.capture}>
           <p className={styles.hint}>
-            Apareceram 3 Pokémon (nível {encounter.level})! Capture um ou continue explorando.
+            {encounter.candidateSpeciesIds.length === 1 ? 'Apareceu' : 'Apareceram'}{' '}
+            {encounter.candidateSpeciesIds.length} Pokémon (nível {encounter.level})! Capture um ou
+            continue explorando.
           </p>
           <div className={styles.picker}>
             {encounter.candidateSpeciesIds.map((id, i) => (

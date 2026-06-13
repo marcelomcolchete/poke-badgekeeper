@@ -73,9 +73,30 @@ function buildAdjacency(
   return adj
 }
 
+// Âncoras de EXIBIÇÃO (PLAN §3.1): onde o popup/marcador aparece SOBRE a arte — os
+// "números" da imagem anotada (3.1, 6.2, o "1" do ginásio…), distintos do ponto de
+// PARADA (a letra para onde o Pokémon caminha). Ex.: a captura 3.6 aparece no fim do
+// caminho de baixo, mas o time só desce até o ponto 'q'. Estimadas da arte e refináveis
+// com o DEV picker do CityMap. Nós sem entrada usam o próprio ponto do grafo.
+const PEWTER_MARKERS: Record<string, MapPos> = {
+  j: { x: 0.401, y: 0.4 }, // 1 — ginásio (sobre o prédio)
+  n: { x: 0.423, y: 0.578 }, // 2 — centro
+  l: { x: 0.543, y: 0.435 }, // 4 — mart
+  d: { x: 0.423, y: 0.198 }, // 5 — museu
+  p: { x: 0.327, y: 0.685 }, // 6.1 — casa
+  a: { x: 0.518, y: 0.197 }, // 6.2 — casa
+  g: { x: 0.612, y: 0.298 }, // 6.3 — casa
+  c: { x: 0.305, y: 0.193 }, // 3.1 — área verde
+  b: { x: 0.628, y: 0.193 }, // 3.2 — área verde
+  m: { x: 0.727, y: 0.542 }, // 3.4 — área verde
+  r: { x: 0.594, y: 0.676 }, // 3.5 — horta
+  q: { x: 0.477, y: 0.878 }, // 3.6 — área verde (fim do caminho de baixo)
+}
+
 const PEWTER_GRAPH: CityGraph = {
   nodes: PEWTER_NODES,
   adj: buildAdjacency(PEWTER_NODES, PEWTER_EDGES),
+  markers: PEWTER_MARKERS,
 }
 
 // Sítio → ponto do grafo (números da imagem anotada).
@@ -149,6 +170,15 @@ export function nodePos(graph: CityGraph, id: string): MapPos {
   const pos = graph.nodes[id]
   if (!pos) throw new Error(`Ponto ${id} não existe no grafo`)
   return pos
+}
+
+/**
+ * Âncora de EXIBIÇÃO de um marcador (popup de missão/captura/defesa) — PLAN §3.1.
+ * Usa a posição enumerada do mapa quando definida; senão, cai no ponto de parada.
+ * Os Pokémon continuam caminhando até `nodePos`; só o ícone é desenhado aqui.
+ */
+export function markerPos(graph: CityGraph, id: string): MapPos {
+  return graph.markers[id] ?? nodePos(graph, id)
 }
 
 /** Pontos onde uma categoria de missão pode surgir, nesta cidade. */

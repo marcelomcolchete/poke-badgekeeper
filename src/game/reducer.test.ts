@@ -3,7 +3,7 @@ import type { DefenseEvent, GameState, MissionInstance } from '../engine/state.t
 import { createInitialState } from '../engine/state.ts'
 import type { EnemyUnit, Pokemon, PokemonType } from '../types/index.ts'
 import { makeAttrs, makeMon } from '../engine/testkit.ts'
-import { MAX_ROSTER_SIZE } from '../engine/constants.ts'
+import { MAX_ROSTER_SIZE, STARTING_GOLD } from '../engine/constants.ts'
 import { reducer } from './reducer.ts'
 import { autoSeedRun } from './setup.ts'
 
@@ -148,6 +148,40 @@ describe('fluxo de defesa (PLAN §4.4/§4.6)', () => {
     s.today.defensesTotal = 1
     s = reducer(s, { type: 'ASSIGN_DEFENSE', defenseId: 'd1', squadIds: ['a'] })
     expect(s.defenses[0]?.status).toBe('won')
+  })
+
+  it('defesa ativa que expira sem luta encerra a run na hora (GAMEOVER)', () => {
+    const enemies: EnemyUnit[] = [{ battle: 1, types: ['normal'] }]
+    let s = dayState({ roster: [strong('a')], defenses: [defense(enemies)] })
+    s = reducer(s, { type: 'TICK', deltaMs: 40_000 }) // o timer da defesa zera
+    expect(s.defenses[0]?.status).toBe('lost')
+    expect(s.run.phase).toBe('GAMEOVER')
+    expect(s.clock.speed).toBe(0)
+  })
+
+  it('defender antes do timer zerar evita o GAMEOVER', () => {
+    const weak: EnemyUnit[] = [{ battle: 1, types: ['normal'] }]
+    let s = dayState({ roster: [strong('a')], defenses: [defense(weak)] })
+    s = reducer(s, { type: 'ASSIGN_DEFENSE', defenseId: 'd1', squadIds: ['a'] })
+    s = reducer(s, { type: 'TICK', deltaMs: 40_000 })
+    expect(s.run.phase).toBe('DAY')
+    expect(s.defenses[0]?.status).toBe('won')
+  })
+
+  it('defesa que surge e expira no mesmo salto de tempo não encerra a run', () => {
+    const enemies: EnemyUnit[] = [{ battle: 1, types: ['normal'] }]
+    const scheduled: DefenseEvent = { ...defense(enemies), status: 'scheduled', spawnAtMs: 10_000 }
+    let s = dayState({ roster: [strong('a')], defenses: [scheduled] })
+    s = reducer(s, { type: 'TICK', deltaMs: 60_000 }) // cruza spawn (10s) e expiry (40s) num tick só
+    expect(s.defenses[0]?.status).toBe('lost')
+    expect(s.run.phase).toBe('DAY')
+  })
+})
+
+describe('ouro inicial (PLAN §4.6)', () => {
+  it('nova run começa com 500 de ouro', () => {
+    expect(createInitialState(SEED).gold).toBe(STARTING_GOLD)
+    expect(STARTING_GOLD).toBe(500)
   })
 })
 

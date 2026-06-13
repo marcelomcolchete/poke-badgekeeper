@@ -34,7 +34,7 @@ body,
 
 body {
   font-family: var(--font-text);
-  background: #0b0d24;
+  background: #123322;
   color: var(--c-hud-text);
   -webkit-font-smoothing: none;
   font-smooth: never;

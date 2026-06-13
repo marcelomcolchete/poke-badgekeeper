@@ -4,13 +4,16 @@
 import { useState } from 'react'
 import { createInitialState } from './engine/state.ts'
 import { clearSave } from './persistence/saveLoad.ts'
+import { pendingPoints } from './engine/leveling.ts'
 import { useGameState } from './game/useGameState.ts'
 import { useGameClock } from './game/useGameClock.ts'
 import { CitySelectScreen } from './components/screens/CitySelectScreen.tsx'
 import { NewGameScreen } from './components/screens/NewGameScreen.tsx'
 import { MorningScreen } from './components/screens/MorningScreen.tsx'
 import { SummaryScreen } from './components/screens/SummaryScreen.tsx'
+import { GameOverScreen } from './components/screens/GameOverScreen.tsx'
 import { DayScreen } from './components/day/DayScreen.tsx'
+import { LevelUpModal } from './components/LevelUpModal/LevelUpModal.tsx'
 import styles from './App.module.css'
 
 function freshState() {
@@ -21,14 +24,18 @@ export default function App() {
   const [state, dispatch] = useGameState(freshState)
   const [uiPaused, setUiPaused] = useState(false)
   const [cityChosen, setCityChosen] = useState(false)
-  useGameClock(state, dispatch, uiPaused)
+
+  const needsSetup = state.gym.types.length === 0
+  // Pokémon do jogador esperando alocação de level-up (modal imediato, PLAN §4.1).
+  const levelingUp = needsSetup ? undefined : state.roster.find((p) => pendingPoints(p) > 0)
+
+  // O relógio congela com qualquer painel aberto OU enquanto há level-up a distribuir.
+  useGameClock(state, dispatch, uiPaused || levelingUp !== undefined)
 
   const restart = (): void => {
     clearSave()
     window.location.reload()
   }
-
-  const needsSetup = state.gym.types.length === 0
 
   return (
     <div className={styles.app}>
@@ -39,6 +46,8 @@ export default function App() {
           ) : (
             <CitySelectScreen onChoose={() => setCityChosen(true)} />
           )
+        ) : state.run.phase === 'GAMEOVER' ? (
+          <GameOverScreen onRestart={restart} />
         ) : state.run.phase === 'SUMMARY' ? (
           <SummaryScreen state={state} dispatch={dispatch} onRestart={restart} />
         ) : state.run.phase === 'DAY' ? (
@@ -47,6 +56,7 @@ export default function App() {
           <MorningScreen state={state} dispatch={dispatch} />
         )}
       </div>
+      {levelingUp && <LevelUpModal pokemon={levelingUp} dispatch={dispatch} />}
     </div>
   )
 }

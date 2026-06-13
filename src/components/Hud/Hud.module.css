@@ -4,7 +4,7 @@
   align-items: center;
   gap: 16px;
   padding: 6px 14px;
-  background: rgba(16, 19, 58, 0.88);
+  background: rgba(28, 86, 50, 0.9);
   border: 2px solid var(--c-hud-border);
   border-radius: 999px;
   color: var(--c-hud-text);
@@ -37,9 +37,9 @@
 .speedBtn {
   font-family: var(--font-pixel);
   font-size: 9px;
-  color: #cdd0ff;
-  background: #1b2061;
-  border: 2px solid #5159c9;
+  color: var(--c-btn-text);
+  background: var(--c-btn-bg);
+  border: 2px solid var(--c-btn-border);
   border-radius: 4px;
   padding: 4px 5px;
   line-height: 1;

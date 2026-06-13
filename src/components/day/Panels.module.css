@@ -109,9 +109,9 @@
   flex: 1;
   font-family: var(--font-pixel);
   font-size: 9px;
-  color: #fff;
-  background: #1b2061;
-  border: 2px solid #5159c9;
+  color: var(--c-btn-text);
+  background: var(--c-btn-bg);
+  border: 2px solid var(--c-btn-border);
   border-radius: 4px;
   padding: 9px 6px;
 }

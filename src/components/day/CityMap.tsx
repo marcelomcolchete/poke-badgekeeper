@@ -7,12 +7,19 @@ import type { MouseEvent } from 'react'
 import type { MapPos, Pokemon } from '../../types/index.ts'
 import type { CityGraph } from '../../data/types.ts'
 import type { DefenseEvent, GameState, MissionInstance } from '../../engine/state.ts'
-import { getCity, nodePos } from '../../data/cities.ts'
-import { getMissionTemplate } from '../../data/missionTemplates.ts'
+import { getCity, markerPos } from '../../data/cities.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
 import { pointAlongPath } from '../../engine/pathfinding.ts'
 import { clamp } from '../../engine/math.ts'
 import styles from './CityMap.module.css'
+
+/** Missões que aparecem no mapa: disponíveis e as já aceitas (em trânsito/ação/volta) — #4. */
+const VISIBLE_MISSION_STATUSES: MissionInstance['status'][] = [
+  'available',
+  'traveling',
+  'inProgress',
+  'returning',
+]
 
 interface Props {
   state: GameState
@@ -56,7 +63,7 @@ export function CityMap({ state, onMission, onDefense, onSpot }: Props) {
   const graph = city.graph
   const now = state.clock.dayElapsedMs
   const activeDefense = state.defenses.find((d) => d.status === 'active')
-  const missions = state.missions.filter((m) => m.status === 'available')
+  const missions = state.missions.filter((m) => VISIBLE_MISSION_STATUSES.includes(m.status))
 
   return (
     <div className={styles.map}>
@@ -70,22 +77,19 @@ export function CityMap({ state, onMission, onDefense, onSpot }: Props) {
           draggable={false}
         />
 
-        <div className={styles.anchor} style={posStyle(nodePos(graph, city.siteNodes.gym))}>
-          {activeDefense ? (
+        {activeDefense && (
+          <div className={styles.anchor} style={posStyle(markerPos(graph, city.siteNodes.gym))}>
             <DefenseMarker defense={activeDefense} now={now} onClick={() => onDefense(activeDefense.id)} />
-          ) : (
-            <span className={styles.building} title="Ginásio">
-              🏛️
-            </span>
-          )}
-        </div>
+          </div>
+        )}
 
         {state.captureSpots.map((node, i) => {
           if (state.today.exploredSpots.includes(i)) return null // área já explorada hoje
+          if (now < (state.captureSpotSpawnsAtMs[i] ?? 0)) return null // ainda não surgiu (#7)
           const ready = state.encounters.some((e) => e.spotIndex === i)
           const searching = state.captureSearches.some((c) => c.spotIndex === i)
           return (
-            <div key={`spot-${i}`} className={styles.anchor} style={posStyle(nodePos(graph, node))}>
+            <div key={`spot-${i}`} className={styles.anchor} style={posStyle(markerPos(graph, node))}>
               <button
                 type="button"
                 className={`${styles.disc} ${styles.capture} ${ready ? styles.ready : ''}`}
@@ -101,7 +105,7 @@ export function CityMap({ state, onMission, onDefense, onSpot }: Props) {
         })}
 
         {missions.map((mission) => (
-          <div key={mission.id} className={styles.anchor} style={posStyle(nodePos(graph, mission.node))}>
+          <div key={mission.id} className={styles.anchor} style={posStyle(markerPos(graph, mission.node))}>
             <MissionMarker mission={mission} now={now} onClick={() => onMission(mission.id)} />
           </div>
         ))}
@@ -112,13 +116,15 @@ export function CityMap({ state, onMission, onDefense, onSpot }: Props) {
   )
 }
 
-/** Posição atual do time de uma missão em deslocamento (ida/parado/volta), ou null. */
+/**
+ * Posição atual do time de uma missão em deslocamento (ida/volta), ou null. Ao CHEGAR
+ * na missão ('inProgress') o time some do mapa; reaparece só na volta ('returning') — #3.
+ */
 function missionTravelerPos(graph: CityGraph, m: MissionInstance, now: number): MapPos | null {
   if (m.path.length === 0) return null
   if (m.status === 'traveling' && m.acceptedAtMs !== null && m.arriveAtMs !== null) {
     return pointAlongPath(graph, m.path, elapsedFraction(now, m.acceptedAtMs, m.arriveAtMs))
   }
-  if (m.status === 'inProgress') return pointAlongPath(graph, m.path, 1)
   if (m.status === 'returning' && m.resolveAtMs !== null && m.returnEndsAtMs !== null) {
     const back = [...m.path].reverse()
     return pointAlongPath(graph, back, elapsedFraction(now, m.resolveAtMs, m.returnEndsAtMs))
@@ -137,10 +143,9 @@ function MapTravelers({ state, graph, now }: { state: GameState; graph: CityGrap
         ) : null
       })}
       {state.captureSearches.map((c) => {
-        const pos =
-          c.phase === 'traveling'
-            ? pointAlongPath(graph, c.path, elapsedFraction(now, c.departAtMs, c.arriveAtMs))
-            : pointAlongPath(graph, c.path, 1)
+        // Ao chegar no local, o procurador some (entra na grama); reaparece só na volta — #3.
+        if (c.phase !== 'traveling') return null
+        const pos = pointAlongPath(graph, c.path, elapsedFraction(now, c.departAtMs, c.arriveAtMs))
         return <TravelerGroup key={`s-${c.searcherId}`} pos={pos} ids={[c.searcherId]} roster={state.roster} />
       })}
       {state.captureReturns.map((r) => {
@@ -182,10 +187,19 @@ function MissionMarker({
   now: number
   onClick: () => void
 }) {
-  const template = getMissionTemplate(mission.templateId)
+  // Toda missão usa o mesmo marcador "!" (captura/ginásio têm marcadores próprios) — #1.
+  // Aceita: o anel congela (cheio) e o marcador continua no mapa, sem piscar — #4.
+  const available = mission.status === 'available'
+  const fraction = available ? timerFraction(mission, now) : 1
   return (
-    <button type="button" className={styles.ring} style={ringStyle(timerFraction(mission, now))} onClick={onClick}>
-      <span className={styles.icon}>{template.themeIcon}</span>
+    <button
+      type="button"
+      className={`${styles.ring} ${available ? '' : styles.ringBusy}`}
+      style={ringStyle(fraction)}
+      onClick={onClick}
+      aria-label={available ? 'Missão disponível' : 'Missão em andamento'}
+    >
+      <span className={`${styles.icon} ${styles.bang}`}>!</span>
     </button>
   )
 }

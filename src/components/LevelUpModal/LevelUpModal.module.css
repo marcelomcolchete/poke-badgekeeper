@@ -1,0 +1,65 @@
+/* Backdrop fixo: o level-up sobrepõe qualquer tela (Dia/Manhã/Resumo). */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  background: var(--c-backdrop);
+}
+
+.panel {
+  width: 100%;
+  max-width: 360px;
+  max-height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--c-overlay-frame);
+  border: 3px solid var(--c-overlay-frame-border);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.title {
+  font-family: var(--font-pixel);
+  font-size: 13px;
+  color: var(--c-hud-accent);
+  text-align: center;
+}
+
+.lead {
+  font-family: var(--font-text);
+  font-size: 17px;
+  color: var(--c-hud-text);
+  line-height: 1.25;
+}
+
+.lead b {
+  color: var(--c-hud-accent);
+}
+
+.allocBtns {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.allocBtn {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: #fff;
+  background: var(--c-grass-dark);
+  border: 2px solid var(--c-overlay-frame-border);
+  border-radius: 4px;
+  padding: 9px 4px;
+  line-height: 1.2;
+}
+
+.allocBtn:hover {
+  background: var(--c-hud-accent);
+  color: var(--c-ink);
+}

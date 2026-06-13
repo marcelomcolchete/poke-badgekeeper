@@ -42,10 +42,12 @@ export function setupDay(s: GameState): void {
     })
   })
   s.defenses = schedule.defenses.map((slot) => buildDefense(s, slot, city))
-  // Captura só nas áreas verdes (pontos) sorteadas para hoje (#3).
-  s.captureSpots = schedule.captureSiteIndices
-    .map((i) => city.siteNodes.green[i])
-    .filter((id): id is string => id !== undefined)
+  // Captura só nas áreas verdes (pontos) sorteadas para hoje (#3), com horário de surgimento.
+  const spots = schedule.captureSiteIndices
+    .map((i, k) => ({ node: city.siteNodes.green[i], at: schedule.captureSpawnsAtMs[k] ?? 0 }))
+    .filter((p): p is { node: string; at: number } => p.node !== undefined)
+  s.captureSpots = spots.map((p) => p.node)
+  s.captureSpotSpawnsAtMs = spots.map((p) => p.at)
   s.clock.dayElapsedMs = 0
   s.clock.speed = 1
 }

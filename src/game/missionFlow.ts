@@ -5,7 +5,7 @@
 
 import type { Pokemon } from '../types/index.ts'
 import type { MissionTemplate } from '../data/types.ts'
-import type { GameState, MissionInstance } from '../engine/state.ts'
+import type { GameState, MissionInstance, MissionStatus } from '../engine/state.ts'
 import { getCity } from '../data/cities.ts'
 import { getMissionTemplate } from '../data/missionTemplates.ts'
 import { MAX_DISPATCH, MIN_DISPATCH } from '../engine/constants.ts'
@@ -25,9 +25,30 @@ function rulesFor(template: MissionTemplate): CategoryRules {
   return CATEGORY_RULES[template.category]
 }
 
-/** Promove a missão a 'available' quando o relógio atinge o spawn (PLAN §3.1). */
-export function promoteMission(mission: MissionInstance, nowMs: number): void {
-  if (mission.status === 'scheduled' && nowMs >= mission.spawnAtMs) mission.status = 'available'
+/** Status que "ocupam" um ponto do mapa (já visível ou com time em trânsito/ação). */
+const OCCUPYING_STATUSES: MissionStatus[] = ['available', 'traveling', 'inProgress', 'returning']
+
+/** Há outra missão ocupando este ponto do grafo? — PLAN §3.1 (#4). */
+function nodeOccupied(s: GameState, node: string, exceptId: string): boolean {
+  return s.missions.some(
+    (m) => m.id !== exceptId && m.node === node && OCCUPYING_STATUSES.includes(m.status),
+  )
+}
+
+/**
+ * Promove a missão a 'available' quando o relógio atinge o spawn (PLAN §3.1), desde que o
+ * ponto esteja livre. Se houver outra missão ocupando o mesmo ponto, adia o surgimento
+ * deslizando a janela (preserva a duração) até liberar — não nascem duas no mesmo lugar (#4).
+ */
+export function promoteMission(s: GameState, mission: MissionInstance, nowMs: number): void {
+  if (mission.status !== 'scheduled' || nowMs < mission.spawnAtMs) return
+  if (nodeOccupied(s, mission.node, mission.id)) {
+    const lifetime = mission.expiresAtMs - mission.spawnAtMs
+    mission.spawnAtMs = nowMs
+    mission.expiresAtMs = nowMs + lifetime
+    return
+  }
+  mission.status = 'available'
 }
 
 /** Expira uma missão não aceita a tempo (oportunidade perdida) — PLAN §3.1. */

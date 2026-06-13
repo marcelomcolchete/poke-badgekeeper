@@ -8,6 +8,7 @@ import type { GameSpeed } from '../../types/index.ts'
 import type { GameState } from '../../engine/state.ts'
 import type { GameAction } from '../../game/actions.ts'
 import { TOTAL_DAYS } from '../../engine/constants.ts'
+import { missionGoal } from '../../engine/approval.ts'
 import { Hud } from '../Hud/Hud.tsx'
 import { Textbox } from '../Textbox/Textbox.tsx'
 import { Overlay } from '../common/Overlay.tsx'
@@ -46,14 +47,15 @@ export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) 
     return () => onPauseChange(false)
   }, [open, onPauseChange])
 
-  // Atalhos de teclado: 1/2/3 = velocidade; ` = alterna pausa/play.
+  // Atalhos de teclado: 1/2/3 = velocidade; ` (tecla à esquerda do "1") e P = pausa/play.
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return
       if (e.key === '1') dispatch({ type: 'SET_SPEED', speed: 1 })
       else if (e.key === '2') dispatch({ type: 'SET_SPEED', speed: 2 })
       else if (e.key === '3') dispatch({ type: 'SET_SPEED', speed: 3 })
-      else if (e.key === '`') dispatch({ type: 'SET_SPEED', speed: state.clock.speed === 0 ? 1 : 0 })
+      else if (e.key === '`' || e.key === 'p' || e.key === 'P')
+        dispatch({ type: 'SET_SPEED', speed: state.clock.speed === 0 ? 1 : 0 })
       else return
       e.preventDefault()
     }
@@ -83,15 +85,30 @@ export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) 
         />
       </div>
 
-      <nav className={styles.sidebar}>
-        <button type="button" className={styles.sideBtn} onClick={() => setOpen({ kind: 'team' })}>
-          <span className={styles.sideIcon}>👥</span> Time
+      <nav className={styles.sidebar} aria-label="Ações do treinador">
+        <button
+          type="button"
+          className={`${styles.actionBtn} ${styles.actTeam}`}
+          onClick={() => setOpen({ kind: 'team' })}
+        >
+          <span className={styles.actionIcon}>👥</span>
+          <span className={styles.actionLabel}>Time</span>
         </button>
-        <button type="button" className={styles.sideBtn} onClick={() => setOpen({ kind: 'report' })}>
-          <span className={styles.sideIcon}>📋</span> Relatório
+        <button
+          type="button"
+          className={`${styles.actionBtn} ${styles.actReport}`}
+          onClick={() => setOpen({ kind: 'report' })}
+        >
+          <span className={styles.actionIcon}>📋</span>
+          <span className={styles.actionLabel}>Relatório</span>
         </button>
-        <button type="button" className={styles.sideBtnQuit} onClick={() => setOpen({ kind: 'quit' })}>
-          <span className={styles.sideIcon}>🚪</span> Desistir
+        <button
+          type="button"
+          className={`${styles.actionBtn} ${styles.actQuit}`}
+          onClick={() => setOpen({ kind: 'quit' })}
+        >
+          <span className={styles.actionIcon}>🚪</span>
+          <span className={styles.actionLabel}>Desistir</span>
         </button>
       </nav>
 
@@ -128,14 +145,29 @@ function dayHint(state: GameState): string {
 function DayReport({ state, onClose }: { state: GameState; onClose: () => void }) {
   const t = state.today
   const completed = t.missionResults.filter((m) => m.success).length
+  const total = state.missions.length
+  const goal = missionGoal(total) // metade do total, arredondando p/ cima (#6)
+  const goalMet = total > 0 && completed >= goal
+  const allDone = total > 0 && completed >= total
   return (
     <Overlay title="RELATÓRIO DO DIA" onClose={onClose}>
       <ul className={styles.report}>
-        <li>Missões cumpridas: <b>{completed}</b> / {state.missions.length}</li>
+        <li>Missões cumpridas: <b>{completed}</b> / {total}</li>
+        <li>
+          Meta do dia: <b className={goalMet ? styles.goalMet : undefined}>{goal}</b>
+          {' '}<span className={styles.goalNote}>(★½ na meta · ★ em todas)</span>
+        </li>
         <li>Defesas vencidas: <b>{t.defensesWon}</b> / {t.defensesTotal}</li>
         <li>Ouro do dia: <b>$ {t.goldEarned}</b></li>
         <li>Capturados: <b>{t.capturedIds.length}</b></li>
       </ul>
+      <p className={styles.reward}>
+        {allDone
+          ? 'Todas as missões cumpridas — +1 estrela! ★'
+          : goalMet
+            ? 'Meta batida — +½ estrela! ★½'
+            : `Faltam ${Math.max(0, goal - completed)} para a meta (½ estrela).`}
+      </p>
     </Overlay>
   )
 }

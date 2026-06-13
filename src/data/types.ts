@@ -42,6 +42,13 @@ export interface CityGraph {
   nodes: Record<string, MapPos>
   /** Vizinhos de cada ponto (sempre simétrico: se a∈adj[b] então b∈adj[a]). */
   adj: Record<string, string[]>
+  /**
+   * Âncora de EXIBIÇÃO do popup/marcador de cada ponto (PLAN §3.1): onde o ícone
+   * da missão/captura/defesa aparece SOBRE a arte (números enumerados do mapa), que é
+   * distinta do ponto de PARADA (a letra para onde os Pokémon caminham). Sem entrada,
+   * o marcador cai no próprio ponto do grafo (`nodes[id]`).
+   */
+  markers: Record<string, MapPos>
 }
 
 /**

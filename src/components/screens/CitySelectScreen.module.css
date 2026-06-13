@@ -67,7 +67,7 @@
   align-items: center;
   gap: 8px;
   padding: 10px 10px 8px;
-  background: linear-gradient(to top, rgba(7, 9, 30, 0.92), rgba(7, 9, 30, 0));
+  background: linear-gradient(to top, rgba(8, 30, 17, 0.92), rgba(8, 30, 17, 0));
 }
 
 .cityName {
