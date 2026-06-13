@@ -117,6 +117,8 @@ export interface DayTally {
   defensesWon: number
   capturedIds: string[]
   goldEarned: number
+  /** Estrelas no início do dia (preenchido no fechamento) — para o resumo. */
+  starsBefore: number
 }
 
 export interface DayLog {
@@ -148,7 +150,14 @@ export interface GameState {
 }
 
 export function emptyTally(): DayTally {
-  return { missionResults: [], defensesTotal: 0, defensesWon: 0, capturedIds: [], goldEarned: 0 }
+  return {
+    missionResults: [],
+    defensesTotal: 0,
+    defensesWon: 0,
+    capturedIds: [],
+    goldEarned: 0,
+    starsBefore: 0,
+  }
 }
 
 /** Estado inicial de uma nova run (antes da escolha do inicial e dos tipos do ginásio). */

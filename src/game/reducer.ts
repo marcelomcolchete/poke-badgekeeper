@@ -6,6 +6,7 @@ import type { GameState } from '../engine/state.ts'
 import type { GameAction } from './actions.ts'
 import { draft } from './runtime.ts'
 import { tick } from './dayClock.ts'
+import { startRun } from './setup.ts'
 import { advancePhase, setSpeed } from './phaseFlow.ts'
 import { acceptMission } from './missionFlow.ts'
 import { assignDefense } from './defenseFlow.ts'
@@ -15,6 +16,9 @@ import { allocatePoint, applyItem, buyItem } from './marketFlow.ts'
 export function reducer(state: GameState, action: GameAction): GameState {
   const s = draft(state)
   switch (action.type) {
+    case 'START_RUN':
+      startRun(s, action.gymTypes, action.starterSpeciesId, action.extraSpeciesIds)
+      break
     case 'SET_SPEED':
       setSpeed(s, action.speed)
       break

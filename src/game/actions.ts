@@ -1,9 +1,11 @@
 // Ações do jogo aplicadas pelo reducer via engine (PLAN §5).
 // O game clock dispara TICK; as demais vêm da interação do jogador (Fase 4).
 
-import type { AttrKey, GameSpeed } from '../types/index.ts'
+import type { AttrKey, GameSpeed, PokemonType } from '../types/index.ts'
 
 export type GameAction =
+  /** Inicia a run: define os 3 tipos do ginásio, o inicial e os 2 recrutas — PLAN §3. */
+  | { type: 'START_RUN'; gymTypes: PokemonType[]; starterSpeciesId: number; extraSpeciesIds: number[] }
   /** Define a velocidade do relógio (0 pausa, 1/2/3) — efeito real no game clock. */
   | { type: 'SET_SPEED'; speed: GameSpeed }
   /** Avança o relógio do dia em `deltaMs` (ms de jogo, já escalados pela velocidade). */

@@ -41,6 +41,7 @@ export function finalizeDay(s: GameState): void {
   resolveLeftovers(s)
 
   const starsBefore = s.approval.stars
+  s.today.starsBefore = starsBefore
   const completed = s.today.missionResults.filter((r) => r.success).length
   const total = s.today.missionResults.length
   s.approval.stars = applyApproval(starsBefore, completed, total)

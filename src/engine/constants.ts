@@ -51,6 +51,9 @@ export const MIN_FAILURE_DAMAGE = 1
 export const CAPTURE_CHOICES = 3
 export const WILD_LEVEL_VARIANCE = 1
 
+/** Novo jogo: sorteia 3 tipos / 3 recrutas por rodada de escolha (PLAN §3). */
+export const DRAFT_CHOICES = 3
+
 /** Versão do schema de save e chave do localStorage (PLAN §5). v2: runtime do dia (Fase 3). */
 export const SAVE_VERSION = 2
 export const SAVE_KEY = 'poke-badgekeeper:save'
