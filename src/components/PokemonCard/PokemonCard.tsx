@@ -14,6 +14,7 @@ const STATUS_LABEL: Record<PokemonStatus, string> = {
   traveling: 'Viajando',
   onMission: 'Em missão',
   defending: 'Defendendo',
+  returning: 'Voltando',
   fainted: 'Desmaiado',
   atCenter: 'No Centro',
 }

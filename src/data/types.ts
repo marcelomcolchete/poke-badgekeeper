@@ -33,23 +33,35 @@ export interface Species extends SpeciesBase {
 }
 
 /**
- * Sítios do mapa: ONDE cada tipo de evento/missão surge (posições normalizadas 0–1).
- * Cada categoria de missão só nasce no seu sítio; captura só nas áreas verdes;
- * defesa só no ginásio. Sítios únicos têm um ponto; houses/green têm vários.
+ * Grafo de deslocamento da cidade (PLAN §3.1): os pontos (a–s) por onde os Pokémon
+ * caminham do ginásio até a missão e de volta. Posições normalizadas 0–1 e adjacência
+ * NÃO-direcionada (simétrica). O menor caminho entre dois pontos define o tempo de viagem.
  */
-export interface CitySites {
-  /** Ginásio: única origem das defesas. */
-  gym: MapPos
+export interface CityGraph {
+  /** Posição normalizada (0–1) de cada ponto, indexada pelo id (ex.: 'j'). */
+  nodes: Record<string, MapPos>
+  /** Vizinhos de cada ponto (sempre simétrico: se a∈adj[b] então b∈adj[a]). */
+  adj: Record<string, string[]>
+}
+
+/**
+ * Sítios do mapa → ponto do grafo ONDE cada tipo de evento/missão surge.
+ * Cada categoria só nasce no seu sítio; captura só nas áreas verdes; defesa só no
+ * ginásio. Sítios únicos apontam um ponto; houses/green listam vários.
+ */
+export interface CitySiteNodes {
+  /** Ginásio: origem das viagens e única origem das defesas. */
+  gym: string
   /** Centro Pokémon: missões 'center' (curam o time no sucesso). */
-  center: MapPos
+  center: string
   /** Poké Mart: missões 'mart' (recompensa em ouro). */
-  mart: MapPos
+  mart: string
   /** Museu: missão temática única da run (concede passiva). */
-  museum: MapPos
+  museum: string
   /** Casas: missões 'house'. */
-  houses: MapPos[]
+  houses: string[]
   /** Áreas verdes: missões 'freeArea' e os spots de captura do dia. */
-  green: MapPos[]
+  green: string[]
 }
 
 /** Cidade de Kanto (PLAN §3.1 / §4.7 / §4.8). */
@@ -69,8 +81,10 @@ export interface CityData {
   mapH: number
   /** Multiplicador de dificuldade (curva de missões/defesas) — PLAN §4.8. */
   difficultyFactor: number
-  /** Sítios do mapa (ginásio, centro, mart, museu, casas, áreas verdes). */
-  sites: CitySites
+  /** Grafo de deslocamento (pontos a–s + adjacência) — PLAN §3.1. */
+  graph: CityGraph
+  /** Mapeamento sítio → ponto do grafo (ginásio, centro, mart, museu, casas, verdes). */
+  siteNodes: CitySiteNodes
   /** Missão única do museu desta cidade (id de template 'museum'); ausente = sem museu. */
   museumMissionId?: string
 }

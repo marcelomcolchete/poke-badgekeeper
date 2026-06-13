@@ -5,7 +5,7 @@
 import type { GameState } from '../engine/state.ts'
 import { advanceMission, expireMission, promoteMission } from './missionFlow.ts'
 import { expireDefense, spawnDefense } from './defenseFlow.ts'
-import { readySearch } from './captureFlow.ts'
+import { advanceCaptureReturn, advanceSearch } from './captureFlow.ts'
 import { finalizeDay } from './phaseFlow.ts'
 
 /** Avança o relógio em `deltaMs` (ms de jogo) e processa os eventos do dia. */
@@ -27,7 +27,11 @@ function processMissions(s: GameState, now: number): void {
     promoteMission(mission, now)
     if (mission.status === 'available' && now >= mission.expiresAtMs) {
       expireMission(s, mission)
-    } else if (mission.status === 'traveling' || mission.status === 'inProgress') {
+    } else if (
+      mission.status === 'traveling' ||
+      mission.status === 'inProgress' ||
+      mission.status === 'returning'
+    ) {
       advanceMission(s, mission, now)
     }
   }
@@ -41,7 +45,6 @@ function processDefenses(s: GameState, now: number): void {
 }
 
 function processSearches(s: GameState, now: number): void {
-  for (const search of [...s.captureSearches]) {
-    if (now >= search.readyAtMs) readySearch(s, search)
-  }
+  for (const search of [...s.captureSearches]) advanceSearch(s, search, now)
+  for (const ret of [...s.captureReturns]) advanceCaptureReturn(s, ret, now)
 }

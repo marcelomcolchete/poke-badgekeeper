@@ -126,4 +126,21 @@ describe('cidades, itens, missões, passivas', () => {
       }
     }
   })
+
+  it('grafo de cada cidade: adjacência simétrica e sítios válidos (ginásio = j)', () => {
+    for (const c of CITIES) {
+      const { nodes, adj } = c.graph
+      for (const [id, neighbors] of Object.entries(adj)) {
+        for (const n of neighbors) {
+          expect(nodes[n], `${id}→${n} aponta para ponto inexistente`).toBeDefined()
+          expect(adj[n], `aresta ${id}–${n} não é simétrica`).toContain(id)
+        }
+      }
+      const sn = c.siteNodes
+      expect(sn.gym).toBe('j')
+      for (const id of [sn.gym, sn.center, sn.mart, sn.museum, ...sn.houses, ...sn.green]) {
+        expect(nodes[id], `sítio ${id} fora do grafo`).toBeDefined()
+      }
+    }
+  })
 })

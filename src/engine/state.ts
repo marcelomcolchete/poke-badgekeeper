@@ -36,25 +36,34 @@ export interface GymInfo {
 export type MissionStatus =
   | 'scheduled' // ainda não surgiu no mapa
   | 'available' // popup no mapa, aceitável até expirar
-  | 'traveling' // time a caminho (PLAN §4.3)
-  | 'inProgress' // executando
-  | 'resolved' // concluída (ver result)
+  | 'traveling' // time a caminho da missão (ida) — PLAN §4.3
+  | 'inProgress' // executando no local
+  | 'returning' // desfecho aplicado; time voltando ao ginásio
+  | 'resolved' // concluída e time já em casa (ver result)
 
 export type MissionResult = 'success' | 'failure' | 'expired'
 
 export interface MissionInstance {
   id: string
   templateId: string
-  pos: MapPos
+  /** Ponto do grafo onde a missão surge — define o trajeto desde o ginásio (PLAN §3.1). */
+  node: string
+  /** Menor caminho ginásio→ponto (ids), calculado ao aceitar; a volta é o reverso. */
+  path: string[]
   /** Momento (ms de jogo) em que aparece no mapa. */
   spawnAtMs: number
   /** Momento em que some se não for aceita — PLAN §3.1. */
   expiresAtMs: number
   status: MissionStatus
   teamIds: string[]
-  /** Fim da viagem e da execução (definidos ao aceitar) — PLAN §4.3. */
-  travelEndsAtMs: number | null
+  /** Marcos de tempo definidos ao aceitar (ms de jogo) — PLAN §4.3. */
+  acceptedAtMs: number | null
+  /** Fim da viagem de ida (chegada ao local). */
+  arriveAtMs: number | null
+  /** Fim da execução = desfecho aplicado; início da volta. */
   resolveAtMs: number | null
+  /** Chegada de volta ao ginásio = time liberado. */
+  returnEndsAtMs: number | null
   result: MissionResult | null
   pSuccess: number | null
 }
@@ -77,11 +86,31 @@ export interface DefenseEvent {
   enemies: EnemyUnit[]
 }
 
-/** Busca de captura em andamento: um Pokémon ocupado num spot até gerar encontro (PLAN §4.5). */
+/** Busca de captura em andamento: um Pokémon viaja até o spot e procura até gerar encontro (PLAN §4.5). */
 export interface CaptureSearch {
   searcherId: string
   spotIndex: number
+  /** Ponto da grama (do grafo) — define o trajeto desde o ginásio. */
+  node: string
+  /** Menor caminho ginásio→ponto (ida); a volta é o reverso. */
+  path: string[]
+  /** Fase: 'traveling' (a caminho) ou 'searching' (procurando no local). */
+  phase: 'traveling' | 'searching'
+  /** Saída do ginásio (início da ida) — base da animação. */
+  departAtMs: number
+  /** Chegada ao local (início da busca). */
+  arriveAtMs: number
+  /** Fim da busca = encontro gerado. */
   readyAtMs: number
+}
+
+/** Procurador voltando ao ginásio após capturar/dispensar — só fica idle ao chegar (PLAN §4.5). */
+export interface CaptureReturn {
+  searcherId: string
+  node: string
+  path: string[]
+  departAtMs: number
+  arriveAtMs: number
 }
 
 /** Encontro pronto: 3 candidatos para o jogador decidir (capturar / voltar / seguir) — PLAN §4.5. */
@@ -141,9 +170,11 @@ export interface GameState {
   missions: MissionInstance[]
   defenses: DefenseEvent[]
   captureSearches: CaptureSearch[]
+  /** Procuradores voltando ao ginásio após o encontro (PLAN §4.5). */
+  captureReturns: CaptureReturn[]
   encounters: CaptureEncounter[]
-  /** Áreas verdes com captura ativa hoje (2 sorteadas) — origem dos spots no mapa. */
-  captureSpots: MapPos[]
+  /** Pontos de grama (ids do grafo) com captura ativa hoje (2 sorteados) — spots no mapa. */
+  captureSpots: string[]
   approval: Approval
   gold: number
   inventory: ItemStack[]
@@ -180,6 +211,7 @@ export function createInitialState(seed: number): GameState {
     missions: [],
     defenses: [],
     captureSearches: [],
+    captureReturns: [],
     encounters: [],
     captureSpots: [],
     approval: { stars: STARS_START, dailyGoalMet: false },

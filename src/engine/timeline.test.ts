@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { DAY_LENGTH_MS, TOTAL_DAYS } from './constants.ts'
 import { CAPTURE_SPOTS_PER_DAY, SPAWN_WINDOW_FRACTION } from './balance.ts'
-import { getCity, sitesForCategory } from '../data/cities.ts'
+import { getCity, nodesForCategory } from '../data/cities.ts'
 import {
   buildDaySchedule,
   countForDay,
@@ -62,7 +62,7 @@ describe('buildDaySchedule (PLAN §3.1/§4.8)', () => {
       expect(slot.atMs).toBeLessThan(window)
       expect(slot.atMs).toBeGreaterThanOrEqual(last) // ordenado
       last = slot.atMs
-      const siteCount = sitesForCategory(PEWTER.sites, slot.category).length
+      const siteCount = nodesForCategory(PEWTER.siteNodes, slot.category).length
       expect(slot.siteIndex).toBeGreaterThanOrEqual(0)
       expect(slot.siteIndex).toBeLessThan(siteCount)
     }
@@ -78,7 +78,7 @@ describe('buildDaySchedule (PLAN §3.1/§4.8)', () => {
     expect(new Set(sched.captureSiteIndices).size).toBe(sched.captureSiteIndices.length)
     for (const i of sched.captureSiteIndices) {
       expect(i).toBeGreaterThanOrEqual(0)
-      expect(i).toBeLessThan(PEWTER.sites.green.length)
+      expect(i).toBeLessThan(PEWTER.siteNodes.green.length)
     }
   })
 

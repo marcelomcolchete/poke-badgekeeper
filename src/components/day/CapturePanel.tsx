@@ -64,7 +64,7 @@ export function CapturePanel({ state, dispatch, spotIndex, onClose }: Props) {
           </div>
         </div>
       ) : searching ? (
-        <p className={styles.hint}>Explorando… aguarde o encontro surgir aqui.</p>
+        <p className={styles.hint}>A caminho / explorando… aguarde o encontro surgir aqui.</p>
       ) : full ? (
         <p className={styles.warn}>
           Roster cheio ({MAX_ROSTER_SIZE}) — captura indisponível até liberar espaço.

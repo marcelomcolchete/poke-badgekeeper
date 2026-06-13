@@ -44,9 +44,10 @@ export type Rarity = (typeof RARITIES)[number]
 /** Estado de um Pokémon do roster durante o dia (PLAN §5). */
 export type PokemonStatus =
   | 'idle'
-  | 'traveling'
+  | 'traveling' // a caminho da missão/área (ida)
   | 'onMission'
   | 'defending'
+  | 'returning' // voltando ao ginásio (só fica 'idle' ao chegar)
   | 'fainted'
   | 'atCenter'
 

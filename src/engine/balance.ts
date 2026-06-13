@@ -32,6 +32,18 @@ export const XP_TO_NEXT_BASE = 100
 /** Missões §4.3: fator de tempo de viagem com a passiva Run Away. */
 export const RUN_AWAY_TRAVEL_FACTOR = 0.5
 
+/**
+ * Missões §4.3: conversão distância-do-grafo → ms de viagem (um trecho de ida). O tempo
+ * total da missão é 2× isto (ida e volta) + execução no local. Tunável (calibrado no preview).
+ */
+export const TRAVEL_MS_PER_DISTANCE = 2_200
+
+/**
+ * Missões §4.3: a Agilidade total do time reduz o tempo de viagem em 0,5% por ponto
+ * (10 → −5%, 100 → −50%). Como a soma do time é capada em 100, a redução máxima é 50%.
+ */
+export const AGILITY_TIME_REDUCTION_PER_POINT = 0.005
+
 /** Captura §4.5: tempo-base de busca e fator da passiva Keen Eye. */
 export const BASE_SEARCH_MS = 30_000
 export const KEEN_EYE_SEARCH_FACTOR = 0.5

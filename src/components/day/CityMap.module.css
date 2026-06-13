@@ -1,9 +1,22 @@
-/* Mapa = background da tela inteira (a fase Dia é full-screen). */
+/* Mapa = fundo da tela inteira (a fase Dia é full-screen). Centraliza o "palco". */
 .map {
   position: absolute;
   inset: 0;
   background: var(--c-grass);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
+}
+
+/* Palco 16:9: a arte e a camada de marcadores compartilham este retângulo, então os
+   pontos (0–1) alinham exatamente com a arte e NADA é cortado em qualquer proporção de
+   janela (letterbox/pillarbox conforme o caso). */
+.stage {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  width: min(100%, calc(100dvh * 16 / 9));
+  max-height: 100%;
 }
 
 .bg {
@@ -11,10 +24,32 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  /* Preenche a tela toda (sem barras). Mapas são 16:9, como a maioria das telas. */
-  object-fit: cover;
+  /* O palco já é 16:9 (como a arte), então 'fill' não distorce. */
+  object-fit: fill;
   image-rendering: pixelated;
   user-select: none;
+}
+
+/* Sprites dos Pokémon caminhando pelo mapa (ponto a ponto). */
+.travelers {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  z-index: 4;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.55));
+}
+
+.traveler {
+  width: 30px;
+  height: 30px;
+  image-rendering: pixelated;
+  margin-left: -10px;
+  animation: bob 0.9s ease-in-out infinite;
+}
+
+.traveler:first-child {
+  margin-left: 0;
 }
 
 .anchor {

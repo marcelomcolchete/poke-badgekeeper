@@ -1,15 +1,28 @@
 // Missões: probabilidade de sucesso (interseção de hexágonos), resolução, dano em
 // falha, tempos de viagem/execução e geração de instância (PLAN §4.2/§4.3).
 
-import type { Attrs, MapPos, MissionCategory, Pokemon } from '../types/index.ts'
+import type { Attrs, MissionCategory, Pokemon } from '../types/index.ts'
 import { ATTR_KEYS } from '../types/index.ts'
 import type { Rng } from './rng.ts'
 import type { MissionTemplate } from '../data/types.ts'
 import { getMissionTemplate, templatesForCategory } from '../data/missionTemplates.ts'
 import type { MissionInstance } from './state.ts'
 import { ATTR_MAX, MIN_FAILURE_DAMAGE, SPECIES_BASE_MAX } from './constants.ts'
-import { RUN_AWAY_TRAVEL_FACTOR, type CategoryRules } from './balance.ts'
-import { applyDamage, axisMin, effectiveAttr, hexagonArea, isFainted, teamSum } from './attributes.ts'
+import {
+  AGILITY_TIME_REDUCTION_PER_POINT,
+  RUN_AWAY_TRAVEL_FACTOR,
+  TRAVEL_MS_PER_DISTANCE,
+  type CategoryRules,
+} from './balance.ts'
+import {
+  applyDamage,
+  axisMin,
+  effectiveAttr,
+  hexagonArea,
+  isFainted,
+  teamAxisSum,
+  teamSum,
+} from './attributes.ts'
 import { average, clamp } from './math.ts'
 
 /** Regra neutra (sem ajuste de dificuldade/efeitos) — padrão de resolveMission. */
@@ -82,22 +95,40 @@ export function resolveMission(
   }
 }
 
-/** Tempo de viagem: baseViagem / (1 + médiaAgilidade/50); Fly zera, Run Away reduz (PLAN §4.3). */
-export function travelMs(team: readonly Pokemon[], baseTravelMs: number): number {
-  if (team.some((p) => p.passives.includes('fly'))) return 0
-  const reduction = team.some((p) => p.passives.includes('run-away')) ? RUN_AWAY_TRAVEL_FACTOR : 1
-  const avgAgility = average(team.map((p) => effectiveAttr(p, 'agilidade')))
-  return (baseTravelMs / (1 + avgAgility / SPECIES_BASE_MAX)) * reduction
+/**
+ * Fator de tempo de viagem pela Agilidade total do time (PLAN §4.3): −0,5%/ponto, soma
+ * capada em 100 → piso de 0,5 (10 → 0,95; 100 → 0,5). Run Away reduz mais; Fly zera (tratado
+ * em graphTravelMs). Devolve o multiplicador a aplicar sobre o tempo-base de deslocamento.
+ */
+export function agilityTravelFactor(team: readonly Pokemon[]): number {
+  const agility = teamAxisSum(team, 'agilidade') // 0–100 (já capado)
+  let factor = clamp(1 - agility * AGILITY_TIME_REDUCTION_PER_POINT, 0.5, 1)
+  if (team.some((p) => p.passives.includes('run-away'))) factor *= RUN_AWAY_TRAVEL_FACTOR
+  return factor
 }
 
-/** Tempo de execução: baseExecução / (1 + médiaInteligência/50) — PLAN §4.3. */
+/**
+ * Tempo de UM trecho (ida) do ginásio até a missão: distância-do-grafo × ms/unidade ×
+ * fator de Agilidade. Fly torna a viagem instantânea (PLAN §4.3).
+ */
+export function graphTravelMs(distance: number, team: readonly Pokemon[]): number {
+  if (team.some((p) => p.passives.includes('fly'))) return 0
+  return distance * TRAVEL_MS_PER_DISTANCE * agilityTravelFactor(team)
+}
+
+/** Tempo de execução parado no local: baseExecução / (1 + médiaInteligência/50) — PLAN §4.3. */
 export function executionMs(team: readonly Pokemon[], baseExecutionMs: number): number {
   const avgIntelligence = average(team.map((p) => effectiveAttr(p, 'inteligencia')))
   return baseExecutionMs / (1 + avgIntelligence / SPECIES_BASE_MAX)
 }
 
-export function missionDurationMs(team: readonly Pokemon[], template: MissionTemplate): number {
-  return travelMs(team, template.baseTravelMs) + executionMs(team, template.baseExecutionMs)
+/** Duração total = ida + volta (deslocamento) + execução no local — PLAN §4.3. */
+export function missionDurationMs(
+  team: readonly Pokemon[],
+  distance: number,
+  template: MissionTemplate,
+): number {
+  return 2 * graphTravelMs(distance, team) + executionMs(team, template.baseExecutionMs)
 }
 
 /** Sorteia um template da categoria (cada categoria tem ≥1 template). */
@@ -110,8 +141,8 @@ export interface MissionInstanceSpec {
   rng: Rng
   /** Categoria sorteada — define de qual pool tirar o template. */
   category: MissionCategory
-  /** Posição (já resolvida) do sítio onde a missão surge. */
-  pos: MapPos
+  /** Ponto do grafo (já resolvido) onde a missão surge. */
+  node: string
   spawnAtMs: number
   lifetimeMs: number
   /** Template fixo (museu); ausente = sorteia da categoria. */
@@ -119,7 +150,7 @@ export interface MissionInstanceSpec {
 }
 
 /**
- * Cria a instância de missão (template + sítio + timer) agendada para o dia.
+ * Cria a instância de missão (template + ponto + timer) agendada para o dia.
  * Nasce 'scheduled'; o relógio a promove a 'available' no spawnAtMs (PLAN §3.1).
  */
 export function createMissionInstance(spec: MissionInstanceSpec): MissionInstance {
@@ -129,13 +160,16 @@ export function createMissionInstance(spec: MissionInstanceSpec): MissionInstanc
   return {
     id: spec.id,
     templateId: template.id,
-    pos: { ...spec.pos },
+    node: spec.node,
+    path: [],
     spawnAtMs: spec.spawnAtMs,
     expiresAtMs: spec.spawnAtMs + spec.lifetimeMs,
     status: 'scheduled',
     teamIds: [],
-    travelEndsAtMs: null,
+    acceptedAtMs: null,
+    arriveAtMs: null,
     resolveAtMs: null,
+    returnEndsAtMs: null,
     result: null,
     pSuccess: null,
   }

@@ -18,13 +18,16 @@ function controlledMission(over: Partial<MissionInstance> = {}): MissionInstance
   return {
     id: 'm1',
     templateId: 'patrol',
-    pos: { x: 0.5, y: 0.5 },
+    node: 'q', // grama 3.6 (longe do ginásio) → viagem real de ida/volta
+    path: [],
     spawnAtMs: 0,
     expiresAtMs: 10_000,
     status: 'available',
     teamIds: [],
-    travelEndsAtMs: null,
+    acceptedAtMs: null,
+    arriveAtMs: null,
     resolveAtMs: null,
+    returnEndsAtMs: null,
     result: null,
     pSuccess: null,
     ...over,
@@ -71,6 +74,24 @@ describe('fluxo de missão (PLAN §4.2/§4.3)', () => {
     expect(s.roster.every((p) => p.level > 1 || p.xp > 0)).toBe(true) // ganhou XP
     expect(s.run.phase).toBe('SUMMARY')
     expect(s.today.missionResults).toHaveLength(1)
+  })
+
+  it('o time fica "returning" até voltar ao ginásio; idle só ao chegar', () => {
+    let s = dayState({ roster: [strong('a')], missions: [controlledMission()] })
+    s = reducer(s, { type: 'ACCEPT_MISSION', missionId: 'm1', teamIds: ['a'] })
+    const resolveAt = s.missions[0]?.resolveAtMs ?? 0
+    expect(resolveAt).toBeGreaterThan(0)
+
+    // Logo após a resolução (no local), antes de a volta terminar.
+    s = reducer(s, { type: 'TICK', deltaMs: resolveAt + 1 })
+    expect(s.missions[0]?.status).toBe('returning')
+    expect(s.missions[0]?.result).toBe('success')
+    expect(s.roster[0]?.status).toBe('returning')
+
+    // Depois de chegar de volta ao ginásio.
+    s = reducer(s, { type: 'TICK', deltaMs: 60_000 })
+    expect(s.missions[0]?.status).toBe('resolved')
+    expect(s.roster[0]?.status).toBe('idle')
   })
 
   it('aceitar com time inválido (vazio) é no-op', () => {
@@ -132,30 +153,39 @@ describe('fluxo de defesa (PLAN §4.4/§4.6)', () => {
 
 describe('fluxo de captura (PLAN §4.5)', () => {
   function searching(): GameState {
-    let s = dayState({ roster: [makeMon({ id: 'a', baseAttrs: makeAttrs({ percepcao: 50 }) })] })
+    // Spot na grama 'q' (precisa de viagem real até lá antes de procurar).
+    let s = dayState({
+      roster: [makeMon({ id: 'a', baseAttrs: makeAttrs({ percepcao: 50 }) })],
+      captureSpots: ['q'],
+    })
     s = reducer(s, { type: 'START_SEARCH', searcherId: 'a', spotIndex: 0 })
-    return reducer(s, { type: 'TICK', deltaMs: 30_000 }) // conclui a busca (sem encerrar o dia)
+    return reducer(s, { type: 'TICK', deltaMs: 60_000 }) // cobre viagem + busca (sem encerrar o dia)
   }
 
-  it('buscar gera encontro; capturar adiciona ao roster e encerra a área', () => {
+  it('buscar gera encontro; capturar adiciona ao roster e a área é encerrada na volta', () => {
     const s = searching()
     expect(s.encounters).toHaveLength(1)
     const pick = s.encounters[0]?.candidateSpeciesIds[0]
     expect(pick).toBeDefined()
-    const after = reducer(s, { type: 'CAPTURE_PICK', searcherId: 'a', speciesId: pick as number })
+    let after = reducer(s, { type: 'CAPTURE_PICK', searcherId: 'a', speciesId: pick as number })
     expect(after.roster).toHaveLength(2)
     expect(after.today.capturedIds).toHaveLength(1)
-    expect(after.roster.find((p) => p.id === 'a')?.status).toBe('idle')
     expect(after.today.exploredSpots).toContain(0) // área some do dia
+    // O procurador volta ao ginásio antes de ficar disponível.
+    expect(after.roster.find((p) => p.id === 'a')?.status).toBe('returning')
+    after = reducer(after, { type: 'TICK', deltaMs: 60_000 })
+    expect(after.roster.find((p) => p.id === 'a')?.status).toBe('idle')
   })
 
-  it('não capturar volta sem capturar e encerra a área do dia', () => {
+  it('não capturar encerra a área e traz o procurador de volta', () => {
     const s = searching()
-    const dismissed = reducer(s, { type: 'CAPTURE_DISMISS', searcherId: 'a' })
+    let dismissed = reducer(s, { type: 'CAPTURE_DISMISS', searcherId: 'a' })
     expect(dismissed.encounters).toHaveLength(0)
     expect(dismissed.roster).toHaveLength(1)
-    expect(dismissed.roster[0]?.status).toBe('idle')
     expect(dismissed.today.exploredSpots).toContain(0)
+    expect(dismissed.roster[0]?.status).toBe('returning')
+    dismissed = reducer(dismissed, { type: 'TICK', deltaMs: 60_000 })
+    expect(dismissed.roster[0]?.status).toBe('idle')
   })
 
   it('roster cheio bloqueia a busca', () => {

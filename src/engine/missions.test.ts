@@ -4,15 +4,16 @@ import type { MissionTemplate } from '../data/types.ts'
 import { createRng } from './rng.ts'
 import { CATEGORY_RULES } from './balance.ts'
 import {
+  agilityTravelFactor,
   createMissionInstance,
   effectiveDanger,
   effectiveRequirement,
   executionMs,
+  graphTravelMs,
   missionDurationMs,
   missionFailureDamage,
   missionSuccessProbability,
   resolveMission,
-  travelMs,
 } from './missions.ts'
 import { fixedRng, makeAttrs, makeMon } from './testkit.ts'
 
@@ -140,49 +141,60 @@ describe('regras por categoria (dificuldade/efeitos)', () => {
 })
 
 describe('tempos de viagem/execução (PLAN §4.3)', () => {
-  it('mais Agilidade = menos viagem', () => {
+  it('mais Agilidade total = menos tempo de viagem', () => {
     const slow = [makeMon({ baseAttrs: makeAttrs({ agilidade: 10 }) })]
     const fast = [makeMon({ baseAttrs: makeAttrs({ agilidade: 50 }) })]
-    expect(travelMs(fast, 20_000)).toBeLessThan(travelMs(slow, 20_000))
+    expect(graphTravelMs(10, fast)).toBeLessThan(graphTravelMs(10, slow))
+  })
+
+  it('Agilidade reduz 0,5%/ponto: 10 → 0,95; soma capada em 100 → 0,5', () => {
+    const agi10 = [makeMon({ baseAttrs: makeAttrs({ agilidade: 10 }) })]
+    expect(agilityTravelFactor(agi10)).toBeCloseTo(0.95, 5)
+    const fifty = makeMon({ baseAttrs: makeAttrs({ agilidade: 50 }) })
+    expect(agilityTravelFactor([fifty, fifty])).toBeCloseTo(0.5, 5) // soma 100 (capada)
   })
 
   it('passiva Fly zera a viagem', () => {
     const flyer = [makeMon({ passives: ['fly'] })]
-    expect(travelMs(flyer, 20_000)).toBe(0)
+    expect(graphTravelMs(10, flyer)).toBe(0)
   })
 
   it('passiva Run Away reduz a viagem', () => {
     const base = [makeMon({ baseAttrs: makeAttrs({ agilidade: 30 }) })]
     const runner = [makeMon({ baseAttrs: makeAttrs({ agilidade: 30 }), passives: ['run-away'] })]
-    expect(travelMs(runner, 20_000)).toBeLessThan(travelMs(base, 20_000))
+    expect(graphTravelMs(10, runner)).toBeLessThan(graphTravelMs(10, base))
   })
 
-  it('mais Inteligência = menos execução; duração é a soma', () => {
+  it('mais Inteligência = menos execução', () => {
     const dumb = [makeMon({ baseAttrs: makeAttrs({ inteligencia: 10 }) })]
     const smart = [makeMon({ baseAttrs: makeAttrs({ inteligencia: 50 }) })]
     expect(executionMs(smart, 30_000)).toBeLessThan(executionMs(dumb, 30_000))
+  })
+
+  it('duração = ida + volta (deslocamento) + execução', () => {
+    const team = [makeMon({ baseAttrs: makeAttrs({ agilidade: 30, inteligencia: 30 }) })]
     const tpl = template(makeAttrs({}, 20))
-    expect(missionDurationMs(smart, tpl)).toBeCloseTo(
-      travelMs(smart, tpl.baseTravelMs) + executionMs(smart, tpl.baseExecutionMs),
+    expect(missionDurationMs(team, 8, tpl)).toBeCloseTo(
+      2 * graphTravelMs(8, team) + executionMs(team, tpl.baseExecutionMs),
       6,
     )
   })
 })
 
 describe('createMissionInstance (PLAN §3.1)', () => {
-  it('é determinística e respeita sítio/timer', () => {
-    const pos = { x: 0.3, y: 0.4 }
+  it('é determinística e respeita ponto/timer', () => {
     const spec = {
       id: 'm1',
       category: 'freeArea' as const,
-      pos,
+      node: 'q',
       spawnAtMs: 5_000,
       lifetimeMs: 20_000,
     }
     const inst = createMissionInstance({ ...spec, rng: createRng(7) })
     const same = createMissionInstance({ ...spec, rng: createRng(7) })
     expect(inst).toEqual(same)
-    expect(inst.pos).toEqual(pos)
+    expect(inst.node).toBe('q')
+    expect(inst.path).toEqual([])
     expect(inst.spawnAtMs).toBe(5_000)
     expect(inst.expiresAtMs).toBe(25_000)
     expect(inst.status).toBe('scheduled')
@@ -194,7 +206,7 @@ describe('createMissionInstance (PLAN §3.1)', () => {
       id: 'm2',
       rng: createRng(1),
       category: 'museum',
-      pos: { x: 0.5, y: 0.1 },
+      node: 'd',
       spawnAtMs: 0,
       lifetimeMs: 20_000,
       templateId: 'museum-fossil',

@@ -5,7 +5,7 @@
 
 import type { CityData } from '../data/types.ts'
 import type { MissionCategory } from '../types/index.ts'
-import { sitesForCategory } from '../data/cities.ts'
+import { nodesForCategory } from '../data/cities.ts'
 import { createRng, deriveSeed, type Rng } from './rng.ts'
 import { DAY_LENGTH_MS, TOTAL_DAYS } from './constants.ts'
 import {
@@ -60,7 +60,7 @@ export interface DaySchedule {
   day: number
   missions: MissionSlot[]
   defenses: DefenseSlot[]
-  /** Índices das áreas verdes (city.sites.green) que recebem captura hoje. */
+  /** Índices das áreas verdes (city.siteNodes.green) que recebem captura hoje. */
   captureSiteIndices: number[]
 }
 
@@ -76,7 +76,7 @@ function randomTime(rng: Rng): number {
 function scheduleMissions(rng: Rng, count: number, city: CityData): MissionSlot[] {
   return Array.from({ length: count }, () => {
     const category = rng.pick(DAILY_CATEGORY_POOL)
-    const siteCount = Math.max(1, sitesForCategory(city.sites, category).length)
+    const siteCount = Math.max(1, nodesForCategory(city.siteNodes, category).length)
     return {
       atMs: randomTime(rng),
       seed: rng.int(0, 0x7fffffff),
@@ -121,6 +121,6 @@ export function buildDaySchedule(seed: number, day: number, city: CityData): Day
     day,
     missions,
     defenses: scheduleDefenses(rng, defensesForDay(day, city)),
-    captureSiteIndices: pickCaptureSpots(rng, city.sites.green.length),
+    captureSiteIndices: pickCaptureSpots(rng, city.siteNodes.green.length),
   }
 }

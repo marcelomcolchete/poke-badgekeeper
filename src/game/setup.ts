@@ -3,13 +3,13 @@
 // autoSeedRun é um atalho PROVISÓRIO para rodar headless/testes — o fluxo
 // interativo de novo jogo (sorteio de tipos + inicial, §3) chega na Fase 4.
 
-import type { MapPos, PokemonType } from '../types/index.ts'
+import type { PokemonType } from '../types/index.ts'
 import type { CityData } from '../data/types.ts'
 import { LEVEL_MIN } from '../engine/constants.ts'
 import type { DefenseEvent, GameState } from '../engine/state.ts'
 import { POKEMON_TYPES } from '../types/index.ts'
 import { createInitialState } from '../engine/state.ts'
-import { getCity, sitesForCategory } from '../data/cities.ts'
+import { getCity, nodePos, nodesForCategory } from '../data/cities.ts'
 import { buildDaySchedule, type DefenseSlot } from '../engine/timeline.ts'
 import { createMissionInstance } from '../engine/missions.ts'
 import { generateDefenseEnemies } from '../engine/gymDefense.ts'
@@ -29,24 +29,23 @@ export function setupDay(s: GameState): void {
   const city = getCity(s.run.cityIndex)
   const schedule = buildDaySchedule(s.run.seed, s.run.day, city)
   s.missions = schedule.missions.map((slot) => {
-    const sites = sitesForCategory(city.sites, slot.category)
-    const pos = sites[slot.siteIndex % sites.length] ?? city.sites.gym
+    const nodes = nodesForCategory(city.siteNodes, slot.category)
+    const node = nodes[slot.siteIndex % nodes.length] ?? city.siteNodes.gym
     return createMissionInstance({
       id: takeId(s, 'm'),
       rng: createRng(slot.seed),
       category: slot.category,
-      pos,
+      node,
       spawnAtMs: slot.atMs,
       lifetimeMs: MISSION_LIFETIME_MS,
       templateId: slot.templateId,
     })
   })
   s.defenses = schedule.defenses.map((slot) => buildDefense(s, slot, city))
-  // Captura só nas áreas verdes sorteadas para hoje (#3).
+  // Captura só nas áreas verdes (pontos) sorteadas para hoje (#3).
   s.captureSpots = schedule.captureSiteIndices
-    .map((i) => city.sites.green[i])
-    .filter((g): g is MapPos => g !== undefined)
-    .map((g) => ({ ...g }))
+    .map((i) => city.siteNodes.green[i])
+    .filter((id): id is string => id !== undefined)
   s.clock.dayElapsedMs = 0
   s.clock.speed = 1
 }
@@ -56,7 +55,7 @@ function buildDefense(s: GameState, slot: DefenseSlot, city: CityData): DefenseE
   const size = rng.int(ENEMY_SQUAD_MIN, ENEMY_SQUAD_MAX)
   return {
     id: takeId(s, 'd'),
-    pos: { ...city.sites.gym },
+    pos: nodePos(city.graph, city.siteNodes.gym),
     spawnAtMs: slot.atMs,
     expiresAtMs: slot.atMs + DEFENSE_LIFETIME_MS,
     status: 'scheduled',

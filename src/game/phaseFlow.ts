@@ -9,7 +9,7 @@ import { emptyTally } from '../engine/state.ts'
 import { TOTAL_DAYS } from '../engine/constants.ts'
 import { applyApproval, dailyGoalMet } from '../engine/approval.ts'
 import { buildDaySummary, toDayLog } from '../engine/daySummary.ts'
-import { expireMission, resolveMissionNow } from './missionFlow.ts'
+import { expireMission, freeOnReturn, resolveMissionNow } from './missionFlow.ts'
 import { expireDefense } from './defenseFlow.ts'
 import { setupDay } from './setup.ts'
 import { findMon, replaceMon } from './runtime.ts'
@@ -63,21 +63,25 @@ export function finalizeDay(s: GameState): void {
   s.clock.speed = 0
 }
 
-/** Expira missões/defesas em aberto e força a resolução das que estão em andamento. */
+/** Expira missões/defesas em aberto e força resolução/retorno das que estão em andamento. */
 function resolveLeftovers(s: GameState): void {
   for (const mission of s.missions) {
     if (mission.status === 'scheduled' || mission.status === 'available') {
       expireMission(s, mission)
     } else if (mission.status === 'traveling' || mission.status === 'inProgress') {
-      resolveMissionNow(s, mission)
+      resolveMissionNow(s, mission) // aplica o desfecho…
+      freeOnReturn(s, mission) // …e traz o time de volta (fim do dia)
+    } else if (mission.status === 'returning') {
+      freeOnReturn(s, mission)
     }
   }
   for (const defense of s.defenses) expireDefense(defense)
-  for (const search of [...s.captureSearches, ...s.encounters]) {
-    const searcher = findMon(s, search.searcherId)
+  for (const traveler of [...s.captureSearches, ...s.encounters, ...s.captureReturns]) {
+    const searcher = findMon(s, traveler.searcherId)
     if (searcher) replaceMon(s, { ...searcher, status: 'idle' })
   }
   s.captureSearches = []
+  s.captureReturns = []
   s.encounters = []
 }
 
@@ -91,6 +95,7 @@ function startNextDay(s: GameState): void {
   s.missions = []
   s.defenses = []
   s.captureSearches = []
+  s.captureReturns = []
   s.encounters = []
   s.today = emptyTally()
   s.clock.dayElapsedMs = 0
