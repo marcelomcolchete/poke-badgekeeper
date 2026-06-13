@@ -36,6 +36,11 @@ export const POKEMON_TYPES = [
 
 export type PokemonType = (typeof POKEMON_TYPES)[number]
 
+/** Raridades, da mais comum à mais rara (PLAN §4.5 — sistema de raridade). */
+export const RARITIES = ['common', 'uncommon', 'rare', 'epic', 'legend'] as const
+
+export type Rarity = (typeof RARITIES)[number]
+
 /** Estado de um Pokémon do roster durante o dia (PLAN §5). */
 export type PokemonStatus =
   | 'idle'

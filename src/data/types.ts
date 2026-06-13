@@ -1,6 +1,6 @@
 // Tipos da camada de dados estáticos (PLAN §5).
 
-import type { Attrs, MapPos, PokemonType } from '../types/index.ts'
+import type { Attrs, MapPos, PokemonType, Rarity } from '../types/index.ts'
 
 /** Espécie como sai do gerador (sem informação de evolução). */
 export interface SpeciesBase {
@@ -10,8 +10,10 @@ export interface SpeciesBase {
   /** Nome de exibição (ex.: "Nidoran♀"). */
   displayName: string
   types: PokemonType[]
-  /** Atributos base curados/derivados (10–50) — PLAN §4.1. */
+  /** Atributos base derivados dos stats oficiais (10–50) — PLAN §4.1. */
   baseAttrs: Attrs
+  /** Raridade no sorteio de captura/preparação (PLAN §4.5). */
+  rarity: Rarity
   spritePath: string
 }
 
