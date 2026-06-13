@@ -62,6 +62,8 @@ export interface CityData {
   starterSpeciesId: number
   /** Arte top-down de fundo da fase Dia. */
   mapImage: string
+  /** Capa ilustrada (perspectiva) para o card do menu de seleção. */
+  coverImage: string
   /** Dimensões nativas da arte (px) — reservam a proporção e evitam layout shift. */
   mapW: number
   mapH: number

@@ -1,21 +1,18 @@
+/* Mapa = background da tela inteira (a fase Dia é full-screen). */
 .map {
-  position: relative;
-  width: 100%;
-  /* A imagem dita a altura (height:auto no .bg). O cap por proporção evita que
-     mapas altos empurrem a textbox pra fora em telas baixas, sem letterbox. */
-  max-width: calc(82vh * (var(--map-aspect, 6 / 5)));
-  margin-inline: auto;
+  position: absolute;
+  inset: 0;
   background: var(--c-grass);
-  border: 3px solid #10133a;
-  border-radius: var(--radius-pixel);
   overflow: hidden;
 }
 
 .bg {
-  display: block;
+  position: absolute;
+  inset: 0;
   width: 100%;
-  height: auto;
-  /* Pixel-art nítido ao escalar (inclui mapas em meia resolução, ex.: Cinnabar). */
+  height: 100%;
+  /* Preenche a tela toda (sem barras). Mapas são 16:9, como a maioria das telas. */
+  object-fit: cover;
   image-rendering: pixelated;
   user-select: none;
 }

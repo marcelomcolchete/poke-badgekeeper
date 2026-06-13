@@ -7,28 +7,8 @@ import type { MapPos, MissionCategory, SiteKind } from '../types/index.ts'
 import { CATEGORY_SITE } from '../types/index.ts'
 import type { CityData, CitySites } from './types.ts'
 
-// Placeholder (compartilhado) para cidades ainda não calibradas — reusa o layout de Pewter.
-const PLACEHOLDER_SITES: CitySites = {
-  gym: { x: 0.38, y: 0.34 },
-  center: { x: 0.41, y: 0.56 },
-  mart: { x: 0.56, y: 0.42 },
-  museum: { x: 0.41, y: 0.08 },
-  houses: [
-    { x: 0.52, y: 0.08 },
-    { x: 0.65, y: 0.23 },
-  ],
-  green: [
-    { x: 0.25, y: 0.08 },
-    { x: 0.65, y: 0.08 },
-    { x: 0.65, y: 0.44 },
-    { x: 0.81, y: 0.54 },
-    { x: 0.3, y: 0.72 },
-    { x: 0.56, y: 0.7 },
-    { x: 0.47, y: 0.96 },
-  ],
-}
-
 // Pewter (1.png): calibrado sobre a arte anotada (ginásio, centro, mart, museu, casas, verdes).
+// A casa do canto inferior-esquerdo (0.30, 0.72) é #6 (casa), não área verde.
 const PEWTER_SITES: CitySites = {
   gym: { x: 0.38, y: 0.34 },
   center: { x: 0.41, y: 0.56 },
@@ -37,17 +17,20 @@ const PEWTER_SITES: CitySites = {
   houses: [
     { x: 0.52, y: 0.08 },
     { x: 0.65, y: 0.23 },
+    { x: 0.3, y: 0.72 },
   ],
   green: [
     { x: 0.25, y: 0.08 },
     { x: 0.65, y: 0.08 },
     { x: 0.65, y: 0.44 },
     { x: 0.81, y: 0.54 },
-    { x: 0.3, y: 0.72 },
     { x: 0.56, y: 0.7 },
     { x: 0.47, y: 0.96 },
   ],
 }
+
+// Placeholder (compartilhado) para cidades ainda não calibradas — reusa o layout de Pewter.
+const PLACEHOLDER_SITES: CitySites = PEWTER_SITES
 
 interface CitySeed {
   name: string
@@ -87,6 +70,7 @@ export const CITIES: CityData[] = SEEDS.map((s, index) => ({
   primaryType: s.primaryType,
   starterSpeciesId: s.starterSpeciesId,
   mapImage: `/maps/kanto/${index + 1}.png`,
+  coverImage: `/maps/kanto/${index + 1}_capa.png`,
   mapW: MAP_W,
   mapH: MAP_H,
   difficultyFactor: s.difficultyFactor,

@@ -28,13 +28,21 @@ export function CitySelectScreen({ onChoose }: { onChoose: (cityIndex: number) =
               disabled={!playable}
               onClick={playable ? () => onChoose(city.index) : undefined}
             >
-              <span className={styles.cityName}>{city.name}</span>
-              <TypeBadge type={city.primaryType} />
-              {playable ? (
-                <span className={styles.play}>Jogar ▶</span>
-              ) : (
-                <span className={styles.soon}>Em breve</span>
-              )}
+              <img
+                className={styles.cover}
+                src={city.coverImage}
+                alt={`Capa de ${city.name}`}
+                width={396}
+                height={228}
+                draggable={false}
+              />
+              <span className={playable ? styles.play : styles.soon}>
+                {playable ? 'Jogar ▶' : 'Em breve'}
+              </span>
+              <div className={styles.cardInfo}>
+                <span className={styles.cityName}>{city.name}</span>
+                <TypeBadge type={city.primaryType} />
+              </div>
             </button>
           )
         })}

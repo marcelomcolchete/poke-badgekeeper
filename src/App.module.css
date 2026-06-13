@@ -1,17 +1,15 @@
 .app {
-  min-height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
-  padding: 16px;
 }
 
-/* margin auto centraliza nos dois eixos sem cortar conteúdo alto (gera scroll). */
+/* Sem moldura azul: telas de menu/formulário ficam centradas e largas; a fase Dia
+   usa a tela inteira (DayScreen é fixed e ignora este contêiner). */
 .frame {
   position: relative;
   width: 100%;
-  max-width: 880px;
+  max-width: 1100px;
   margin: auto;
-  background: #2a2f7a;
-  border: 3px solid #10133a;
-  border-radius: 14px;
-  padding: 12px;
+  padding: 16px;
 }

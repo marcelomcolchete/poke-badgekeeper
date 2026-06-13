@@ -48,39 +48,41 @@ export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) 
 
   return (
     <div className={styles.screen}>
-      <Hud
-        day={state.run.day}
-        totalDays={TOTAL_DAYS}
-        elapsedMs={state.clock.dayElapsedMs}
-        dayLengthMs={state.clock.dayLengthMs}
-        speed={state.clock.speed}
-        gold={state.gold}
-        stars={state.approval.stars}
-        onSpeedChange={setSpeed}
+      <CityMap
+        state={state}
+        onMission={(id) => setOpen({ kind: 'mission', id })}
+        onDefense={(id) => setOpen({ kind: 'defense', id })}
+        onSpot={(spotIndex) => setOpen({ kind: 'capture', spotIndex })}
       />
 
-      <div className={styles.stage}>
-        <nav className={styles.sidebar}>
-          <button type="button" className={styles.sideBtn} onClick={() => setOpen({ kind: 'team' })}>
-            Time
-          </button>
-          <button type="button" className={styles.sideBtn} onClick={() => setOpen({ kind: 'report' })}>
-            Relatório
-          </button>
-          <button type="button" className={styles.sideBtnQuit} onClick={() => setOpen({ kind: 'quit' })}>
-            Desistir
-          </button>
-        </nav>
-
-        <CityMap
-          state={state}
-          onMission={(id) => setOpen({ kind: 'mission', id })}
-          onDefense={(id) => setOpen({ kind: 'defense', id })}
-          onSpot={(spotIndex) => setOpen({ kind: 'capture', spotIndex })}
+      <div className={styles.hudBar}>
+        <Hud
+          day={state.run.day}
+          totalDays={TOTAL_DAYS}
+          elapsedMs={state.clock.dayElapsedMs}
+          dayLengthMs={state.clock.dayLengthMs}
+          speed={state.clock.speed}
+          gold={state.gold}
+          stars={state.approval.stars}
+          onSpeedChange={setSpeed}
         />
       </div>
 
-      <Textbox>{dayHint(state)}</Textbox>
+      <nav className={styles.sidebar}>
+        <button type="button" className={styles.sideBtn} onClick={() => setOpen({ kind: 'team' })}>
+          Time
+        </button>
+        <button type="button" className={styles.sideBtn} onClick={() => setOpen({ kind: 'report' })}>
+          Relatório
+        </button>
+        <button type="button" className={styles.sideBtnQuit} onClick={() => setOpen({ kind: 'quit' })}>
+          Desistir
+        </button>
+      </nav>
+
+      <div className={styles.textbox}>
+        <Textbox>{dayHint(state)}</Textbox>
+      </div>
 
       {open?.kind === 'mission' && (
         <MissionDispatch state={state} dispatch={dispatch} missionId={open.id} onClose={close} />

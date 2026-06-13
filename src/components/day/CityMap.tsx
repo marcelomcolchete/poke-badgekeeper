@@ -1,7 +1,7 @@
 // Mapa da cidade na fase Dia (PLAN §3.1): missões como popups com timer, áreas de
 // captura fixas e o símbolo de defesa sobre o ginásio. Posições normalizadas (0–1).
 
-import type { CSSProperties, MouseEvent } from 'react'
+import type { MouseEvent } from 'react'
 import type { MapPos } from '../../types/index.ts'
 import type { DefenseEvent, GameState, MissionInstance } from '../../engine/state.ts'
 import { getCity } from '../../data/cities.ts'
@@ -47,12 +47,8 @@ export function CityMap({ state, onMission, onDefense, onSpot }: Props) {
   const activeDefense = state.defenses.find((d) => d.status === 'active')
   const missions = state.missions.filter((m) => m.status === 'available')
 
-  // A imagem é a régua: --map-aspect dita a proporção/altura máxima do contêiner,
-  // independente das dimensões nativas de cada arte.
-  const mapStyle = { '--map-aspect': `${city.mapW} / ${city.mapH}` } as CSSProperties
-
   return (
-    <div className={styles.map} style={mapStyle} onClick={logPickedPos}>
+    <div className={styles.map} onClick={logPickedPos}>
       <img
         className={styles.bg}
         src={city.mapImage}
