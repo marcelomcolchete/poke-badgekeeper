@@ -18,6 +18,7 @@
  * Emite (auto-gerados, não editar à mão):
  *  - src/data/pokemon/species.generated.ts
  *  - src/data/pokemon/evolutions.generated.ts
+ *  - src/data/pokemon/genders.generated.ts (gender_rate: oitavos-fêmea, -1 = sem gênero)
  *
  * Uso: node --experimental-strip-types scripts/buildPokemonData.ts
  */
@@ -217,6 +218,7 @@ async function main(): Promise<void> {
 
   const ids = Array.from({ length: GEN1_MAX }, (_, i) => i + 1)
   const chainUrls = new Set<string>()
+  const genderRate = new Map<number, number>()
 
   console.log(`Buscando ${GEN1_MAX} Pokémon + sprites...`)
   const species: SpeciesBase[] = await mapLimit(ids, CONCURRENCY, async (id) => {
@@ -227,6 +229,7 @@ async function main(): Promise<void> {
     const stats: StatMap = {}
     for (const st of p.stats) stats[st.stat.name] = st.base_stat
     const friendship: number = sp.base_happiness ?? 70
+    genderRate.set(id, sp.gender_rate ?? -1)
     if (sp.evolution_chain?.url) chainUrls.add(sp.evolution_chain.url)
     await downloadSprite(id, spriteDir)
     return {
@@ -285,6 +288,14 @@ async function main(): Promise<void> {
   writeFileSync(
     resolve(pokemonDir, 'evolutions.generated.ts'),
     `${header}import type { EvolutionStep } from '../types.ts'\n\nexport const EVOLUTIONS: EvolutionStep[] = [\n${evoBody}\n]\n`,
+  )
+
+  const genderBody = ids.map((id) => `  ${id}: ${genderRate.get(id) ?? -1},`).join('\n')
+  const genderHeader =
+    `${header}// gender_rate da PokéAPI: oitavos-fêmea (0=100% macho, 8=100% fêmea, -1=sem gênero).\n`
+  writeFileSync(
+    resolve(pokemonDir, 'genders.generated.ts'),
+    `${genderHeader}\nexport const GENDER_RATE: Record<number, number> = {\n${genderBody}\n}\n`,
   )
 
   console.log(`OK: ${species.length} espécies, ${steps.length} passos de evolução.`)

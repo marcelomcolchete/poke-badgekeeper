@@ -51,6 +51,9 @@ export type PokemonStatus =
   | 'fainted'
   | 'atCenter'
 
+/** Sexo do Pokémon — sorteado na criação pela taxa da espécie (jogo original). */
+export type Gender = 'male' | 'female' | 'genderless'
+
 export interface Pokemon {
   id: string
   speciesId: number
@@ -65,6 +68,10 @@ export interface Pokemon {
   maxHp: number
   status: PokemonStatus
   passives: string[]
+  /** Sexo sorteado na captura/criação pela proporção da espécie (PLAN §4.5). */
+  gender: Gender
+  /** Apelido dado pelo jogador na captura; null = usa o nome da espécie. */
+  nickname: string | null
 }
 
 /** Tipos de sítio no mapa da cidade — definem ONDE cada evento/missão pode surgir. */

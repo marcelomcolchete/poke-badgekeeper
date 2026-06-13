@@ -8,8 +8,11 @@ import { TOTAL_DAYS } from '../../engine/constants.ts'
 import { buildDaySummary } from '../../engine/daySummary.ts'
 import { isHired } from '../../engine/approval.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
+import type { Pokemon } from '../../types/index.ts'
 import { Textbox } from '../Textbox/Textbox.tsx'
 import { Stars } from '../common/Stars.tsx'
+import { TypeBadge } from '../common/TypeBadge.tsx'
+import { displayNameOf, genderColor, genderSymbol } from '../common/naming.ts'
 import styles from './SummaryScreen.module.css'
 
 interface Props {
@@ -36,27 +39,27 @@ export function SummaryScreen({ state, dispatch, onRestart }: Props) {
 
   return (
     <div className={styles.screen}>
-      <span className={styles.title}>RESUMO — DIA {summary.day}/{TOTAL_DAYS}</span>
-
-      <div className={styles.approval}>
-        <Stars value={summary.starsAfter} />
-        <span className={styles.delta} data-sign={delta >= 0 ? 'up' : 'down'}>
-          {delta >= 0 ? '+' : ''}
-          {delta.toFixed(1)}
-        </span>
+      <div className={styles.header}>
+        <span className={styles.title}>RESUMO — DIA {summary.day}/{TOTAL_DAYS}</span>
+        <div className={styles.approval}>
+          <Stars value={summary.starsAfter} />
+          <span className={styles.delta} data-sign={delta >= 0 ? 'up' : 'down'}>
+            {delta >= 0 ? '▲ +' : '▼ '}
+            {delta.toFixed(1)}
+          </span>
+        </div>
       </div>
 
-      <ul className={styles.rows}>
-        <Row label="Missões cumpridas" value={`${summary.missionsCompleted}/${summary.missionsTotal}`} />
-        <Row label="Defesas vencidas" value={`${summary.defensesWon}/${summary.defensesTotal}`} />
-        <Row label="Ouro do dia" value={`$ ${summary.goldEarned}`} accent />
-        <Row label="Capturados" value={`${summary.captured}`} />
-        <Row label="Desmaiados" value={`${summary.fainted}`} />
-        <Row
-          label="Destaque"
-          value={mvp ? getSpecies(mvp.speciesId).displayName : '—'}
-        />
-      </ul>
+      <MvpCard mvp={mvp} missions={summary.mvpMissions} />
+
+      <div className={styles.tiles}>
+        <Tile label="Missões" value={`${summary.missionsCompleted}/${summary.missionsTotal}`} icon="🎯" />
+        <Tile label="Defesas" value={`${summary.defensesWon}/${summary.defensesTotal}`} icon="🛡️" />
+        <Tile label="Ouro" value={`$${summary.goldEarned}`} icon="💰" accent />
+        <Tile label="Capturados" value={`${summary.captured}`} icon="⚪" />
+        <Tile label="Desmaiados" value={`${summary.fainted}`} icon="💤" danger={summary.fainted > 0} />
+        <Tile label="Disponíveis" value={`${summary.available}`} icon="✨" />
+      </div>
 
       {lastDay ? (
         <FinalResult hired={isHired(summary.starsAfter)} stars={summary.starsAfter} onRestart={onRestart} />
@@ -87,11 +90,65 @@ function FinalResult({ hired, stars, onRestart }: { hired: boolean; stars: numbe
   )
 }
 
-function Row({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
+function MvpCard({ mvp, missions }: { mvp: Pokemon | undefined; missions: number }) {
+  if (!mvp) {
+    return (
+      <div className={`${styles.mvp} ${styles.mvpEmpty}`}>
+        <span className={styles.mvpBadge}>★ DESTAQUE</span>
+        <span className={styles.mvpEmptyText}>Nenhuma missão concluída hoje.</span>
+      </div>
+    )
+  }
+  const species = getSpecies(mvp.speciesId)
+  const symbol = genderSymbol(mvp.gender)
   return (
-    <li className={styles.row}>
-      <span className={styles.rowLabel}>{label}</span>
-      <span className={accent ? styles.rowAccent : styles.rowValue}>{value}</span>
-    </li>
+    <div className={styles.mvp}>
+      <span className={styles.mvpBadge}>★ DESTAQUE DO DIA</span>
+      <div className={styles.mvpRow}>
+        <img className={styles.mvpSprite} src={species.spritePath} alt={species.displayName} />
+        <div className={styles.mvpInfo}>
+          <span className={styles.mvpName}>
+            {displayNameOf(mvp)}
+            {symbol && (
+              <span className={styles.mvpGender} style={{ color: genderColor(mvp.gender) }}>
+                {symbol}
+              </span>
+            )}
+            <span className={styles.mvpLevel}>Nv {mvp.level}</span>
+          </span>
+          <span className={styles.mvpTypes}>
+            {mvp.types.map((t) => (
+              <TypeBadge key={t} type={t} />
+            ))}
+          </span>
+          <span className={styles.mvpDeed}>
+            Venceu <b>{missions}</b> {missions === 1 ? 'missão' : 'missões'} hoje
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Tile({
+  label,
+  value,
+  icon,
+  accent = false,
+  danger = false,
+}: {
+  label: string
+  value: string
+  icon: string
+  accent?: boolean
+  danger?: boolean
+}) {
+  const cls = [styles.tile, accent ? styles.tileAccent : '', danger ? styles.tileDanger : ''].join(' ')
+  return (
+    <div className={cls}>
+      <span className={styles.tileIcon}>{icon}</span>
+      <span className={styles.tileValue}>{value}</span>
+      <span className={styles.tileLabel}>{label}</span>
+    </div>
   )
 }

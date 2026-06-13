@@ -5,6 +5,7 @@
 import { ATTR_KEYS, type AttrKey, type Attrs, type Pokemon } from '../types/index.ts'
 import type { Rng } from './rng.ts'
 import { getSpecies } from '../data/pokemon/index.ts'
+import { rollGender } from './gender.ts'
 import { HP_MIN, LEVEL_MAX, LEVEL_MIN } from './constants.ts'
 import { RARITY_XP_RATE, XP_TO_NEXT_BASE } from './balance.ts'
 import { maxHpOf, recomputeMaxHp, zeroAttrs } from './attributes.ts'
@@ -47,16 +48,21 @@ export interface NewPokemonSpec {
   level: number
   rng: Rng
   passives?: string[]
+  /** Apelido inicial (raro; a captura renomeia depois via ação própria). */
+  nickname?: string | null
 }
 
 /**
  * Cria um Pokémon no nível dado. Os `(nível − 1)` pontos já vêm distribuídos
  * aleatoriamente (regra do selvagem e do inicial > nível 1) — PLAN §4.1.1.
- * Nasce com HP cheio.
+ * Nasce com HP cheio. O sexo é sorteado pela proporção da espécie.
  */
 export function createPokemon(spec: NewPokemonSpec): Pokemon {
   const species = getSpecies(spec.speciesId)
   const level = clamp(spec.level, LEVEL_MIN, LEVEL_MAX)
+  // Alocações primeiro, gênero depois: mantém estável a sequência do RNG das alocações.
+  const allocations = randomAllocations(spec.rng, level - 1)
+  const gender = rollGender(spec.rng, species.id)
   const draft: Pokemon = {
     id: spec.id,
     speciesId: species.id,
@@ -64,11 +70,13 @@ export function createPokemon(spec: NewPokemonSpec): Pokemon {
     xp: 0,
     types: [...species.types],
     baseAttrs: { ...species.baseAttrs },
-    allocations: randomAllocations(spec.rng, level - 1),
+    allocations,
     currentHp: 0,
     maxHp: 0,
     status: 'idle',
     passives: spec.passives ? [...spec.passives] : [],
+    gender,
+    nickname: spec.nickname ?? null,
   }
   const maxHp = maxHpOf(draft)
   return { ...draft, maxHp, currentHp: maxHp }

@@ -34,6 +34,8 @@ export interface DaySummary {
   available: number
   /** Pokémon com mais missões bem-sucedidas; null se ninguém concluiu nenhuma. */
   mvpId: string | null
+  /** Quantas missões bem-sucedidas o destaque participou (0 se não houver). */
+  mvpMissions: number
 }
 
 /** Agrega o resumo do dia a partir dos resultados e do roster final. */
@@ -53,12 +55,15 @@ export function buildDaySummary(input: DaySummaryInput): DaySummary {
     captured: input.capturedIds.length,
     fainted,
     available: input.roster.length - fainted,
-    mvpId: computeMvp(input.missionResults),
+    ...computeMvp(input.missionResults),
   }
 }
 
 /** Destaque do dia: quem participou de mais missões bem-sucedidas (PLAN §3). */
-function computeMvp(results: readonly MissionResultLog[]): string | null {
+function computeMvp(results: readonly MissionResultLog[]): {
+  mvpId: string | null
+  mvpMissions: number
+} {
   const counts = new Map<string, number>()
   for (const result of results) {
     if (!result.success) continue
@@ -72,7 +77,7 @@ function computeMvp(results: readonly MissionResultLog[]): string | null {
       mvpId = id
     }
   }
-  return mvpId
+  return { mvpId, mvpMissions: best }
 }
 
 /** Converte o resumo no DayLog enxuto guardado no histórico do GameState. */

@@ -8,6 +8,7 @@ import { HexRadar } from '../HexRadar/HexRadar.tsx'
 import { TypeBadge } from '../common/TypeBadge.tsx'
 import { HpBar } from '../common/HpBar.tsx'
 import { RARITY_COLOR, RARITY_LABEL_PT } from '../common/visual.ts'
+import { displayNameOf, genderColor, genderSymbol } from '../common/naming.ts'
 import styles from './PokemonCard.module.css'
 
 const STATUS_LABEL: Record<PokemonStatus, string> = {
@@ -47,7 +48,18 @@ export function PokemonCard({ pokemon, selected = false, disabled = false, onCli
       <div className={styles.head}>
         <img className={styles.sprite} src={species.spritePath} alt={species.displayName} />
         <div className={styles.id}>
-          <span className={styles.name}>{species.displayName}</span>
+          <span className={styles.name}>
+            {displayNameOf(pokemon)}
+            {genderSymbol(pokemon.gender) && (
+              <span
+                className={styles.gender}
+                style={{ color: genderColor(pokemon.gender) }}
+                aria-label={pokemon.gender === 'female' ? 'Fêmea' : 'Macho'}
+              >
+                {genderSymbol(pokemon.gender)}
+              </span>
+            )}
+          </span>
           <span className={styles.meta}>
             <span className={styles.level}>Nv {pokemon.level}</span>
             <span className={styles.rarity} style={{ color: RARITY_COLOR[species.rarity] }}>
