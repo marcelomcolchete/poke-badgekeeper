@@ -1,0 +1,62 @@
+/* Tokens de tema — direção de arte retrô arcade (PLAN §2.1).
+   Cores chapadas, sem gradiente/sombra. Paleta fiel ao Pokémon original. */
+:root {
+  /* Fontes bitmap (auto-hospedadas em /public/fonts — ver @font-face em globals.css) */
+  --font-pixel: 'Press Start 2P', 'Courier New', monospace;
+  --font-text: 'VT323', 'Courier New', monospace;
+
+  /* HUD (cabeçalho) */
+  --c-hud-bg: #161a52;
+  --c-hud-border: #0a0c2e;
+  --c-hud-accent: #ffcb05; /* amarelo Pokémon */
+  --c-hud-text: #ffffff;
+  --c-hud-muted: #9aa0ff;
+
+  /* Superfícies / molduras */
+  --c-panel: #f7f3e6;
+  --c-panel-border: #1b1f5e;
+  --c-ink: #1b1f5e;
+  --c-ink-muted: #5a5f8a;
+
+  /* Textbox clássica (branca, borda azul, texto azul, cursor vermelho) */
+  --c-dialog-bg: #fbfdff;
+  --c-dialog-border: #57a6dc;
+  --c-dialog-border-inner: #cdeafb;
+  --c-dialog-text: #2336c4;
+  --c-dialog-cursor: #e02020;
+
+  /* Overworld / mapa */
+  --c-grass: #77c766;
+  --c-grass-dark: #4f9e3f;
+  --c-path: #d8d5be;
+
+  /* HP (verde -> amarelo -> vermelho) */
+  --c-hp-high: #6fcf3f;
+  --c-hp-mid: #f0c020;
+  --c-hp-low: #e84040;
+  --c-hp-track: #2a2e55;
+
+  /* Estrelas de aprovação */
+  --c-star-on: #ffcb05;
+  --c-star-off: #3a3f80;
+
+  /* Raio de borda "pixel" (cantos curtos, nada arredondado demais) */
+  --radius-pixel: 6px;
+
+  /* Cores canônicas dos 15 tipos da Gen 1 */
+  --type-normal: #a8a878;
+  --type-fire: #f08030;
+  --type-water: #6890f0;
+  --type-electric: #f8d030;
+  --type-grass: #78c850;
+  --type-ice: #98d8d8;
+  --type-fighting: #c03028;
+  --type-poison: #a040a0;
+  --type-ground: #e0c068;
+  --type-flying: #a890f0;
+  --type-psychic: #f85888;
+  --type-bug: #a8b820;
+  --type-rock: #b8a038;
+  --type-ghost: #705898;
+  --type-dragon: #7038f8;
+}

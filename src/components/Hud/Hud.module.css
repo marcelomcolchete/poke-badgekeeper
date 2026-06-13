@@ -1,0 +1,82 @@
+.hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--c-hud-bg);
+  border: 3px solid var(--c-hud-border);
+  border-radius: var(--radius-pixel);
+  color: var(--c-hud-text);
+  font-family: var(--font-text);
+  font-size: 18px;
+}
+
+.day {
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  color: var(--c-hud-accent);
+}
+
+.center {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.muted {
+  color: var(--c-hud-muted);
+}
+
+.speedGroup {
+  display: flex;
+  gap: 4px;
+}
+
+.speedBtn {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: #cdd0ff;
+  background: #1b2061;
+  border: 2px solid #5159c9;
+  border-radius: 4px;
+  padding: 4px 5px;
+  line-height: 1;
+}
+
+.speedActive {
+  color: var(--c-hud-border);
+  background: var(--c-hud-accent);
+  border-color: var(--c-hud-accent);
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.gold {
+  color: var(--c-hud-accent);
+}
+
+.stars {
+  position: relative;
+  display: inline-block;
+  line-height: 1;
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+.starsOff {
+  color: var(--c-star-off);
+}
+
+.starsOn {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  color: var(--c-star-on);
+}

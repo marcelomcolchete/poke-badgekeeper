@@ -1,0 +1,53 @@
+@import './theme.css';
+
+/* Fontes bitmap de licença aberta (SIL OFL), auto-hospedadas — PLAN §2.1 / §10.
+   Coloque os arquivos .woff2 em /public/fonts (ver public/fonts/README.md).
+   Enquanto ausentes, o fallback monospace mantém o app legível. */
+@font-face {
+  font-family: 'Press Start 2P';
+  src: url('/fonts/press-start-2p.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'VT323';
+  src: url('/fonts/vt323.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-text);
+  background: #0b0d24;
+  color: var(--c-hud-text);
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+}
+
+/* Sprites e arte pixelada nunca são suavizados (PLAN §2.1). */
+img,
+canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}

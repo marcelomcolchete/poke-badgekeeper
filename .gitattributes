@@ -1,0 +1,8 @@
+# Normaliza fins de linha para LF no repositório (cross-platform).
+* text=auto eol=lf
+
+# Binários — não normalizar.
+*.woff2 binary
+*.png binary
+*.jpg binary
+*.gif binary
