@@ -1,0 +1,84 @@
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.title {
+  font-family: var(--font-pixel);
+  font-size: 14px;
+  color: var(--c-hud-accent);
+  text-align: center;
+  line-height: 1.5;
+}
+
+.approval {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.delta {
+  font-family: var(--font-pixel);
+  font-size: 12px;
+}
+
+.delta[data-sign='up'] {
+  color: var(--c-hp-high);
+}
+
+.delta[data-sign='down'] {
+  color: var(--c-hp-low);
+}
+
+.rows {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--c-panel);
+  border: 3px solid var(--c-panel-border);
+  border-radius: var(--radius-pixel);
+  padding: 10px 12px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-text);
+  font-size: 18px;
+  color: var(--c-ink);
+  padding: 3px 0;
+  border-bottom: 1px dotted #c9c2a6;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.rowLabel {
+  color: var(--c-ink-muted);
+}
+
+.rowValue {
+  font-variant-numeric: tabular-nums;
+}
+
+.rowAccent {
+  color: #b8860b;
+  font-variant-numeric: tabular-nums;
+}
+
+.primary {
+  align-self: center;
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  color: var(--c-ink);
+  background: var(--c-hud-accent);
+  border: 3px solid var(--c-ink);
+  border-radius: var(--radius-pixel);
+  padding: 12px 18px;
+}

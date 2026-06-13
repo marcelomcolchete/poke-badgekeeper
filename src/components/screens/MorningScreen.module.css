@@ -1,0 +1,141 @@
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.title {
+  font-family: var(--font-pixel);
+  font-size: 13px;
+  color: var(--c-hud-accent);
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.gold {
+  font-family: var(--font-text);
+  font-size: 20px;
+  color: var(--c-hud-accent);
+}
+
+.sectionTitle {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  color: var(--c-hud-muted);
+}
+
+.market,
+.team {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.items {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--c-panel);
+  border: 3px solid var(--c-panel-border);
+  border-radius: var(--radius-pixel);
+  padding: 8px 10px;
+}
+
+.itemInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.itemName {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--c-ink);
+}
+
+.itemDesc {
+  font-family: var(--font-text);
+  font-size: 15px;
+  color: var(--c-ink-muted);
+}
+
+.itemBuy {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.owned {
+  font-family: var(--font-text);
+  font-size: 15px;
+  color: var(--c-ink-muted);
+}
+
+.buyBtn {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--c-ink);
+  background: var(--c-hud-accent);
+  border: 2px solid var(--c-ink);
+  border-radius: 4px;
+  padding: 7px 8px;
+}
+
+.buyBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.teamHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ghostBtn {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: #fff;
+  background: #1b2061;
+  border: 2px solid #5159c9;
+  border-radius: 4px;
+  padding: 6px 8px;
+}
+
+.roster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.primary {
+  align-self: center;
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  color: var(--c-ink);
+  background: var(--c-hud-accent);
+  border: 3px solid var(--c-ink);
+  border-radius: var(--radius-pixel);
+  padding: 12px 18px;
+}

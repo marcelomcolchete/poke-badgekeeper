@@ -1,0 +1,117 @@
+.dispatch {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(0, 1.1fr);
+  gap: 12px;
+}
+
+.radarSide {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--c-panel);
+  border: 3px solid var(--c-panel-border);
+  border-radius: var(--radius-pixel);
+  padding: 8px 10px;
+  font-family: var(--font-text);
+  font-size: 17px;
+  color: var(--c-ink);
+}
+
+.stats b {
+  color: var(--c-grass-dark);
+}
+
+.picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.confirm {
+  margin-top: 10px;
+  width: 100%;
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  color: var(--c-ink);
+  background: var(--c-hud-accent);
+  border: 3px solid var(--c-ink);
+  border-radius: var(--radius-pixel);
+  padding: 12px;
+}
+
+.confirm:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.defenseInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: var(--c-panel);
+  border: 3px solid var(--c-panel-border);
+  border-radius: var(--radius-pixel);
+  padding: 8px 10px;
+  font-family: var(--font-text);
+  font-size: 17px;
+  color: var(--c-ink);
+}
+
+.defenseInfo b {
+  color: var(--c-hp-low);
+}
+
+.enemyTypes {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.hint {
+  font-family: var(--font-text);
+  font-size: 17px;
+  color: var(--c-hud-text);
+  margin: 8px 0;
+}
+
+.warn {
+  font-family: var(--font-text);
+  font-size: 16px;
+  color: #ffd0d0;
+  background: rgba(180, 40, 40, 0.35);
+  border: 2px solid var(--c-hp-low);
+  border-radius: 4px;
+  padding: 6px 8px;
+  margin-top: 8px;
+}
+
+.capture {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.captureActions {
+  display: flex;
+  gap: 8px;
+}
+
+.ghost {
+  flex: 1;
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: #fff;
+  background: #1b2061;
+  border: 2px solid #5159c9;
+  border-radius: 4px;
+  padding: 9px 6px;
+}
