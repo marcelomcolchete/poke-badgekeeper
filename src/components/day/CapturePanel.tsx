@@ -55,21 +55,11 @@ export function CapturePanel({ state, dispatch, spotIndex, onClose }: Props) {
               type="button"
               className={styles.ghost}
               onClick={() => {
-                dispatch({ type: 'CAPTURE_KEEP', searcherId: encounter.searcherId })
-                onClose()
-              }}
-            >
-              Continuar explorando
-            </button>
-            <button
-              type="button"
-              className={styles.ghost}
-              onClick={() => {
                 dispatch({ type: 'CAPTURE_DISMISS', searcherId: encounter.searcherId })
                 onClose()
               }}
             >
-              Encerrar exploração
+              Não capturar
             </button>
           </div>
         </div>

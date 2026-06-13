@@ -55,5 +55,5 @@ export const WILD_LEVEL_VARIANCE = 1
 export const DRAFT_CHOICES = 3
 
 /** Versão do schema de save e chave do localStorage (PLAN §5). v3: sítios + missões por categoria + Fossil. */
-export const SAVE_VERSION = 3
+export const SAVE_VERSION = 4
 export const SAVE_KEY = 'poke-badgekeeper:save'

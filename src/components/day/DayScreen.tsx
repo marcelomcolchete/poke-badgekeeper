@@ -46,6 +46,21 @@ export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) 
     return () => onPauseChange(false)
   }, [open, onPauseChange])
 
+  // Atalhos de teclado: 1/2/3 = velocidade; ` = alterna pausa/play.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return
+      if (e.key === '1') dispatch({ type: 'SET_SPEED', speed: 1 })
+      else if (e.key === '2') dispatch({ type: 'SET_SPEED', speed: 2 })
+      else if (e.key === '3') dispatch({ type: 'SET_SPEED', speed: 3 })
+      else if (e.key === '`') dispatch({ type: 'SET_SPEED', speed: state.clock.speed === 0 ? 1 : 0 })
+      else return
+      e.preventDefault()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [dispatch, state.clock.speed])
+
   return (
     <div className={styles.screen}>
       <CityMap
@@ -70,13 +85,13 @@ export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) 
 
       <nav className={styles.sidebar}>
         <button type="button" className={styles.sideBtn} onClick={() => setOpen({ kind: 'team' })}>
-          Time
+          <span className={styles.sideIcon}>👥</span> Time
         </button>
         <button type="button" className={styles.sideBtn} onClick={() => setOpen({ kind: 'report' })}>
-          Relatório
+          <span className={styles.sideIcon}>📋</span> Relatório
         </button>
         <button type="button" className={styles.sideBtnQuit} onClick={() => setOpen({ kind: 'quit' })}>
-          Desistir
+          <span className={styles.sideIcon}>🚪</span> Desistir
         </button>
       </nav>
 

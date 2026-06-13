@@ -50,7 +50,12 @@ function releaseSearcher(s: GameState, searcherId: string): void {
   if (searcher) replaceMon(s, { ...searcher, status: 'idle' })
 }
 
-/** Captura o candidato escolhido (se houver espaço) e libera o procurador — PLAN §4.5. */
+/** Marca a área como explorada hoje — o spot some do mapa até o próximo dia. */
+function consumeSpot(s: GameState, spotIndex: number): void {
+  if (!s.today.exploredSpots.includes(spotIndex)) s.today.exploredSpots.push(spotIndex)
+}
+
+/** Captura o candidato escolhido (se houver espaço), libera o procurador e encerra a área. */
 export function capturePick(s: GameState, searcherId: string, speciesId: number): void {
   const encounter = popEncounter(s, searcherId)
   if (!encounter || !encounter.candidateSpeciesIds.includes(speciesId)) return
@@ -68,22 +73,13 @@ export function capturePick(s: GameState, searcherId: string, speciesId: number)
   })
   s.today.capturedIds.push(id)
   releaseSearcher(s, searcherId)
+  consumeSpot(s, encounter.spotIndex)
 }
 
-/** Não pega nenhum e traz o Pokémon de volta (fica idle) — PLAN §4.5. */
+/** Não pega nenhum: traz o Pokémon de volta (idle) e encerra a área do dia — PLAN §4.5. */
 export function captureDismiss(s: GameState, searcherId: string): void {
-  if (!popEncounter(s, searcherId)) return
-  releaseSearcher(s, searcherId)
-}
-
-/** Não pega nenhum e segue procurando: novo ciclo de busca no mesmo spot — PLAN §4.5. */
-export function captureKeep(s: GameState, searcherId: string): void {
   const encounter = popEncounter(s, searcherId)
-  const searcher = findMon(s, searcherId)
-  if (!encounter || !searcher) return
-  s.captureSearches.push({
-    searcherId,
-    spotIndex: encounter.spotIndex,
-    readyAtMs: s.clock.dayElapsedMs + searchMs(searcher),
-  })
+  if (!encounter) return
+  releaseSearcher(s, searcherId)
+  consumeSpot(s, encounter.spotIndex)
 }

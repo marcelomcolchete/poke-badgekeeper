@@ -137,7 +137,7 @@ describe('fluxo de captura (PLAN §4.5)', () => {
     return reducer(s, { type: 'TICK', deltaMs: 30_000 }) // conclui a busca (sem encerrar o dia)
   }
 
-  it('buscar gera encontro; capturar adiciona ao roster', () => {
+  it('buscar gera encontro; capturar adiciona ao roster e encerra a área', () => {
     const s = searching()
     expect(s.encounters).toHaveLength(1)
     const pick = s.encounters[0]?.candidateSpeciesIds[0]
@@ -146,18 +146,16 @@ describe('fluxo de captura (PLAN §4.5)', () => {
     expect(after.roster).toHaveLength(2)
     expect(after.today.capturedIds).toHaveLength(1)
     expect(after.roster.find((p) => p.id === 'a')?.status).toBe('idle')
+    expect(after.today.exploredSpots).toContain(0) // área some do dia
   })
 
-  it('dispensar volta sem capturar; seguir procurando reinicia a busca', () => {
+  it('não capturar volta sem capturar e encerra a área do dia', () => {
     const s = searching()
     const dismissed = reducer(s, { type: 'CAPTURE_DISMISS', searcherId: 'a' })
     expect(dismissed.encounters).toHaveLength(0)
     expect(dismissed.roster).toHaveLength(1)
     expect(dismissed.roster[0]?.status).toBe('idle')
-
-    const kept = reducer(s, { type: 'CAPTURE_KEEP', searcherId: 'a' })
-    expect(kept.encounters).toHaveLength(0)
-    expect(kept.captureSearches).toHaveLength(1)
+    expect(dismissed.today.exploredSpots).toContain(0)
   })
 
   it('roster cheio bloqueia a busca', () => {

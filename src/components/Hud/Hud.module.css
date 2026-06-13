@@ -1,20 +1,21 @@
+/* Pill compacta e translúcida, flutuando centralizada no topo (fase Dia full-screen). */
 .hud {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 8px 12px;
-  background: var(--c-hud-bg);
-  border: 3px solid var(--c-hud-border);
-  border-radius: var(--radius-pixel);
+  gap: 16px;
+  padding: 6px 14px;
+  background: rgba(16, 19, 58, 0.88);
+  border: 2px solid var(--c-hud-border);
+  border-radius: 999px;
   color: var(--c-hud-text);
   font-family: var(--font-text);
-  font-size: 18px;
+  font-size: 17px;
+  white-space: nowrap;
 }
 
 .day {
   font-family: var(--font-pixel);
-  font-size: 11px;
+  font-size: 10px;
   color: var(--c-hud-accent);
 }
 

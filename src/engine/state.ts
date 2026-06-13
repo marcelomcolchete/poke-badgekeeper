@@ -121,6 +121,8 @@ export interface DayTally {
   starsBefore: number
   /** Fossil já reviveu alguém hoje? (efeito 1×/dia). */
   fossilUsed: boolean
+  /** Áreas de captura já exploradas hoje (índices em captureSpots) — somem do mapa. */
+  exploredSpots: number[]
 }
 
 export interface DayLog {
@@ -164,6 +166,7 @@ export function emptyTally(): DayTally {
     goldEarned: 0,
     starsBefore: 0,
     fossilUsed: false,
+    exploredSpots: [],
   }
 }
 

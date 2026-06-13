@@ -8,9 +8,9 @@
 
 .hudBar {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 3;
 }
 
@@ -27,32 +27,45 @@
 
 .textbox {
   position: absolute;
-  left: 12px;
-  right: 12px;
-  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 14px;
+  width: min(600px, calc(100% - 24px));
   z-index: 3;
 }
 
 .sideBtn,
 .sideBtnQuit {
-  font-family: var(--font-pixel);
-  font-size: 9px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-text);
+  font-size: 18px;
   color: #fff;
-  background: #1b2061;
-  border: 3px solid #5159c9;
+  background: rgba(20, 24, 70, 0.9);
+  border: 2px solid #5159c9;
   border-radius: var(--radius-pixel);
-  padding: 12px 8px;
-  writing-mode: horizontal-tb;
-  width: 74px;
+  padding: 7px 12px;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.sideIcon {
+  font-size: 18px;
+  line-height: 1;
 }
 
 .sideBtn:hover {
-  background: #2a31a0;
+  background: rgba(42, 49, 160, 0.95);
 }
 
 .sideBtnQuit {
-  background: #5a1d2a;
+  background: rgba(90, 29, 42, 0.9);
   border-color: #a3414f;
+}
+
+.sideBtnQuit:hover {
+  background: rgba(122, 40, 57, 0.95);
 }
 
 .report {

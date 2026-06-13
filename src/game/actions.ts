@@ -20,10 +20,8 @@ export type GameAction =
   | { type: 'START_SEARCH'; searcherId: string; spotIndex: number }
   /** No encontro: captura o candidato escolhido — PLAN §4.5. */
   | { type: 'CAPTURE_PICK'; searcherId: string; speciesId: number }
-  /** No encontro: não pega nenhum e encerra a exploração — o Pokémon fica idle. */
+  /** No encontro: não pega nenhum e encerra a exploração — a área some do dia. */
   | { type: 'CAPTURE_DISMISS'; searcherId: string }
-  /** No encontro: não pega nenhum e continua explorando (novo encontro depois). */
-  | { type: 'CAPTURE_KEEP'; searcherId: string }
   /** Compra no mercado (manhã) — PLAN §4.6. */
   | { type: 'BUY_ITEM'; itemId: string; quantity?: number }
   /** Usa um item (Potion/Revive…) num Pokémon do roster — PLAN §4.6. */

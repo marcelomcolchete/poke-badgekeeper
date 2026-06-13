@@ -69,6 +69,7 @@ export function CityMap({ state, onMission, onDefense, onSpot }: Props) {
       </div>
 
       {state.captureSpots.map((spot, i) => {
+        if (state.today.exploredSpots.includes(i)) return null // área já explorada hoje
         const ready = state.encounters.some((e) => e.spotIndex === i)
         const searching = state.captureSearches.some((c) => c.spotIndex === i)
         return (
