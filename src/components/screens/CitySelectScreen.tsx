@@ -1,0 +1,46 @@
+// Tela inicial: escolha da cidade de Kanto (PLAN §3). Na Fase 5 só Pewter tem
+// conteúdo pronto; as demais ficam como "Em breve" (desabilitadas).
+
+import { CITIES } from '../../data/cities.ts'
+import { TypeBadge } from '../common/TypeBadge.tsx'
+import { Textbox } from '../Textbox/Textbox.tsx'
+import styles from './CitySelectScreen.module.css'
+
+/** Cidades com conteúdo pronto (Fase 5: somente Pewter). */
+const PLAYABLE_CITIES = new Set<number>([0])
+
+export function CitySelectScreen({ onChoose }: { onChoose: (cityIndex: number) => void }) {
+  return (
+    <div className={styles.screen}>
+      <header className={styles.header}>
+        <span className={styles.title}>POKE BADGEKEEPER</span>
+        <span className={styles.sub}>Escolha a cidade de Kanto</span>
+      </header>
+
+      <div className={styles.grid}>
+        {CITIES.map((city) => {
+          const playable = PLAYABLE_CITIES.has(city.index)
+          return (
+            <button
+              key={city.index}
+              type="button"
+              className={`${styles.city} ${playable ? '' : styles.locked}`}
+              disabled={!playable}
+              onClick={playable ? () => onChoose(city.index) : undefined}
+            >
+              <span className={styles.cityName}>{city.name}</span>
+              <TypeBadge type={city.primaryType} />
+              {playable ? (
+                <span className={styles.play}>Jogar ▶</span>
+              ) : (
+                <span className={styles.soon}>Em breve</span>
+              )}
+            </button>
+          )
+        })}
+      </div>
+
+      <Textbox>Pewter está pronta. As demais cidades de Kanto chegam em breve.</Textbox>
+    </div>
+  )
+}

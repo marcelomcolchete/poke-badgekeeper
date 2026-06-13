@@ -7,10 +7,14 @@ import type { Dispatch } from 'react'
 import type { GameState } from '../engine/state.ts'
 import type { GameAction } from './actions.ts'
 
-export function useGameClock(state: GameState, dispatch: Dispatch<GameAction>): void {
+export function useGameClock(
+  state: GameState,
+  dispatch: Dispatch<GameAction>,
+  paused = false,
+): void {
   const lastTs = useRef<number | null>(null)
   const speed = state.clock.speed
-  const running = state.run.phase === 'DAY' && speed > 0
+  const running = state.run.phase === 'DAY' && speed > 0 && !paused
 
   useEffect(() => {
     if (!running) {
@@ -29,3 +33,4 @@ export function useGameClock(state: GameState, dispatch: Dispatch<GameAction>): 
     return () => cancelAnimationFrame(frame)
   }, [running, speed, dispatch])
 }
+

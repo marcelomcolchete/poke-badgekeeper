@@ -2,7 +2,7 @@
 // esquerda (Time/Relatório/Desistir) e textbox na base. Abre os painéis conforme
 // o jogador clica nos marcadores.
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Dispatch } from 'react'
 import type { GameSpeed } from '../../types/index.ts'
 import type { GameState } from '../../engine/state.ts'
@@ -31,12 +31,20 @@ interface Props {
   state: GameState
   dispatch: Dispatch<GameAction>
   onRestart: () => void
+  /** Avisa o App para congelar o relógio enquanto um painel está aberto. */
+  onPauseChange: (paused: boolean) => void
 }
 
-export function DayScreen({ state, dispatch, onRestart }: Props) {
+export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) {
   const [open, setOpen] = useState<Selection>(null)
   const close = (): void => setOpen(null)
   const setSpeed = (speed: GameSpeed): void => dispatch({ type: 'SET_SPEED', speed })
+
+  // Abrir qualquer painel pausa o tempo (missões, defesa, captura…); fechar retoma.
+  useEffect(() => {
+    onPauseChange(open !== null)
+    return () => onPauseChange(false)
+  }, [open, onPauseChange])
 
   return (
     <div className={styles.screen}>
