@@ -7,7 +7,7 @@ import type { MouseEvent } from 'react'
 import type { MapPos, Pokemon } from '../../types/index.ts'
 import type { CityGraph } from '../../data/types.ts'
 import type { DefenseEvent, GameState, MissionInstance } from '../../engine/state.ts'
-import { getCity, nodePos } from '../../data/cities.ts'
+import { getCity, markerPos } from '../../data/cities.ts'
 import { getMissionTemplate } from '../../data/missionTemplates.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
 import { pointAlongPath } from '../../engine/pathfinding.ts'
@@ -70,22 +70,18 @@ export function CityMap({ state, onMission, onDefense, onSpot }: Props) {
           draggable={false}
         />
 
-        <div className={styles.anchor} style={posStyle(nodePos(graph, city.siteNodes.gym))}>
-          {activeDefense ? (
+        {activeDefense && (
+          <div className={styles.anchor} style={posStyle(markerPos(graph, city.siteNodes.gym))}>
             <DefenseMarker defense={activeDefense} now={now} onClick={() => onDefense(activeDefense.id)} />
-          ) : (
-            <span className={styles.building} title="Ginásio">
-              🏛️
-            </span>
-          )}
-        </div>
+          </div>
+        )}
 
         {state.captureSpots.map((node, i) => {
           if (state.today.exploredSpots.includes(i)) return null // área já explorada hoje
           const ready = state.encounters.some((e) => e.spotIndex === i)
           const searching = state.captureSearches.some((c) => c.spotIndex === i)
           return (
-            <div key={`spot-${i}`} className={styles.anchor} style={posStyle(nodePos(graph, node))}>
+            <div key={`spot-${i}`} className={styles.anchor} style={posStyle(markerPos(graph, node))}>
               <button
                 type="button"
                 className={`${styles.disc} ${styles.capture} ${ready ? styles.ready : ''}`}
@@ -101,7 +97,7 @@ export function CityMap({ state, onMission, onDefense, onSpot }: Props) {
         })}
 
         {missions.map((mission) => (
-          <div key={mission.id} className={styles.anchor} style={posStyle(nodePos(graph, mission.node))}>
+          <div key={mission.id} className={styles.anchor} style={posStyle(markerPos(graph, mission.node))}>
             <MissionMarker mission={mission} now={now} onClick={() => onMission(mission.id)} />
           </div>
         ))}

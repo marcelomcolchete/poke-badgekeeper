@@ -10,7 +10,7 @@ import type {
   Pokemon,
   PokemonType,
 } from '../types/index.ts'
-import { DAY_LENGTH_MS, STARS_START } from './constants.ts'
+import { DAY_LENGTH_MS, STARS_START, STARTING_GOLD } from './constants.ts'
 
 export interface RunInfo {
   /** Índice da cidade atual de Kanto (0..7). */
@@ -215,7 +215,7 @@ export function createInitialState(seed: number): GameState {
     encounters: [],
     captureSpots: [],
     approval: { stars: STARS_START, dailyGoalMet: false },
-    gold: 0,
+    gold: STARTING_GOLD,
     inventory: [],
     runItems: [],
     today: emptyTally(),

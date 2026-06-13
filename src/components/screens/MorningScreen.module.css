@@ -116,9 +116,9 @@
 .ghostBtn {
   font-family: var(--font-pixel);
   font-size: 8px;
-  color: #fff;
-  background: #1b2061;
-  border: 2px solid #5159c9;
+  color: var(--c-btn-text);
+  background: var(--c-btn-bg);
+  border: 2px solid var(--c-btn-border);
   border-radius: 4px;
   padding: 6px 8px;
 }

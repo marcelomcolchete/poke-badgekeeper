@@ -20,6 +20,15 @@ export function expireDefense(defense: DefenseEvent): void {
   if (defense.status === 'active') defense.status = 'lost'
 }
 
+/**
+ * Derrota imediata: deixar o timer de uma defesa ATIVA zerar sem nem lutar encerra a
+ * run na hora, independente do dia e da reputação. Congela o relógio e vai a GAMEOVER.
+ */
+export function loseRunByUndefendedGym(s: GameState): void {
+  s.run.phase = 'GAMEOVER'
+  s.clock.speed = 0
+}
+
 function squadOf(s: GameState, ids: readonly string[]): Pokemon[] {
   return ids
     .map((id) => findMon(s, id))

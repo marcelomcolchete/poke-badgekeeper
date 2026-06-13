@@ -86,8 +86,8 @@ export const CATEGORY_SITE: Record<MissionCategory, SiteKind> = {
   museum: 'museum',
 }
 
-/** Fase do dia (PLAN §3 / §5). */
-export type GamePhase = 'MORNING' | 'DAY' | 'CAPTURE' | 'SUMMARY'
+/** Fase do dia (PLAN §3 / §5). GAMEOVER = derrota imediata (ex.: ginásio indefeso). */
+export type GamePhase = 'MORNING' | 'DAY' | 'CAPTURE' | 'SUMMARY' | 'GAMEOVER'
 
 /** Velocidade do relógio: 0 = pausa. */
 export type GameSpeed = 0 | 1 | 2 | 3

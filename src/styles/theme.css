@@ -5,18 +5,28 @@
   --font-pixel: 'Press Start 2P', 'Courier New', monospace;
   --font-text: 'VT323', 'Courier New', monospace;
 
-  /* HUD (cabeçalho) */
-  --c-hud-bg: #161a52;
-  --c-hud-border: #0a0c2e;
-  --c-hud-accent: #ffcb05; /* amarelo Pokémon */
+  /* HUD (cabeçalho) — verde para combinar com o mapa (overworld) */
+  --c-hud-bg: #2f8f50;
+  --c-hud-border: #18512f;
+  --c-hud-accent: #ffcb05; /* amarelo Pokémon (ouro/estrelas/destaques) */
   --c-hud-text: #ffffff;
-  --c-hud-muted: #9aa0ff;
+  --c-hud-muted: #c4e9cd;
 
-  /* Superfícies / molduras */
-  --c-panel: #f7f3e6;
-  --c-panel-border: #1b1f5e;
-  --c-ink: #1b1f5e;
-  --c-ink-muted: #5a5f8a;
+  /* Botões de controle (HUD, overlays, painéis): verde com borda clara */
+  --c-btn-bg: #2f8f50;
+  --c-btn-border: #76d18d;
+  --c-btn-text: #eafff0;
+
+  /* Molduras de overlay (antes navy) — agora verde, conteúdo claro/grama */
+  --c-overlay-frame: #2b7d49;
+  --c-overlay-frame-border: #18512f;
+  --c-backdrop: rgba(8, 26, 14, 0.72);
+
+  /* Superfícies / molduras claras (cartas, listas) */
+  --c-panel: #f4fbf2;
+  --c-panel-border: #2f8f50;
+  --c-ink: #1c4a2c;
+  --c-ink-muted: #5c7d64;
 
   /* Textbox clássica (branca, borda azul, texto azul, cursor vermelho) */
   --c-dialog-bg: #fbfdff;
@@ -34,11 +44,11 @@
   --c-hp-high: #6fcf3f;
   --c-hp-mid: #f0c020;
   --c-hp-low: #e84040;
-  --c-hp-track: #2a2e55;
+  --c-hp-track: #234b30;
 
   /* Estrelas de aprovação */
   --c-star-on: #ffcb05;
-  --c-star-off: #3a3f80;
+  --c-star-off: #2f6b43;
 
   /* Raio de borda "pixel" (cantos curtos, nada arredondado demais) */
   --radius-pixel: 6px;
