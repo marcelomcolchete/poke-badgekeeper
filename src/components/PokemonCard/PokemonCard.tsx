@@ -32,9 +32,8 @@ export function PokemonCard({ pokemon, selected = false, disabled = false, onCli
   const pending = pendingPoints(pokemon)
   const atMaxLevel = pokemon.level >= LEVEL_MAX
   const xpNeeded = xpToNext(pokemon.level)
-  const xpLeft = atMaxLevel ? 0 : Math.max(0, xpNeeded - pokemon.xp)
   const xpPct = atMaxLevel ? 100 : Math.min(100, (pokemon.xp / xpNeeded) * 100)
-  const evolvesNextLevel = species.evolvesTo?.atLevel === pokemon.level + 1
+  const evolvesAt = species.evolvesTo?.atLevel
   const totalStats = ATTR_KEYS.reduce((sum, key) => sum + effectiveAttr(pokemon, key), 0)
   const classes = [
     styles.card,
@@ -83,7 +82,7 @@ export function PokemonCard({ pokemon, selected = false, disabled = false, onCli
         <span className={styles.expText}>
           {atMaxLevel
             ? 'Nível máximo'
-            : `EXP: faltam ${xpLeft} p/ Nv ${pokemon.level + 1}${evolvesNextLevel ? ' ✦ evolui' : ''}`}
+            : `EXP: ${pokemon.xp}/${xpNeeded}${evolvesAt !== undefined ? ` ✦ evolui no Nv ${evolvesAt}` : ''}`}
         </span>
       </div>
     </button>
