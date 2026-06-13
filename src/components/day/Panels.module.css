@@ -162,6 +162,77 @@
   opacity: 0.5;
 }
 
+/* Medidor de duelo: marcador oscilante sobre a zona de vitória (interseção). */
+.meterWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--c-panel);
+  border: 3px solid var(--c-panel-border);
+  border-radius: var(--radius-pixel);
+  padding: 8px 10px;
+}
+
+.meterHead {
+  font-family: var(--font-text);
+  font-size: 16px;
+  color: var(--c-ink);
+}
+
+.meterHead b {
+  color: var(--c-grass-dark);
+}
+
+.meterTrack {
+  position: relative;
+  height: 16px;
+  background: var(--c-hp-low);
+  border: 2px solid var(--c-ink);
+  border-radius: 4px;
+}
+
+.meterZone {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: var(--c-grass-dark);
+  border-radius: 2px 0 0 2px;
+}
+
+.meterMarker {
+  position: absolute;
+  top: -4px;
+  width: 4px;
+  height: 24px;
+  margin-left: -2px;
+  background: var(--c-ink);
+  box-shadow: 0 0 0 2px #fff;
+  border-radius: 2px;
+}
+
+.markerWin,
+.markerLose {
+  transition: left 220ms ease-out;
+}
+
+.markerWin {
+  background: #2bd24f;
+  box-shadow: 0 0 0 2px #fff, 0 0 8px #2bd24f;
+}
+
+.markerLose {
+  background: #fff;
+  box-shadow: 0 0 0 2px var(--c-hp-low);
+}
+
+.meterVerdict {
+  font-family: var(--font-text);
+  font-size: 15px;
+  color: var(--c-ink-muted);
+  min-height: 19px;
+}
+
 .duelLog {
   display: flex;
   flex-direction: column;

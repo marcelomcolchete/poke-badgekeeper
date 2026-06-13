@@ -49,7 +49,7 @@ export function DefensePanel({ state, dispatch, defenseId, onClose }: Props) {
     <Overlay title="DEFESA DO GINÁSIO" onClose={onClose} wide>
       <div className={styles.defenseInfo}>
         <span>
-          Invasores: <b>{defense.enemies.length}</b>
+          Desafiantes: <b>{defense.enemies.length}</b>
         </span>
         <span className={styles.enemyTypes}>
           {enemyTypes.map((t) => (
@@ -86,6 +86,7 @@ interface Round {
   enemy: EnemyUnit
   yourId: string
   youWon: boolean
+  pWin: number
 }
 
 /** Reconstrói a ordem de confrontos a partir do log de duelos (mesma lógica da engine). */
@@ -95,13 +96,18 @@ function buildRounds(defense: DefenseEvent): Round[] {
   for (const duel of defense.duels) {
     const enemy = defense.enemies[theirs]
     if (!enemy) break
-    rounds.push({ enemyIndex: theirs, enemy, yourId: duel.yourId, youWon: duel.youWon })
+    rounds.push({ enemyIndex: theirs, enemy, yourId: duel.yourId, youWon: duel.youWon, pWin: duel.pWin })
     if (duel.youWon) theirs += 1
   }
   return rounds
 }
 
-const STEP_MS = 850
+const OSC_MS = 1100
+const HOLD_MS = 750
+
+function clamp01(n: number): number {
+  return Math.max(0, Math.min(1, n))
+}
 
 function BattleView({
   state,
@@ -115,18 +121,20 @@ function BattleView({
   const rounds = buildRounds(defense)
   const [step, setStep] = useState(0)
   const done = step >= rounds.length
-
-  useEffect(() => {
-    if (done) return
-    const t = setTimeout(() => setStep((s) => s + 1), STEP_MS)
-    return () => clearTimeout(t)
-  }, [step, done])
+  const current = done ? null : (rounds[step] as Round)
 
   const nameOf = (id: string): string => {
     const mon = state.roster.find((p) => p.id === id)
     return mon ? getSpecies(mon.speciesId).displayName : id
   }
+  const enemyNameOf = (enemy: EnemyUnit): string =>
+    enemy.speciesId !== undefined ? getSpecies(enemy.speciesId).displayName : 'o desafiante'
+
   const enemiesDefeated = rounds.slice(0, step).filter((r) => r.youWon).length
+  // Seus Pokémon que já perderam um duelo ficam cinza, como os desafiantes derrotados.
+  const lostIds = new Set(
+    rounds.slice(0, step).filter((r) => !r.youWon).map((r) => r.yourId),
+  )
   const won = defense.status === 'won'
 
   return (
@@ -140,7 +148,7 @@ function BattleView({
               return mon ? (
                 <img
                   key={id}
-                  className={styles.fighter}
+                  className={`${styles.fighter} ${lostIds.has(id) ? styles.defeated : ''}`}
                   src={getSpecies(mon.speciesId).spritePath}
                   alt={getSpecies(mon.speciesId).displayName}
                   draggable={false}
@@ -152,7 +160,7 @@ function BattleView({
 
         <div className={styles.battleSide}>
           <span className={styles.battleLabel}>
-            Invasores ({enemiesDefeated}/{defense.enemies.length} derrotados)
+            Desafiantes ({enemiesDefeated}/{defense.enemies.length} derrotados)
           </span>
           <div className={styles.battleRow}>
             {defense.enemies.map((enemy, i) => (
@@ -167,11 +175,21 @@ function BattleView({
           </div>
         </div>
 
+        {current && (
+          <DuelMeter
+            key={step}
+            round={current}
+            yourName={nameOf(current.yourId)}
+            enemyName={enemyNameOf(current.enemy)}
+            onDone={() => setStep((s) => s + 1)}
+          />
+        )}
+
         <ol className={styles.duelLog}>
           {rounds.slice(0, step).map((r, i) => (
             <li key={i} className={r.youWon ? styles.duelWin : styles.duelLose}>
               <b>{nameOf(r.yourId)}</b> {r.youWon ? 'venceu' : 'perdeu para'}{' '}
-              {r.enemy.speciesId !== undefined ? getSpecies(r.enemy.speciesId).displayName : 'o invasor'}
+              {enemyNameOf(r.enemy)}
             </li>
           ))}
         </ol>
@@ -187,5 +205,82 @@ function BattleView({
         </button>
       </div>
     </Overlay>
+  )
+}
+
+/**
+ * Medidor do duelo (PLAN §4.4): um marcador oscila pela barra e "pousa" dentro da zona
+ * de vitória (interseção verde, largura = pWin) quando você vence, ou fora dela quando
+ * perde. A oscilação é só visual — o resultado já vem resolvido do estado.
+ */
+function DuelMeter({
+  round,
+  yourName,
+  enemyName,
+  onDone,
+}: {
+  round: Round
+  yourName: string
+  enemyName: string
+  onDone: () => void
+}) {
+  const winZone = clamp01(round.pWin)
+  const [pos, setPos] = useState(0.5)
+  const [settled, setSettled] = useState(false)
+
+  // Oscila por OSC_MS (onda triangular) e então fixa dentro/fora da zona de vitória.
+  useEffect(() => {
+    setSettled(false)
+    const final = round.youWon ? winZone * 0.5 : winZone + (1 - winZone) * 0.5
+    let raf = 0
+    let start = 0
+    const tick = (ts: number): void => {
+      if (!start) start = ts
+      const elapsed = ts - start
+      if (elapsed >= OSC_MS) {
+        setPos(final)
+        setSettled(true)
+        return
+      }
+      const phase = (elapsed / OSC_MS) * 2.5 // ~2,5 vai-e-volta
+      const frac = phase - Math.floor(phase)
+      setPos(1 - Math.abs(frac * 2 - 1)) // 0 → 1 → 0
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [round, winZone])
+
+  // Depois de fixar, segura um instante e avança para o próximo duelo.
+  useEffect(() => {
+    if (!settled) return
+    const t = setTimeout(onDone, HOLD_MS)
+    return () => clearTimeout(t)
+  }, [settled, onDone])
+
+  const markerClass = settled ? (round.youWon ? styles.markerWin : styles.markerLose) : ''
+
+  const verdictClass = settled ? (round.youWon ? styles.duelWin : styles.duelLose) : ''
+
+  return (
+    <div className={styles.meterWrap}>
+      <span className={styles.meterHead}>
+        <b>{yourName}</b> vs {enemyName} — {Math.round(winZone * 100)}% de vitória
+      </span>
+      <div className={styles.meterTrack}>
+        <span className={styles.meterZone} style={{ width: `${winZone * 100}%` }} />
+        <span
+          className={`${styles.meterMarker} ${markerClass}`}
+          style={{ left: `${pos * 100}%` }}
+        />
+      </div>
+      <span className={`${styles.meterVerdict} ${verdictClass}`}>
+        {!settled
+          ? 'Resolvendo…'
+          : round.youWon
+            ? 'Caiu na interseção — venceu! ✓'
+            : 'Caiu fora da interseção — perdeu.'}
+      </span>
+    </div>
   )
 }
