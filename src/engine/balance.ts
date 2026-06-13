@@ -38,3 +38,15 @@ export const DEFENSE_LIFETIME_MS = 40_000
 /** Defesa §4.4: Batalha-base dos inimigos e ganho por dia da cidade. */
 export const ENEMY_BASE_BATTLE = 25
 export const ENEMY_BATTLE_PER_DAY = 4
+
+/** Defesa §4.4: tamanho do esquadrão inimigo (sorteado por evento). */
+export const ENEMY_SQUAD_MIN = 3
+export const ENEMY_SQUAD_MAX = 6
+
+/** Leveling §4.1: XP concedido a cada Pokémon do time numa missão bem-sucedida. */
+export const MISSION_XP_REWARD = 120
+
+/** Itens §4.6: cura/revive (HP é 1–10, então poucos pontos já contam). */
+export const POTION_HEAL = 3
+export const SUPER_POTION_HEAL = 7
+export const REVIVE_HP_FRACTION = 0.5

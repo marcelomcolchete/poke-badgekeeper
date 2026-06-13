@@ -87,7 +87,10 @@ export interface MissionInstanceSpec {
   lifetimeMs: number
 }
 
-/** Cria a instância de missão (template + âncora + timer) para o mapa do dia (PLAN §3.1). */
+/**
+ * Cria a instância de missão (template + âncora + timer) agendada para o dia.
+ * Nasce 'scheduled'; o relógio a promove a 'available' no spawnAtMs (PLAN §3.1).
+ */
 export function createMissionInstance(spec: MissionInstanceSpec): MissionInstance {
   const template = rollMissionTemplate(spec.rng)
   const anchorCount = spec.anchors.length
@@ -96,8 +99,13 @@ export function createMissionInstance(spec: MissionInstanceSpec): MissionInstanc
     id: spec.id,
     templateId: template.id,
     pos: pos ? { ...pos } : { x: 0.5, y: 0.5 },
+    spawnAtMs: spec.spawnAtMs,
     expiresAtMs: spec.spawnAtMs + spec.lifetimeMs,
-    status: 'available',
+    status: 'scheduled',
     teamIds: [],
+    travelEndsAtMs: null,
+    resolveAtMs: null,
+    result: null,
+    pSuccess: null,
   }
 }

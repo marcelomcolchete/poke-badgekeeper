@@ -2,15 +2,10 @@
 // (MVP) para a tela de Resumo e para o histórico (PLAN §3 / §5).
 
 import type { Pokemon } from '../types/index.ts'
-import type { DayLog } from './state.ts'
+import type { DayLog, MissionResultLog } from './state.ts'
 import { isFainted } from './attributes.ts'
 
-/** Resultado de uma missão resolvida no dia (para contagem e MVP). */
-export interface MissionResultLog {
-  templateId: string
-  success: boolean
-  teamIds: string[]
-}
+export type { MissionResultLog }
 
 export interface DaySummaryInput {
   day: number

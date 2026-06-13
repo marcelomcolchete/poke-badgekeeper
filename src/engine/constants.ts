@@ -25,6 +25,9 @@ export const ATTR_PER_POINT = 10
 export const LEVEL_MIN = 1
 export const LEVEL_MAX = 10
 
+/** Inicial da cidade: 1 Pokémon do tipo primário, nível 3 (PLAN §3). */
+export const STARTER_LEVEL = 3
+
 /** HP inteiro de 1–10, derivado da Resistência (PLAN §4.1). */
 export const HP_MIN = 1
 export const HP_MAX = 10
@@ -48,6 +51,6 @@ export const MIN_FAILURE_DAMAGE = 1
 export const CAPTURE_CHOICES = 3
 export const WILD_LEVEL_VARIANCE = 1
 
-/** Versão do schema de save e chave do localStorage (PLAN §5). */
-export const SAVE_VERSION = 1
+/** Versão do schema de save e chave do localStorage (PLAN §5). v2: runtime do dia (Fase 3). */
+export const SAVE_VERSION = 2
 export const SAVE_KEY = 'poke-badgekeeper:save'

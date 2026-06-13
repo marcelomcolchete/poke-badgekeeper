@@ -72,3 +72,9 @@ export interface MapPos {
   x: number
   y: number
 }
+
+/** Inimigo efêmero de uma defesa de ginásio (só Batalha + tipo) — PLAN §4.4. */
+export interface EnemyUnit {
+  battle: number
+  types: PokemonType[]
+}

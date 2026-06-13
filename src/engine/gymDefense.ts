@@ -2,9 +2,11 @@
 // (PLAN §4.4). A tabela de tipos (data/typeChart) serve apenas para classificar
 // vantagem/desvantagem; o efeito é ×1,5 por vantagem e ×0,5 por desvantagem.
 
-import type { Pokemon, PokemonType } from '../types/index.ts'
+import type { EnemyUnit, Pokemon, PokemonType } from '../types/index.ts'
 import { POKEMON_TYPES } from '../types/index.ts'
 import type { Rng } from './rng.ts'
+
+export type { EnemyUnit }
 import { singleTypeMultiplier } from '../data/typeChart.ts'
 import {
   ATTR_MAX,
@@ -50,11 +52,6 @@ export function effectiveBattle(attacker: Pokemon, defenderTypes: readonly Pokem
 export function duelWinProbability(attackerBattleEff: number, defenderBattleEff: number): number {
   if (defenderBattleEff <= 0) return 1
   return clamp(attackerBattleEff / defenderBattleEff, 0, 1)
-}
-
-export interface EnemyUnit {
-  battle: number
-  types: PokemonType[]
 }
 
 /** Inimigos efêmeros da defesa, com Batalha escalando pelo dia (PLAN §4.4/§4.8). */
