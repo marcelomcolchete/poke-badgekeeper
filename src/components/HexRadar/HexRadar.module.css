@@ -18,10 +18,24 @@
   stroke-width: 1;
 }
 
+.flush {
+  background: none;
+  border: none;
+  border-radius: 0;
+}
+
 .label {
   fill: var(--c-ink-muted);
   font-family: var(--font-pixel);
   font-size: 8px;
+}
+
+/* Pontuação do Pokémon sob o nome do eixo (modo individual) — PLAN §4.1. */
+.value {
+  fill: var(--c-ink);
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Exigência da missão (o alvo a cobrir) */

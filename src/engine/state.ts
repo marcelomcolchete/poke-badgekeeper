@@ -10,6 +10,7 @@ import type {
   Pokemon,
   PokemonType,
 } from '../types/index.ts'
+import type { DuelLog } from './gymDefense.ts'
 import { DAY_LENGTH_MS, STARS_START, STARTING_GOLD } from './constants.ts'
 
 export interface RunInfo {
@@ -84,6 +85,8 @@ export interface DefenseEvent {
   squadIds: string[]
   /** Inimigos sorteados quando a defesa surge (matchup fixo/semeado). */
   enemies: EnemyUnit[]
+  /** Log da cadeia de duelos, preenchido ao resolver — alimenta o modal de batalha (§4.4). */
+  duels: DuelLog[]
 }
 
 /** Busca de captura em andamento: um Pokémon viaja até o spot e procura até gerar encontro (PLAN §4.5). */
@@ -146,6 +149,8 @@ export interface DayTally {
   defensesWon: number
   capturedIds: string[]
   goldEarned: number
+  /** Ouro vindo só de defesas (base do bônus de +30% por dia perfeito) — PLAN §4.6. */
+  defenseGold: number
   /** Estrelas no início do dia (preenchido no fechamento) — para o resumo. */
   starsBefore: number
   /** Fossil já reviveu alguém hoje? (efeito 1×/dia). */
@@ -197,6 +202,7 @@ export function emptyTally(): DayTally {
     defensesWon: 0,
     capturedIds: [],
     goldEarned: 0,
+    defenseGold: 0,
     starsBefore: 0,
     fossilUsed: false,
     exploredSpots: [],

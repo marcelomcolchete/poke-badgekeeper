@@ -2,11 +2,12 @@ import type { Pokemon, PokemonStatus } from '../../types/index.ts'
 import { ATTR_KEYS } from '../../types/index.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
 import { LEVEL_MAX } from '../../engine/constants.ts'
-import { effectiveAttr } from '../../engine/attributes.ts'
+import { effectiveAttr, effectiveAttrs } from '../../engine/attributes.ts'
 import { pendingPoints, xpToNext } from '../../engine/leveling.ts'
+import { HexRadar } from '../HexRadar/HexRadar.tsx'
 import { TypeBadge } from '../common/TypeBadge.tsx'
 import { HpBar } from '../common/HpBar.tsx'
-import { ATTR_SHORT_PT, RARITY_COLOR, RARITY_LABEL_PT } from '../common/visual.ts'
+import { RARITY_COLOR, RARITY_LABEL_PT } from '../common/visual.ts'
 import styles from './PokemonCard.module.css'
 
 const STATUS_LABEL: Record<PokemonStatus, string> = {
@@ -34,6 +35,7 @@ export function PokemonCard({ pokemon, selected = false, disabled = false, onCli
   const xpLeft = atMaxLevel ? 0 : Math.max(0, xpNeeded - pokemon.xp)
   const xpPct = atMaxLevel ? 100 : Math.min(100, (pokemon.xp / xpNeeded) * 100)
   const evolvesNextLevel = species.evolvesTo?.atLevel === pokemon.level + 1
+  const totalStats = ATTR_KEYS.reduce((sum, key) => sum + effectiveAttr(pokemon, key), 0)
   const classes = [
     styles.card,
     selected ? styles.selected : '',
@@ -62,13 +64,11 @@ export function PokemonCard({ pokemon, selected = false, disabled = false, onCli
         {pending > 0 && <span className={styles.pending}>+{pending}★</span>}
       </div>
 
-      <div className={styles.attrs}>
-        {ATTR_KEYS.map((key) => (
-          <span key={key} className={styles.attr}>
-            <span className={styles.attrLabel}>{ATTR_SHORT_PT[key]}</span>
-            <span className={styles.attrValue}>{effectiveAttr(pokemon, key)}</span>
-          </span>
-        ))}
+      <div className={styles.radarBox}>
+        <HexRadar values={effectiveAttrs(pokemon)} showValues frame={false} size={150} />
+        <span className={styles.total}>
+          Total Stats: <b>{totalStats}</b>
+        </span>
       </div>
 
       <div className={styles.foot}>

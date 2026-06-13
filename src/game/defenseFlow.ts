@@ -51,11 +51,13 @@ export function assignDefense(s: GameState, defenseId: string, squadIds: string[
   }
 
   defense.squadIds = squad.map((p) => p.id)
+  defense.duels = resolution.duels
   defense.status = resolution.won ? 'won' : 'lost'
-  if (resolution.won) {
-    const gold = goldForDefense(squad)
-    s.gold += gold
-    s.today.goldEarned += gold
-    s.today.defensesWon += 1
-  }
+
+  // Ouro é pago por participar da batalha, vencendo OU perdendo (PLAN §4.6, ajuste).
+  const gold = goldForDefense(squad)
+  s.gold += gold
+  s.today.goldEarned += gold
+  s.today.defenseGold += gold
+  if (resolution.won) s.today.defensesWon += 1
 }

@@ -1,6 +1,10 @@
 // Radar hexagonal sobreposto (PLAN §3.1/§4.2): a exigência da missão e a soma do
 // time (capada em 100) desenhadas nos 6 eixos canônicos a 60°. A sobreposição das
 // áreas ilustra a P_sucesso (interseção ÷ exigência).
+//
+// Modo individual: passando só `values` (e opcionalmente `showValues`), desenha um
+// único polígono — o gráfico de atributos de UM Pokémon, com a pontuação sob cada
+// eixo (usado na carta do Pokémon — PLAN §4.1).
 
 import { ATTR_KEYS, type Attrs } from '../../types/index.ts'
 import { ATTR_SHORT_PT } from '../common/visual.ts'
@@ -10,12 +14,27 @@ const AXIS_MAX = 100
 const RINGS = [0.25, 0.5, 0.75, 1]
 
 interface Props {
-  requirement: Attrs
-  teamSum: Attrs
+  /** Exigência da missão (polígono laranja). Ausente no modo individual. */
+  requirement?: Attrs
+  /** Soma do time, capada em 100 (polígono verde). Ausente no modo individual. */
+  teamSum?: Attrs
+  /** Atributos de um único Pokémon (polígono verde) — modo individual. */
+  values?: Attrs
+  /** Mostra a pontuação numérica sob cada eixo (modo individual) — PLAN §4.1. */
+  showValues?: boolean
+  /** Desenha a moldura/fundo do painel (desligado quando embutido numa carta). */
+  frame?: boolean
   size?: number
 }
 
-export function HexRadar({ requirement, teamSum, size = 260 }: Props) {
+export function HexRadar({
+  requirement,
+  teamSum,
+  values,
+  showValues = false,
+  frame = true,
+  size = 260,
+}: Props) {
   const cx = size / 2
   const cy = size / 2
   const radius = size / 2 - 30
@@ -35,9 +54,9 @@ export function HexRadar({ requirement, teamSum, size = 260 }: Props) {
   return (
     <svg
       viewBox={`0 0 ${size} ${size}`}
-      className={styles.radar}
+      className={`${styles.radar} ${frame ? '' : styles.flush}`}
       role="img"
-      aria-label="Radar da missão contra o time"
+      aria-label="Radar de atributos"
     >
       {RINGS.map((scale) => (
         <polygon key={scale} className={styles.grid} points={ringPoints(scale)} />
@@ -51,11 +70,17 @@ export function HexRadar({ requirement, teamSum, size = 260 }: Props) {
             <text className={styles.label} x={label.x} y={label.y} textAnchor="middle">
               {ATTR_SHORT_PT[key]}
             </text>
+            {showValues && values && (
+              <text className={styles.value} x={label.x} y={label.y + 10} textAnchor="middle">
+                {Math.round(values[key])}
+              </text>
+            )}
           </g>
         )
       })}
-      <polygon className={styles.requirement} points={valuePoints(requirement)} />
-      <polygon className={styles.team} points={valuePoints(teamSum)} />
+      {requirement && <polygon className={styles.requirement} points={valuePoints(requirement)} />}
+      {teamSum && <polygon className={styles.team} points={valuePoints(teamSum)} />}
+      {values && <polygon className={styles.team} points={valuePoints(values)} />}
     </svg>
   )
 }

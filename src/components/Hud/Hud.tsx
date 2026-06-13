@@ -13,11 +13,12 @@ interface HudProps {
   onSpeedChange?: (speed: GameSpeed) => void
 }
 
+// Ordem dos controles: 1x, 2x, 3x e por fim a pausa (hotkey "4") — PLAN §3.1.
 const SPEED_OPTIONS: { value: GameSpeed; label: string }[] = [
-  { value: 0, label: 'II' },
   { value: 1, label: '▶' },
   { value: 2, label: '▶▶' },
   { value: 3, label: '▶▶▶' },
+  { value: 0, label: 'II' },
 ]
 
 function formatClock(remainingMs: number): string {

@@ -12,15 +12,10 @@ import { createInitialState } from '../engine/state.ts'
 import { getCity, nodePos, nodesForCategory } from '../data/cities.ts'
 import { buildDaySchedule, type DefenseSlot } from '../engine/timeline.ts'
 import { createMissionInstance } from '../engine/missions.ts'
-import { generateDefenseEnemies } from '../engine/gymDefense.ts'
+import { enemySquadSizeForDay, generateDefenseEnemies } from '../engine/gymDefense.ts'
 import { createPokemon } from '../engine/leveling.ts'
 import { createRng, deriveSeed, type Rng } from '../engine/rng.ts'
-import {
-  DEFENSE_LIFETIME_MS,
-  ENEMY_SQUAD_MAX,
-  ENEMY_SQUAD_MIN,
-  MISSION_LIFETIME_MS,
-} from '../engine/balance.ts'
+import { DEFENSE_LIFETIME_MS, MISSION_LIFETIME_MS } from '../engine/balance.ts'
 import { STARTER_LEVEL } from '../engine/constants.ts'
 import { takeId, takeRng } from './runtime.ts'
 
@@ -54,7 +49,7 @@ export function setupDay(s: GameState): void {
 
 function buildDefense(s: GameState, slot: DefenseSlot, city: CityData): DefenseEvent {
   const rng = createRng(slot.seed)
-  const size = rng.int(ENEMY_SQUAD_MIN, ENEMY_SQUAD_MAX)
+  const size = enemySquadSizeForDay(rng, s.run.day)
   return {
     id: takeId(s, 'd'),
     pos: nodePos(city.graph, city.siteNodes.gym),
@@ -63,6 +58,7 @@ function buildDefense(s: GameState, slot: DefenseSlot, city: CityData): DefenseE
     status: 'scheduled',
     squadIds: [],
     enemies: generateDefenseEnemies(rng, s.run.day, size),
+    duels: [],
   }
 }
 
