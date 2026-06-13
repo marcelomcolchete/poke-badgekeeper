@@ -1,13 +1,226 @@
 /**
- * Gerador dos dados da Gen 1 (Fase 1).
+ * Gerador dos dados da Gen 1 (PLAN §1 Fase 1).
  *
- * Plano: buscar nomes/tipos/sprites via PokéAPI e combinar com um mapa CURADO de
- * atributos custom (Batalha/Inteligência/Carisma/Agilidade/Resistência/Percepção),
- * cadeia de evolução + nível de jogo (escala 1–10) e passivas, emitindo os arquivos
- * em `src/data/pokemon/`.
+ * Busca nomes/tipos/sprites/stats via PokéAPI e:
+ *  - deriva os 6 atributos custom (Batalha/Inteligência/Carisma/Agilidade/
+ *    Resistência/Percepção) a partir dos stats oficiais — mapa PROVISÓRIO,
+ *    a ser refinado com a lista curada do usuário (PLAN §4.1);
+ *  - remapeia os níveis de evolução canônicos para a escala 1–10 (PLAN §4.1.1);
+ *  - baixa as sprites front-default para public/sprites/.
  *
- * Stub intencional — implementação na Fase 1. Mantido no escopo do tsconfig.node
- * apenas como referência de estrutura; ainda não é executado.
+ * Emite (auto-gerados, não editar à mão):
+ *  - src/data/pokemon/species.generated.ts
+ *  - src/data/pokemon/evolutions.generated.ts
+ *
+ * Uso: node --experimental-strip-types scripts/buildPokemonData.ts
  */
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import type { AttrKey, PokemonType } from '../src/types/index.ts'
+import type { EvolutionStep, SpeciesBase } from '../src/data/types.ts'
 
-export {}
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const API = 'https://pokeapi.co/api/v2'
+const SPRITE_CDN = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon'
+const GEN1_MAX = 151
+const CONCURRENCY = 12
+
+const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n))
+const round = (n: number) => Math.round(n)
+
+const DISPLAY_OVERRIDES: Record<string, string> = {
+  'nidoran-f': 'Nidoran♀',
+  'nidoran-m': 'Nidoran♂',
+  'mr-mime': 'Mr. Mime',
+  farfetchd: "Farfetch'd",
+}
+
+function displayName(name: string): string {
+  if (DISPLAY_OVERRIDES[name]) return DISPLAY_OVERRIDES[name]
+  return name
+    .split('-')
+    .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+    .join(' ')
+}
+
+function idFromUrl(url: string): number {
+  const m = url.match(/\/(\d+)\/?$/)
+  return m ? Number(m[1]) : NaN
+}
+
+async function getJson(url: string): Promise<any> {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      const res = await fetch(url)
+      if (res.ok) return await res.json()
+    } catch {
+      // retry
+    }
+    await new Promise((r) => setTimeout(r, 300 * (attempt + 1)))
+  }
+  throw new Error(`Falha ao buscar ${url}`)
+}
+
+async function mapLimit<T, R>(
+  items: readonly T[],
+  limit: number,
+  fn: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  const out: R[] = new Array(items.length)
+  let cursor = 0
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (cursor < items.length) {
+      const i = cursor++
+      out[i] = await fn(items[i] as T, i)
+    }
+  })
+  await Promise.all(workers)
+  return out
+}
+
+/** Stat oficial (≈20–130) → atributo base (10–50). */
+function attrFromRaw(raw: number): number {
+  return clamp(round(10 + ((raw - 20) / (130 - 20)) * 40), 10, 50)
+}
+
+type StatMap = Record<string, number>
+
+/** Deriva os 6 atributos custom dos stats oficiais (heurística provisória — PLAN §4.1). */
+function deriveAttrs(s: StatMap): Record<AttrKey, number> {
+  const atk = s['attack'] ?? 20
+  const def = s['defense'] ?? 20
+  const hp = s['hp'] ?? 20
+  const spa = s['special-attack'] ?? 20
+  const spd = s['special-defense'] ?? 20
+  const spe = s['speed'] ?? 20
+  return {
+    batalha: attrFromRaw(atk),
+    inteligencia: attrFromRaw((spa + spd) / 2),
+    carisma: attrFromRaw((hp + spa) / 2),
+    agilidade: attrFromRaw(spe),
+    resistencia: attrFromRaw((def + hp) / 2),
+    percepcao: attrFromRaw((spd + spe) / 2),
+  }
+}
+
+/** Nível de evolução canônico → escala 1–10 (PLAN §4.1.1). null = pedra/troca/amizade. */
+function remapLevel(min: number | null, parentLevel: number): number {
+  let lvl = min == null ? 5 : clamp(round(min / 5), 2, 9)
+  if (parentLevel > 0) lvl = clamp(Math.max(lvl, parentLevel + 1), 2, 9)
+  return lvl
+}
+
+/** Tipos da Gen 1: usa `past_types` quando existe (ex.: Magnemite era Electric puro;
+ *  Clefairy/Jigglypuff/Mr. Mime eram Normal/Psychic antes do retcon de Fairy/Steel). */
+function gen1Types(p: any): PokemonType[] {
+  const source = p.past_types?.length ? p.past_types[0].types : p.types
+  return source
+    .slice()
+    .sort((a: any, b: any) => a.slot - b.slot)
+    .map((t: any) => t.type.name as PokemonType)
+}
+
+async function downloadSprite(id: number, spriteDir: string): Promise<void> {
+  if (existsSync(resolve(spriteDir, `${id}.png`))) return
+  try {
+    const res = await fetch(`${SPRITE_CDN}/${id}.png`)
+    if (!res.ok) return
+    const buf = Buffer.from(await res.arrayBuffer())
+    writeFileSync(resolve(spriteDir, `${id}.png`), buf)
+  } catch {
+    // sprite ausente é não-fatal
+  }
+}
+
+function serializeAttrs(a: Record<AttrKey, number>): string {
+  return (
+    `{ batalha: ${a.batalha}, inteligencia: ${a.inteligencia}, carisma: ${a.carisma}, ` +
+    `agilidade: ${a.agilidade}, resistencia: ${a.resistencia}, percepcao: ${a.percepcao} }`
+  )
+}
+
+async function main(): Promise<void> {
+  const spriteDir = resolve(ROOT, 'public/sprites')
+  const pokemonDir = resolve(ROOT, 'src/data/pokemon')
+  mkdirSync(spriteDir, { recursive: true })
+  mkdirSync(pokemonDir, { recursive: true })
+
+  const ids = Array.from({ length: GEN1_MAX }, (_, i) => i + 1)
+
+  console.log(`Buscando ${GEN1_MAX} Pokémon + sprites...`)
+  const species: SpeciesBase[] = await mapLimit(ids, CONCURRENCY, async (id) => {
+    const p = await getJson(`${API}/pokemon/${id}`)
+    const stats: StatMap = {}
+    for (const st of p.stats) stats[st.stat.name] = st.base_stat
+    const types = gen1Types(p)
+    await downloadSprite(id, spriteDir)
+    return {
+      id,
+      name: p.name,
+      displayName: displayName(p.name),
+      types,
+      baseAttrs: deriveAttrs(stats),
+      spritePath: `/sprites/${id}.png`,
+    }
+  })
+
+  console.log('Resolvendo cadeias de evolução...')
+  const chainUrls = new Set<string>()
+  await mapLimit(ids, CONCURRENCY, async (id) => {
+    const sp = await getJson(`${API}/pokemon-species/${id}`)
+    if (sp.evolution_chain?.url) chainUrls.add(sp.evolution_chain.url)
+  })
+
+  const steps: EvolutionStep[] = []
+  const walk = (node: any, parentLevel: number): void => {
+    const fromId = idFromUrl(node.species.url)
+    for (const child of node.evolves_to) {
+      const toId = idFromUrl(child.species.url)
+      const min: number | null = child.evolution_details?.[0]?.min_level ?? null
+      const lvl = remapLevel(min, parentLevel)
+      if (fromId <= GEN1_MAX && toId <= GEN1_MAX) steps.push({ from: fromId, to: toId, atLevel: lvl })
+      walk(child, lvl)
+    }
+  }
+  await mapLimit([...chainUrls], CONCURRENCY, async (url) => {
+    const chain = await getJson(url)
+    walk(chain.chain, 0)
+  })
+
+  species.sort((a, b) => a.id - b.id)
+  steps.sort((a, b) => a.from - b.from || a.to - b.to)
+
+  const speciesBody = species
+    .map(
+      (s) =>
+        `  { id: ${s.id}, name: ${JSON.stringify(s.name)}, displayName: ${JSON.stringify(
+          s.displayName,
+        )}, types: ${JSON.stringify(s.types)}, baseAttrs: ${serializeAttrs(
+          s.baseAttrs,
+        )}, spritePath: ${JSON.stringify(s.spritePath)} },`,
+    )
+    .join('\n')
+
+  const evoBody = steps
+    .map((e) => `  { from: ${e.from}, to: ${e.to}, atLevel: ${e.atLevel} },`)
+    .join('\n')
+
+  const header = '// AUTO-GERADO por scripts/buildPokemonData.ts — não editar à mão.\n'
+
+  writeFileSync(
+    resolve(pokemonDir, 'species.generated.ts'),
+    `${header}import type { SpeciesBase } from '../types.ts'\n\nexport const SPECIES_BASE: SpeciesBase[] = [\n${speciesBody}\n]\n`,
+  )
+  writeFileSync(
+    resolve(pokemonDir, 'evolutions.generated.ts'),
+    `${header}import type { EvolutionStep } from '../types.ts'\n\nexport const EVOLUTIONS: EvolutionStep[] = [\n${evoBody}\n]\n`,
+  )
+
+  console.log(`OK: ${species.length} espécies, ${steps.length} passos de evolução.`)
+}
+
+main().catch((err) => {
+  console.error(err)
+  process.exit(1)
+})

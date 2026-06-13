@@ -24,4 +24,10 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'error',
     },
   },
+  {
+    // Gerador de dados: lida com respostas não-tipadas da PokéAPI.
+    files: ['scripts/**/*.ts'],
+    languageOptions: { globals: globals.node },
+    rules: { '@typescript-eslint/no-explicit-any': 'off' },
+  },
 )

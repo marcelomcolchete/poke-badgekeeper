@@ -1,7 +1,7 @@
 {
   "name": "poke-badgekeeper",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Poke BadgeKeeper — fan game não-comercial de gerenciamento de ginásio Pokémon (Gen 1).",
   "type": "module",
   "scripts": {

@@ -11,8 +11,13 @@ Plano de design completo em [`docs/PLAN.md`](docs/PLAN.md).
 
 ## Status
 
-**Fase 0 — Setup** (scaffold). O projeto roda; engine pura, persistência e direção de arte
-estão estabelecidas. Próximas fases: dados da Gen 1, engine de jogo, orquestração e UI.
+**Fase 1 — Dados** concluída. As 151 espécies da Gen 1 (tipos da época, atributos custom
+derivados, evolução remapeada 1–10), a tabela de tipos Gen 1, 8 cidades, itens, modelos de
+missão e passivas estão em `src/data/`, com testes de integridade. Próximas fases: engine de
+jogo (mecânicas + testes), orquestração em tempo real e UI.
+
+> Os atributos custom são **derivados provisoriamente** dos stats oficiais (heurística em
+> `scripts/buildPokemonData.ts`) — a serem refinados com a lista curada.
 
 ## Stack
 
