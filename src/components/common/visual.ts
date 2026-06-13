@@ -1,7 +1,7 @@
 // Rótulos em PT e cor por tipo para a UI (PLAN §2.1). As cores canônicas dos 15
 // tipos vivem como variáveis CSS (--type-*) em styles/theme.css.
 
-import type { AttrKey, PokemonType } from '../../types/index.ts'
+import type { AttrKey, PokemonType, Rarity } from '../../types/index.ts'
 
 export const TYPE_LABEL_PT: Record<PokemonType, string> = {
   normal: 'Normal',
@@ -41,4 +41,20 @@ export const ATTR_SHORT_PT: Record<AttrKey, string> = {
 
 export function typeColorVar(type: PokemonType): string {
   return `var(--type-${type})`
+}
+
+export const RARITY_LABEL_PT: Record<Rarity, string> = {
+  common: 'Comum',
+  uncommon: 'Incomum',
+  rare: 'Raro',
+  epic: 'Épico',
+  legend: 'Lendário',
+}
+
+export const RARITY_COLOR: Record<Rarity, string> = {
+  common: '#9aa0b5',
+  uncommon: '#5fbf6f',
+  rare: '#4f86d6',
+  epic: '#a05fd0',
+  legend: '#e0a020',
 }
