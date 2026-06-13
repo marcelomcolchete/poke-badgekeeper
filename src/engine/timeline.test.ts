@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { DAY_LENGTH_MS, TOTAL_DAYS } from './constants.ts'
-import { CAPTURE_SPOTS_PER_DAY, SPAWN_WINDOW_FRACTION } from './balance.ts'
+import {
+  CAPTURE_SPOTS_PER_DAY,
+  DAY1_FIRST_MISSION_DELAY_MS,
+  SPAWN_WINDOW_FRACTION,
+} from './balance.ts'
 import { getCity, nodesForCategory } from '../data/cities.ts'
 import {
   buildDaySchedule,
@@ -72,13 +76,23 @@ describe('buildDaySchedule (PLAN §3.1/§4.8)', () => {
     }
   })
 
-  it('captura escolhe 2 áreas verdes distintas e válidas', () => {
+  it('captura escolhe CAPTURE_SPOTS_PER_DAY áreas verdes distintas e válidas, com horário', () => {
     const sched = buildDaySchedule(7, 9, PEWTER)
     expect(sched.captureSiteIndices).toHaveLength(CAPTURE_SPOTS_PER_DAY)
     expect(new Set(sched.captureSiteIndices).size).toBe(sched.captureSiteIndices.length)
+    expect(sched.captureSpawnsAtMs).toHaveLength(sched.captureSiteIndices.length)
     for (const i of sched.captureSiteIndices) {
       expect(i).toBeGreaterThanOrEqual(0)
       expect(i).toBeLessThan(PEWTER.siteNodes.green.length)
+    }
+    for (const at of sched.captureSpawnsAtMs) expect(at).toBeGreaterThanOrEqual(0)
+  })
+
+  it('no dia 1 a captura surge no início (0) e a 1ª missão só após o atraso de respiro', () => {
+    const sched = buildDaySchedule(7, 1, PEWTER)
+    for (const at of sched.captureSpawnsAtMs) expect(at).toBe(0)
+    if (sched.missions.length > 0) {
+      expect(sched.missions[0]?.atMs).toBeGreaterThanOrEqual(DAY1_FIRST_MISSION_DELAY_MS)
     }
   })
 

@@ -25,7 +25,7 @@ export function tick(s: GameState, deltaMs: number): void {
 
 function processMissions(s: GameState, now: number): void {
   for (const mission of s.missions) {
-    promoteMission(mission, now)
+    promoteMission(s, mission, now)
     if (mission.status === 'available' && now >= mission.expiresAtMs) {
       expireMission(s, mission)
     } else if (

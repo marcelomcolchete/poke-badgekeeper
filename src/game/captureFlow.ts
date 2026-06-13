@@ -19,6 +19,8 @@ export function startSearch(s: GameState, searcherId: string, spotIndex: number)
   if (s.captureSearches.some((c) => c.searcherId === searcherId)) return
   const node = s.captureSpots[spotIndex]
   if (!node) return
+  // A área só pode ser explorada depois de surgir no mapa (horário sorteado) — #7.
+  if (s.clock.dayElapsedMs < (s.captureSpotSpawnsAtMs[spotIndex] ?? 0)) return
 
   const city = getCity(s.run.cityIndex)
   const path = shortestPath(city.graph, city.siteNodes.gym, node)

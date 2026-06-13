@@ -11,6 +11,7 @@ import { DAY_LENGTH_MS, TOTAL_DAYS } from './constants.ts'
 import {
   CAPTURE_SPOTS_PER_DAY,
   DAILY_CATEGORY_POOL,
+  DAY1_FIRST_MISSION_DELAY_MS,
   MAX_DEFENSES,
   MAX_MISSIONS,
   MIN_DEFENSES,
@@ -62,6 +63,8 @@ export interface DaySchedule {
   defenses: DefenseSlot[]
   /** Índices das áreas verdes (city.siteNodes.green) que recebem captura hoje. */
   captureSiteIndices: number[]
+  /** Horário (ms de jogo) em que cada captura surge — alinhado a captureSiteIndices. */
+  captureSpawnsAtMs: number[]
 }
 
 /** Dia (semeado) em que a missão única do museu surge na run — PLAN §3.1 (#5). */
@@ -100,6 +103,25 @@ function pickCaptureSpots(rng: Rng, greenCount: number): number[] {
   return rng.shuffle(indices).slice(0, n)
 }
 
+/**
+ * No dia 1, desloca a agenda para que a 1ª missão só surja após o atraso de respiro
+ * (PLAN §3.1): mantém o espaçamento entre missões e a ordem.
+ */
+function delayFirstMissionOnDay1(day: number, missions: MissionSlot[]): MissionSlot[] {
+  if (day !== 1 || missions.length === 0) return missions
+  const earliest = missions[0]?.atMs ?? 0
+  const shift = Math.max(0, DAY1_FIRST_MISSION_DELAY_MS - earliest)
+  return shift === 0 ? missions : missions.map((m) => ({ ...m, atMs: m.atMs + shift }))
+}
+
+/**
+ * Horário de surgimento de cada captura: no dia 1 surge logo no início (0); nos demais
+ * dias, em horário aleatório dentro da janela do dia (PLAN §4.5, #7).
+ */
+function captureSpawns(rng: Rng, day: number, count: number): number[] {
+  return Array.from({ length: count }, () => (day === 1 ? 0 : randomTime(rng)))
+}
+
 /** Agenda completa do dia, reprodutível pelo seed da run + dia (PLAN §3.1/§4.8). */
 export function buildDaySchedule(seed: number, day: number, city: CityData): DaySchedule {
   const rng = createRng(deriveSeed(seed, day))
@@ -117,10 +139,13 @@ export function buildDaySchedule(seed: number, day: number, city: CityData): Day
   }
   missions.sort((a, b) => a.atMs - b.atMs)
 
+  const defenses = scheduleDefenses(rng, defensesForDay(day, city))
+  const captureSiteIndices = pickCaptureSpots(rng, city.siteNodes.green.length)
   return {
     day,
-    missions,
-    defenses: scheduleDefenses(rng, defensesForDay(day, city)),
-    captureSiteIndices: pickCaptureSpots(rng, city.siteNodes.green.length),
+    missions: delayFirstMissionOnDay1(day, missions),
+    defenses,
+    captureSiteIndices,
+    captureSpawnsAtMs: captureSpawns(rng, day, captureSiteIndices.length),
   }
 }

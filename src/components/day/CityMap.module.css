@@ -112,6 +112,12 @@
   animation: pulse 0.8s steps(2) infinite;
 }
 
+/* Missão já aceita: anel congelado (cheio), parado e levemente apagado — #4. */
+.ringBusy {
+  animation: none;
+  opacity: 0.82;
+}
+
 .icon {
   display: grid;
   place-items: center;
@@ -121,6 +127,15 @@
   background: var(--c-panel);
   border: 2px solid var(--c-ink);
   border-radius: 50%;
+}
+
+/* Marcador "!" padrão de toda missão (#1) — tipografia pixel, destaque vermelho. */
+.bang {
+  font-family: var(--font-pixel);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--c-dialog-cursor);
+  padding-bottom: 2px;
 }
 
 @keyframes bob {

@@ -4,7 +4,7 @@
 import { useState } from 'react'
 import type { Dispatch } from 'react'
 import type { Pokemon } from '../../types/index.ts'
-import type { GameState } from '../../engine/state.ts'
+import type { GameState, MissionInstance } from '../../engine/state.ts'
 import type { GameAction } from '../../game/actions.ts'
 import { MAX_DISPATCH, MIN_DISPATCH } from '../../engine/constants.ts'
 import { getCity } from '../../data/cities.ts'
@@ -29,8 +29,13 @@ export function MissionDispatch({ state, dispatch, missionId, onClose }: Props) 
   const [selected, setSelected] = useState<string[]>([])
   if (!mission) return null
 
-  const city = getCity(state.run.cityIndex)
   const template = getMissionTemplate(mission.templateId)
+  // Missão já aceita: painel de status (sem despacho) — o time está em campo (#4).
+  if (mission.status !== 'available') {
+    return <MissionStatus state={state} mission={mission} onClose={onClose} />
+  }
+
+  const city = getCity(state.run.cityIndex)
   const team: Pokemon[] = selected
     .map((id) => state.roster.find((p) => p.id === id))
     .filter((p): p is Pokemon => p !== undefined)
@@ -86,6 +91,54 @@ export function MissionDispatch({ state, dispatch, missionId, onClose }: Props) 
       <button type="button" className={styles.confirm} disabled={!valid} onClick={send}>
         Despachar ▶
       </button>
+    </Overlay>
+  )
+}
+
+const PHASE_LABEL: Record<string, string> = {
+  traveling: 'A caminho da missão',
+  inProgress: 'Em ação no local',
+  returning: 'Voltando ao ginásio',
+}
+
+/** Status de uma missão já aceita (sem despacho): fase atual, time em campo e chance. */
+function MissionStatus({
+  state,
+  mission,
+  onClose,
+}: {
+  state: GameState
+  mission: MissionInstance
+  onClose: () => void
+}) {
+  const template = getMissionTemplate(mission.templateId)
+  const team: Pokemon[] = mission.teamIds
+    .map((id) => state.roster.find((p) => p.id === id))
+    .filter((p): p is Pokemon => p !== undefined)
+  const probability = mission.pSuccess !== null ? Math.round(mission.pSuccess * 100) : null
+
+  return (
+    <Overlay title={`MISSÃO — ${template.name.toUpperCase()}`} onClose={onClose} wide>
+      <div className={styles.capture}>
+        <p className={styles.hint}>
+          {PHASE_LABEL[mission.status] ?? 'Em andamento'} — o time está em campo. Aguarde o retorno.
+        </p>
+        <div className={styles.stats}>
+          {probability !== null && (
+            <span>
+              Sucesso: <b>{probability}%</b>
+            </span>
+          )}
+          <span>
+            Time: <b>{team.length}</b>
+          </span>
+        </div>
+        <div className={styles.picker}>
+          {team.map((mon) => (
+            <PokemonCard key={mon.id} pokemon={mon} disabled />
+          ))}
+        </div>
+      </div>
     </Overlay>
   )
 }

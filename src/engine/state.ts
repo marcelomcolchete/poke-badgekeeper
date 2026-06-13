@@ -173,8 +173,10 @@ export interface GameState {
   /** Procuradores voltando ao ginásio após o encontro (PLAN §4.5). */
   captureReturns: CaptureReturn[]
   encounters: CaptureEncounter[]
-  /** Pontos de grama (ids do grafo) com captura ativa hoje (2 sorteados) — spots no mapa. */
+  /** Pontos de grama (ids do grafo) com captura ativa hoje (1×/dia) — spots no mapa. */
   captureSpots: string[]
+  /** Horário (ms de jogo) em que cada spot de captura surge no mapa — alinhado a captureSpots. */
+  captureSpotSpawnsAtMs: number[]
   approval: Approval
   gold: number
   inventory: ItemStack[]
@@ -214,6 +216,7 @@ export function createInitialState(seed: number): GameState {
     captureReturns: [],
     encounters: [],
     captureSpots: [],
+    captureSpotSpawnsAtMs: [],
     approval: { stars: STARS_START, dailyGoalMet: false },
     gold: STARTING_GOLD,
     inventory: [],

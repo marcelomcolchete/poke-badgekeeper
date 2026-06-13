@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { PokemonType } from '../types/index.ts'
-import { LEVEL_MAX, LEVEL_MIN, MAX_ROSTER_SIZE } from './constants.ts'
+import { CAPTURE_CHOICES, LEVEL_MAX, LEVEL_MIN, MAX_ROSTER_SIZE } from './constants.ts'
 import { createRng } from './rng.ts'
 import { getSpecies } from '../data/pokemon/index.ts'
 import {
@@ -57,10 +57,10 @@ describe('wildLevel (PLAN §4.5)', () => {
 })
 
 describe('rollCandidates / rollEncounter (PLAN §4.5)', () => {
-  it('sorteia até 3 candidatos, todos dos tipos do ginásio e elegíveis', () => {
+  it('sorteia até CAPTURE_CHOICES candidatos, todos dos tipos do ginásio e elegíveis', () => {
     for (let seed = 0; seed < 50; seed++) {
       const candidates = rollCandidates(createRng(seed), GYM_TYPES, 5)
-      expect(candidates.length).toBeLessThanOrEqual(3)
+      expect(candidates.length).toBeLessThanOrEqual(CAPTURE_CHOICES)
       for (const s of candidates) {
         expect(s.types.some((t) => GYM_TYPES.includes(t))).toBe(true)
         expect(5).toBeGreaterThanOrEqual(s.minWildLevel) // filtro de evolução

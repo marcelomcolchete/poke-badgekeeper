@@ -16,13 +16,18 @@
 
 .sidebar {
   position: absolute;
-  left: 10px;
+  left: 12px;
   top: 50%;
   transform: translateY(-50%);
   z-index: 3;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
+  padding: 8px;
+  background: rgba(8, 26, 14, 0.62);
+  border: 2px solid var(--c-hud-border);
+  border-radius: 10px;
+  backdrop-filter: blur(2px);
 }
 
 .textbox {
@@ -34,38 +39,67 @@
   z-index: 3;
 }
 
-.sideBtn,
-.sideBtnQuit {
+/* Botões de ação do treinador (#2): chip de ícone + label, cor por função, hover/active
+   evidentes. Pixel-art coeso, alto contraste sobre o mapa. */
+.actionBtn {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 9px;
+  width: 100%;
   font-family: var(--font-text);
-  font-size: 18px;
+  font-size: 19px;
   color: #fff;
-  background: rgba(28, 86, 50, 0.92);
-  border: 2px solid var(--c-btn-border);
+  background: var(--btn-bg, rgba(28, 86, 50, 0.95));
+  border: 2px solid var(--btn-border, var(--c-btn-border));
+  border-bottom-width: 4px;
   border-radius: var(--radius-pixel);
-  padding: 7px 12px;
+  padding: 8px 14px 8px 8px;
   white-space: nowrap;
   line-height: 1;
+  cursor: pointer;
+  transition:
+    transform 0.06s ease,
+    filter 0.1s ease;
 }
 
-.sideIcon {
-  font-size: 18px;
+.actionIcon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  font-size: 17px;
   line-height: 1;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.28);
+  flex: none;
 }
 
-.sideBtn:hover {
-  background: rgba(47, 143, 80, 0.96);
+.actionLabel {
+  letter-spacing: 0.04em;
 }
 
-.sideBtnQuit {
-  background: rgba(90, 29, 42, 0.9);
-  border-color: #a3414f;
+.actionBtn:hover {
+  filter: brightness(1.12);
 }
 
-.sideBtnQuit:hover {
-  background: rgba(122, 40, 57, 0.95);
+.actionBtn:active {
+  transform: translateY(2px);
+  border-bottom-width: 2px;
+}
+
+.actTeam {
+  --btn-bg: rgba(38, 110, 78, 0.95);
+  --btn-border: #76d18d;
+}
+
+.actReport {
+  --btn-bg: rgba(176, 132, 18, 0.95);
+  --btn-border: #ffcb05;
+}
+
+.actQuit {
+  --btn-bg: rgba(122, 40, 57, 0.95);
+  --btn-border: #e84040;
 }
 
 .report {
@@ -80,6 +114,23 @@
 
 .report b {
   color: var(--c-hud-accent);
+}
+
+.goalMet {
+  color: var(--c-hp-high) !important;
+}
+
+.goalNote {
+  font-size: 15px;
+  color: var(--c-hud-muted);
+}
+
+.reward {
+  margin-top: 10px;
+  font-family: var(--font-text);
+  font-size: 18px;
+  color: var(--c-hud-accent);
+  text-align: center;
 }
 
 .quitText {

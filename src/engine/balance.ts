@@ -51,8 +51,8 @@ export const KEEN_EYE_SEARCH_FACTOR = 0.5
 /** Economia §4.6: ouro base por defesa de ginásio vencida. */
 export const GOLD_BASE_PER_DEFENSE = 100
 
-/** Aprovação §4.7: fração das missões do dia que define a meta. */
-export const MISSION_GOAL_FRACTION = 0.6
+/** Aprovação §4.7: fração das missões do dia que define a meta (metade, arredondando p/ cima). */
+export const MISSION_GOAL_FRACTION = 0.5
 
 /** Curva de dificuldade §4.8: faixa de missões/defesas por dia (×fatorCidade). */
 export const MIN_MISSIONS = 3
@@ -114,8 +114,11 @@ export const DAILY_CATEGORY_POOL: MissionCategory[] = [
   'mart',
 ]
 
-/** Captura §4.5: quantas áreas verdes recebem captura por dia (sorteadas). */
-export const CAPTURE_SPOTS_PER_DAY = 2
+/** Captura §4.5: quantas áreas verdes recebem captura por dia (1×/dia, horário sorteado). */
+export const CAPTURE_SPOTS_PER_DAY = 1
+
+/** Atraso (ms de jogo) da 1ª missão no dia 1 — janela de respiro no início da run (§3.1). */
+export const DAY1_FIRST_MISSION_DELAY_MS = 15_000
 
 /** Museu: a missão única da run cai num dia sorteado nesta faixa (evita os extremos). */
 export const MUSEUM_DAY_MIN = 3
