@@ -4,7 +4,7 @@ import { useState } from 'react'
 import type { Dispatch } from 'react'
 import type { GameState } from '../../engine/state.ts'
 import type { GameAction } from '../../game/actions.ts'
-import { TOTAL_DAYS } from '../../engine/constants.ts'
+import { MAX_ROSTER_SIZE, TOTAL_DAYS } from '../../engine/constants.ts'
 import { ITEMS } from '../../data/items.ts'
 import { canAfford } from '../../engine/economy.ts'
 import { PokemonCard } from '../PokemonCard/PokemonCard.tsx'
@@ -61,7 +61,7 @@ export function MorningScreen({ state, dispatch }: Props) {
 
       <section className={styles.team}>
         <div className={styles.teamHead}>
-          <span className={styles.sectionTitle}>SEU TIME ({state.roster.length}/9)</span>
+          <span className={styles.sectionTitle}>SEU TIME ({state.roster.length}/{MAX_ROSTER_SIZE})</span>
           <button type="button" className={styles.ghostBtn} onClick={() => setTeamOpen(true)}>
             Gerenciar ▸
           </button>

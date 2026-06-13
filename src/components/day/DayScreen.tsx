@@ -100,7 +100,7 @@ export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) 
 
 function dayHint(state: GameState): string {
   if (state.defenses.some((d) => d.status === 'active')) {
-    return 'Defesa no ginásio! Clique no símbolo de luta e monte um esquadrão (≥3).'
+    return 'Defesa no ginásio! Clique no símbolo de luta e monte um esquadrão (≥1).'
   }
   if (state.encounters.length > 0) return 'Um encontro de captura está pronto na área marcada!'
   const available = state.missions.filter((m) => m.status === 'available').length
