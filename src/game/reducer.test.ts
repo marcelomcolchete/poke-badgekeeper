@@ -1,0 +1,222 @@
+import { describe, expect, it } from 'vitest'
+import type { DefenseEvent, GameState, MissionInstance } from '../engine/state.ts'
+import { createInitialState } from '../engine/state.ts'
+import type { EnemyUnit, Pokemon, PokemonType } from '../types/index.ts'
+import { makeAttrs, makeMon } from '../engine/testkit.ts'
+import { reducer } from './reducer.ts'
+import { autoSeedRun } from './setup.ts'
+
+const SEED = 777
+const GYM: PokemonType[] = ['rock', 'water', 'grass']
+
+function strong(id: string): Pokemon {
+  return makeMon({ id, baseAttrs: makeAttrs({}, 50) })
+}
+
+function controlledMission(over: Partial<MissionInstance> = {}): MissionInstance {
+  return {
+    id: 'm1',
+    templateId: 'patrol',
+    pos: { x: 0.5, y: 0.5 },
+    spawnAtMs: 0,
+    expiresAtMs: 10_000,
+    status: 'available',
+    teamIds: [],
+    travelEndsAtMs: null,
+    resolveAtMs: null,
+    result: null,
+    pSuccess: null,
+    ...over,
+  }
+}
+
+function dayState(over: Partial<GameState> = {}): GameState {
+  return { ...createInitialState(SEED), run: { cityIndex: 0, day: 1, seed: SEED, phase: 'DAY' }, gym: { types: GYM }, ...over }
+}
+
+describe('reducer — pureza e determinismo', () => {
+  it('não muta a entrada e é determinístico', () => {
+    const base = dayState({ roster: [strong('a')], missions: [controlledMission()] })
+    const a = reducer(base, { type: 'TICK', deltaMs: 5_000 })
+    const b = reducer(base, { type: 'TICK', deltaMs: 5_000 })
+    expect(a).toEqual(b)
+    expect(base.clock.dayElapsedMs).toBe(0)
+    expect(a.clock.dayElapsedMs).toBe(5_000)
+  })
+
+  it('SET_SPEED altera a velocidade do relógio', () => {
+    const s = reducer(dayState(), { type: 'SET_SPEED', speed: 3 })
+    expect(s.clock.speed).toBe(3)
+  })
+
+  it('TICK não avança fora da fase DAY', () => {
+    const morning = createInitialState(SEED) // phase MORNING
+    const s = reducer(morning, { type: 'TICK', deltaMs: 5_000 })
+    expect(s.clock.dayElapsedMs).toBe(0)
+  })
+})
+
+describe('fluxo de missão (PLAN §4.2/§4.3)', () => {
+  it('aceitar despacha o time; o tempo resolve e concede XP no sucesso', () => {
+    let s = dayState({ roster: [strong('a'), strong('b'), strong('c')], missions: [controlledMission()] })
+    s = reducer(s, { type: 'ACCEPT_MISSION', missionId: 'm1', teamIds: ['a', 'b', 'c'] })
+    expect(s.missions[0]?.status).toBe('traveling')
+    expect(s.roster.every((p) => p.status === 'traveling')).toBe(true)
+
+    s = reducer(s, { type: 'TICK', deltaMs: 200_000 }) // passa do resolveAt e do fim do dia
+    expect(s.missions[0]?.status).toBe('resolved')
+    expect(s.missions[0]?.result).toBe('success') // 3× atributo 50 cobrem a exigência → P=1
+    expect(s.roster.every((p) => p.status === 'idle')).toBe(true)
+    expect(s.roster.every((p) => p.level > 1 || p.xp > 0)).toBe(true) // ganhou XP
+    expect(s.run.phase).toBe('SUMMARY')
+    expect(s.today.missionResults).toHaveLength(1)
+  })
+
+  it('aceitar com time inválido (vazio) é no-op', () => {
+    let s = dayState({ roster: [strong('a')], missions: [controlledMission()] })
+    s = reducer(s, { type: 'ACCEPT_MISSION', missionId: 'm1', teamIds: [] })
+    expect(s.missions[0]?.status).toBe('available')
+  })
+
+  it('missão disponível ignorada expira no timer', () => {
+    let s = dayState({ roster: [strong('a')], missions: [controlledMission({ expiresAtMs: 3_000 })] })
+    s = reducer(s, { type: 'TICK', deltaMs: 4_000 })
+    expect(s.missions[0]?.status).toBe('resolved')
+    expect(s.missions[0]?.result).toBe('expired')
+    expect(s.today.missionResults).toHaveLength(1)
+  })
+})
+
+describe('fluxo de defesa (PLAN §4.4/§4.6)', () => {
+  function defense(enemies: EnemyUnit[]): DefenseEvent {
+    return {
+      id: 'd1',
+      pos: { x: 0.5, y: 0.2 },
+      spawnAtMs: 0,
+      expiresAtMs: 40_000,
+      status: 'active',
+      squadIds: [],
+      enemies,
+    }
+  }
+
+  it('vitória rende ouro e libera o esquadrão', () => {
+    const weak: EnemyUnit[] = [
+      { battle: 1, types: ['normal'] },
+      { battle: 1, types: ['normal'] },
+    ]
+    let s = dayState({ roster: [strong('a'), strong('b'), strong('c')], defenses: [defense(weak)] })
+    s.today.defensesTotal = 1
+    s = reducer(s, { type: 'ASSIGN_DEFENSE', defenseId: 'd1', squadIds: ['a', 'b', 'c'] })
+    expect(s.defenses[0]?.status).toBe('won')
+    expect(s.gold).toBeGreaterThan(0)
+    expect(s.today.defensesWon).toBe(1)
+    expect(s.roster.every((p) => p.status === 'idle')).toBe(true)
+  })
+
+  it('esquadrão com menos de 3 é rejeitado', () => {
+    let s = dayState({ roster: [strong('a'), strong('b')], defenses: [defense([{ battle: 1, types: ['normal'] }])] })
+    s = reducer(s, { type: 'ASSIGN_DEFENSE', defenseId: 'd1', squadIds: ['a', 'b'] })
+    expect(s.defenses[0]?.status).toBe('active')
+  })
+})
+
+describe('fluxo de captura (PLAN §4.5)', () => {
+  function searching(): GameState {
+    let s = dayState({ roster: [makeMon({ id: 'a', baseAttrs: makeAttrs({ percepcao: 50 }) })] })
+    s = reducer(s, { type: 'START_SEARCH', searcherId: 'a', spotIndex: 0 })
+    return reducer(s, { type: 'TICK', deltaMs: 30_000 }) // conclui a busca (sem encerrar o dia)
+  }
+
+  it('buscar gera encontro; capturar adiciona ao roster', () => {
+    const s = searching()
+    expect(s.encounters).toHaveLength(1)
+    const pick = s.encounters[0]?.candidateSpeciesIds[0]
+    expect(pick).toBeDefined()
+    const after = reducer(s, { type: 'CAPTURE_PICK', searcherId: 'a', speciesId: pick as number })
+    expect(after.roster).toHaveLength(2)
+    expect(after.today.capturedIds).toHaveLength(1)
+    expect(after.roster.find((p) => p.id === 'a')?.status).toBe('idle')
+  })
+
+  it('dispensar volta sem capturar; seguir procurando reinicia a busca', () => {
+    const s = searching()
+    const dismissed = reducer(s, { type: 'CAPTURE_DISMISS', searcherId: 'a' })
+    expect(dismissed.encounters).toHaveLength(0)
+    expect(dismissed.roster).toHaveLength(1)
+    expect(dismissed.roster[0]?.status).toBe('idle')
+
+    const kept = reducer(s, { type: 'CAPTURE_KEEP', searcherId: 'a' })
+    expect(kept.encounters).toHaveLength(0)
+    expect(kept.captureSearches).toHaveLength(1)
+  })
+
+  it('roster cheio (9) bloqueia a busca', () => {
+    const full = Array.from({ length: 9 }, (_, i) => strong(`r${i}`))
+    let s = dayState({ roster: full })
+    s = reducer(s, { type: 'START_SEARCH', searcherId: 'r0', spotIndex: 0 })
+    expect(s.captureSearches).toHaveLength(0)
+  })
+})
+
+describe('mercado e alocação (PLAN §4.6/§4.1)', () => {
+  it('comprar debita ouro; usar Potion cura', () => {
+    let s = createInitialState(SEED)
+    s.gold = 1000
+    s.roster = [makeMon({ id: 'a', baseAttrs: makeAttrs({ resistencia: 50 }), currentHp: 1 })]
+    s = reducer(s, { type: 'BUY_ITEM', itemId: 'potion', quantity: 2 })
+    expect(s.gold).toBe(600)
+    expect(s.inventory).toEqual([{ itemId: 'potion', quantity: 2 }])
+    s = reducer(s, { type: 'USE_ITEM', itemId: 'potion', targetId: 'a' })
+    expect(s.roster[0]?.currentHp).toBeGreaterThan(1)
+    expect(s.inventory).toEqual([{ itemId: 'potion', quantity: 1 }])
+  })
+
+  it('comprar sem ouro suficiente é no-op', () => {
+    let s = createInitialState(SEED)
+    s.gold = 50
+    s = reducer(s, { type: 'BUY_ITEM', itemId: 'potion' })
+    expect(s.gold).toBe(50)
+    expect(s.inventory).toHaveLength(0)
+  })
+
+  it('alocar gasta o ponto pendente do level-up', () => {
+    let s = createInitialState(SEED)
+    s.roster = [makeMon({ id: 'a', level: 2 })] // 1 ponto pendente
+    s = reducer(s, { type: 'ALLOCATE_POINT', pokemonId: 'a', attr: 'batalha' })
+    expect(s.roster[0]?.allocations.batalha).toBe(1)
+    const again = reducer(s, { type: 'ALLOCATE_POINT', pokemonId: 'a', attr: 'batalha' })
+    expect(again.roster[0]?.allocations.batalha).toBe(1) // sem pontos → no-op
+  })
+})
+
+describe('ciclo do dia headless (PLAN §3)', () => {
+  it('MORNING→DAY agenda eventos; o dia inteiro fecha em SUMMARY', () => {
+    let s = autoSeedRun(SEED)
+    expect(s.run.phase).toBe('MORNING')
+    expect(s.roster).toHaveLength(1)
+    expect(s.gym.types).toHaveLength(3)
+
+    s = reducer(s, { type: 'ADVANCE_PHASE' })
+    expect(s.run.phase).toBe('DAY')
+    expect(s.clock.speed).toBe(1)
+    expect(s.missions.length).toBeGreaterThan(0)
+    expect(s.missions.every((m) => m.status === 'scheduled')).toBe(true)
+
+    s = reducer(s, { type: 'TICK', deltaMs: s.clock.dayLengthMs })
+    expect(s.run.phase).toBe('SUMMARY')
+    expect(s.missions.every((m) => m.status === 'resolved')).toBe(true)
+    expect(s.history).toHaveLength(1)
+  })
+
+  it('SUMMARY→próximo dia cura o roster e limpa eventos', () => {
+    let s = autoSeedRun(SEED)
+    s = reducer(s, { type: 'ADVANCE_PHASE' }) // DAY
+    s = reducer(s, { type: 'TICK', deltaMs: s.clock.dayLengthMs }) // SUMMARY
+    s = reducer(s, { type: 'ADVANCE_PHASE' }) // próximo dia
+    expect(s.run.day).toBe(2)
+    expect(s.run.phase).toBe('MORNING')
+    expect(s.missions).toHaveLength(0)
+    expect(s.roster.every((p) => p.currentHp === p.maxHp && p.status === 'idle')).toBe(true)
+  })
+})
