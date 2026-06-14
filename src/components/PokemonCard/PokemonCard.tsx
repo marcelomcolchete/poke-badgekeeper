@@ -5,10 +5,11 @@ import { getNatureEntry, NATURE_LABEL_PT } from '../../data/natures.ts'
 import { LEVEL_MAX } from '../../engine/constants.ts'
 import { effectiveAttr, effectiveAttrs } from '../../engine/attributes.ts'
 import { pendingPoints, xpToNext } from '../../engine/leveling.ts'
+import { pokemonRank } from '../../engine/ranking.ts'
 import { HexRadar } from '../HexRadar/HexRadar.tsx'
 import { TypeBadge } from '../common/TypeBadge.tsx'
 import { HpBar } from '../common/HpBar.tsx'
-import { RARITY_COLOR, RARITY_LABEL_PT, STATUS_LABEL_PT } from '../common/visual.ts'
+import { RANK_COLOR, RARITY_COLOR, RARITY_LABEL_PT, STATUS_LABEL_PT } from '../common/visual.ts'
 import { displayNameOf, genderColor, genderSymbol } from '../common/naming.ts'
 import styles from './PokemonCard.module.css'
 
@@ -26,6 +27,7 @@ export function PokemonCard({ pokemon, selected = false, disabled = false, toggl
   const pending = pendingPoints(pokemon)
   const atMaxLevel = pokemon.level >= LEVEL_MAX
   const natureEntry = pokemon.nature ? getNatureEntry(pokemon.nature) : null
+  const rank = pokemonRank(pokemon)
   const xpNeeded = xpToNext(pokemon.level)
   const xpPct = atMaxLevel ? 100 : Math.min(100, (pokemon.xp / xpNeeded) * 100)
   const evolvesAt = species.evolvesTo?.atLevel
@@ -45,6 +47,10 @@ export function PokemonCard({ pokemon, selected = false, disabled = false, toggl
       disabled={disabled || !onClick}
       aria-pressed={toggle ? selected : undefined}
     >
+      <span className={styles.rank} style={{ color: RANK_COLOR[rank], borderColor: RANK_COLOR[rank] }} aria-label={`Rank ${rank}`}>
+        <span className={styles.rankTag}>RANK</span>
+        <span className={styles.rankLetter}>{rank}</span>
+      </span>
       <div className={styles.head}>
         <img className={styles.sprite} src={species.spritePath} alt={species.displayName} />
         <div className={styles.id}>
@@ -65,6 +71,7 @@ export function PokemonCard({ pokemon, selected = false, disabled = false, toggl
             <span className={styles.rarity} style={{ color: RARITY_COLOR[species.rarity] }}>
               {RARITY_LABEL_PT[species.rarity]}
             </span>
+            {pending > 0 && <span className={styles.pending}>+{pending}★</span>}
           </span>
           {pokemon.nature && (
             <span className={styles.nature}>
@@ -77,7 +84,6 @@ export function PokemonCard({ pokemon, selected = false, disabled = false, toggl
             ))}
           </span>
         </div>
-        {pending > 0 && <span className={styles.pending}>+{pending}★</span>}
       </div>
 
       <div className={styles.radarBox}>

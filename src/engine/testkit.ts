@@ -42,6 +42,7 @@ export function makeMon(overrides: Partial<Pokemon> = {}): Pokemon {
     xp: overrides.xp ?? 0,
     types: overrides.types ?? ['normal'],
     baseAttrs: overrides.baseAttrs ?? makeAttrs(),
+    ivs: overrides.ivs ?? zeroAttrs(),
     allocations: overrides.allocations ?? zeroAttrs(),
     currentHp: 0,
     maxHp: 0,

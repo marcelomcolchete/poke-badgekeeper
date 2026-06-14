@@ -46,6 +46,13 @@ describe('effectiveAttr', () => {
       expect(attrs[k]).toBeLessThanOrEqual(ATTR_MAX)
     }
   })
+
+  it('soma a variação de encontro (IV), podendo cair até 0', () => {
+    const up = makeMon({ baseAttrs: makeAttrs({ batalha: 30 }), ivs: { ...zeroAttrs(), batalha: 10 } })
+    expect(effectiveAttr(up, 'batalha')).toBe(40) // 30 + 10
+    const down = makeMon({ baseAttrs: makeAttrs({ resistencia: 10 }), ivs: { ...zeroAttrs(), resistencia: -10 } })
+    expect(effectiveAttr(down, 'resistencia')).toBe(0) // 10 − 10, piso 0
+  })
 })
 
 describe('teamAxisSum / teamSum', () => {

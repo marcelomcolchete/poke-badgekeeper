@@ -38,6 +38,15 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Atributo no teto (60): destaque dourado e não pode mais ser upado — PLAN §4.1. */
+.valueMax {
+  fill: #e0a020;
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Spokes e labels com cor de natureza */
 .spokeBoosted {
   stroke: #4a90d9;

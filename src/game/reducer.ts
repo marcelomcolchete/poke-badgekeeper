@@ -45,7 +45,7 @@ export function reducer(state: GameState, action: GameAction): GameState {
       startSearch(s, action.searcherId, action.spotIndex)
       break
     case 'CAPTURE_PICK':
-      capturePick(s, action.searcherId, action.speciesId, action.releaseId)
+      capturePick(s, action.searcherId, action.candidateIndex, action.releaseId)
       break
     case 'CAPTURE_DISMISS':
       captureDismiss(s, action.searcherId)

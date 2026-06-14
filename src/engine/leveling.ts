@@ -8,9 +8,9 @@ import { rollNature } from '../data/natures.ts'
 import type { Rng } from './rng.ts'
 import { getSpecies } from '../data/pokemon/index.ts'
 import { rollGender } from './gender.ts'
-import { HP_MIN, LEVEL_MAX, LEVEL_MIN } from './constants.ts'
+import { HP_MIN, IV_MAX, IV_MIN, LEVEL_MAX, LEVEL_MIN } from './constants.ts'
 import { RARITY_XP_RATE, XP_TO_NEXT_BASE } from './balance.ts'
-import { maxHpOf, recomputeMaxHp, zeroAttrs } from './attributes.ts'
+import { mapAttrs, maxHpOf, recomputeMaxHp, zeroAttrs } from './attributes.ts'
 import { clamp } from './math.ts'
 
 /** XP para subir do nível `level` → `level+1`; Infinity no nível máximo (PLAN §4.1). */
@@ -44,6 +44,11 @@ function randomAllocations(rng: Rng, points: number): Attrs {
   return allocations
 }
 
+/** Variação de encontro: cada eixo recebe um inteiro em [−10, +10] (PLAN §4.1). */
+function randomIvs(rng: Rng): Attrs {
+  return mapAttrs(() => rng.int(IV_MIN, IV_MAX))
+}
+
 export interface NewPokemonSpec {
   id: string
   speciesId: number
@@ -69,6 +74,8 @@ export function createPokemon(spec: NewPokemonSpec): Pokemon {
   const gender = rollGender(spec.rng, species.id)
   // Se nature for explicitamente fornecida (incluindo null), usa o valor; senão sorteia.
   const nature = 'nature' in spec ? (spec.nature ?? null) : rollNature(spec.rng)
+  // IVs por último: mantém estáveis as sequências de alocação/gênero/natureza já existentes.
+  const ivs = randomIvs(spec.rng)
   const draft: Pokemon = {
     id: spec.id,
     speciesId: species.id,
@@ -76,6 +83,7 @@ export function createPokemon(spec: NewPokemonSpec): Pokemon {
     xp: 0,
     types: [...species.types],
     baseAttrs: { ...species.baseAttrs },
+    ivs,
     allocations,
     currentHp: 0,
     maxHp: 0,

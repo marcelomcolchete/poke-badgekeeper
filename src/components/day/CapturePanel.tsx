@@ -25,8 +25,8 @@ export function CapturePanel({ state, dispatch, spotIndex, onClose }: Props) {
   const encounter = state.encounters.find((e) => e.spotIndex === spotIndex)
   const searching = state.captureSearches.some((c) => c.spotIndex === spotIndex)
   const full = rosterIsFull(state.roster)
-  // Espécie escolhida aguardando a escolha de quem descartar (só quando o roster está cheio).
-  const [discardFor, setDiscardFor] = useState<number | null>(null)
+  // Candidato escolhido (índice + espécie) aguardando a escolha de quem descartar (roster cheio).
+  const [discardFor, setDiscardFor] = useState<{ index: number; speciesId: number } | null>(null)
   // Após capturar, abre o modal de apelido para o Pokémon recém-pego (último capturado).
   const [awaitingRename, setAwaitingRename] = useState(false)
   const lastCapturedId = state.today.capturedIds.at(-1) ?? null
@@ -47,15 +47,15 @@ export function CapturePanel({ state, dispatch, spotIndex, onClose }: Props) {
     )
   }
 
-  const capture = (speciesId: number, releaseId?: string): void => {
+  const capture = (candidateIndex: number, releaseId?: string): void => {
     if (!encounter) return
-    dispatch({ type: 'CAPTURE_PICK', searcherId: encounter.searcherId, speciesId, releaseId })
+    dispatch({ type: 'CAPTURE_PICK', searcherId: encounter.searcherId, candidateIndex, releaseId })
     setAwaitingRename(true)
   }
 
   // Passo de descarte: time cheio + candidato escolhido → escolher quem liberar.
   if (encounter && discardFor !== null) {
-    const newcomer = getSpecies(discardFor).displayName
+    const newcomer = getSpecies(discardFor.speciesId).displayName
     return (
       <Overlay title="TIME CHEIO" onClose={onClose}>
         <div className={styles.capture}>
@@ -70,7 +70,7 @@ export function CapturePanel({ state, dispatch, spotIndex, onClose }: Props) {
                 <PokemonCard
                   key={mon.id}
                   pokemon={mon}
-                  onClick={() => capture(discardFor, mon.id)}
+                  onClick={() => capture(discardFor.index, mon.id)}
                 />
               ))}
           </div>
@@ -102,8 +102,8 @@ export function CapturePanel({ state, dispatch, spotIndex, onClose }: Props) {
             {encounter.candidateSpeciesIds.map((id, i) => (
               <PokemonCard
                 key={`${id}-${i}`}
-                pokemon={previewPokemon(id, encounter.level)}
-                onClick={() => (full ? setDiscardFor(id) : capture(id))}
+                pokemon={previewPokemon(id, encounter.level, { seed: encounter.candidateSeeds?.[i] })}
+                onClick={() => (full ? setDiscardFor({ index: i, speciesId: id }) : capture(i))}
               />
             ))}
           </div>

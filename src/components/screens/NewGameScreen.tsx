@@ -11,7 +11,7 @@ import { getCity } from '../../data/cities.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
 import { createRng, deriveSeed } from '../../engine/rng.ts'
 import { rollRecruitChoices, rollTypeChoices } from '../../engine/recruit.ts'
-import { STARTER_LEVEL } from '../../engine/constants.ts'
+import { RECRUIT_SEED_SALT, STARTER_LEVEL, STARTER_SEED_SALT } from '../../engine/constants.ts'
 import { PokemonCard } from '../PokemonCard/PokemonCard.tsx'
 import { Textbox } from '../Textbox/Textbox.tsx'
 import { TypeBadge } from '../common/TypeBadge.tsx'
@@ -81,7 +81,11 @@ export function NewGameScreen({ state, dispatch }: { state: GameState; dispatch:
           hint={`Seu inicial é um Pokémon de ${TYPE_LABEL_PT[city.primaryType]}, nível ${STARTER_LEVEL}. Em seguida você escolhe mais 1 tipo do ginásio.`}
         >
           <div className={styles.single}>
-            <PokemonCard pokemon={previewPokemon(city.starterSpeciesId, STARTER_LEVEL)} />
+            <PokemonCard
+              pokemon={previewPokemon(city.starterSpeciesId, STARTER_LEVEL, {
+                seed: deriveSeed(seed, STARTER_SEED_SALT),
+              })}
+            />
           </div>
           <NameField
             label="Dar um apelido ao seu inicial?"
@@ -119,7 +123,9 @@ export function NewGameScreen({ state, dispatch }: { state: GameState; dispatch:
             {recruitChoices.map((species, i) => (
               <PokemonCard
                 key={`${species.id}-${i}`}
-                pokemon={previewPokemon(species.id, 1)}
+                pokemon={previewPokemon(species.id, 1, {
+                  seed: deriveSeed(seed, RECRUIT_SEED_SALT, species.id),
+                })}
                 onClick={() => pickRecruit(species.id)}
               />
             ))}
@@ -130,9 +136,20 @@ export function NewGameScreen({ state, dispatch }: { state: GameState; dispatch:
       {stage.kind === 'confirm' && (
         <Section hint="Seu time inicial está pronto. Boa sorte, líder!">
           <div className={styles.cardGrid}>
-            <PokemonCard pokemon={previewPokemon(city.starterSpeciesId, STARTER_LEVEL, starterName.trim())} />
+            <PokemonCard
+              pokemon={previewPokemon(city.starterSpeciesId, STARTER_LEVEL, {
+                nickname: starterName.trim(),
+                seed: deriveSeed(seed, STARTER_SEED_SALT),
+              })}
+            />
             {chosenExtras.map((id, i) => (
-              <PokemonCard key={`${id}-${i}`} pokemon={previewPokemon(id, 1, recruitName.trim())} />
+              <PokemonCard
+                key={`${id}-${i}`}
+                pokemon={previewPokemon(id, 1, {
+                  nickname: recruitName.trim(),
+                  seed: deriveSeed(seed, RECRUIT_SEED_SALT, id),
+                })}
+              />
             ))}
           </div>
           {chosenExtras[0] !== undefined && (

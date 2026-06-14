@@ -16,8 +16,8 @@ import { enemySquadSizeForDay, generateDefenseEnemies } from '../engine/gymDefen
 import { createPokemon } from '../engine/leveling.ts'
 import { createRng, deriveSeed, type Rng } from '../engine/rng.ts'
 import { DEFENSE_LIFETIME_MS, MISSION_LIFETIME_MS } from '../engine/balance.ts'
-import { STARTER_LEVEL } from '../engine/constants.ts'
-import { takeId, takeRng } from './runtime.ts'
+import { RECRUIT_SEED_SALT, STARTER_LEVEL, STARTER_SEED_SALT } from '../engine/constants.ts'
+import { takeId } from './runtime.ts'
 
 /** Instancia a agenda do dia (missões/defesas 'scheduled') e arma o relógio (PLAN §4.8). */
 export function setupDay(s: GameState): void {
@@ -95,11 +95,13 @@ export function startRun(
   extraNicknames: string[] = [],
 ): void {
   s.gym.types = [...gymTypes]
+  // Seeds estáveis (não consomem o cursor da run): o card do preview no NewGameScreen
+  // usa exatamente os mesmos, então o Pokémon obtido = o exibido (natureza, IVs/rank).
   const starter = createPokemon({
     id: takeId(s, 'p'),
     speciesId: starterSpeciesId,
     level: STARTER_LEVEL,
-    rng: takeRng(s),
+    rng: createRng(deriveSeed(s.run.seed, STARTER_SEED_SALT)),
     nickname: cleanNickname(starterNickname),
   })
   const extras = extraSpeciesIds.map((speciesId, i) =>
@@ -107,7 +109,7 @@ export function startRun(
       id: takeId(s, 'p'),
       speciesId,
       level: LEVEL_MIN,
-      rng: takeRng(s),
+      rng: createRng(deriveSeed(s.run.seed, RECRUIT_SEED_SALT, speciesId)),
       nickname: cleanNickname(extraNicknames[i]),
     }),
   )

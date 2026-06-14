@@ -133,6 +133,8 @@ export interface CaptureEncounter {
   spotIndex: number
   level: number
   candidateSpeciesIds: number[]
+  /** Seed estável por candidato: preview = Pokémon capturado (natureza, IVs/rank) — §4.5. */
+  candidateSeeds: number[]
 }
 
 export interface ItemStack {

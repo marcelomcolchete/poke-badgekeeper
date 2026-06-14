@@ -25,6 +25,17 @@ export const SPECIES_BASE_MIN = 10
 export const SPECIES_BASE_MAX = 50
 export const ATTR_PER_POINT = 10
 
+/** Piso do atributo EFETIVO: 0, pois a variação de encontro (IV) pode zerar um eixo. */
+export const ATTR_EFFECTIVE_MIN = 0
+
+/** Variação por eixo sorteada no encontro/criação (IV): −10 a +10 (PLAN §4.1, naturezas). */
+export const IV_MIN = -10
+export const IV_MAX = 10
+
+/** Sub-seeds estáveis do novo jogo: tornam o card do preview = Pokémon obtido. */
+export const STARTER_SEED_SALT = 0x57a27
+export const RECRUIT_SEED_SALT = 0x5ec17
+
 /** Natureza: modificadores do valor por ponto alocado (+15 favorecido, +5 penalizado). */
 export const NATURE_BOOSTED_PER_POINT = 15
 export const NATURE_REDUCED_PER_POINT = 5
@@ -74,6 +85,8 @@ export const DRAFT_CHOICES = 3
  * volta (xpSeed) e retorno de captura com spotIndex/captured para o marcador do mapa.
  * v11: teto de atributos 60, XP do dia no relatório (today.xpEarned) e estrelas até 0 com
  * game over por reputação zerada (run.gameOverReason).
- * v12: sistema de naturezas (nature: Nature | null) em cada Pokémon do roster. */
-export const SAVE_VERSION = 12
+ * v12: sistema de naturezas (nature: Nature | null) em cada Pokémon do roster.
+ * v13: variação de encontro por eixo (ivs: Attrs, −10..+10) e ranking F–S derivado;
+ * candidateSeeds nos encontros para preview = captura. */
+export const SAVE_VERSION = 13
 export const SAVE_KEY = 'poke-badgekeeper:save'

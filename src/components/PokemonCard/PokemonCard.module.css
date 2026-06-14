@@ -1,4 +1,5 @@
 .card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 7px;
@@ -10,6 +11,37 @@
   padding: 8px;
   color: var(--c-ink);
   font-family: var(--font-text);
+}
+
+/* Badge de ranking (F–S), na diagonal no canto superior direito do card. */
+.rank {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 2px 5px;
+  background: var(--c-panel);
+  border: 2px solid currentColor;
+  border-radius: 5px;
+  transform: rotate(9deg);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.rankTag {
+  font-family: var(--font-pixel);
+  font-size: 5px;
+  letter-spacing: 1px;
+  opacity: 0.85;
+}
+
+.rankLetter {
+  font-family: var(--font-pixel);
+  font-size: 15px;
+  font-weight: bold;
 }
 
 .card:not(:disabled):hover {
@@ -57,6 +89,8 @@
   font-family: var(--font-pixel);
   font-size: 10px;
   line-height: 1.2;
+  /* Espaço reservado para o badge de rank no canto. */
+  padding-right: 38px;
 }
 
 .gender {

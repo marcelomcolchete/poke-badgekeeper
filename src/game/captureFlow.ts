@@ -9,6 +9,7 @@ import { getSpecies } from '../data/pokemon/index.ts'
 import { captureWild, rollEncounter, rosterIsFull, searchMs } from '../engine/capture.ts'
 import { graphTravelMs } from '../engine/missions.ts'
 import { pathDistance, shortestPath } from '../engine/pathfinding.ts'
+import { createRng } from '../engine/rng.ts'
 import { findMon, replaceMon, takeId, takeRng } from './runtime.ts'
 
 /**
@@ -55,15 +56,19 @@ export function advanceSearch(s: GameState, search: CaptureSearch, nowMs: number
   }
 }
 
-/** Busca concluída → gera o encontro (3 candidatos dos tipos do ginásio) — PLAN §4.5. */
+/** Busca concluída → gera o encontro (candidatos dos tipos do ginásio) — PLAN §4.5. */
 export function readySearch(s: GameState, search: CaptureSearch): void {
   s.captureSearches = s.captureSearches.filter((c) => c !== search)
   const encounter = rollEncounter(takeRng(s), s.gym.types, s.run.day)
+  // Um seed estável por candidato: o card do preview já mostra natureza/IVs/rank reais
+  // e a captura recria o MESMO Pokémon a partir desse seed.
+  const seedRng = takeRng(s)
   s.encounters.push({
     searcherId: search.searcherId,
     spotIndex: search.spotIndex,
     level: encounter.level,
     candidateSpeciesIds: encounter.candidates.map((c) => c.id),
+    candidateSeeds: encounter.candidates.map(() => seedRng.int(0, 0x7fffffff)),
   })
 }
 
@@ -115,13 +120,14 @@ export function advanceCaptureReturn(s: GameState, ret: CaptureReturn, nowMs: nu
 export function capturePick(
   s: GameState,
   searcherId: string,
-  speciesId: number,
+  candidateIndex: number,
   releaseId?: string,
 ): void {
   // Valida ANTES de consumir o encontro: uma captura bloqueada (time cheio sem descarte)
   // não pode descartar o trio do encontro.
   const encounter = s.encounters.find((e) => e.searcherId === searcherId)
-  if (!encounter || !encounter.candidateSpeciesIds.includes(speciesId)) return
+  const speciesId = encounter?.candidateSpeciesIds[candidateIndex]
+  if (!encounter || speciesId === undefined) return
 
   if (rosterIsFull(s.roster)) {
     if (!releaseId || releaseId === searcherId) return
@@ -130,11 +136,14 @@ export function capturePick(
   }
   s.encounters = s.encounters.filter((e) => e !== encounter)
   const id = takeId(s, 'p')
+  // Recria o candidato a partir do seed do encontro (preview = captura); saves antigos
+  // sem candidateSeeds caem no RNG da run.
+  const seed = encounter.candidateSeeds?.[candidateIndex]
   s.roster = captureWild({
     roster: s.roster,
     species: getSpecies(speciesId),
     level: encounter.level,
-    rng: takeRng(s),
+    rng: seed !== undefined ? createRng(seed) : takeRng(s),
     id,
   })
   s.today.capturedIds.push(id)

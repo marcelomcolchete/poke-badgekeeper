@@ -2,6 +2,7 @@
 // tipos vivem como variáveis CSS (--type-*) em styles/theme.css.
 
 import type { AttrKey, PokemonStatus, PokemonType, Rarity } from '../../types/index.ts'
+import type { Rank } from '../../engine/ranking.ts'
 
 /** Rótulo em PT do que o Pokémon está fazendo agora (HUD/painel do time). */
 export const STATUS_LABEL_PT: Record<PokemonStatus, string> = {
@@ -79,4 +80,15 @@ export const RARITY_COLOR: Record<Rarity, string> = {
   rare: '#4f86d6',
   epic: '#a05fd0',
   legend: '#e0a020',
+}
+
+/** Cor do badge de ranking (F frio/cinza → S dourado). */
+export const RANK_COLOR: Record<Rank, string> = {
+  F: '#8a8f9c',
+  E: '#5fbf6f',
+  D: '#3fae9a',
+  C: '#4f86d6',
+  B: '#a05fd0',
+  A: '#e0683c',
+  S: '#e0a020',
 }

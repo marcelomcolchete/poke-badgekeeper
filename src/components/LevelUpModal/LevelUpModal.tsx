@@ -7,7 +7,8 @@ import type { Dispatch } from 'react'
 import { ATTR_KEYS, type Pokemon } from '../../types/index.ts'
 import type { GameAction } from '../../game/actions.ts'
 import { pendingPoints } from '../../engine/leveling.ts'
-import { ATTR_PER_POINT } from '../../engine/constants.ts'
+import { effectiveAttr } from '../../engine/attributes.ts'
+import { ATTR_MAX, ATTR_PER_POINT } from '../../engine/constants.ts'
 import { PokemonCard } from '../PokemonCard/PokemonCard.tsx'
 import { ATTR_LABEL_PT } from '../common/visual.ts'
 import { displayNameOf } from '../common/naming.ts'
@@ -21,6 +22,10 @@ interface Props {
 export function LevelUpModal({ pokemon, dispatch }: Props) {
   const pending = pendingPoints(pokemon)
   const name = displayNameOf(pokemon)
+  // Atributo no teto (60) fica travado — salvo o caso (raríssimo) de TODOS estarem no teto,
+  // o que travaria o modal obrigatório; aí libera para não prender o jogador.
+  const maxed = ATTR_KEYS.map((attr) => effectiveAttr(pokemon, attr) >= ATTR_MAX)
+  const allMaxed = maxed.every(Boolean)
 
   return (
     <div className={styles.backdrop} role="dialog" aria-label="Subiu de nível">
@@ -33,16 +38,20 @@ export function LevelUpModal({ pokemon, dispatch }: Props) {
           <PokemonCard pokemon={pokemon} />
         </div>
         <div className={styles.allocBtns}>
-          {ATTR_KEYS.map((attr) => (
-            <button
-              key={attr}
-              type="button"
-              className={styles.allocBtn}
-              onClick={() => dispatch({ type: 'ALLOCATE_POINT', pokemonId: pokemon.id, attr })}
-            >
-              {ATTR_LABEL_PT[attr]} +{ATTR_PER_POINT}
-            </button>
-          ))}
+          {ATTR_KEYS.map((attr, i) => {
+            const locked = !allMaxed && maxed[i]
+            return (
+              <button
+                key={attr}
+                type="button"
+                className={`${styles.allocBtn} ${locked ? styles.allocBtnMax : ''}`}
+                disabled={locked}
+                onClick={() => dispatch({ type: 'ALLOCATE_POINT', pokemonId: pokemon.id, attr })}
+              >
+                {ATTR_LABEL_PT[attr]} {locked ? 'MÁX' : `+${ATTR_PER_POINT}`}
+              </button>
+            )
+          })}
         </div>
       </div>
     </div>

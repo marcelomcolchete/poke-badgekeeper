@@ -73,6 +73,26 @@ function migrate(file: Partial<SaveFile>): SaveFile | null {
     version = 12
   }
 
+  // v12 → v13: variação de encontro (ivs zerados = rank C) em cada Pokémon do roster.
+  if (version === 12) {
+    const zeroIvs = {
+      batalha: 0,
+      inteligencia: 0,
+      carisma: 0,
+      agilidade: 0,
+      resistencia: 0,
+      percepcao: 0,
+    }
+    const roster = state.roster as Array<Record<string, unknown>> | undefined
+    if (Array.isArray(roster)) {
+      state = {
+        ...state,
+        roster: roster.map((p) => ({ ivs: zeroIvs, ...p })),
+      }
+    }
+    version = 13
+  }
+
   if (version !== SAVE_VERSION) return null
   return { version, savedAtMs: (file as SaveFile).savedAtMs, state } as unknown as SaveFile
 }
