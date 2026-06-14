@@ -6,7 +6,7 @@
 // único polígono — o gráfico de atributos de UM Pokémon, com a pontuação sob cada
 // eixo (usado na carta do Pokémon — PLAN §4.1).
 
-import { ATTR_KEYS, type Attrs } from '../../types/index.ts'
+import { ATTR_KEYS, type Attrs, type AttrKey } from '../../types/index.ts'
 import { ATTR_MAX } from '../../engine/constants.ts'
 import { ATTR_SHORT_PT } from '../common/visual.ts'
 import styles from './HexRadar.module.css'

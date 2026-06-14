@@ -59,7 +59,7 @@ export function clearSave(): void {
 function migrate(file: Partial<SaveFile>): SaveFile | null {
   if (!file || typeof file.version !== 'number' || !file.state) return null
 
-  let { version, state } = file as { version: number; state: Record<string, unknown> }
+  let { version, state } = file as unknown as { version: number; state: Record<string, unknown> }
 
   // v11 → v12: adiciona nature: null a todos os Pokémon do roster.
   if (version === 11) {
@@ -74,5 +74,5 @@ function migrate(file: Partial<SaveFile>): SaveFile | null {
   }
 
   if (version !== SAVE_VERSION) return null
-  return { version, savedAtMs: (file as SaveFile).savedAtMs, state } as SaveFile
+  return { version, savedAtMs: (file as SaveFile).savedAtMs, state } as unknown as SaveFile
 }

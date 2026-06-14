@@ -22,6 +22,8 @@ export function previewPokemon(speciesId: number, level: number, nickname?: stri
     // Preview de candidato: o sexo só é sorteado de fato na captura.
     gender: 'genderless',
     nickname: nickname?.trim() || null,
+    // Preview não sorteia natureza — só na captura/criação real.
+    nature: null,
   }
   const maxHp = maxHpOf(draft)
   return { ...draft, maxHp, currentHp: maxHp }
