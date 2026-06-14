@@ -175,7 +175,7 @@
 /* "..." surgindo em sequência enquanto a missão acontece. */
 .dots {
   display: inline-flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 3px;
   height: 100%;
 }

@@ -19,17 +19,17 @@ import {
 import { makeAttrs, makeMon } from './testkit.ts'
 
 describe('effectiveAttr', () => {
-  it('= base + alocação·10, clampado em [10, 100]', () => {
+  it('= base + alocação·10, clampado em [10, 60]', () => {
     const mon = makeMon({ baseAttrs: makeAttrs({ batalha: 30 }), allocations: zeroAttrs() })
     expect(effectiveAttr(mon, 'batalha')).toBe(30)
     const buffed = makeMon({
       baseAttrs: makeAttrs({ batalha: 30 }),
-      allocations: { ...zeroAttrs(), batalha: 3 },
+      allocations: { ...zeroAttrs(), batalha: 2 },
     })
-    expect(effectiveAttr(buffed, 'batalha')).toBe(60)
+    expect(effectiveAttr(buffed, 'batalha')).toBe(50)
   })
 
-  it('nunca sai de [10, 100]', () => {
+  it('nunca sai de [10, 60]', () => {
     const maxed = makeMon({
       baseAttrs: makeAttrs({ batalha: 50 }),
       allocations: { ...zeroAttrs(), batalha: 9 },
@@ -49,12 +49,12 @@ describe('effectiveAttr', () => {
 })
 
 describe('teamAxisSum / teamSum', () => {
-  it('soma por eixo, capada em 100', () => {
+  it('soma por eixo, capada no teto de atributos', () => {
     const a = makeMon({ baseAttrs: makeAttrs({ agilidade: 50 }) })
     const b = makeMon({ baseAttrs: makeAttrs({ agilidade: 50 }) })
     const c = makeMon({ baseAttrs: makeAttrs({ agilidade: 50 }) })
-    expect(teamAxisSum([a, b], 'agilidade')).toBe(100)
-    expect(teamAxisSum([a, b, c], 'agilidade')).toBe(100) // 150 → cap 100
+    expect(teamAxisSum([a, b], 'agilidade')).toBe(ATTR_MAX) // 100 → cap no teto
+    expect(teamAxisSum([a, b, c], 'agilidade')).toBe(ATTR_MAX) // 150 → cap no teto
   })
 
   it('time vazio soma 0', () => {
@@ -99,10 +99,10 @@ describe('hexagonArea / axisMin', () => {
 })
 
 describe('HP derivado da Resistência', () => {
-  it('mapeia 100→10 e 10→1, no intervalo 1–10', () => {
-    expect(hpFromResistance(100)).toBe(HP_MAX)
-    expect(hpFromResistance(10)).toBe(HP_MIN)
-    for (let res = 10; res <= 100; res += 7) {
+  it('mapeia o teto→10 e o piso→1, no intervalo 1–10', () => {
+    expect(hpFromResistance(ATTR_MAX)).toBe(HP_MAX)
+    expect(hpFromResistance(0)).toBe(HP_MIN)
+    for (let res = 10; res <= ATTR_MAX; res += 7) {
       const hp = hpFromResistance(res)
       expect(hp).toBeGreaterThanOrEqual(HP_MIN)
       expect(hp).toBeLessThanOrEqual(HP_MAX)
@@ -112,26 +112,26 @@ describe('HP derivado da Resistência', () => {
 
   it('maxHpOf usa a Resistência efetiva', () => {
     const mon = makeMon({ baseAttrs: makeAttrs({ resistencia: 50 }) })
-    expect(maxHpOf(mon)).toBe(5)
+    expect(maxHpOf(mon)).toBe(8) // round(50/6)
   })
 
   it('recomputeMaxHp acompanha a alocação em Resistência', () => {
     const mon = makeMon({
       baseAttrs: makeAttrs({ resistencia: 30 }),
-      allocations: { ...zeroAttrs(), resistencia: 4 },
+      allocations: { ...zeroAttrs(), resistencia: 2 },
     })
     const fixed = recomputeMaxHp(mon)
-    expect(fixed.maxHp).toBe(7) // (30 + 40)/10 = 7
+    expect(fixed.maxHp).toBe(8) // round((30 + 20)/6)
   })
 })
 
 describe('applyDamage / heal / isFainted', () => {
   it('dano reduz HP e desmaia ao chegar a 0 (sem mutar a entrada)', () => {
-    const mon = makeMon({ baseAttrs: makeAttrs({ resistencia: 50 }) }) // maxHp 5
+    const mon = makeMon({ baseAttrs: makeAttrs({ resistencia: 50 }) }) // maxHp 8
     const hit = applyDamage(mon, 2)
-    expect(hit.currentHp).toBe(3)
+    expect(hit.currentHp).toBe(6)
     expect(hit.status).toBe('idle')
-    expect(mon.currentHp).toBe(5) // entrada intacta
+    expect(mon.currentHp).toBe(8) // entrada intacta
     const ko = applyDamage(mon, 99)
     expect(ko.currentHp).toBe(0)
     expect(ko.status).toBe('fainted')
@@ -140,7 +140,7 @@ describe('applyDamage / heal / isFainted', () => {
 
   it('heal não passa do máximo nem revive (HP 0 segue 0)', () => {
     const mon = makeMon({ baseAttrs: makeAttrs({ resistencia: 50 }), currentHp: 1 })
-    expect(heal(mon, 99).currentHp).toBe(5)
+    expect(heal(mon, 99).currentHp).toBe(8)
     const downed = makeMon({ baseAttrs: makeAttrs({ resistencia: 50 }), currentHp: 0 })
     expect(heal(downed, 0).currentHp).toBe(0)
   })

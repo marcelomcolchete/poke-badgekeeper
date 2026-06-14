@@ -6,9 +6,9 @@
 import type { GameSpeed } from '../types/index.ts'
 import type { GameState } from '../engine/state.ts'
 import { emptyTally } from '../engine/state.ts'
-import { TOTAL_DAYS } from '../engine/constants.ts'
+import { STARS_MIN, TOTAL_DAYS } from '../engine/constants.ts'
 import { ALL_DEFENSES_WON_BONUS } from '../engine/balance.ts'
-import { applyApproval, dailyGoalMet } from '../engine/approval.ts'
+import { applyApproval, approvalDelta, dailyGoalMet } from '../engine/approval.ts'
 import { buildDaySummary, toDayLog } from '../engine/daySummary.ts'
 import { expireMission, freeOnReturn, resolveMissionNow } from './missionFlow.ts'
 import { expireDefense } from './defenseFlow.ts'
@@ -46,6 +46,16 @@ export function finalizeDay(s: GameState): void {
   s.today.starsBefore = starsBefore
   const completed = s.today.missionResults.filter((r) => r.success).length
   const total = s.today.missionResults.length
+
+  // Sem estrelas e meta não batida: perder ½ estrela zeraria a reputação → game over.
+  if (starsBefore + approvalDelta(completed, total) < STARS_MIN) {
+    s.approval.stars = STARS_MIN
+    s.run.phase = 'GAMEOVER'
+    s.run.gameOverReason = 'stars'
+    s.clock.speed = 0
+    return
+  }
+
   s.approval.stars = applyApproval(starsBefore, completed, total)
   s.approval.dailyGoalMet = dailyGoalMet(completed, total)
 

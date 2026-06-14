@@ -120,7 +120,7 @@
   color: var(--c-hp-high);
 }
 
-/* Grade 2×2 de indicadores do dia. */
+/* Grade de indicadores do dia (2 colunas por padrão). */
 .stats {
   list-style: none;
   display: grid;
@@ -128,6 +128,19 @@
   gap: 8px;
   margin: 0;
   padding: 0;
+}
+
+/* Linha compacta de 3 colunas: Ouro / Capturados / XP do dia. */
+.statsThree {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.statsThree .stat {
+  padding: 8px 3px;
+}
+
+.statsThree .statVal {
+  font-size: 11px;
 }
 
 .stat {
@@ -162,6 +175,73 @@
   font-family: var(--font-text);
   font-size: 13px;
   color: var(--c-hud-muted);
+}
+
+/* Destaque do dia (compacto): badge no topo, sprite + nome/feito em linha. */
+.mvp {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  background: rgba(28, 86, 50, 0.5);
+  border: 2px solid var(--c-hud-accent);
+  border-radius: var(--radius-pixel);
+}
+
+.mvpBadge {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: var(--c-hud-accent);
+  letter-spacing: 0.04em;
+}
+
+.mvpRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.mvpSprite {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  image-rendering: pixelated;
+  object-fit: contain;
+}
+
+.mvpInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.mvpName {
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  color: var(--c-hud-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mvpDeed {
+  font-family: var(--font-text);
+  font-size: 13px;
+  color: var(--c-hud-muted);
+}
+
+.mvpEmpty {
+  justify-content: center;
+  border-color: var(--c-hud-border);
+}
+
+.mvpEmptyText {
+  font-family: var(--font-text);
+  font-size: 13px;
+  color: var(--c-hud-muted);
+  text-align: center;
 }
 
 /* Guia (antigo líder): histórico de falas rolável, ocupa o espaço restante. */

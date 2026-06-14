@@ -26,6 +26,7 @@ export function expireDefense(defense: DefenseEvent): void {
  */
 export function loseRunByUndefendedGym(s: GameState): void {
   s.run.phase = 'GAMEOVER'
+  s.run.gameOverReason = 'gym'
   s.clock.speed = 0
 }
 

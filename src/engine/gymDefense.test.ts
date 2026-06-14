@@ -84,7 +84,8 @@ describe('resolveDefense (PLAN §4.4)', () => {
 
   it('cada Pokémon que perde um duelo perde 1 HP e sai; defesa perdida', () => {
     const tank = makeMon({ id: 'a', types: ['normal'], baseAttrs: makeAttrs({ batalha: 10, resistencia: 100 }) })
-    const fragile = makeMon({ id: 'b', types: ['normal'], baseAttrs: makeAttrs({ batalha: 10, resistencia: 10 }) })
+    // HP mínimo agora é 2 (resistência mínima 10); 1 HP exige override para testar o desmaio.
+    const fragile = makeMon({ id: 'b', types: ['normal'], baseAttrs: makeAttrs({ batalha: 10, resistencia: 10 }), currentHp: 1 })
     const out = resolveDefense(fixedRng(0.999), [tank, fragile], enemiesStrong)
     expect(out.won).toBe(false)
     expect(out.squad[0]?.currentHp).toBe(tank.maxHp - 1) // perdeu 1 HP
