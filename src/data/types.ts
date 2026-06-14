@@ -52,6 +52,12 @@ export interface CityGraph {
    * o marcador cai no próprio ponto do grafo (`nodes[id]`).
    */
   markers: Record<string, MapPos>
+  /**
+   * Custo EXPLÍCITO de arestas (chave canônica "a|b" ordenada), sobrepondo a distância
+   * geométrica. Usado pelo túnel do Dig (atravessar por baixo da terra custa quase nada),
+   * ausente nas arestas normais — PLAN §3.1 (Habilidade Secreta).
+   */
+  edgeCosts?: Record<string, number>
 }
 
 /**

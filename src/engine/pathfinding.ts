@@ -5,6 +5,7 @@
 import type { MapPos } from '../types/index.ts'
 import type { CityGraph } from '../data/types.ts'
 import { MAP_ASPECT_H, MAP_ASPECT_W } from './constants.ts'
+import { DIG_TUNNEL_COST } from './balance.ts'
 import { clamp } from './math.ts'
 
 /**
@@ -15,6 +16,41 @@ export function segmentLength(a: MapPos, b: MapPos): number {
   const dx = (a.x - b.x) * MAP_ASPECT_W
   const dy = (a.y - b.y) * MAP_ASPECT_H
   return Math.hypot(dx, dy)
+}
+
+/** Chave canônica (ordenada) de uma aresta entre dois pontos — usada nos custos do túnel. */
+export function tunnelKey(a: string, b: string): string {
+  return a < b ? `${a}|${b}` : `${b}|${a}`
+}
+
+/** Custo de atravessar a aresta a–b: peso explícito (túnel do Dig) ou distância geométrica. */
+function edgeCost(graph: CityGraph, a: string, b: string): number {
+  const override = graph.edgeCosts?.[tunnelKey(a, b)]
+  if (override !== undefined) return override
+  const pa = graph.nodes[a]
+  const pb = graph.nodes[b]
+  return pa && pb ? segmentLength(pa, pb) : Infinity
+}
+
+/**
+ * Grafo do dia com o túnel do Dig: liga dois pontos por uma aresta de custo ínfimo
+ * (DIG_TUNNEL_COST), sem mexer no grafo-base. Sem túnel, devolve o próprio grafo.
+ */
+export function graphWithTunnel(
+  graph: CityGraph,
+  tunnel: readonly [string, string] | null | undefined,
+): CityGraph {
+  if (!tunnel) return graph
+  const [a, b] = tunnel
+  if (a === b || !graph.nodes[a] || !graph.nodes[b]) return graph
+  const adj: Record<string, string[]> = { ...graph.adj }
+  adj[a] = adj[a]?.includes(b) ? adj[a] : [...(adj[a] ?? []), b]
+  adj[b] = adj[b]?.includes(a) ? adj[b] : [...(adj[b] ?? []), a]
+  return {
+    ...graph,
+    adj,
+    edgeCosts: { ...(graph.edgeCosts ?? {}), [tunnelKey(a, b)]: DIG_TUNNEL_COST },
+  }
 }
 
 /**
@@ -46,12 +82,10 @@ export function shortestPath(graph: CityGraph, from: string, to: string): string
     if (current === to) break
     visited.add(current)
 
-    const here = graph.nodes[current] as MapPos
     for (const next of graph.adj[current] ?? []) {
       if (visited.has(next)) continue
-      const nextPos = graph.nodes[next]
-      if (!nextPos) continue
-      const candidate = best + segmentLength(here, nextPos)
+      if (!graph.nodes[next]) continue
+      const candidate = best + edgeCost(graph, current, next)
       if (candidate < (dist[next] ?? Infinity)) {
         dist[next] = candidate
         prev[next] = current
@@ -68,13 +102,13 @@ export function shortestPath(graph: CityGraph, from: string, to: string): string
   return path
 }
 
-/** Comprimento total (16:9-corrigido) de um caminho já resolvido. */
+/** Comprimento total (16:9-corrigido, com custo de túnel) de um caminho já resolvido. */
 export function pathDistance(graph: CityGraph, path: readonly string[]): number {
   let total = 0
   for (let i = 1; i < path.length; i++) {
-    const a = graph.nodes[path[i - 1] as string]
-    const b = graph.nodes[path[i] as string]
-    if (a && b) total += segmentLength(a, b)
+    const a = path[i - 1] as string
+    const b = path[i] as string
+    if (graph.nodes[a] && graph.nodes[b]) total += edgeCost(graph, a, b)
   }
   return total
 }
@@ -98,9 +132,12 @@ export function pointAlongPath(graph: CityGraph, path: readonly string[], frac: 
   const target = clamp(frac, 0, 1) * total
   let traveled = 0
   for (let i = 1; i < path.length; i++) {
-    const a = graph.nodes[path[i - 1] as string] as MapPos
-    const b = graph.nodes[path[i] as string] as MapPos
-    const len = segmentLength(a, b)
+    const idA = path[i - 1] as string
+    const idB = path[i] as string
+    const a = graph.nodes[idA] as MapPos
+    const b = graph.nodes[idB] as MapPos
+    // Comprimento do trecho = custo (túnel é ínfimo → atravessa rápido); posição é geométrica.
+    const len = edgeCost(graph, idA, idB)
     if (traveled + len >= target || i === path.length - 1) {
       const t = len > 0 ? (target - traveled) / len : 1
       return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }

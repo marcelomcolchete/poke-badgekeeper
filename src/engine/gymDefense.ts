@@ -28,6 +28,7 @@ import {
   ENEMY_SQUAD_JITTER_FROM_DAY,
 } from './balance.ts'
 import { applyDamage, effectiveAttr } from './attributes.ts'
+import { combatDamageMultiplier, hasSturdy } from './secretEffects.ts'
 import { clamp, lerp } from './math.ts'
 
 /** ≥1 Pokémon disponível para abrir uma defesa (PLAN §4.4). */
@@ -108,20 +109,30 @@ export interface DefenseResolution {
   /** Esquadrão com HP atualizado: quem PERDE um duelo perde 1 HP e sai (PLAN §4.4). */
   squad: Pokemon[]
   duels: DuelLog[]
+  /** Pokémon que usaram o Sturdy nesta batalha (não desmaiaram) — consome o 1×/dia. */
+  sturdyUsedIds: string[]
+}
+
+export interface ResolveDefenseOpts {
+  /** Pokémon (ids) que ainda têm o Sturdy disponível hoje (consome ao usar, 1×/dia). */
+  sturdyAvailableIds?: ReadonlySet<string>
 }
 
 /**
  * Cadeia de duelos 1v1: a frente de cada lado se enfrenta; o perdedor perde 1 HP e
  * sai (entra o próximo). Acaba quando um lado fica sem Pokémon. Você vence se zerar
- * o adversário antes do seu (PLAN §4.4).
+ * o adversário antes do seu (PLAN §4.4). Habilidades Secretas: Weak Armor dobra o dano
+ * recebido; Sturdy (1×/dia) impede o desmaio, deixando 1 de vida.
  */
 export function resolveDefense(
   rng: Rng,
   squad: readonly Pokemon[],
   enemies: readonly EnemyUnit[],
+  opts: ResolveDefenseOpts = {},
 ): DefenseResolution {
   const result = squad.map((p) => ({ ...p }))
   const duels: DuelLog[] = []
+  const sturdyUsed = new Set<string>()
   let yours = 0
   let theirs = 0
   while (yours < result.length && theirs < enemies.length) {
@@ -135,9 +146,21 @@ export function resolveDefense(
     if (youWon) {
       theirs += 1 // o inimigo perde e sai; você permanece na frente
     } else {
-      result[yours] = applyDamage(you, HP_LOSS_PER_DEFENSE_LOSS)
+      const loss = HP_LOSS_PER_DEFENSE_LOSS * combatDamageMultiplier(you)
+      const wouldFaint = you.currentHp - loss <= 0
+      const canSturdy =
+        wouldFaint &&
+        hasSturdy(you) &&
+        !sturdyUsed.has(you.id) &&
+        (opts.sturdyAvailableIds?.has(you.id) ?? false)
+      if (canSturdy) {
+        result[yours] = { ...you, currentHp: 1, status: 'idle' } // não desmaia: fica com 1
+        sturdyUsed.add(you.id)
+      } else {
+        result[yours] = applyDamage(you, loss)
+      }
       yours += 1
     }
   }
-  return { won: theirs >= enemies.length, squad: result, duels }
+  return { won: theirs >= enemies.length, squad: result, duels, sturdyUsedIds: [...sturdyUsed] }
 }

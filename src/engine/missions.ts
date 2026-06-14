@@ -34,6 +34,12 @@ import {
   teamSum,
   zeroAttrs,
 } from './attributes.ts'
+import {
+  combatDamageMultiplier,
+  teamHasFly,
+  teamSecretSum,
+  type MissionSecretCtx,
+} from './secretEffects.ts'
 import { average, clamp } from './math.ts'
 
 /** Termo do dia somado às faixas-base (principal/secundário): SCALE · dia / DIVISOR. */
@@ -118,6 +124,17 @@ export function missionSuccessProbability(team: readonly Pokemon[], requirement:
   return clamp(intersection / requiredArea, 0, 1)
 }
 
+/**
+ * Igual à anterior, mas a soma do time inclui os multiplicadores de Habilidade Secreta
+ * (Rivalidade, Rock Head, Shell Armor, Battle Armor). Usada no despacho real e no preview.
+ */
+export function missionSuccessProbabilityCtx(ctx: MissionSecretCtx, requirement: Attrs): number {
+  const requiredArea = hexagonArea(requirement)
+  if (requiredArea <= 0) return 1
+  const intersection = hexagonArea(axisMin(teamSecretSum(ctx), requirement))
+  return clamp(intersection / requiredArea, 0, 1)
+}
+
 /** Dano em falha = max(1, round((1 − P)·perigo)) — PLAN §4.2. */
 export function missionFailureDamage(pSuccess: number, danger: number): number {
   return Math.max(MIN_FAILURE_DAMAGE, Math.round((1 - pSuccess) * danger))
@@ -140,13 +157,16 @@ export function resolveMission(
   team: readonly Pokemon[],
   requirement: Attrs,
   danger: number,
+  /** P_sucesso já calculado (com multiplicadores de habilidade); omitir = calcula sem eles. */
+  pSuccessOverride?: number,
 ): MissionOutcome {
-  const pSuccess = missionSuccessProbability(team, requirement)
+  const pSuccess = pSuccessOverride ?? missionSuccessProbability(team, requirement)
   if (rng.bool(pSuccess)) {
     return { success: true, pSuccess, team: [...team], faintedIds: [] }
   }
   const damage = missionFailureDamage(pSuccess, danger)
-  const updated = team.map((p) => applyDamage(p, damage))
+  // Weak Armor: dano recebido dobrado.
+  const updated = team.map((p) => applyDamage(p, damage * combatDamageMultiplier(p)))
   return {
     success: false,
     pSuccess,
@@ -169,11 +189,16 @@ export function agilityTravelFactor(team: readonly Pokemon[]): number {
 
 /**
  * Tempo de UM trecho (ida) do ginásio até a missão: distância-do-grafo × ms/unidade ×
- * fator de Agilidade. Fly torna a viagem instantânea (PLAN §4.3).
+ * fator de Agilidade ÷ velocidade de habilidade (Sand Rush/Weak Armor). Fly torna a viagem
+ * instantânea — passiva do museu ou Aerodactyl desbloqueado (PLAN §4.3).
  */
-export function graphTravelMs(distance: number, team: readonly Pokemon[]): number {
-  if (team.some((p) => p.passives.includes('fly'))) return 0
-  return distance * TRAVEL_MS_PER_DISTANCE * agilityTravelFactor(team)
+export function graphTravelMs(
+  distance: number,
+  team: readonly Pokemon[],
+  speedMult = 1,
+): number {
+  if (teamHasFly(team)) return 0
+  return (distance * TRAVEL_MS_PER_DISTANCE * agilityTravelFactor(team)) / Math.max(speedMult, 0.0001)
 }
 
 /** Tempo de execução parado no local: baseExecução / (1 + médiaInteligência/50) — PLAN §4.3. */
@@ -187,8 +212,9 @@ export function missionDurationMs(
   team: readonly Pokemon[],
   distance: number,
   template: MissionTemplate,
+  speedMult = 1,
 ): number {
-  return 2 * graphTravelMs(distance, team) + executionMs(team, template.baseExecutionMs)
+  return 2 * graphTravelMs(distance, team, speedMult) + executionMs(team, template.baseExecutionMs)
 }
 
 /** Sorteia um template da categoria (cada categoria tem ≥1 template). */

@@ -11,8 +11,10 @@ import { buildDaySchedule, type DefenseSlot } from '../engine/timeline.ts'
 import { createMissionInstance } from '../engine/missions.ts'
 import { enemySquadSizeForDay, generateDefenseEnemies } from '../engine/gymDefense.ts'
 import { createPokemon } from '../engine/leveling.ts'
+import { hasDig } from '../engine/secretEffects.ts'
 import { createRng, deriveSeed } from '../engine/rng.ts'
 import { DEFENSE_LIFETIME_MS, MISSION_LIFETIME_MS } from '../engine/balance.ts'
+import { DIG_SEED_SALT } from '../engine/constants.ts'
 import { takeId } from './runtime.ts'
 
 /** Instancia a agenda do dia (missões/defesas 'scheduled') e arma o relógio (PLAN §4.8). */
@@ -40,8 +42,22 @@ export function setupDay(s: GameState): void {
     .filter((p): p is { node: string; at: number } => p.node !== undefined)
   s.captureSpots = spots.map((p) => p.node)
   s.captureSpotSpawnsAtMs = spots.map((p) => p.at)
+  s.today.digTunnel = computeDigTunnel(s, city)
   s.clock.dayElapsedMs = 0
   s.clock.speed = 1
+}
+
+/**
+ * Túnel do Dig (Habilidade Secreta do Diglett): se algum Pokémon do roster tem a habilidade
+ * desbloqueada, sorteia dois pontos distintos do grafo ligados por baixo da terra hoje.
+ */
+function computeDigTunnel(s: GameState, city: CityData): [string, string] | null {
+  if (!s.roster.some(hasDig)) return null
+  const ids = Object.keys(city.graph.nodes)
+  if (ids.length < 2) return null
+  const rng = createRng(deriveSeed(s.run.seed, DIG_SEED_SALT, s.run.day))
+  const [a, b] = rng.shuffle(ids)
+  return a && b ? [a, b] : null
 }
 
 function buildDefense(s: GameState, slot: DefenseSlot, city: CityData): DefenseEvent {
