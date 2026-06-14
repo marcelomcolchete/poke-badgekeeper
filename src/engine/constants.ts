@@ -25,6 +25,10 @@ export const SPECIES_BASE_MIN = 10
 export const SPECIES_BASE_MAX = 50
 export const ATTR_PER_POINT = 10
 
+/** Natureza: modificadores do valor por ponto alocado (+15 favorecido, +5 penalizado). */
+export const NATURE_BOOSTED_PER_POINT = 15
+export const NATURE_REDUCED_PER_POINT = 5
+
 /** Níveis 1–10 (PLAN §4.1). */
 export const LEVEL_MIN = 1
 export const LEVEL_MAX = 10
@@ -69,6 +73,7 @@ export const DRAFT_CHOICES = 3
  * v9: sexo (gender) e apelido (nickname) por Pokémon. v10: XP de missão aplicado só na
  * volta (xpSeed) e retorno de captura com spotIndex/captured para o marcador do mapa.
  * v11: teto de atributos 60, XP do dia no relatório (today.xpEarned) e estrelas até 0 com
- * game over por reputação zerada (run.gameOverReason). */
-export const SAVE_VERSION = 11
+ * game over por reputação zerada (run.gameOverReason).
+ * v12: sistema de naturezas (nature: Nature | null) em cada Pokémon do roster. */
+export const SAVE_VERSION = 12
 export const SAVE_KEY = 'poke-badgekeeper:save'

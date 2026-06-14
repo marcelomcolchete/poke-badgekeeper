@@ -85,6 +85,13 @@
   letter-spacing: 0.5px;
 }
 
+.nature {
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  color: var(--c-ink-muted);
+  letter-spacing: 0.5px;
+}
+
 .types {
   display: flex;
   gap: 4px;

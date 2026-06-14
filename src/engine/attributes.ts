@@ -2,12 +2,16 @@
 // Tudo puro: recebe Pokémon/Attrs e devolve números ou NOVOS Pokémon (nunca muta).
 
 import { ATTR_KEYS, type AttrKey, type Attrs, type Pokemon } from '../types/index.ts'
+import type { Nature } from '../data/natures.ts'
+import { NATURES } from '../data/natures.ts'
 import {
   ATTR_MAX,
   ATTR_MIN,
   ATTR_PER_POINT,
   HP_MAX,
   HP_MIN,
+  NATURE_BOOSTED_PER_POINT,
+  NATURE_REDUCED_PER_POINT,
 } from './constants.ts'
 import { clamp } from './math.ts'
 
@@ -32,9 +36,19 @@ export function zeroAttrs(): Attrs {
   return mapAttrs(() => 0)
 }
 
-/** Atributo efetivo = clamp(base + alocação·10, 10, 100) — PLAN §4.1. */
+/** Multiplicador de pontos por natureza: 15 (favorecido), 5 (penalizado) ou 10 (neutro). */
+function natureBonusPerPoint(nature: Nature | null, key: AttrKey): number {
+  if (!nature) return ATTR_PER_POINT
+  const entry = NATURES[nature]
+  if (entry.boosted === key) return NATURE_BOOSTED_PER_POINT
+  if (entry.reduced === key) return NATURE_REDUCED_PER_POINT
+  return ATTR_PER_POINT
+}
+
+/** Atributo efetivo = clamp(base + alocação·modificador, 10, 60) — PLAN §4.1. */
 export function effectiveAttr(p: Pokemon, key: AttrKey): number {
-  return clamp(p.baseAttrs[key] + p.allocations[key] * ATTR_PER_POINT, ATTR_MIN, ATTR_MAX)
+  const perPoint = natureBonusPerPoint(p.nature, key)
+  return clamp(p.baseAttrs[key] + p.allocations[key] * perPoint, ATTR_MIN, ATTR_MAX)
 }
 
 export function effectiveAttrs(p: Pokemon): Attrs {

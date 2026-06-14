@@ -3,6 +3,8 @@
 // (modal, via allocatePoint); selvagens nascem com os pontos distribuídos pelo RNG.
 
 import { ATTR_KEYS, type AttrKey, type Attrs, type Pokemon } from '../types/index.ts'
+import type { Nature } from '../data/natures.ts'
+import { rollNature } from '../data/natures.ts'
 import type { Rng } from './rng.ts'
 import { getSpecies } from '../data/pokemon/index.ts'
 import { rollGender } from './gender.ts'
@@ -50,6 +52,8 @@ export interface NewPokemonSpec {
   passives?: string[]
   /** Apelido inicial (raro; a captura renomeia depois via ação própria). */
   nickname?: string | null
+  /** Natureza predefinida; omitir para sortear via RNG. */
+  nature?: Nature | null
 }
 
 /**
@@ -60,9 +64,11 @@ export interface NewPokemonSpec {
 export function createPokemon(spec: NewPokemonSpec): Pokemon {
   const species = getSpecies(spec.speciesId)
   const level = clamp(spec.level, LEVEL_MIN, LEVEL_MAX)
-  // Alocações primeiro, gênero depois: mantém estável a sequência do RNG das alocações.
+  // Alocações primeiro, gênero e natureza depois: mantém estável a sequência do RNG das alocações.
   const allocations = randomAllocations(spec.rng, level - 1)
   const gender = rollGender(spec.rng, species.id)
+  // Se nature for explicitamente fornecida (incluindo null), usa o valor; senão sorteia.
+  const nature = 'nature' in spec ? (spec.nature ?? null) : rollNature(spec.rng)
   const draft: Pokemon = {
     id: spec.id,
     speciesId: species.id,
@@ -77,6 +83,7 @@ export function createPokemon(spec: NewPokemonSpec): Pokemon {
     passives: spec.passives ? [...spec.passives] : [],
     gender,
     nickname: spec.nickname ?? null,
+    nature,
   }
   const maxHp = maxHpOf(draft)
   return { ...draft, maxHp, currentHp: maxHp }

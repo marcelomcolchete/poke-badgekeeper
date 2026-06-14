@@ -53,11 +53,26 @@ export function clearSave(): void {
 }
 
 /**
- * Migração de schema. Por ora, saves de versão diferente são descartados;
- * a partir de novas versões, encadear transformações aqui (vN → vN+1).
+ * Migração de schema. Encadeia transformações vN → vN+1 até chegar na versão atual.
+ * Saves de versão incompatível (muito antigos) são descartados.
  */
 function migrate(file: Partial<SaveFile>): SaveFile | null {
   if (!file || typeof file.version !== 'number' || !file.state) return null
-  if (file.version !== SAVE_VERSION) return null
-  return file as SaveFile
+
+  let { version, state } = file as { version: number; state: Record<string, unknown> }
+
+  // v11 → v12: adiciona nature: null a todos os Pokémon do roster.
+  if (version === 11) {
+    const roster = state.roster as Array<Record<string, unknown>> | undefined
+    if (Array.isArray(roster)) {
+      state = {
+        ...state,
+        roster: roster.map((p) => ({ nature: null, ...p })),
+      }
+    }
+    version = 12
+  }
+
+  if (version !== SAVE_VERSION) return null
+  return { version, savedAtMs: (file as SaveFile).savedAtMs, state } as SaveFile
 }

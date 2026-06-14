@@ -1,6 +1,7 @@
 import type { Pokemon } from '../../types/index.ts'
 import { ATTR_KEYS } from '../../types/index.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
+import { getNatureEntry, NATURE_LABEL_PT } from '../../data/natures.ts'
 import { LEVEL_MAX } from '../../engine/constants.ts'
 import { effectiveAttr, effectiveAttrs } from '../../engine/attributes.ts'
 import { pendingPoints, xpToNext } from '../../engine/leveling.ts'
@@ -24,6 +25,7 @@ export function PokemonCard({ pokemon, selected = false, disabled = false, toggl
   const species = getSpecies(pokemon.speciesId)
   const pending = pendingPoints(pokemon)
   const atMaxLevel = pokemon.level >= LEVEL_MAX
+  const natureEntry = pokemon.nature ? getNatureEntry(pokemon.nature) : null
   const xpNeeded = xpToNext(pokemon.level)
   const xpPct = atMaxLevel ? 100 : Math.min(100, (pokemon.xp / xpNeeded) * 100)
   const evolvesAt = species.evolvesTo?.atLevel
@@ -64,6 +66,11 @@ export function PokemonCard({ pokemon, selected = false, disabled = false, toggl
               {RARITY_LABEL_PT[species.rarity]}
             </span>
           </span>
+          {pokemon.nature && (
+            <span className={styles.nature}>
+              {NATURE_LABEL_PT[pokemon.nature]}
+            </span>
+          )}
           <span className={styles.types}>
             {pokemon.types.map((t) => (
               <TypeBadge key={t} type={t} />
@@ -74,7 +81,14 @@ export function PokemonCard({ pokemon, selected = false, disabled = false, toggl
       </div>
 
       <div className={styles.radarBox}>
-        <HexRadar values={effectiveAttrs(pokemon)} showValues frame={false} size={150} />
+        <HexRadar
+          values={effectiveAttrs(pokemon)}
+          showValues
+          frame={false}
+          size={150}
+          boostedAxis={natureEntry?.boosted ?? null}
+          reducedAxis={natureEntry?.reduced ?? null}
+        />
         <span className={styles.total}>
           Total Stats: <b>{totalStats}</b>
         </span>
