@@ -164,6 +164,7 @@ export function freeOnReturn(s: GameState, mission: MissionInstance): void {
   const evoRng = createRng(mission.xpSeed ?? 0) // mesma sequência sorteada ao resolver
   for (const member of teamOf(s, mission.teamIds)) {
     replaceMon(s, settleFaint(s, applyOutcome(member, success, rules, evoRng)))
+    if (success) s.today.xpEarned += MISSION_XP_REWARD // XP do dia (relatório)
   }
   mission.status = 'resolved'
 }

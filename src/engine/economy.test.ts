@@ -10,10 +10,10 @@ describe('goldForDefense (PLAN §4.6)', () => {
     expect(goldForDefense(high)).toBeGreaterThan(goldForDefense(low))
   })
 
-  it('Carisma 50 → 1,5× a base; é inteiro', () => {
+  it('Carisma 50 → ~1,83× a base; é inteiro', () => {
     const squad = [makeMon({ baseAttrs: makeAttrs({ carisma: 50 }) })]
     const gold = goldForDefense(squad)
-    expect(gold).toBe(150) // 100 · (1 + 50/100)
+    expect(gold).toBe(183) // round(100 · (1 + 50/60))
     expect(Number.isInteger(gold)).toBe(true)
   })
 

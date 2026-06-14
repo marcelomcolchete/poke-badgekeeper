@@ -60,7 +60,7 @@ export function buildDaySummary(input: DaySummaryInput): DaySummary {
 }
 
 /** Destaque do dia: quem participou de mais missões bem-sucedidas (PLAN §3). */
-function computeMvp(results: readonly MissionResultLog[]): {
+export function computeMvp(results: readonly MissionResultLog[]): {
   mvpId: string | null
   mvpMissions: number
 } {

@@ -44,12 +44,10 @@ export function useGameSounds(state: GameState): void {
     if (!first && pending > pendingTotal.current) playSound('levelUp')
     pendingTotal.current = pending
 
-    // 4) Tempo acabando: missão 'available' ou defesa 'active' sem interação, perto de expirar.
+    // 4) Tempo acabando: APENAS defesa de ginásio 'active' sem esquadrão, perto de expirar
+    //    (deixar zerar = derrota imediata). Missões prestes a expirar não apitam.
     const now = state.clock.dayElapsedMs
     if (!first) {
-      for (const m of state.missions) {
-        if (m.status === 'available') warnIfExpiring(m.id, m.expiresAtMs - now, warnedIds.current)
-      }
       for (const d of state.defenses) {
         if (d.status === 'active') warnIfExpiring(d.id, d.expiresAtMs - now, warnedIds.current)
       }

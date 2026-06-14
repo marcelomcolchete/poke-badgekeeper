@@ -1,16 +1,17 @@
 // Radar hexagonal sobreposto (PLAN §3.1/§4.2): a exigência da missão e a soma do
-// time (capada em 100) desenhadas nos 6 eixos canônicos a 60°. A sobreposição das
-// áreas ilustra a P_sucesso (interseção ÷ exigência).
+// time (capada no teto de atributos) desenhadas nos 6 eixos canônicos a 60°. A
+// sobreposição das áreas ilustra a P_sucesso (interseção ÷ exigência).
 //
 // Modo individual: passando só `values` (e opcionalmente `showValues`), desenha um
 // único polígono — o gráfico de atributos de UM Pokémon, com a pontuação sob cada
 // eixo (usado na carta do Pokémon — PLAN §4.1).
 
 import { ATTR_KEYS, type Attrs } from '../../types/index.ts'
+import { ATTR_MAX } from '../../engine/constants.ts'
 import { ATTR_SHORT_PT } from '../common/visual.ts'
 import styles from './HexRadar.module.css'
 
-const AXIS_MAX = 100
+const AXIS_MAX = ATTR_MAX
 const RINGS = [0.25, 0.5, 0.75, 1]
 
 interface Props {

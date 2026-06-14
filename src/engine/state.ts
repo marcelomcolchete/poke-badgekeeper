@@ -21,6 +21,8 @@ export interface RunInfo {
   /** Seed-mestra da run (reprodutibilidade). */
   seed: number
   phase: GamePhase
+  /** Motivo da derrota quando phase === 'GAMEOVER' (mensagem da tela de fim de jogo). */
+  gameOverReason?: 'gym' | 'stars'
 }
 
 export interface ClockState {
@@ -158,6 +160,8 @@ export interface DayTally {
   defensesWon: number
   capturedIds: string[]
   goldEarned: number
+  /** XP total concedido em missões bem-sucedidas no dia (relatório) — somado na volta. */
+  xpEarned: number
   /** Ouro vindo só de defesas (base do bônus de +30% por dia perfeito) — PLAN §4.6. */
   defenseGold: number
   /** Estrelas no início do dia (preenchido no fechamento) — para o resumo. */
@@ -211,6 +215,7 @@ export function emptyTally(): DayTally {
     defensesWon: 0,
     capturedIds: [],
     goldEarned: 0,
+    xpEarned: 0,
     defenseGold: 0,
     starsBefore: 0,
     fossilUsed: false,

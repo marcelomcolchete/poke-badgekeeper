@@ -18,9 +18,9 @@ export const MIN_DISPATCH = 1
 export const MAX_DISPATCH = 6
 export const MIN_DEFENSE_SQUAD = 1
 
-/** Atributos: mínimo 10, máximo natural por espécie 50, teto efetivo 100 (PLAN §4.1). */
+/** Atributos: mínimo 10, máximo natural por espécie 50, teto efetivo 60 (PLAN §4.1). */
 export const ATTR_MIN = 10
-export const ATTR_MAX = 100
+export const ATTR_MAX = 60
 export const SPECIES_BASE_MIN = 10
 export const SPECIES_BASE_MAX = 50
 export const ATTR_PER_POINT = 10
@@ -39,8 +39,8 @@ export const STARTING_GOLD = 500
 export const HP_MIN = 1
 export const HP_MAX = 10
 
-/** Aprovação: estrelas de 1 a 5, começa em 1, passo de 0,5; efetivado se > 3 (PLAN §4.7). */
-export const STARS_MIN = 1
+/** Aprovação: estrelas de 0 a 5, começa em 1, passo de 0,5; efetivado se > 3. Zerar = game over. */
+export const STARS_MIN = 0
 export const STARS_MAX = 5
 export const STARS_START = 1
 export const STARS_STEP = 0.5
@@ -67,6 +67,8 @@ export const DRAFT_CHOICES = 3
  * com horário de surgimento (captureSpotSpawnsAtMs). v8: defesa com log de duelos +
  * inimigos com espécie, ouro de defesa por batalha (+bônus 30%) e fim do dia por retorno.
  * v9: sexo (gender) e apelido (nickname) por Pokémon. v10: XP de missão aplicado só na
- * volta (xpSeed) e retorno de captura com spotIndex/captured para o marcador do mapa. */
-export const SAVE_VERSION = 10
+ * volta (xpSeed) e retorno de captura com spotIndex/captured para o marcador do mapa.
+ * v11: teto de atributos 60, XP do dia no relatório (today.xpEarned) e estrelas até 0 com
+ * game over por reputação zerada (run.gameOverReason). */
+export const SAVE_VERSION = 11
 export const SAVE_KEY = 'poke-badgekeeper:save'

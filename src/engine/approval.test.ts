@@ -45,8 +45,8 @@ describe('approvalDelta (PLAN §4.7)', () => {
 })
 
 describe('applyApproval (PLAN §4.7)', () => {
-  it('mantém as estrelas em [1, 5] e em passos de 0,5', () => {
-    expect(applyApproval(STARS_MIN, 0, 5)).toBe(STARS_MIN) // não cai abaixo de 1
+  it('mantém as estrelas em [0, 5] e em passos de 0,5', () => {
+    expect(applyApproval(STARS_MIN, 0, 5)).toBe(STARS_MIN) // não cai abaixo de 0
     expect(applyApproval(STARS_MAX, 5, 5)).toBe(STARS_MAX) // não passa de 5
     const mid = applyApproval(3, missionGoal(5), 5)
     expect(mid).toBe(3.5)

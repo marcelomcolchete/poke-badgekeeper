@@ -2,10 +2,14 @@
 // missões rumo à meta, defesas, ouro e capturas. Substitui o antigo modal.
 
 import type { GameState } from '../../engine/state.ts'
+import type { Pokemon } from '../../types/index.ts'
 import type { GuideMessage } from './DayScreen.tsx'
 import { STARS_MAX } from '../../engine/constants.ts'
 import { missionGoal } from '../../engine/approval.ts'
+import { computeMvp } from '../../engine/daySummary.ts'
 import { clamp } from '../../engine/math.ts'
+import { getSpecies } from '../../data/pokemon/index.ts'
+import { displayNameOf } from '../common/naming.ts'
 import styles from './ReportSidebar.module.css'
 
 interface Props {
@@ -15,6 +19,8 @@ interface Props {
 
 export function ReportSidebar({ state, messages }: Props) {
   const t = state.today
+  const { mvpId, mvpMissions } = computeMvp(t.missionResults)
+  const mvp = mvpId ? state.roster.find((p) => p.id === mvpId) : undefined
   const completed = t.missionResults.filter((m) => m.success).length
   const total = state.missions.length
   const goal = missionGoal(total)
@@ -80,6 +86,9 @@ export function ReportSidebar({ state, messages }: Props) {
           </span>
           <span className={styles.statLabel}>Batalhas previstas</span>
         </li>
+      </ul>
+
+      <ul className={`${styles.stats} ${styles.statsThree}`}>
         <li className={styles.stat}>
           <span className={styles.statIcon}>💰</span>
           <span className={styles.statVal}>$ {t.goldEarned}</span>
@@ -90,7 +99,14 @@ export function ReportSidebar({ state, messages }: Props) {
           <span className={styles.statVal}>{t.capturedIds.length}</span>
           <span className={styles.statLabel}>Capturados</span>
         </li>
+        <li className={styles.stat}>
+          <span className={styles.statIcon}>⭐</span>
+          <span className={styles.statVal}>{t.xpEarned}</span>
+          <span className={styles.statLabel}>XP do dia</span>
+        </li>
       </ul>
+
+      <DayMvp mvp={mvp} missions={mvpMissions} />
 
       <section className={styles.guide} aria-label="Mensagens do guia">
         <div className={styles.guideHead}>
@@ -111,5 +127,32 @@ export function ReportSidebar({ state, messages }: Props) {
         </div>
       </section>
     </aside>
+  )
+}
+
+/** Destaque do dia ao vivo: o mesmo MVP que aparece no resumo final (compacto). */
+function DayMvp({ mvp, missions }: { mvp: Pokemon | undefined; missions: number }) {
+  if (!mvp) {
+    return (
+      <div className={`${styles.mvp} ${styles.mvpEmpty}`}>
+        <span className={styles.mvpBadge}>★ DESTAQUE DO DIA</span>
+        <span className={styles.mvpEmptyText}>Nenhuma missão concluída ainda.</span>
+      </div>
+    )
+  }
+  const species = getSpecies(mvp.speciesId)
+  return (
+    <div className={styles.mvp}>
+      <span className={styles.mvpBadge}>★ DESTAQUE DO DIA</span>
+      <div className={styles.mvpRow}>
+        <img className={styles.mvpSprite} src={species.spritePath} alt={species.displayName} />
+        <span className={styles.mvpInfo}>
+          <span className={styles.mvpName}>{displayNameOf(mvp)}</span>
+          <span className={styles.mvpDeed}>
+            {missions} {missions === 1 ? 'missão' : 'missões'} hoje
+          </span>
+        </span>
+      </div>
+    </div>
   )
 }

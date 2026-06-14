@@ -74,7 +74,7 @@ export default function App() {
             <CitySelectScreen onChoose={() => setCityChosen(true)} />
           )
         ) : state.run.phase === 'GAMEOVER' ? (
-          <GameOverScreen onRestart={restart} />
+          <GameOverScreen reason={state.run.gameOverReason} onRestart={restart} />
         ) : state.run.phase === 'SUMMARY' ? (
           <SummaryScreen state={state} dispatch={dispatch} onRestart={restart} />
         ) : state.run.phase === 'DAY' ? (
