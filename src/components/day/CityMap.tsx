@@ -3,7 +3,7 @@
 // surgem nos pontos do grafo; os Pokémon despachados caminham ponto a ponto (ida e
 // volta) e suas fotos aparecem se deslocando pelo mapa.
 
-import type { MouseEvent } from 'react'
+import type { MouseEvent, ReactNode } from 'react'
 import type { MapPos, Pokemon } from '../../types/index.ts'
 import type { CityGraph } from '../../data/types.ts'
 import type { DefenseEvent, GameState, MissionInstance } from '../../engine/state.ts'
@@ -47,10 +47,15 @@ function timerFraction(event: { spawnAtMs: number; expiresAtMs: number }, now: n
   return span > 0 ? clamp((event.expiresAtMs - now) / span, 0, 1) : 0
 }
 
-function ringStyle(fraction: number): { background: string } {
+function ringStyle(fraction: number, color = 'var(--c-hud-accent)'): { background: string } {
   return {
-    background: `conic-gradient(var(--c-hud-accent) ${fraction * 360}deg, rgba(10,12,40,0.45) 0)`,
+    background: `conic-gradient(${color} ${fraction * 360}deg, rgba(10,12,40,0.45) 0)`,
   }
+}
+
+/** Fração [0,1] do tempo RESTANTE entre dois instantes (esvazia até 0 no fim). */
+function remainingFraction(now: number, start: number, end: number): number {
+  return end > start ? clamp((end - now) / (end - start), 0, 1) : 0
 }
 
 /** Fração [0,1] do tempo decorrido entre dois instantes (start→end). */
@@ -178,6 +183,79 @@ function TravelerGroup({ pos, ids, roster }: { pos: MapPos; ids: string[]; roste
   )
 }
 
+interface MissionVisual {
+  /** Classe de tema do ícone (cor/estilo por estado). */
+  iconClass: string | undefined
+  /** Cor do anel de progresso (conic-gradient). */
+  ringColor: string
+  /** Conteúdo do ícone (texto, emoji ou animação de "..."). */
+  content: ReactNode
+  /** Fração [0,1] do anel: tempo restante daquela etapa. */
+  fraction: number
+  /** O anel pulsa (chama atenção) só quando há ação do jogador pendente. */
+  pulse: boolean
+  ariaLabel: string
+}
+
+/** Define ícone, cor e timer do marcador conforme o estado da missão (#1). */
+function missionVisual(mission: MissionInstance, now: number): MissionVisual {
+  switch (mission.status) {
+    case 'traveling':
+      // A caminho: passos + anel do tempo de chegada (ida).
+      return {
+        iconClass: styles.travelIcon,
+        ringColor: '#4f86d6',
+        content: '👣',
+        fraction: remainingFraction(now, mission.acceptedAtMs ?? now, mission.arriveAtMs ?? now),
+        pulse: false,
+        ariaLabel: 'Time a caminho da missão',
+      }
+    case 'inProgress':
+      // No local: "..." animado + anel do tempo de execução.
+      return {
+        iconClass: styles.workIcon,
+        ringColor: '#e0a93c',
+        content: <Dots />,
+        fraction: remainingFraction(now, mission.arriveAtMs ?? now, mission.resolveAtMs ?? now),
+        pulse: false,
+        ariaLabel: 'Missão em execução',
+      }
+    case 'returning': {
+      // Terminou: ✓ verde (sucesso) ou ✗ vermelho (falha) + anel da volta.
+      const won = mission.result === 'success'
+      return {
+        iconClass: won ? styles.winIcon : styles.failIcon,
+        ringColor: won ? '#4f9e3f' : '#e0683c',
+        content: won ? '✓' : '✗',
+        fraction: remainingFraction(now, mission.resolveAtMs ?? now, mission.returnEndsAtMs ?? now),
+        pulse: false,
+        ariaLabel: won ? 'Missão cumprida, time voltando' : 'Missão falhou, time voltando',
+      }
+    }
+    default:
+      // Disponível: "!" com o anel esvaziando até expirar.
+      return {
+        iconClass: styles.bang,
+        ringColor: 'var(--c-hud-accent)',
+        content: '!',
+        fraction: timerFraction(mission, now),
+        pulse: true,
+        ariaLabel: 'Missão disponível',
+      }
+  }
+}
+
+/** Três pontos surgindo em sequência (missão acontecendo no local). */
+function Dots() {
+  return (
+    <span className={styles.dots} aria-hidden="true">
+      <span />
+      <span />
+      <span />
+    </span>
+  )
+}
+
 function MissionMarker({
   mission,
   now,
@@ -187,19 +265,16 @@ function MissionMarker({
   now: number
   onClick: () => void
 }) {
-  // Toda missão usa o mesmo marcador "!" (captura/ginásio têm marcadores próprios) — #1.
-  // Aceita: o anel congela (cheio) e o marcador continua no mapa, sem piscar — #4.
-  const available = mission.status === 'available'
-  const fraction = available ? timerFraction(mission, now) : 1
+  const v = missionVisual(mission, now)
   return (
     <button
       type="button"
-      className={`${styles.ring} ${available ? '' : styles.ringBusy}`}
-      style={ringStyle(fraction)}
+      className={`${styles.ring} ${v.pulse ? '' : styles.ringBusy}`}
+      style={ringStyle(v.fraction, v.ringColor)}
       onClick={onClick}
-      aria-label={available ? 'Missão disponível' : 'Missão em andamento'}
+      aria-label={v.ariaLabel}
     >
-      <span className={`${styles.icon} ${styles.bang}`}>!</span>
+      <span className={`${styles.icon} ${v.iconClass}`}>{v.content}</span>
     </button>
   )
 }

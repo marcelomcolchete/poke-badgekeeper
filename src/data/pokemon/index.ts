@@ -4,13 +4,15 @@ import type { PokemonType } from '../../types/index.ts'
 import type { Species } from '../types.ts'
 import { SPECIES_BASE } from './species.generated.ts'
 import { EVOLUTIONS } from './evolutions.generated.ts'
+import { MIN_WILD_LEVEL } from './minWildLevels.generated.ts'
 
 function buildSpecies(): Map<number, Species> {
-  const evolvesTo = new Map<number, { id: number; atLevel: number }>()
-  const minWildLevel = new Map<number, number>()
+  // Agrupa os passos por origem: uma espécie pode ter vários alvos (ex.: Eevee).
+  const evolvesTo = new Map<number, { ids: number[]; atLevel: number }>()
   for (const step of EVOLUTIONS) {
-    evolvesTo.set(step.from, { id: step.to, atLevel: step.atLevel })
-    minWildLevel.set(step.to, step.atLevel)
+    const existing = evolvesTo.get(step.from)
+    if (existing) existing.ids.push(step.to)
+    else evolvesTo.set(step.from, { ids: [step.to], atLevel: step.atLevel })
   }
 
   const map = new Map<number, Species>()
@@ -18,7 +20,7 @@ function buildSpecies(): Map<number, Species> {
     map.set(base.id, {
       ...base,
       evolvesTo: evolvesTo.get(base.id) ?? null,
-      minWildLevel: minWildLevel.get(base.id) ?? 1,
+      minWildLevel: MIN_WILD_LEVEL[base.id] ?? 1,
     })
   }
   return map

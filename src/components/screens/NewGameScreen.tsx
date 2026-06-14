@@ -8,6 +8,7 @@ import { POKEMON_TYPES } from '../../types/index.ts'
 import type { GameState } from '../../engine/state.ts'
 import type { GameAction } from '../../game/actions.ts'
 import { getCity } from '../../data/cities.ts'
+import { getSpecies } from '../../data/pokemon/index.ts'
 import { createRng, deriveSeed } from '../../engine/rng.ts'
 import { rollRecruitChoices, rollTypeChoices } from '../../engine/recruit.ts'
 import { STARTER_LEVEL } from '../../engine/constants.ts'
@@ -30,6 +31,8 @@ export function NewGameScreen({ state, dispatch }: { state: GameState; dispatch:
   const [stage, setStage] = useState<Stage>({ kind: 'intro' })
   const [chosenTypes, setChosenTypes] = useState<PokemonType[]>([])
   const [chosenExtras, setChosenExtras] = useState<number[]>([])
+  const [starterName, setStarterName] = useState('')
+  const [recruitName, setRecruitName] = useState('')
 
   const typeChoices = useMemo(() => {
     if (stage.kind !== 'type') return []
@@ -59,6 +62,8 @@ export function NewGameScreen({ state, dispatch }: { state: GameState; dispatch:
       gymTypes: [city.primaryType, ...chosenTypes],
       starterSpeciesId: city.starterSpeciesId,
       extraSpeciesIds: chosenExtras,
+      starterNickname: starterName.trim() || undefined,
+      extraNicknames: [recruitName.trim() || ''],
     })
   }
 
@@ -78,6 +83,12 @@ export function NewGameScreen({ state, dispatch }: { state: GameState; dispatch:
           <div className={styles.single}>
             <PokemonCard pokemon={previewPokemon(city.starterSpeciesId, STARTER_LEVEL)} />
           </div>
+          <NameField
+            label="Dar um apelido ao seu inicial?"
+            value={starterName}
+            speciesId={city.starterSpeciesId}
+            onChange={setStarterName}
+          />
           <button type="button" className={styles.primary} onClick={() => setStage({ kind: 'type', round: 0 })}>
             Começar ▶
           </button>
@@ -119,11 +130,19 @@ export function NewGameScreen({ state, dispatch }: { state: GameState; dispatch:
       {stage.kind === 'confirm' && (
         <Section hint="Seu time inicial está pronto. Boa sorte, líder!">
           <div className={styles.cardGrid}>
-            <PokemonCard pokemon={previewPokemon(city.starterSpeciesId, STARTER_LEVEL)} />
+            <PokemonCard pokemon={previewPokemon(city.starterSpeciesId, STARTER_LEVEL, starterName.trim())} />
             {chosenExtras.map((id, i) => (
-              <PokemonCard key={`${id}-${i}`} pokemon={previewPokemon(id, 1)} />
+              <PokemonCard key={`${id}-${i}`} pokemon={previewPokemon(id, 1, recruitName.trim())} />
             ))}
           </div>
+          {chosenExtras[0] !== undefined && (
+            <NameField
+              label="Dar um apelido ao seu recruta?"
+              value={recruitName}
+              speciesId={chosenExtras[0]}
+              onChange={setRecruitName}
+            />
+          )}
           <div className={styles.gymTypes}>
             Ginásio: {[city.primaryType, ...chosenTypes].map((t) => <TypeBadge key={t} type={t} />)}
           </div>
@@ -133,6 +152,34 @@ export function NewGameScreen({ state, dispatch }: { state: GameState; dispatch:
         </Section>
       )}
     </div>
+  )
+}
+
+const MAX_NAME_LEN = 16
+
+function NameField({
+  label,
+  value,
+  speciesId,
+  onChange,
+}: {
+  label: string
+  value: string
+  speciesId: number
+  onChange: (v: string) => void
+}) {
+  return (
+    <label className={styles.nameField}>
+      <span className={styles.nameLabel}>{label}</span>
+      <input
+        className={styles.nameInput}
+        type="text"
+        value={value}
+        maxLength={MAX_NAME_LEN}
+        placeholder={getSpecies(speciesId).displayName}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </label>
   )
 }
 

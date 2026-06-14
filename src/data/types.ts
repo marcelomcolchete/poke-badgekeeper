@@ -26,8 +26,11 @@ export interface EvolutionStep {
 
 /** Espécie completa (base + evolução resolvida). */
 export interface Species extends SpeciesBase {
-  /** Próxima forma e o nível de jogo em que evolui (null se não evolui). */
-  evolvesTo: { id: number; atLevel: number } | null
+  /**
+   * Próximas formas e o nível de jogo em que evolui (null se não evolui). Pode haver
+   * mais de um alvo (ex.: Eevee): a evolução sorteia um deles via RNG — PLAN §4.1.1.
+   */
+  evolvesTo: { ids: number[]; atLevel: number } | null
   /** Menor nível em que pode surgir como selvagem (1, ou o nível em que esta forma evolui) — PLAN §4.5. */
   minWildLevel: number
 }

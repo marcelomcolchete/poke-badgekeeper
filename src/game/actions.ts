@@ -5,7 +5,16 @@ import type { AttrKey, GameSpeed, PokemonType } from '../types/index.ts'
 
 export type GameAction =
   /** Inicia a run: define os 2 tipos do ginásio, o inicial e o recruta — PLAN §3. */
-  | { type: 'START_RUN'; gymTypes: PokemonType[]; starterSpeciesId: number; extraSpeciesIds: number[] }
+  | {
+      type: 'START_RUN'
+      gymTypes: PokemonType[]
+      starterSpeciesId: number
+      extraSpeciesIds: number[]
+      /** Apelido opcional do inicial (tipo primário). */
+      starterNickname?: string
+      /** Apelidos opcionais dos recrutas, na ordem de extraSpeciesIds. */
+      extraNicknames?: string[]
+    }
   /** Define a velocidade do relógio (0 pausa, 1/2/3) — efeito real no game clock. */
   | { type: 'SET_SPEED'; speed: GameSpeed }
   /** Avança o relógio do dia em `deltaMs` (ms de jogo, já escalados pela velocidade). */

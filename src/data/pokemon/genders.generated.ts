@@ -1,5 +1,5 @@
-// AUTO-GERADO por scripts/buildPokemonData.ts — não editar à mão.
-// gender_rate da PokéAPI: oitavos-fêmea (0=100% macho, 8=100% fêmea, -1=sem gênero).
+// AUTO-GERADO por scripts/importPokemonCsv.ts (balanceamento manual via CSV) — não editar à mão.
+// gender_rate: oitavos-fêmea (0=100% macho, 8=100% fêmea, -1=sem gênero).
 
 export const GENDER_RATE: Record<number, number> = {
   1: 1,
