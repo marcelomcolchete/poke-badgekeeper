@@ -5,6 +5,7 @@ import type { Dispatch } from 'react'
 import { ATTR_KEYS } from '../../types/index.ts'
 import type { GameState } from '../../engine/state.ts'
 import type { GameAction } from '../../game/actions.ts'
+import { getNatureEntry, NATURE_LABEL_PT } from '../../data/natures.ts'
 import { pendingPoints } from '../../engine/leveling.ts'
 import { PokemonCard } from '../PokemonCard/PokemonCard.tsx'
 import { Overlay } from '../common/Overlay.tsx'
@@ -28,6 +29,7 @@ export function MemberDetail({ state, dispatch, pokemonId, onClose }: Props) {
   if (!mon) return null
 
   const pending = pendingPoints(mon)
+  const natureEntry = mon.nature ? getNatureEntry(mon.nature) : null
   const hurt = mon.currentHp > 0 && mon.currentHp < mon.maxHp
   const fainted = mon.currentHp <= 0
   const potions = count(state, 'potion')
@@ -37,6 +39,21 @@ export function MemberDetail({ state, dispatch, pokemonId, onClose }: Props) {
     <Overlay title={displayNameOf(mon).toUpperCase()} onClose={onClose}>
       <div className={styles.body}>
         <PokemonCard pokemon={mon} />
+
+        {mon.nature && (
+          <div className={styles.natureLine}>
+            <span className={styles.natureName}>{NATURE_LABEL_PT[mon.nature]}</span>
+            {natureEntry?.boosted && (
+              <span className={styles.natureBoosted}>↑ {ATTR_SHORT_PT[natureEntry.boosted]}</span>
+            )}
+            {natureEntry?.reduced && (
+              <span className={styles.natureReduced}>↓ {ATTR_SHORT_PT[natureEntry.reduced]}</span>
+            )}
+            {!natureEntry?.boosted && !natureEntry?.reduced && (
+              <span className={styles.natureNeutral}>(neutra)</span>
+            )}
+          </div>
+        )}
 
         {pending > 0 && (
           <div className={styles.alloc}>

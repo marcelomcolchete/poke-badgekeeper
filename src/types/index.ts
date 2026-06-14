@@ -1,4 +1,5 @@
 // Tipos de domínio compartilhados (PLAN §4 / §5).
+// Nota: o tipo Nature vive em src/data/natures.ts para evitar dependência circular.
 
 /** Ordem canônica fixa dos 6 eixos do radar (60° entre si) — PLAN §4.2. */
 export const ATTR_KEYS = [
@@ -62,7 +63,7 @@ export interface Pokemon {
   types: PokemonType[]
   /** Base curada por espécie (10–50). */
   baseAttrs: Attrs
-  /** Pontos alocados por nível; efetivo = base + alocação * 10. */
+  /** Pontos alocados por nível; efetivo = base + alocação * modificador de natureza. */
   allocations: Attrs
   currentHp: number
   maxHp: number
@@ -72,6 +73,8 @@ export interface Pokemon {
   gender: Gender
   /** Apelido dado pelo jogador na captura; null = usa o nome da espécie. */
   nickname: string | null
+  /** Natureza sorteada na criação; null = sem natureza (saves migrados de v11). */
+  nature: import('../data/natures.ts').Nature | null
 }
 
 /** Tipos de sítio no mapa da cidade — definem ONDE cada evento/missão pode surgir. */

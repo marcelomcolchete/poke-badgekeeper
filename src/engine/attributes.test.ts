@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ATTR_KEYS } from '../types/index.ts'
-import { ATTR_MAX, ATTR_MIN, HP_MAX, HP_MIN } from './constants.ts'
+import { ATTR_MAX, ATTR_MIN, HP_MAX, HP_MIN, NATURE_BOOSTED_PER_POINT, NATURE_REDUCED_PER_POINT } from './constants.ts'
 import {
   applyDamage,
   axisMin,
@@ -122,6 +122,62 @@ describe('HP derivado da Resistência', () => {
     })
     const fixed = recomputeMaxHp(mon)
     expect(fixed.maxHp).toBe(8) // round((30 + 20)/6)
+  })
+})
+
+describe('natureza — effectiveAttr com modificador', () => {
+  it('nature: null usa ATTR_PER_POINT = 10 (retrocompatibilidade)', () => {
+    const mon = makeMon({ baseAttrs: makeAttrs({ batalha: 20 }), allocations: { ...zeroAttrs(), batalha: 2 }, nature: null })
+    expect(effectiveAttr(mon, 'batalha')).toBe(40) // 20 + 2*10
+  })
+
+  it('natureza neutra (bashful) usa ATTR_PER_POINT = 10', () => {
+    const mon = makeMon({ baseAttrs: makeAttrs({ batalha: 20 }), allocations: { ...zeroAttrs(), batalha: 2 }, nature: 'bashful' })
+    expect(effectiveAttr(mon, 'batalha')).toBe(40) // 20 + 2*10
+  })
+
+  it('eixo favorecido usa NATURE_BOOSTED_PER_POINT = 15', () => {
+    // lonely: +batalha / -carisma
+    const mon = makeMon({ baseAttrs: makeAttrs({ batalha: 20 }), allocations: { ...zeroAttrs(), batalha: 2 }, nature: 'lonely' })
+    expect(effectiveAttr(mon, 'batalha')).toBe(20 + 2 * NATURE_BOOSTED_PER_POINT) // 50
+  })
+
+  it('eixo penalizado usa NATURE_REDUCED_PER_POINT = 5', () => {
+    // lonely: +batalha / -carisma
+    const mon = makeMon({ baseAttrs: makeAttrs({ carisma: 20 }), allocations: { ...zeroAttrs(), carisma: 2 }, nature: 'lonely' })
+    expect(effectiveAttr(mon, 'carisma')).toBe(20 + 2 * NATURE_REDUCED_PER_POINT) // 30
+  })
+
+  it('eixos neutros da natureza continuam usando ATTR_PER_POINT = 10', () => {
+    // lonely afeta batalha e carisma; os outros 4 são neutros
+    const mon = makeMon({ baseAttrs: makeAttrs({ agilidade: 20 }), allocations: { ...zeroAttrs(), agilidade: 2 }, nature: 'lonely' })
+    expect(effectiveAttr(mon, 'agilidade')).toBe(40) // 20 + 2*10
+  })
+
+  it('clamp ATTR_MAX é respeitado mesmo com natureza favorecida', () => {
+    // base 50 + 1 ponto * 15 = 65 → clampado em 60
+    const mon = makeMon({ baseAttrs: makeAttrs({ batalha: 50 }), allocations: { ...zeroAttrs(), batalha: 1 }, nature: 'lonely' })
+    expect(effectiveAttr(mon, 'batalha')).toBe(ATTR_MAX)
+  })
+
+  it('clamp ATTR_MIN é respeitado mesmo com natureza penalizada', () => {
+    // base 10 + 0 pontos * 5 = 10 → no mínimo
+    const mon = makeMon({ baseAttrs: makeAttrs({ carisma: 10 }), allocations: zeroAttrs(), nature: 'lonely' })
+    expect(effectiveAttr(mon, 'carisma')).toBe(ATTR_MIN)
+  })
+
+  it('HP máximo sobe com natureza que favorece resistencia', () => {
+    // bold: +resistencia / -batalha
+    const sem = makeMon({ baseAttrs: makeAttrs({ resistencia: 20 }), allocations: { ...zeroAttrs(), resistencia: 2 }, nature: null })
+    const com = makeMon({ baseAttrs: makeAttrs({ resistencia: 20 }), allocations: { ...zeroAttrs(), resistencia: 2 }, nature: 'bold' })
+    expect(maxHpOf(com)).toBeGreaterThan(maxHpOf(sem))
+  })
+
+  it('HP máximo cai com natureza que penaliza resistencia', () => {
+    // hasty: +agilidade / -resistencia
+    const sem = makeMon({ baseAttrs: makeAttrs({ resistencia: 30 }), allocations: { ...zeroAttrs(), resistencia: 2 }, nature: null })
+    const com = makeMon({ baseAttrs: makeAttrs({ resistencia: 30 }), allocations: { ...zeroAttrs(), resistencia: 2 }, nature: 'hasty' })
+    expect(maxHpOf(com)).toBeLessThan(maxHpOf(sem))
   })
 })
 

@@ -38,6 +38,31 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Spokes e labels com cor de natureza */
+.spokeBoosted {
+  stroke: #4a90d9;
+  stroke-width: 1.5;
+}
+
+.spokeReduced {
+  stroke: #e05050;
+  stroke-width: 1.5;
+}
+
+.labelBoosted {
+  fill: #4a90d9;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  font-weight: bold;
+}
+
+.labelReduced {
+  fill: #e05050;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  font-weight: bold;
+}
+
 /* Exigência da missão (o alvo a cobrir) */
 .requirement {
   fill: #e0683c;

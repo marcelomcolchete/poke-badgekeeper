@@ -4,6 +4,38 @@
   gap: 8px;
 }
 
+.natureLine {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  background: var(--c-panel);
+  border: 2px solid var(--c-panel-border);
+  border-radius: 4px;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+}
+
+.natureName {
+  color: var(--c-ink-muted);
+  flex: 1;
+}
+
+.natureBoosted {
+  color: #4a90d9;
+  font-weight: bold;
+}
+
+.natureReduced {
+  color: #e05050;
+  font-weight: bold;
+}
+
+.natureNeutral {
+  color: var(--c-ink-muted);
+  font-style: italic;
+}
+
 .alloc {
   background: var(--c-panel);
   border: 2px solid var(--c-panel-border);
