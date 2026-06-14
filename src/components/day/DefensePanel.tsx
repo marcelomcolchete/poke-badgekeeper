@@ -370,14 +370,14 @@ function Fighter({
           alt={alt}
           draggable={false}
         />
-        {hp && (
-          <span className={styles.hpTag}>
-            ♥ {hp.cur}/{hp.max}
-          </span>
-        )}
         {showMinus && <span className={styles.hpMinus}>−1</span>}
       </div>
-      <span className={`${styles.battleTag} ${trendCls}`}>
+      {hp && (
+        <span className={`${styles.statTag} ${styles.hpTag}`}>
+          HP {hp.cur}/{hp.max}
+        </span>
+      )}
+      <span className={`${styles.statTag} ${trendCls}`}>
         ⚔ {battle}
         {trend === 'up' ? ' ▲' : trend === 'down' ? ' ▼' : ''}
       </span>

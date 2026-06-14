@@ -10,8 +10,11 @@ export type { EnemyUnit }
 import { singleTypeMultiplier } from '../data/typeChart.ts'
 import { speciesByType } from '../data/pokemon/index.ts'
 import {
+  ATTR_EFFECTIVE_MIN,
   ATTR_MAX,
   HP_LOSS_PER_DEFENSE_LOSS,
+  IV_MAX,
+  IV_MIN,
   MIN_DEFENSE_SQUAD,
   TOTAL_DAYS,
   TYPE_ADVANTAGE_MULT,
@@ -73,13 +76,19 @@ export function enemySquadSizeForDay(rng: Rng, day: number): number {
   return rng.int(center, hi)
 }
 
-/** Inimigos efêmeros da defesa, com Batalha escalando pelo dia e uma espécie p/ exibir (PLAN §4.4/§4.8). */
+/**
+ * Inimigos efêmeros da defesa (PLAN §4.4/§4.8). Cada desafiante tem o SEU próprio poder
+ * de Batalha: a Batalha-base da espécie sorteada, escalada pelo dia, com variação de ±10
+ * (como os IVs do jogador) — então dois invasores da mesma espécie ainda diferem.
+ */
 export function generateDefenseEnemies(rng: Rng, day: number, size: number): EnemyUnit[] {
-  const battle = Math.min(ENEMY_BASE_BATTLE + ENEMY_BATTLE_PER_DAY * (day - 1), ATTR_MAX)
+  const dayBonus = ENEMY_BATTLE_PER_DAY * (day - 1)
   return Array.from({ length: size }, () => {
     const type = rng.pick(POKEMON_TYPES)
     const pool = speciesByType(type)
     const species = pool.length > 0 ? rng.pick(pool) : null
+    const base = species ? species.baseAttrs.batalha : ENEMY_BASE_BATTLE
+    const battle = clamp(base + dayBonus + rng.int(IV_MIN, IV_MAX), ATTR_EFFECTIVE_MIN, ATTR_MAX)
     return {
       battle,
       types: species ? [...species.types] : [type],
