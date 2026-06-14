@@ -11,6 +11,7 @@ import { getCity } from '../../data/cities.ts'
 import { getMissionTemplate } from '../../data/missionTemplates.ts'
 import { teamSum } from '../../engine/attributes.ts'
 import { missionDurationMs, missionSuccessProbability } from '../../engine/missions.ts'
+import { sortRoster } from '../../engine/roster.ts'
 import { pathDistance, shortestPath } from '../../engine/pathfinding.ts'
 import { HexRadar } from '../HexRadar/HexRadar.tsx'
 import { PokemonCard } from '../PokemonCard/PokemonCard.tsx'
@@ -77,7 +78,7 @@ export function MissionDispatch({ state, dispatch, missionId, onClose }: Props) 
           </div>
         </div>
         <div className={styles.picker}>
-          {state.roster.map((mon) => (
+          {sortRoster(state.roster).map((mon) => (
             <PokemonCard
               key={mon.id}
               pokemon={mon}

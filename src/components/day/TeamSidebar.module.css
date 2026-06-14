@@ -47,6 +47,8 @@
 }
 
 .member {
+  position: relative;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -226,11 +228,25 @@
   flex: none;
 }
 
+/* HP + EXP lado a lado na mesma linha (economiza altura do card). */
+.vitals {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vitalHp {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
 /* EXP: barra fina + valor por escrito. */
 .expRow {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .expTrack {
@@ -289,19 +305,48 @@
   margin: 0;
 }
 
-.status {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--font-text);
-  font-size: 14px;
-  color: var(--c-hud-muted);
+/* Card ocupado: véu escuro + faixa diagonal grande com a atividade e o ETA. */
+.busyMember {
+  cursor: default;
 }
 
-.dot {
-  flex: none;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  box-shadow: 0 0 4px currentColor;
+.busyOverlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(6, 16, 10, 0.62);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.busyBanner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 150%;
+  padding: 7px 0;
+  transform: rotate(-11deg);
+  background: linear-gradient(180deg, rgba(240, 192, 32, 0.96), rgba(214, 134, 30, 0.96));
+  border-top: 2px solid rgba(0, 0, 0, 0.45);
+  border-bottom: 2px solid rgba(0, 0, 0, 0.45);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
+  text-align: center;
+}
+
+.busyText {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+  color: #2a1c00;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
+  padding: 0 4px;
+}
+
+.busyEta {
+  font-family: var(--font-text);
+  font-size: 13px;
+  color: #1d1300;
 }

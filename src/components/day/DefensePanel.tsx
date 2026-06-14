@@ -5,10 +5,12 @@
 
 import { useEffect, useState } from 'react'
 import type { Dispatch } from 'react'
-import type { EnemyUnit, PokemonType } from '../../types/index.ts'
+import type { EnemyUnit, Pokemon, PokemonType } from '../../types/index.ts'
 import type { GameState, DefenseEvent } from '../../engine/state.ts'
 import type { GameAction } from '../../game/actions.ts'
 import { MIN_DEFENSE_SQUAD } from '../../engine/constants.ts'
+import { effectiveBattle, typeAdvantageMultiplier } from '../../engine/gymDefense.ts'
+import { sortRoster } from '../../engine/roster.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
 import { TypeBadge } from '../common/TypeBadge.tsx'
 import { PokemonCard } from '../PokemonCard/PokemonCard.tsx'
@@ -65,7 +67,7 @@ export function DefensePanel({ state, dispatch, defenseId, onClose }: Props) {
         Escolha ao menos {MIN_DEFENSE_SQUAD} Pokémon disponíveis para a cadeia de duelos 1v1.
       </p>
       <div className={styles.picker}>
-        {state.roster.map((mon) => (
+        {sortRoster(state.roster).map((mon) => (
           <PokemonCard
             key={mon.id}
             pokemon={mon}
@@ -88,16 +90,45 @@ interface Round {
   yourId: string
   youWon: boolean
   pWin: number
+  /** Poder de batalha efetivo do seu Pokémon contra os tipos deste inimigo. */
+  yourBattle: number
+  /** Poder de batalha efetivo do inimigo contra os tipos do seu Pokémon. */
+  enemyBattle: number
+  /** HP do seu Pokémon ANTES do duelo (perde 1 se for derrotado). */
+  hpBefore: number
+  hpMax: number
 }
 
-/** Reconstrói a ordem de confrontos a partir do log de duelos (mesma lógica da engine). */
-function buildRounds(defense: DefenseEvent): Round[] {
+/**
+ * Reconstrói a ordem de confrontos a partir do log de duelos (mesma lógica da engine),
+ * anexando poder de batalha individual e o HP do seu Pokémon em cada duelo. Como cada
+ * Pokémon só perde 1 HP (e sai) ao ser derrotado, o HP de antes = HP atual no roster +
+ * (1 se ele perdeu algum duelo nesta defesa).
+ */
+function buildRounds(defense: DefenseEvent, roster: readonly Pokemon[]): Round[] {
+  const lostOnce = new Set(defense.duels.filter((d) => !d.youWon).map((d) => d.yourId))
   const rounds: Round[] = []
   let theirs = 0
   for (const duel of defense.duels) {
     const enemy = defense.enemies[theirs]
     if (!enemy) break
-    rounds.push({ enemyIndex: theirs, enemy, yourId: duel.yourId, youWon: duel.youWon, pWin: duel.pWin })
+    const mon = roster.find((p) => p.id === duel.yourId)
+    const yourBattle = mon ? Math.round(effectiveBattle(mon, enemy.types)) : 0
+    const enemyBattle = mon
+      ? Math.round(enemy.battle * typeAdvantageMultiplier(enemy.types, mon.types))
+      : enemy.battle
+    const hpBefore = mon ? mon.currentHp + (lostOnce.has(duel.yourId) ? 1 : 0) : 0
+    rounds.push({
+      enemyIndex: theirs,
+      enemy,
+      yourId: duel.yourId,
+      youWon: duel.youWon,
+      pWin: duel.pWin,
+      yourBattle,
+      enemyBattle,
+      hpBefore,
+      hpMax: mon?.maxHp ?? 0,
+    })
     if (duel.youWon) theirs += 1
   }
   return rounds
@@ -119,7 +150,7 @@ function BattleView({
   defense: DefenseEvent
   onClose: () => void
 }) {
-  const rounds = buildRounds(defense)
+  const rounds = buildRounds(defense, state.roster)
   const [step, setStep] = useState(0)
   const done = step >= rounds.length
   const current = done ? null : (rounds[step] as Round)
@@ -191,6 +222,7 @@ function BattleView({
             <li key={i} className={r.youWon ? styles.duelWin : styles.duelLose}>
               <b>{nameOf(r.yourId)}</b> {r.youWon ? 'venceu' : 'perdeu para'}{' '}
               {enemyNameOf(r.enemy)}
+              {!r.youWon && ' (−1 HP)'}
             </li>
           ))}
         </ol>
@@ -263,10 +295,22 @@ function DuelMeter({
 
   const verdictClass = settled ? (round.youWon ? styles.duelWin : styles.duelLose) : ''
 
+  // HP perde 1 só quando o duelo é resolvido como derrota.
+  const lostHp = settled && !round.youWon
+  const hpNow = lostHp ? Math.max(0, round.hpBefore - 1) : round.hpBefore
+
   return (
     <div className={styles.meterWrap}>
       <span className={styles.meterHead}>
-        <b>{yourName}</b> vs {enemyName} — {Math.round(winZone * 100)}% de vitória
+        <b>{yourName}</b> (Btl {round.yourBattle}) vs {enemyName} (Btl {round.enemyBattle}) —{' '}
+        {Math.round(winZone * 100)}% de vitória
+      </span>
+      <span className={styles.meterHp}>
+        HP de {yourName}:{' '}
+        <b className={lostHp ? styles.hpHit : ''}>
+          {hpNow}/{round.hpMax}
+        </b>
+        {lostHp && <em className={styles.hpLoss}>−1 HP</em>}
       </span>
       <div className={styles.meterTrack}>
         <span className={styles.meterZone} style={{ width: `${winZone * 100}%` }} />

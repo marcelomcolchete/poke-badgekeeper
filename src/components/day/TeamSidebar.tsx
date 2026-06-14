@@ -13,6 +13,7 @@ import { MISSION_XP_REWARD } from '../../engine/balance.ts'
 import { effectiveAttr, perPointGain } from '../../engine/attributes.ts'
 import { addXp, pendingPoints, xpToNext } from '../../engine/leveling.ts'
 import { pokemonRank } from '../../engine/ranking.ts'
+import { isAvailable, sortRoster } from '../../engine/roster.ts'
 import { HpBar } from '../common/HpBar.tsx'
 import { TypeBadge } from '../common/TypeBadge.tsx'
 import {
@@ -20,7 +21,6 @@ import {
   RANK_COLOR,
   RARITY_COLOR,
   RARITY_LABEL_PT,
-  STATUS_COLOR,
   STATUS_LABEL_PT,
 } from '../common/visual.ts'
 import { displayNameOf, genderColor, genderSymbol } from '../common/naming.ts'
@@ -37,6 +37,25 @@ function activityLabel(state: GameState, mon: Pokemon): string {
   )
   if (mission) return `${base}: ${getMissionTemplate(mission.templateId).name}`
   return base
+}
+
+/**
+ * Segundos (de jogo) até o Pokémon voltar a ficar disponível, ou null quando não dá para
+ * estimar (caça ainda procurando, indisponível sem marco de tempo). Usado na faixa diagonal.
+ */
+function availableInSeconds(state: GameState, mon: Pokemon): number | null {
+  const now = state.clock.dayElapsedMs
+  const ret = state.captureReturns.find((r) => r.searcherId === mon.id)
+  if (ret) return Math.max(0, Math.round((ret.arriveAtMs - now) / 1000))
+  // Caça em andamento: o retorno só é agendado após o encontro — sem ETA confiável.
+  if (state.captureSearches.some((c) => c.searcherId === mon.id)) return null
+  const mission = state.missions.find(
+    (m) => m.teamIds.includes(mon.id) && m.status !== 'resolved' && m.returnEndsAtMs !== null,
+  )
+  if (mission && mission.returnEndsAtMs !== null) {
+    return Math.max(0, Math.round((mission.returnEndsAtMs - now) / 1000))
+  }
+  return null
 }
 
 /**
@@ -66,7 +85,7 @@ export function TeamSidebar({ state, onSelect }: Props) {
       </header>
 
       <ul className={styles.list}>
-        {state.roster.map((mon) => {
+        {sortRoster(state.roster).map((mon) => {
           const species = getSpecies(mon.speciesId)
           const pending = pendingPoints(mon)
           const fainted = mon.currentHp <= 0
@@ -75,9 +94,14 @@ export function TeamSidebar({ state, onSelect }: Props) {
           const atMax = mon.level >= LEVEL_MAX
           const xpNeeded = xpToNext(mon.level)
           const xpPct = atMax ? 100 : Math.min(100, (mon.xp / xpNeeded) * 100)
+          // Ocupado = não está livre e não está desmaiado: ganha a faixa diagonal
+          // dizendo o que faz e quando volta a ficar disponível.
+          const busy = !isAvailable(mon) && !fainted
+          const etaS = busy ? availableInSeconds(state, mon) : null
           const memberClass = [
             styles.member,
             fainted ? styles.faintedMember : '',
+            busy ? styles.busyMember : '',
             willLevelUp ? styles.willLevelUp : '',
           ]
             .filter(Boolean)
@@ -132,18 +156,21 @@ export function TeamSidebar({ state, onSelect }: Props) {
                         {RARITY_LABEL_PT[species.rarity]}
                       </span>
                     </span>
-
-                    <HpBar current={mon.currentHp} max={mon.maxHp} light />
                   </span>
                 </div>
 
-                {/* EXP — barra + valor por escrito. */}
-                <div className={styles.expRow}>
-                  <span className={styles.expTrack}>
-                    <span className={styles.expFill} style={{ width: `${xpPct}%` }} />
+                {/* HP (esquerda) + EXP (direita) na mesma linha — economiza espaço. */}
+                <div className={styles.vitals}>
+                  <span className={styles.vitalHp}>
+                    <HpBar current={mon.currentHp} max={mon.maxHp} light />
                   </span>
-                  <span className={styles.expText}>
-                    {atMax ? 'EXP máx.' : `EXP ${mon.xp}/${xpNeeded}`}
+                  <span className={styles.expRow}>
+                    <span className={styles.expTrack}>
+                      <span className={styles.expFill} style={{ width: `${xpPct}%` }} />
+                    </span>
+                    <span className={styles.expText}>
+                      {atMax ? 'EXP máx.' : `EXP ${mon.xp}/${xpNeeded}`}
+                    </span>
                   </span>
                 </div>
 
@@ -178,10 +205,16 @@ export function TeamSidebar({ state, onSelect }: Props) {
                   })}
                 </dl>
 
-                <span className={styles.status}>
-                  <span className={styles.dot} style={{ background: STATUS_COLOR[mon.status] }} />
-                  {activityLabel(state, mon)}
-                </span>
+                {busy && (
+                  <span className={styles.busyOverlay}>
+                    <span className={styles.busyBanner}>
+                      <span className={styles.busyText}>{activityLabel(state, mon)}</span>
+                      <span className={styles.busyEta}>
+                        {etaS !== null ? `Disponível em ~${etaS}s` : 'Indisponível'}
+                      </span>
+                    </span>
+                  </span>
+                )}
               </button>
             </li>
           )
