@@ -11,6 +11,8 @@ interface HudProps {
   gold: number
   stars: number
   onSpeedChange?: (speed: GameSpeed) => void
+  /** Abre a confirmação de desistir (ícone no canto do header). */
+  onQuit?: () => void
 }
 
 // Ordem dos controles: 1x, 2x, 3x e por fim a pausa (hotkey "4") — PLAN §3.1.
@@ -37,42 +39,62 @@ export function Hud({
   gold,
   stars,
   onSpeedChange,
+  onQuit,
 }: HudProps) {
   const remaining = formatClock(dayLengthMs - elapsedMs)
+  const overtime = elapsedMs >= dayLengthMs
   const starsPct = `${(stars / STARS_MAX) * 100}%`
 
   return (
     <div className={styles.hud}>
-      <span className={styles.day}>
-        DIA {day}/{totalDays}
-      </span>
-
-      <span className={styles.center}>
-        <span className={styles.muted}>TEMPO</span>
-        <span>{remaining}</span>
-        <span className={styles.speedGroup}>
-          {SPEED_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              className={`${styles.speedBtn} ${speed === opt.value ? styles.speedActive : ''}`}
-              onClick={() => onSpeedChange?.(opt.value)}
-              aria-label={`Velocidade ${opt.value === 0 ? 'pausa' : `x${opt.value}`}`}
-              aria-pressed={speed === opt.value}
-            >
-              {opt.label}
-            </button>
-          ))}
+      <span className={styles.group}>
+        <span className={styles.day}>
+          DIA {day}/{totalDays}
         </span>
+        {onQuit && (
+          <button
+            type="button"
+            className={styles.quit}
+            onClick={onQuit}
+            aria-label="Desistir da run"
+            title="Desistir da run"
+            data-sound="deselect"
+          >
+            🚪
+          </button>
+        )}
       </span>
 
-      <span className={styles.right}>
-        <span className={styles.gold}>$ {gold}</span>
-        <span className={styles.stars}>
-          <span className={styles.starsOff}>{'★'.repeat(STARS_MAX)}</span>
-          <span className={styles.starsOn} style={{ width: starsPct }}>
-            {'★'.repeat(STARS_MAX)}
-          </span>
+      <span className={styles.sep} aria-hidden="true" />
+
+      <span className={styles.clock}>
+        <span className={styles.muted}>TEMPO</span>
+        <span className={overtime ? styles.clockLow : undefined}>{remaining}</span>
+      </span>
+
+      <span className={styles.gold}>$ {gold}</span>
+
+      <span className={styles.speedGroup}>
+        {SPEED_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            className={`${styles.speedBtn} ${speed === opt.value ? styles.speedActive : ''}`}
+            onClick={() => onSpeedChange?.(opt.value)}
+            aria-label={`Velocidade ${opt.value === 0 ? 'pausa' : `x${opt.value}`}`}
+            aria-pressed={speed === opt.value}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </span>
+
+      <span className={styles.sep} aria-hidden="true" />
+
+      <span className={styles.stars}>
+        <span className={styles.starsOff}>{'★'.repeat(STARS_MAX)}</span>
+        <span className={styles.starsOn} style={{ width: starsPct }}>
+          {'★'.repeat(STARS_MAX)}
         </span>
       </span>
     </div>

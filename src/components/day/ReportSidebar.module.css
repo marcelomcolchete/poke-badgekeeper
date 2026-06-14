@@ -1,0 +1,259 @@
+/* Coluna fixa do relatório (direita): mesmo visual translúcido da coluna do time. */
+.panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(8, 26, 14, 0.72);
+  border-left: 2px solid var(--c-hud-border);
+  backdrop-filter: blur(2px);
+  overflow: hidden;
+  z-index: 3;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--c-hud-border);
+}
+
+.title {
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  color: var(--c-hud-accent);
+  letter-spacing: 0.04em;
+}
+
+.stars {
+  position: relative;
+  display: inline-block;
+  line-height: 1;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.starsOff {
+  color: var(--c-star-off);
+}
+
+.starsOn {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  color: var(--c-star-on);
+}
+
+/* Bloco de destaque: progresso de missões rumo à meta. */
+.missions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: rgba(28, 86, 50, 0.5);
+  border: 2px solid var(--c-hud-border);
+  border-radius: var(--radius-pixel);
+}
+
+.missionTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.label {
+  font-family: var(--font-text);
+  font-size: 16px;
+  color: var(--c-hud-muted);
+}
+
+.big {
+  font-family: var(--font-pixel);
+  font-size: 16px;
+  color: var(--c-hud-text);
+}
+
+.of {
+  font-size: 11px;
+  color: var(--c-hud-muted);
+}
+
+.bar {
+  position: relative;
+  height: 12px;
+  background: var(--c-hp-track);
+  border: 2px solid var(--c-hud-border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.barFill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--c-hp-high);
+  transition: width 0.3s ease;
+}
+
+/* Marcador vertical da meta sobre a barra. */
+.goalMark {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 3px;
+  background: var(--c-hud-accent);
+  transform: translateX(-50%);
+}
+
+.hint {
+  font-family: var(--font-text);
+  font-size: 15px;
+  color: var(--c-hud-muted);
+  margin: 0;
+}
+
+.hintGood {
+  color: var(--c-hp-high);
+}
+
+/* Grade 2×2 de indicadores do dia. */
+.stats {
+  list-style: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 6px;
+  background: rgba(28, 86, 50, 0.5);
+  border: 2px solid var(--c-hud-border);
+  border-radius: var(--radius-pixel);
+}
+
+.statIcon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.statVal {
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  color: var(--c-hud-accent);
+  text-align: center;
+}
+
+.statSub {
+  font-size: 9px;
+  color: var(--c-hud-muted);
+}
+
+.statLabel {
+  font-family: var(--font-text);
+  font-size: 13px;
+  color: var(--c-hud-muted);
+}
+
+/* Guia (antigo líder): histórico de falas rolável, ocupa o espaço restante. */
+.guide {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 2px solid var(--c-hud-border);
+}
+
+.guideHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Placeholder do retrato — troque o emoji pela foto do líder no futuro. */
+.guideAvatar {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  font-size: 14px;
+  background: var(--c-hud-accent);
+  border: 2px solid var(--c-ink);
+  border-radius: 50%;
+}
+
+.guideName {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--c-hud-accent);
+  letter-spacing: 0.04em;
+}
+
+.log {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.msg {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+/* Retrato pequeno por mensagem (estilo chat) — placeholder até a arte do líder. */
+.msgAvatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  font-size: 15px;
+  background: rgba(28, 86, 50, 0.7);
+  border: 2px solid var(--c-hud-border);
+  border-radius: 50%;
+}
+
+/* Balão de fala clássico (branco, texto azul) — ecoa a textbox antiga. */
+.bubble {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-family: var(--font-text);
+  font-size: 15px;
+  line-height: 1.25;
+  color: var(--c-dialog-text);
+  background: var(--c-dialog-bg);
+  border: 2px solid var(--c-dialog-border);
+  border-radius: 8px;
+  padding: 7px 9px;
+}
+
+/* Bico do balão apontando para o retrato. */
+.bubble::before {
+  content: '';
+  position: absolute;
+  left: -7px;
+  top: 9px;
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-right: 7px solid var(--c-dialog-border);
+}

@@ -1,7 +1,29 @@
 // Rótulos em PT e cor por tipo para a UI (PLAN §2.1). As cores canônicas dos 15
 // tipos vivem como variáveis CSS (--type-*) em styles/theme.css.
 
-import type { AttrKey, PokemonType, Rarity } from '../../types/index.ts'
+import type { AttrKey, PokemonStatus, PokemonType, Rarity } from '../../types/index.ts'
+
+/** Rótulo em PT do que o Pokémon está fazendo agora (HUD/painel do time). */
+export const STATUS_LABEL_PT: Record<PokemonStatus, string> = {
+  idle: 'Pronto',
+  traveling: 'A caminho',
+  onMission: 'Em missão',
+  defending: 'Defendendo',
+  returning: 'Voltando',
+  fainted: 'Desmaiado',
+  atCenter: 'No Centro',
+}
+
+/** Cor do "led" de status (verde = livre, amarelo = ocupado, vermelho = indisponível). */
+export const STATUS_COLOR: Record<PokemonStatus, string> = {
+  idle: '#6fcf3f',
+  traveling: '#f0c020',
+  onMission: '#f0c020',
+  defending: '#e0683c',
+  returning: '#57a6dc',
+  fainted: '#e84040',
+  atCenter: '#a05fd0',
+}
 
 export const TYPE_LABEL_PT: Record<PokemonType, string> = {
   normal: 'Normal',

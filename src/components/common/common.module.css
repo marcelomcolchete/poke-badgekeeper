@@ -20,6 +20,11 @@
   color: var(--c-ink);
 }
 
+/* Variante p/ fundos escuros (ex.: coluna do time): texto do HP em tom claro. */
+.hpLight {
+  color: var(--c-hud-text);
+}
+
 .hpLabel {
   font-family: var(--font-pixel);
   font-size: 8px;

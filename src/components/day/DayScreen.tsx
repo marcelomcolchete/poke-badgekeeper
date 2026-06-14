@@ -1,6 +1,6 @@
-// Tela do Dia (PLAN §3.1): HUD no topo, mapa da cidade com marcadores, botões à
-// esquerda (Time/Relatório/Desistir) e textbox na base. Abre os painéis conforme
-// o jogador clica nos marcadores.
+// Tela do Dia (PLAN §3.1) — dashboard em 3 colunas: coluna do TIME à esquerda,
+// mapa da cidade ao centro (HUD no topo + textbox na base) e RELATÓRIO à direita.
+// O desistir virou um ícone no header; painéis de evento abrem como modais por cima.
 
 import { useEffect, useRef, useState } from 'react'
 import type { Dispatch } from 'react'
@@ -8,12 +8,12 @@ import type { GameSpeed } from '../../types/index.ts'
 import type { GameState } from '../../engine/state.ts'
 import type { GameAction } from '../../game/actions.ts'
 import { TOTAL_DAYS } from '../../engine/constants.ts'
-import { missionGoal } from '../../engine/approval.ts'
 import { Hud } from '../Hud/Hud.tsx'
-import { Textbox } from '../Textbox/Textbox.tsx'
 import { Overlay } from '../common/Overlay.tsx'
-import { TeamPanel } from '../TeamPanel/TeamPanel.tsx'
 import { CityMap } from './CityMap.tsx'
+import { TeamSidebar } from './TeamSidebar.tsx'
+import { ReportSidebar } from './ReportSidebar.tsx'
+import { MemberDetail } from './MemberDetail.tsx'
 import { MissionDispatch } from './MissionDispatch.tsx'
 import { MissionRevealModal } from './MissionRevealModal.tsx'
 import { DefensePanel } from './DefensePanel.tsx'
@@ -24,10 +24,13 @@ type Selection =
   | { kind: 'mission'; id: string }
   | { kind: 'defense'; id: string }
   | { kind: 'capture'; spotIndex: number }
-  | { kind: 'team' }
-  | { kind: 'report' }
   | { kind: 'quit' }
   | null
+
+export interface GuideMessage {
+  id: number
+  text: string
+}
 
 interface Props {
   state: GameState
@@ -39,6 +42,15 @@ interface Props {
 
 export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) {
   const [open, setOpen] = useState<Selection>(null)
+  // Membro do time aberto em detalhe (coluna esquerda → modal).
+  const [memberId, setMemberId] = useState<string | null>(null)
+  // Histórico de falas do guia (antigo líder): acumula cada dica nova do dia.
+  const [messages, setMessages] = useState<GuideMessage[]>(() => [
+    { id: 0, text: 'Bem-vindo ao ginásio! Eu te guio durante o dia — fica de olho aqui.' },
+    { id: 1, text: dayHint(state) },
+  ])
+  const msgCounter = useRef(2)
+  const lastMsg = useRef(dayHint(state))
   // Missão a revelar (modal de conclusão com os gráficos) e controles de "já visto".
   const [revealId, setRevealId] = useState<string | null>(null)
   const revealedMissions = useRef<Set<string>>(new Set())
@@ -46,11 +58,11 @@ export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) 
   const close = (): void => setOpen(null)
   const setSpeed = (speed: GameSpeed): void => dispatch({ type: 'SET_SPEED', speed })
 
-  // Abrir qualquer painel OU revelar uma missão pausa o tempo; fechar retoma.
+  // Abrir qualquer painel/detalhe OU revelar uma missão pausa o tempo; fechar retoma.
   useEffect(() => {
-    onPauseChange(open !== null || revealId !== null)
+    onPauseChange(open !== null || memberId !== null || revealId !== null)
     return () => onPauseChange(false)
-  }, [open, revealId, onPauseChange])
+  }, [open, memberId, revealId, onPauseChange])
 
   // Conclusão de missão (#2): ao resolver, abre o modal de revelação (uma vez por missão).
   useEffect(() => {
@@ -80,6 +92,14 @@ export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) 
   }
   const revealMission = revealId ? state.missions.find((m) => m.id === revealId) : undefined
 
+  // Fala do guia: sempre que a dica contextual muda, registra uma nova mensagem no histórico.
+  useEffect(() => {
+    const text = dayHint(state)
+    if (text === lastMsg.current) return
+    lastMsg.current = text
+    setMessages((prev) => [...prev, { id: msgCounter.current++, text }])
+  }, [state])
+
   // Atalhos de teclado: 1/2/3 = velocidade; 4 = pausa/play (segue a ordem dos botões).
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -98,56 +118,32 @@ export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) 
 
   return (
     <div className={styles.screen}>
-      <CityMap
-        state={state}
-        onMission={(id) => setOpen({ kind: 'mission', id })}
-        onDefense={(id) => setOpen({ kind: 'defense', id })}
-        onSpot={(spotIndex) => setOpen({ kind: 'capture', spotIndex })}
-      />
+      <TeamSidebar state={state} onSelect={setMemberId} />
 
-      <div className={styles.hudBar}>
-        <Hud
-          day={state.run.day}
-          totalDays={TOTAL_DAYS}
-          elapsedMs={state.clock.dayElapsedMs}
-          dayLengthMs={state.clock.dayLengthMs}
-          speed={state.clock.speed}
-          gold={state.gold}
-          stars={state.approval.stars}
-          onSpeedChange={setSpeed}
+      <div className={styles.stage}>
+        <CityMap
+          state={state}
+          onMission={(id) => setOpen({ kind: 'mission', id })}
+          onDefense={(id) => setOpen({ kind: 'defense', id })}
+          onSpot={(spotIndex) => setOpen({ kind: 'capture', spotIndex })}
         />
+
+        <div className={styles.hudBar}>
+          <Hud
+            day={state.run.day}
+            totalDays={TOTAL_DAYS}
+            elapsedMs={state.clock.dayElapsedMs}
+            dayLengthMs={state.clock.dayLengthMs}
+            speed={state.clock.speed}
+            gold={state.gold}
+            stars={state.approval.stars}
+            onSpeedChange={setSpeed}
+            onQuit={() => setOpen({ kind: 'quit' })}
+          />
+        </div>
       </div>
 
-      <nav className={styles.sidebar} aria-label="Ações do treinador">
-        <button
-          type="button"
-          className={`${styles.actionBtn} ${styles.actTeam}`}
-          onClick={() => setOpen({ kind: 'team' })}
-        >
-          <span className={styles.actionIcon}>👥</span>
-          <span className={styles.actionLabel}>Time</span>
-        </button>
-        <button
-          type="button"
-          className={`${styles.actionBtn} ${styles.actReport}`}
-          onClick={() => setOpen({ kind: 'report' })}
-        >
-          <span className={styles.actionIcon}>📋</span>
-          <span className={styles.actionLabel}>Relatório</span>
-        </button>
-        <button
-          type="button"
-          className={`${styles.actionBtn} ${styles.actQuit}`}
-          onClick={() => setOpen({ kind: 'quit' })}
-        >
-          <span className={styles.actionIcon}>🚪</span>
-          <span className={styles.actionLabel}>Desistir</span>
-        </button>
-      </nav>
-
-      <div className={styles.textbox}>
-        <Textbox>{dayHint(state)}</Textbox>
-      </div>
+      <ReportSidebar state={state} messages={messages} />
 
       {open?.kind === 'mission' && (
         <MissionDispatch state={state} dispatch={dispatch} missionId={open.id} onClose={close} />
@@ -158,9 +154,16 @@ export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) 
       {open?.kind === 'capture' && (
         <CapturePanel state={state} dispatch={dispatch} spotIndex={open.spotIndex} onClose={close} />
       )}
-      {open?.kind === 'team' && <TeamPanel state={state} dispatch={dispatch} onClose={close} />}
-      {open?.kind === 'report' && <DayReport state={state} onClose={close} />}
       {open?.kind === 'quit' && <QuitConfirm onConfirm={onRestart} onClose={close} />}
+
+      {memberId && (
+        <MemberDetail
+          state={state}
+          dispatch={dispatch}
+          pokemonId={memberId}
+          onClose={() => setMemberId(null)}
+        />
+      )}
 
       {revealMission && (
         <MissionRevealModal state={state} mission={revealMission} onClose={closeReveal} />
@@ -180,36 +183,6 @@ function dayHint(state: GameState): string {
   const available = state.missions.filter((m) => m.status === 'available').length
   if (available > 0) return `${available} missão(ões) disponível(is). Clique num "!" para despachar seu time.`
   return 'Dia em andamento. Aguarde novas missões surgirem pela cidade…'
-}
-
-function DayReport({ state, onClose }: { state: GameState; onClose: () => void }) {
-  const t = state.today
-  const completed = t.missionResults.filter((m) => m.success).length
-  const total = state.missions.length
-  const goal = missionGoal(total) // metade do total, arredondando p/ cima (#6)
-  const goalMet = total > 0 && completed >= goal
-  const allDone = total > 0 && completed >= total
-  return (
-    <Overlay title="RELATÓRIO DO DIA" onClose={onClose}>
-      <ul className={styles.report}>
-        <li>Missões cumpridas: <b>{completed}</b> / {total}</li>
-        <li>
-          Meta do dia: <b className={goalMet ? styles.goalMet : undefined}>{goal}</b>
-          {' '}<span className={styles.goalNote}>(★½ na meta · ★ em todas)</span>
-        </li>
-        <li>Defesas vencidas: <b>{t.defensesWon}</b> / {t.defensesTotal}</li>
-        <li>Ouro do dia: <b>$ {t.goldEarned}</b></li>
-        <li>Capturados: <b>{t.capturedIds.length}</b></li>
-      </ul>
-      <p className={styles.reward}>
-        {allDone
-          ? 'Todas as missões cumpridas — +1 estrela! ★'
-          : goalMet
-            ? 'Meta batida — +½ estrela! ★½'
-            : `Faltam ${Math.max(0, goal - completed)} para a meta (½ estrela).`}
-      </p>
-    </Overlay>
-  )
 }
 
 function QuitConfirm({ onConfirm, onClose }: { onConfirm: () => void; onClose: () => void }) {

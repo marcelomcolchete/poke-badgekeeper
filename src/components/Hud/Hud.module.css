@@ -13,13 +13,53 @@
   white-space: nowrap;
 }
 
+.group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .day {
   font-family: var(--font-pixel);
   font-size: 10px;
   color: var(--c-hud-accent);
 }
 
-.center {
+/* Ícone de desistir, embutido ao lado do dia (substitui o antigo botão lateral). */
+.quit {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  font-size: 13px;
+  line-height: 1;
+  background: rgba(122, 40, 57, 0.92);
+  border: 2px solid #e84040;
+  border-radius: 6px;
+  cursor: pointer;
+  transition:
+    transform 0.06s ease,
+    filter 0.1s ease;
+}
+
+.quit:hover {
+  filter: brightness(1.15);
+}
+
+.quit:active {
+  transform: translateY(1px);
+}
+
+/* Divisor vertical fino entre os grupos do header. */
+.sep {
+  width: 2px;
+  align-self: stretch;
+  margin: -2px 2px;
+  background: var(--c-hud-border);
+  opacity: 0.6;
+}
+
+.clock {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -27,6 +67,12 @@
 
 .muted {
   color: var(--c-hud-muted);
+}
+
+/* Tempo esgotado: cronômetro em vermelho, chamando atenção. */
+.clockLow {
+  color: var(--c-hp-low);
+  font-weight: 700;
 }
 
 .speedGroup {
@@ -49,12 +95,6 @@
   color: var(--c-hud-border);
   background: var(--c-hud-accent);
   border-color: var(--c-hud-accent);
-}
-
-.right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
 }
 
 .gold {

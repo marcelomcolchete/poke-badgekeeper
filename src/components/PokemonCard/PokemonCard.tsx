@@ -1,4 +1,4 @@
-import type { Pokemon, PokemonStatus } from '../../types/index.ts'
+import type { Pokemon } from '../../types/index.ts'
 import { ATTR_KEYS } from '../../types/index.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
 import { LEVEL_MAX } from '../../engine/constants.ts'
@@ -7,19 +7,9 @@ import { pendingPoints, xpToNext } from '../../engine/leveling.ts'
 import { HexRadar } from '../HexRadar/HexRadar.tsx'
 import { TypeBadge } from '../common/TypeBadge.tsx'
 import { HpBar } from '../common/HpBar.tsx'
-import { RARITY_COLOR, RARITY_LABEL_PT } from '../common/visual.ts'
+import { RARITY_COLOR, RARITY_LABEL_PT, STATUS_LABEL_PT } from '../common/visual.ts'
 import { displayNameOf, genderColor, genderSymbol } from '../common/naming.ts'
 import styles from './PokemonCard.module.css'
-
-const STATUS_LABEL: Record<PokemonStatus, string> = {
-  idle: 'Pronto',
-  traveling: 'Viajando',
-  onMission: 'Em missão',
-  defending: 'Defendendo',
-  returning: 'Voltando',
-  fainted: 'Desmaiado',
-  atCenter: 'No Centro',
-}
 
 interface Props {
   pokemon: Pokemon
@@ -92,7 +82,7 @@ export function PokemonCard({ pokemon, selected = false, disabled = false, toggl
 
       <div className={styles.foot}>
         <HpBar current={pokemon.currentHp} max={pokemon.maxHp} />
-        <span className={styles.status}>{STATUS_LABEL[pokemon.status]}</span>
+        <span className={styles.status}>{STATUS_LABEL_PT[pokemon.status]}</span>
       </div>
 
       <div className={styles.exp}>
