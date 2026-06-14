@@ -11,10 +11,15 @@ import { MAX_DISPATCH, MIN_DISPATCH } from '../../engine/constants.ts'
 import { getCity } from '../../data/cities.ts'
 import { getMissionTemplate, missionReward } from '../../data/missionTemplates.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
-import { teamSum } from '../../engine/attributes.ts'
-import { missionDurationMs, missionSuccessProbability } from '../../engine/missions.ts'
+import { missionDurationMs, missionSuccessProbabilityCtx } from '../../engine/missions.ts'
+import {
+  teamHasAttrBoost,
+  teamSecretSum,
+  teamTravelSpeedMultiplier,
+  type MissionSecretCtx,
+} from '../../engine/secretEffects.ts'
 import { sortRoster } from '../../engine/roster.ts'
-import { pathDistance, shortestPath } from '../../engine/pathfinding.ts'
+import { graphWithTunnel, pathDistance, shortestPath } from '../../engine/pathfinding.ts'
 import { ATTR_LABEL_PT } from '../common/visual.ts'
 import { HexRadar } from '../HexRadar/HexRadar.tsx'
 import { PokemonCard } from '../PokemonCard/PokemonCard.tsx'
@@ -58,9 +63,13 @@ export function MissionDispatch({ state, dispatch, missionId, onClose }: Props) 
   const team: Pokemon[] = selected
     .map((id) => state.roster.find((p) => p.id === id))
     .filter((p): p is Pokemon => p !== undefined)
-  const probability = Math.round(missionSuccessProbability(team, mission.requirement) * 100)
-  const distance = pathDistance(city.graph, shortestPath(city.graph, city.siteNodes.gym, mission.node))
-  const durationS = Math.round(missionDurationMs(team, distance, template) / 1000)
+  const ctx: MissionSecretCtx = { team, template, runtime: state.today.secretRuntime }
+  const probability = Math.round(missionSuccessProbabilityCtx(ctx, mission.requirement) * 100)
+  const graph = graphWithTunnel(city.graph, state.today.digTunnel)
+  const distance = pathDistance(graph, shortestPath(graph, city.siteNodes.gym, mission.node))
+  const speedMult = teamTravelSpeedMultiplier(team, state.today.secretRuntime)
+  const durationS = Math.round(missionDurationMs(team, distance, template, speedMult) / 1000)
+  const boosted = teamHasAttrBoost(ctx)
   const valid = selected.length >= MIN_DISPATCH && selected.length <= MAX_DISPATCH
   const subtitle = missionSubtitle(template, mission.secondaryAttr)
   const reward = missionReward(template)
@@ -91,7 +100,12 @@ export function MissionDispatch({ state, dispatch, missionId, onClose }: Props) 
               <span aria-hidden="true">{reward.icon}</span> {reward.label}
             </p>
           )}
-          <HexRadar requirement={mission.requirement} teamSum={teamSum(team)} />
+          <HexRadar requirement={mission.requirement} teamSum={teamSecretSum(ctx)} />
+          {boosted && (
+            <p className={styles.missionReward}>
+              <span aria-hidden="true">✦</span> Habilidade Secreta ativa nesta missão
+            </p>
+          )}
           <div className={styles.stats}>
             <span>
               Sucesso: <b>{probability}%</b>

@@ -16,7 +16,7 @@ import type {
 import { getCity, markerPos } from '../../data/cities.ts'
 import { getMissionTemplate, missionReward } from '../../data/missionTemplates.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
-import { pointAlongPath } from '../../engine/pathfinding.ts'
+import { graphWithTunnel, pointAlongPath } from '../../engine/pathfinding.ts'
 import { clamp } from '../../engine/math.ts'
 import styles from './CityMap.module.css'
 
@@ -72,7 +72,7 @@ function elapsedFraction(now: number, start: number, end: number): number {
 
 export function CityMap({ state, onMission, onDefense, onSpot }: Props) {
   const city = getCity(state.run.cityIndex)
-  const graph = city.graph
+  const graph = graphWithTunnel(city.graph, state.today.digTunnel)
   const now = state.clock.dayElapsedMs
   const activeDefense = state.defenses.find((d) => d.status === 'active')
   const missions = state.missions.filter((m) => VISIBLE_MISSION_STATUSES.includes(m.status))
@@ -88,6 +88,8 @@ export function CityMap({ state, onMission, onDefense, onSpot }: Props) {
           alt={`Mapa de ${city.name}`}
           draggable={false}
         />
+
+        {state.today.digTunnel && <DigTunnel graph={graph} tunnel={state.today.digTunnel} />}
 
         {activeDefense && (
           <div className={styles.anchor} style={posStyle(markerPos(graph, city.siteNodes.gym))}>
@@ -123,6 +125,26 @@ export function CityMap({ state, onMission, onDefense, onSpot }: Props) {
         <MapTravelers state={state} graph={graph} now={now} />
       </div>
     </div>
+  )
+}
+
+/** Túnel do Dig: dois buracos nos pontos ligados + uma linha tracejada por baixo da terra. */
+function DigTunnel({ graph, tunnel }: { graph: CityGraph; tunnel: readonly [string, string] }) {
+  const a = graph.nodes[tunnel[0]]
+  const b = graph.nodes[tunnel[1]]
+  if (!a || !b) return null
+  return (
+    <>
+      <svg className={styles.tunnelLine} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        <line x1={a.x * 100} y1={a.y * 100} x2={b.x * 100} y2={b.y * 100} />
+      </svg>
+      <div className={styles.tunnelHole} style={posStyle(a)} title="Túnel (Dig)" aria-hidden="true">
+        🕳️
+      </div>
+      <div className={styles.tunnelHole} style={posStyle(b)} title="Túnel (Dig)" aria-hidden="true">
+        🕳️
+      </div>
+    </>
   )
 }
 

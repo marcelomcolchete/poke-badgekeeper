@@ -172,6 +172,18 @@ export interface MissionResultLog {
   teamIds: string[]
 }
 
+/** Estado por-Pokémon das Habilidades Secretas no dia (zera a cada manhã). */
+export interface SecretRuntime {
+  /** Sand Rush: tarefas concluídas com sucesso em sequência (cada uma = +25% de velocidade). */
+  sandRushStacks?: number
+  /** Weak Armor: já tomou dano hoje → +50% de velocidade em missões pelo resto do dia. */
+  weakArmorActive?: boolean
+  /** Battle Armor: defendeu o ginásio → +50% nos atributos da próxima missão (consome ao despachar). */
+  battleArmorPending?: boolean
+  /** Sturdy: já usou o "não desmaia" hoje (efeito 1×/dia). */
+  sturdyUsed?: boolean
+}
+
 /** Um inimigo derrotado numa defesa do dia: quem derrotou + espécie (sprite no relatório). */
 export interface DefenseKill {
   defeaterId: string
@@ -202,6 +214,10 @@ export interface DayTally {
   defenseKills: DefenseKill[]
   /** Habilidade Secreta desbloqueada HOJE pelo Destaque do Dia (reveal no resumo); null se nenhuma. */
   secretUnlock: { pokemonId: string; abilityId: string } | null
+  /** Estado por-Pokémon das Habilidades Secretas hoje (stacks/flags), por id de Pokémon. */
+  secretRuntime: Record<string, SecretRuntime>
+  /** Túnel do Dig hoje: dois pontos do grafo ligados por baixo da terra; null se não há. */
+  digTunnel: [string, string] | null
 }
 
 export interface DayLog {
@@ -255,6 +271,8 @@ export function emptyTally(): DayTally {
     exploredSpots: [],
     defenseKills: [],
     secretUnlock: null,
+    secretRuntime: {},
+    digTunnel: null,
   }
 }
 

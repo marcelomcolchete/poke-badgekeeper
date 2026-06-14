@@ -8,7 +8,7 @@ import { getCity } from '../data/cities.ts'
 import { getSpecies } from '../data/pokemon/index.ts'
 import { captureWild, rollEncounter, rosterIsFull, searchMs } from '../engine/capture.ts'
 import { graphTravelMs } from '../engine/missions.ts'
-import { pathDistance, shortestPath } from '../engine/pathfinding.ts'
+import { graphWithTunnel, pathDistance, shortestPath } from '../engine/pathfinding.ts'
 import { createRng } from '../engine/rng.ts'
 import { findMon, replaceMon, takeId, takeRng } from './runtime.ts'
 
@@ -26,8 +26,9 @@ export function startSearch(s: GameState, searcherId: string, spotIndex: number)
   if (s.clock.dayElapsedMs < (s.captureSpotSpawnsAtMs[spotIndex] ?? 0)) return
 
   const city = getCity(s.run.cityIndex)
-  const path = shortestPath(city.graph, city.siteNodes.gym, node)
-  const oneWay = graphTravelMs(pathDistance(city.graph, path), [searcher])
+  const graph = graphWithTunnel(city.graph, s.today.digTunnel)
+  const path = shortestPath(graph, city.siteNodes.gym, node)
+  const oneWay = graphTravelMs(pathDistance(graph, path), [searcher])
   const now = s.clock.dayElapsedMs
   const arriveAtMs = now + oneWay
 
@@ -89,8 +90,9 @@ function startReturn(s: GameState, searcherId: string, spotIndex: number, captur
   if (!searcher) return
   const city = getCity(s.run.cityIndex)
   const node = s.captureSpots[spotIndex] ?? city.siteNodes.gym
-  const path = shortestPath(city.graph, city.siteNodes.gym, node)
-  const oneWay = graphTravelMs(pathDistance(city.graph, path), [searcher])
+  const graph = graphWithTunnel(city.graph, s.today.digTunnel)
+  const path = shortestPath(graph, city.siteNodes.gym, node)
+  const oneWay = graphTravelMs(pathDistance(graph, path), [searcher])
   const now = s.clock.dayElapsedMs
   replaceMon(s, { ...searcher, status: 'returning' })
   s.captureReturns.push({

@@ -13,10 +13,17 @@ import { MISSION_XP_REWARD, RETURN_SPEED_BONUS_ON_SUCCESS } from '../engine/bala
 import {
   executionMs,
   graphTravelMs,
-  missionSuccessProbability,
+  missionSuccessProbabilityCtx,
   resolveMission,
+  type MissionOutcome,
 } from '../engine/missions.ts'
-import { pathDistance, shortestPath } from '../engine/pathfinding.ts'
+import {
+  activeSecretId,
+  hasWeakArmor,
+  teamTravelSpeedMultiplier,
+  type MissionSecretCtx,
+} from '../engine/secretEffects.ts'
+import { graphWithTunnel, pathDistance, shortestPath } from '../engine/pathfinding.ts'
 import { addXp } from '../engine/leveling.ts'
 import { createRng, type Rng } from '../engine/rng.ts'
 import { findMon, replaceMon, settleFaint, takeRng } from './runtime.ts'
@@ -71,9 +78,12 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
   const city = getCity(s.run.cityIndex)
   const template = getMissionTemplate(mission.templateId)
   const now = s.clock.dayElapsedMs
-  const path = shortestPath(city.graph, city.siteNodes.gym, mission.node)
-  const oneWay = graphTravelMs(pathDistance(city.graph, path), team)
+  const graph = graphWithTunnel(city.graph, s.today.digTunnel)
+  const path = shortestPath(graph, city.siteNodes.gym, mission.node)
+  const speedMult = teamTravelSpeedMultiplier(team, s.today.secretRuntime)
+  const oneWay = graphTravelMs(pathDistance(graph, path), team, speedMult)
   const execution = executionMs(team, template.baseExecutionMs)
+  const ctx: MissionSecretCtx = { team, template, runtime: s.today.secretRuntime }
 
   mission.teamIds = team.map((p) => p.id)
   mission.path = path
@@ -82,7 +92,7 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
   mission.arriveAtMs = now + oneWay
   mission.resolveAtMs = now + oneWay + execution
   mission.returnEndsAtMs = now + oneWay + execution + oneWay
-  mission.pSuccess = missionSuccessProbability(team, mission.requirement)
+  mission.pSuccess = missionSuccessProbabilityCtx(ctx, mission.requirement)
   for (const p of team) replaceMon(s, { ...p, status: 'traveling' })
 }
 
@@ -116,7 +126,11 @@ export function advanceMission(s: GameState, mission: MissionInstance, nowMs: nu
 export function resolveMissionNow(s: GameState, mission: MissionInstance): void {
   const template = getMissionTemplate(mission.templateId)
   const team = teamOf(s, mission.teamIds)
-  const outcome = resolveMission(takeRng(s), team, mission.requirement, template.danger)
+  const ctx: MissionSecretCtx = { team, template, runtime: s.today.secretRuntime }
+  const pSuccess = missionSuccessProbabilityCtx(ctx, mission.requirement)
+  const outcome = resolveMission(takeRng(s), team, mission.requirement, template.danger, pSuccess)
+  // Habilidades Secretas: atualiza stacks (Sand Rush), ativa Weak Armor e consome Battle Armor.
+  applyMissionSecretRuntime(s, team, outcome)
   // Aplica só o dano (HP) agora; XP/cura/evolução são adiados para freeOnReturn.
   for (const member of outcome.team) {
     replaceMon(s, { ...member, status: 'returning' })
@@ -155,6 +169,30 @@ export function freeOnReturn(s: GameState, mission: MissionInstance): void {
     if (success) s.today.xpEarned += MISSION_XP_REWARD // XP do dia (relatório)
   }
   mission.status = 'resolved'
+}
+
+/**
+ * Atualiza o estado diário das Habilidades Secretas após resolver a missão:
+ * Sand Rush acumula/zera os stacks; Weak Armor ativa o buff de velocidade ao tomar dano;
+ * Battle Armor é consumido (valeu para esta missão).
+ */
+function applyMissionSecretRuntime(
+  s: GameState,
+  before: readonly Pokemon[],
+  outcome: MissionOutcome,
+): void {
+  const post = new Map(outcome.team.map((p) => [p.id, p]))
+  for (const p of before) {
+    const rt = (s.today.secretRuntime[p.id] ??= {})
+    if (activeSecretId(p) === 'secret-sandshrew') {
+      rt.sandRushStacks = outcome.success ? (rt.sandRushStacks ?? 0) + 1 : 0
+    }
+    if (hasWeakArmor(p)) {
+      const after = post.get(p.id)
+      if (after && after.currentHp < p.currentHp) rt.weakArmorActive = true
+    }
+    if (rt.battleArmorPending) rt.battleArmorPending = false
+  }
 }
 
 /** Recompensas de sucesso do template: ouro (Pokemart) e passiva concedida (Museu). */

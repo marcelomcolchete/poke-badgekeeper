@@ -138,6 +138,25 @@ export const DAY1_FIRST_MISSION_DELAY_MS = 15_000
 export const MUSEUM_DAY_MIN = 3
 export const MUSEUM_DAY_MAX = 8
 
+// ---- Habilidades Secretas (efeitos por linha de Pedra/Ground) ----
+
+/** Rivalidade (Nidoran): +10% em todos os atributos na missão com aliado do mesmo gênero. */
+export const RIVALRY_ATTR_MULT = 1.1
+/** Rock Head (Rhyhorn): +20% nos atributos em missões de escolta. */
+export const ROCK_HEAD_ESCORT_MULT = 1.2
+/** Shell Armor (Omanyte): +50% nos atributos em escolta, −50% em patrulha. */
+export const SHELL_ARMOR_ESCORT_MULT = 1.5
+export const SHELL_ARMOR_PATROL_MULT = 0.5
+/** Battle Armor (Cubone): +50% nos atributos na próxima missão após defender o ginásio. */
+export const BATTLE_ARMOR_MISSION_MULT = 1.5
+/** Sand Rush (Sandshrew): +25% de velocidade do time por tarefa concluída (acumula no dia). */
+export const SAND_RUSH_SPEED_PER_STACK = 0.25
+/** Weak Armor (Onix/Kabuto): dano recebido dobrado; +50% de velocidade em missões após tomar dano. */
+export const WEAK_ARMOR_DAMAGE_MULT = 2
+export const WEAK_ARMOR_SPEED_BONUS = 0.5
+/** Dig (Diglett): custo do túnel entre os dois pontos (distância-do-grafo, bem baixa = atalho). */
+export const DIG_TUNNEL_COST = 0.4
+
 /** Itens §4.6: cura/revive (HP é 1–10, então poucos pontos já contam). */
 export const POTION_HEAL = 3
 export const SUPER_POTION_HEAL = 7

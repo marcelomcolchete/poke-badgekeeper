@@ -39,6 +39,9 @@ export const IV_MAX = 10
  */
 export const STARTER_SLOT_SALTS = [0x57a27, 0x5ec17] as const
 
+/** Sub-seed do túnel do Dig (Habilidade Secreta): sorteia os dois pontos ligados por dia. */
+export const DIG_SEED_SALT = 0xd16
+
 /** Natureza: modificadores do valor por ponto alocado (+15 favorecido, +5 penalizado). */
 export const NATURE_BOOSTED_PER_POINT = 15
 export const NATURE_REDUCED_PER_POINT = 5
@@ -100,6 +103,8 @@ export const DRAFT_CHOICES = 3
  * v16: Habilidade Secreta — desbloqueio do Destaque do Dia gravado em today.secretUnlock.
  * v17: rebalanceamento das missões — exigência gerada por dia gravada na instância
  * (requirement + secondaryAttr), 6 tipos + 3 especiais, despacho máx. 3. A migração limpa
- * missões antigas (templateIds incompatíveis) e libera Pokémon presos nelas. */
-export const SAVE_VERSION = 17
+ * missões antigas (templateIds incompatíveis) e libera Pokémon presos nelas.
+ * v18: efeitos das Habilidades Secretas — estado diário (today.secretRuntime) e túnel do
+ * Dig (today.digTunnel). */
+export const SAVE_VERSION = 18
 export const SAVE_KEY = 'poke-badgekeeper:save'

@@ -140,6 +140,15 @@ function migrate(file: Partial<SaveFile>): SaveFile | null {
     version = 17
   }
 
+  // v17 → v18: estado diário das Habilidades Secretas e túnel do Dig.
+  if (version === 17) {
+    const today = state.today as Record<string, unknown> | undefined
+    if (today && typeof today === 'object') {
+      state = { ...state, today: { secretRuntime: {}, digTunnel: null, ...today } }
+    }
+    version = 18
+  }
+
   if (version !== SAVE_VERSION) return null
   return { version, savedAtMs: (file as SaveFile).savedAtMs, state } as unknown as SaveFile
 }

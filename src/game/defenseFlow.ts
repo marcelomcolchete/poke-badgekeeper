@@ -3,7 +3,8 @@
 
 import type { Pokemon } from '../types/index.ts'
 import type { DefenseEvent, GameState } from '../engine/state.ts'
-import { canDefend, resolveDefense } from '../engine/gymDefense.ts'
+import { canDefend, resolveDefense, type DefenseResolution } from '../engine/gymDefense.ts'
+import { hasBattleArmor, hasSturdy, hasWeakArmor } from '../engine/secretEffects.ts'
 import { goldForDefense } from '../engine/economy.ts'
 import { addXp } from '../engine/leveling.ts'
 import { createRng } from '../engine/rng.ts'
@@ -33,6 +34,27 @@ export function loseRunByUndefendedGym(s: GameState): void {
   s.clock.speed = 0
 }
 
+/**
+ * Atualiza o estado diário das Habilidades Secretas após a defesa: consome o Sturdy usado
+ * (1×/dia), marca Battle Armor (bônus na próxima missão) e ativa Weak Armor de quem tomou dano.
+ */
+function applyDefenseSecretRuntime(
+  s: GameState,
+  before: readonly Pokemon[],
+  resolution: DefenseResolution,
+): void {
+  const post = new Map(resolution.squad.map((p) => [p.id, p]))
+  for (const id of resolution.sturdyUsedIds) (s.today.secretRuntime[id] ??= {}).sturdyUsed = true
+  for (const p of before) {
+    const rt = (s.today.secretRuntime[p.id] ??= {})
+    if (hasBattleArmor(p)) rt.battleArmorPending = true
+    if (hasWeakArmor(p)) {
+      const after = post.get(p.id)
+      if (after && after.currentHp < p.currentHp) rt.weakArmorActive = true
+    }
+  }
+}
+
 function squadOf(s: GameState, ids: readonly string[]): Pokemon[] {
   return ids
     .map((id) => findMon(s, id))
@@ -50,7 +72,12 @@ export function assignDefense(s: GameState, defenseId: string, squadIds: string[
   const squad = squadOf(s, squadIds)
   if (!canDefend(squad)) return
 
-  const resolution = resolveDefense(takeRng(s), squad, defense.enemies)
+  // Sturdy disponível hoje (1×/dia) para quem tem a habilidade e ainda não usou.
+  const sturdyAvailableIds = new Set(
+    squad.filter((p) => hasSturdy(p) && !s.today.secretRuntime[p.id]?.sturdyUsed).map((p) => p.id),
+  )
+  const resolution = resolveDefense(takeRng(s), squad, defense.enemies, { sturdyAvailableIds })
+  applyDefenseSecretRuntime(s, squad, resolution)
 
   // Registra o desafiante derrotado (defeaterId + espécie) para o MVP/relatório.
   let theirs = 0
