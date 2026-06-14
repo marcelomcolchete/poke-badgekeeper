@@ -16,7 +16,11 @@ export type AttrKey = (typeof ATTR_KEYS)[number]
 /** Mapa de atributos (0–100) indexado pelos eixos canônicos. */
 export type Attrs = Record<AttrKey, number>
 
-/** Os 15 tipos da Gen 1. */
+/**
+ * Os 15 tipos da Gen 1 + Aço (steel). Aço não existe na Gen 1 — foi adicionado para o
+ * ginásio de Vermilion (secundário Aço). Nenhuma espécie é Aço por ora; a tipagem do
+ * Magnemite & cia. (dado gerado) fica para quando Vermilion for implementada.
+ */
 export const POKEMON_TYPES = [
   'normal',
   'fire',
@@ -33,6 +37,7 @@ export const POKEMON_TYPES = [
   'rock',
   'ghost',
   'dragon',
+  'steel',
 ] as const
 
 export type PokemonType = (typeof POKEMON_TYPES)[number]

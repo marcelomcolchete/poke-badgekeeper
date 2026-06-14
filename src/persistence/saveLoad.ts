@@ -111,6 +111,35 @@ function migrate(file: Partial<SaveFile>): SaveFile | null {
     version = 15
   }
 
+  // v15 → v16: Habilidade Secreta desbloqueada no dia (reveal no resumo).
+  if (version === 15) {
+    const today = state.today as Record<string, unknown> | undefined
+    if (today && typeof today === 'object') {
+      state = { ...state, today: { secretUnlock: null, ...today } }
+    }
+    version = 16
+  }
+
+  // v16 → v17: rebalanceamento das missões. As instâncias antigas têm templateIds e
+  // formato incompatíveis (sem requirement); limpa-as e libera Pokémon presos nelas.
+  if (version === 16) {
+    const missions = state.missions as Array<{ teamIds?: string[] }> | undefined
+    if (Array.isArray(missions)) {
+      const stranded = new Set(missions.flatMap((m) => m.teamIds ?? []))
+      const roster = state.roster as Array<Record<string, unknown>> | undefined
+      state = {
+        ...state,
+        missions: [],
+        roster: Array.isArray(roster)
+          ? roster.map((p) =>
+              stranded.has(p.id as string) && p.status !== 'fainted' ? { ...p, status: 'idle' } : p,
+            )
+          : roster,
+      }
+    }
+    version = 17
+  }
+
   if (version !== SAVE_VERSION) return null
   return { version, savedAtMs: (file as SaveFile).savedAtMs, state } as unknown as SaveFile
 }

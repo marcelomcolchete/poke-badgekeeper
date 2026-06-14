@@ -9,14 +9,8 @@ import type { GameState, MissionInstance, MissionStatus } from '../engine/state.
 import { getCity } from '../data/cities.ts'
 import { getMissionTemplate } from '../data/missionTemplates.ts'
 import { MAX_DISPATCH, MIN_DISPATCH } from '../engine/constants.ts'
+import { MISSION_XP_REWARD, RETURN_SPEED_BONUS_ON_SUCCESS } from '../engine/balance.ts'
 import {
-  CATEGORY_RULES,
-  MISSION_XP_REWARD,
-  RETURN_SPEED_BONUS_ON_SUCCESS,
-  type CategoryRules,
-} from '../engine/balance.ts'
-import {
-  effectiveRequirement,
   executionMs,
   graphTravelMs,
   missionSuccessProbability,
@@ -26,10 +20,6 @@ import { pathDistance, shortestPath } from '../engine/pathfinding.ts'
 import { addXp } from '../engine/leveling.ts'
 import { createRng, type Rng } from '../engine/rng.ts'
 import { findMon, replaceMon, settleFaint, takeRng } from './runtime.ts'
-
-function rulesFor(template: MissionTemplate): CategoryRules {
-  return CATEGORY_RULES[template.category]
-}
 
 /** Status que "ocupam" um ponto do mapa (já visível ou com time em trânsito/ação). */
 const OCCUPYING_STATUSES: MissionStatus[] = ['available', 'traveling', 'inProgress', 'returning']
@@ -92,7 +82,7 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
   mission.arriveAtMs = now + oneWay
   mission.resolveAtMs = now + oneWay + execution
   mission.returnEndsAtMs = now + oneWay + execution + oneWay
-  mission.pSuccess = missionSuccessProbability(team, effectiveRequirement(template, rulesFor(template)))
+  mission.pSuccess = missionSuccessProbability(team, mission.requirement)
   for (const p of team) replaceMon(s, { ...p, status: 'traveling' })
 }
 
@@ -125,16 +115,15 @@ export function advanceMission(s: GameState, mission: MissionInstance, nowMs: nu
  */
 export function resolveMissionNow(s: GameState, mission: MissionInstance): void {
   const template = getMissionTemplate(mission.templateId)
-  const rules = rulesFor(template)
   const team = teamOf(s, mission.teamIds)
-  const outcome = resolveMission(takeRng(s), team, template, rules)
+  const outcome = resolveMission(takeRng(s), team, mission.requirement, template.danger)
   // Aplica só o dano (HP) agora; XP/cura/evolução são adiados para freeOnReturn.
   for (const member of outcome.team) {
     replaceMon(s, { ...member, status: 'returning' })
   }
   // Seed de evolução sorteado AGORA (mantém o cursor do RNG estável); usado só na volta.
   mission.xpSeed = takeRng(s).int(0, 0x7fffffff)
-  if (outcome.success) applyMissionRewards(s, template, rules)
+  if (outcome.success) applyMissionRewards(s, template)
 
   mission.status = 'returning'
   mission.result = outcome.success ? 'success' : 'failure'
@@ -159,21 +148,20 @@ function speedUpReturn(mission: MissionInstance): void {
  */
 export function freeOnReturn(s: GameState, mission: MissionInstance): void {
   const template = getMissionTemplate(mission.templateId)
-  const rules = rulesFor(template)
   const success = mission.result === 'success'
   const evoRng = createRng(mission.xpSeed ?? 0) // mesma sequência sorteada ao resolver
   for (const member of teamOf(s, mission.teamIds)) {
-    replaceMon(s, settleFaint(s, applyOutcome(member, success, rules, evoRng)))
+    replaceMon(s, settleFaint(s, applyOutcome(member, success, template, evoRng)))
     if (success) s.today.xpEarned += MISSION_XP_REWARD // XP do dia (relatório)
   }
   mission.status = 'resolved'
 }
 
-/** Recompensas de sucesso por categoria: ouro (mart) e passiva concedida (museu). */
-function applyMissionRewards(s: GameState, template: MissionTemplate, rules: CategoryRules): void {
-  if (rules.goldOnSuccess > 0) {
-    s.gold += rules.goldOnSuccess
-    s.today.goldEarned += rules.goldOnSuccess
+/** Recompensas de sucesso do template: ouro (Pokemart) e passiva concedida (Museu). */
+function applyMissionRewards(s: GameState, template: MissionTemplate): void {
+  if (template.goldOnSuccess) {
+    s.gold += template.goldOnSuccess
+    s.today.goldEarned += template.goldOnSuccess
   }
   if (template.grantsPassive && !s.runItems.includes(template.grantsPassive)) {
     s.runItems.push(template.grantsPassive)
@@ -182,15 +170,15 @@ function applyMissionRewards(s: GameState, template: MissionTemplate, rules: Cat
 
 /**
  * Efeitos aplicados na VOLTA ao ginásio: XP (só em sucesso, pode subir nível/evoluir) e
- * cura se a categoria curar (Centro Pokémon). O status final é definido por settleFaint.
+ * cura se o template curar (Pokecenter). O status final é definido por settleFaint.
  */
 function applyOutcome(
   member: Pokemon,
   success: boolean,
-  rules: CategoryRules,
+  template: MissionTemplate,
   rng: Rng,
 ): Pokemon {
   let mon = success ? addXp(member, MISSION_XP_REWARD, rng).pokemon : member
-  if (success && rules.healOnSuccess) mon = { ...mon, currentHp: mon.maxHp }
+  if (success && template.healOnSuccess) mon = { ...mon, currentHp: mon.maxHp }
   return mon
 }

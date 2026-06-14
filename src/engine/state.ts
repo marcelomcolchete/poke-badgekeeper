@@ -3,6 +3,8 @@
 // A Fase 3 acrescenta o runtime do dia (eventos com timing, buscas, encontros, tally).
 
 import type {
+  AttrKey,
+  Attrs,
   EnemyUnit,
   GamePhase,
   GameSpeed,
@@ -49,6 +51,16 @@ export type MissionResult = 'success' | 'failure' | 'expired'
 export interface MissionInstance {
   id: string
   templateId: string
+  /**
+   * Exigência por eixo (0–60), GERADA e gravada no spawn escalando com o dia (ver
+   * engine/missions.ts → generateRequirement). Desenha o hexágono e define a P_sucesso.
+   */
+  requirement: Attrs
+  /**
+   * Atributo secundário sorteado (subtipo) das missões normais; igual ao principal = "mega".
+   * Ausente nas especiais (Pokecenter/Pokemart/Museu).
+   */
+  secondaryAttr?: AttrKey | null
   /** Ponto do grafo onde a missão surge — define o trajeto desde o ginásio (PLAN §3.1). */
   node: string
   /** Menor caminho ginásio→ponto (ids), calculado ao aceitar; a volta é o reverso. */
@@ -188,6 +200,8 @@ export interface DayTally {
   exploredSpots: number[]
   /** Inimigos derrotados em defesas hoje (MVP por derrotas + miniaturas no relatório). */
   defenseKills: DefenseKill[]
+  /** Habilidade Secreta desbloqueada HOJE pelo Destaque do Dia (reveal no resumo); null se nenhuma. */
+  secretUnlock: { pokemonId: string; abilityId: string } | null
 }
 
 export interface DayLog {
@@ -240,6 +254,7 @@ export function emptyTally(): DayTally {
     fossilUsed: false,
     exploredSpots: [],
     defenseKills: [],
+    secretUnlock: null,
   }
 }
 

@@ -3,20 +3,16 @@
 // autoSeedRun é um atalho PROVISÓRIO para rodar headless/testes — o fluxo
 // interativo de novo jogo (sorteio de tipos + inicial, §3) chega na Fase 4.
 
-import type { PokemonType } from '../types/index.ts'
 import type { CityData } from '../data/types.ts'
-import { LEVEL_MIN } from '../engine/constants.ts'
 import type { DefenseEvent, GameState } from '../engine/state.ts'
-import { POKEMON_TYPES } from '../types/index.ts'
 import { createInitialState } from '../engine/state.ts'
 import { getCity, nodePos, nodesForCategory } from '../data/cities.ts'
 import { buildDaySchedule, type DefenseSlot } from '../engine/timeline.ts'
 import { createMissionInstance } from '../engine/missions.ts'
 import { enemySquadSizeForDay, generateDefenseEnemies } from '../engine/gymDefense.ts'
 import { createPokemon } from '../engine/leveling.ts'
-import { createRng, deriveSeed, type Rng } from '../engine/rng.ts'
+import { createRng, deriveSeed } from '../engine/rng.ts'
 import { DEFENSE_LIFETIME_MS, MISSION_LIFETIME_MS } from '../engine/balance.ts'
-import { RECRUIT_SEED_SALT, STARTER_LEVEL, STARTER_SEED_SALT } from '../engine/constants.ts'
 import { takeId } from './runtime.ts'
 
 /** Instancia a agenda do dia (missões/defesas 'scheduled') e arma o relógio (PLAN §4.8). */
@@ -29,6 +25,7 @@ export function setupDay(s: GameState): void {
     return createMissionInstance({
       id: takeId(s, 'm'),
       rng: createRng(slot.seed),
+      day: s.run.day,
       category: slot.category,
       node,
       spawnAtMs: slot.atMs,
@@ -62,58 +59,52 @@ function buildDefense(s: GameState, slot: DefenseSlot, city: CityData): DefenseE
   }
 }
 
-function pickExtraTypes(rng: Rng, primary: PokemonType): PokemonType[] {
-  return rng.shuffle(POKEMON_TYPES.filter((t) => t !== primary)).slice(0, 1)
-}
-
 /**
- * Bootstrap PROVISÓRIO de uma run na cidade 0: define os 2 tipos do ginásio
- * (primário + 1 sorteado) e o inicial nível 3. Substituído pelo fluxo
- * interativo de novo jogo na Fase 4 (PLAN §3).
+ * Bootstrap PROVISÓRIO de uma run na cidade 0: tipos do ginásio fixos da cidade e o
+ * primeiro inicial (nível fixo). Usado headless/testes — o fluxo interativo de novo
+ * jogo (escolha de versões) vive na UI (PLAN §3).
  */
 export function autoSeedRun(seed: number): GameState {
   const s = createInitialState(seed)
   const city = getCity(0)
   const rng = createRng(deriveSeed(seed, 0))
-  s.gym.types = [city.primaryType, ...pickExtraTypes(rng, city.primaryType)]
-  s.roster = [
-    createPokemon({ id: takeId(s, 'p'), speciesId: city.starterSpeciesId, level: STARTER_LEVEL, rng }),
-  ]
+  s.gym.types = [city.primaryType, city.secondaryType]
+  const starter = city.starters[0]
+  if (starter) {
+    s.roster = [
+      createPokemon({ id: takeId(s, 'p'), speciesId: starter.speciesId, level: starter.level, rng }),
+    ]
+  }
   return s
 }
 
+/** Versão escolhida de um inicial: espécie + nível fixos + seed do roll selecionado. */
+export interface StarterPick {
+  speciesId: number
+  level: number
+  /** Seed do roll escolhido — recria EXATAMENTE o Pokémon mostrado no preview. */
+  seed: number
+  /** Apelido opcional dado na tela de novo jogo. */
+  nickname?: string
+}
+
 /**
- * Conclui o fluxo interativo de novo jogo (PLAN §3): grava os 2 tipos do ginásio
- * e monta o roster inicial — inicial nível 3 + 1 recruta nível 1.
+ * Conclui o fluxo interativo de novo jogo (PLAN §3): grava os tipos fixos do ginásio
+ * e monta o roster com as versões escolhidas dos iniciais fixos da cidade.
  */
-export function startRun(
-  s: GameState,
-  gymTypes: PokemonType[],
-  starterSpeciesId: number,
-  extraSpeciesIds: number[],
-  starterNickname?: string,
-  extraNicknames: string[] = [],
-): void {
-  s.gym.types = [...gymTypes]
-  // Seeds estáveis (não consomem o cursor da run): o card do preview no NewGameScreen
-  // usa exatamente os mesmos, então o Pokémon obtido = o exibido (natureza, IVs/rank).
-  const starter = createPokemon({
-    id: takeId(s, 'p'),
-    speciesId: starterSpeciesId,
-    level: STARTER_LEVEL,
-    rng: createRng(deriveSeed(s.run.seed, STARTER_SEED_SALT)),
-    nickname: cleanNickname(starterNickname),
-  })
-  const extras = extraSpeciesIds.map((speciesId, i) =>
+export function startRun(s: GameState, picks: StarterPick[]): void {
+  const city = getCity(s.run.cityIndex)
+  s.gym.types = [city.primaryType, city.secondaryType]
+  // O seed do roll é estável (vem da UI): o card do preview = Pokémon obtido (natureza, IVs/rank).
+  s.roster = picks.map((pick) =>
     createPokemon({
       id: takeId(s, 'p'),
-      speciesId,
-      level: LEVEL_MIN,
-      rng: createRng(deriveSeed(s.run.seed, RECRUIT_SEED_SALT, speciesId)),
-      nickname: cleanNickname(extraNicknames[i]),
+      speciesId: pick.speciesId,
+      level: pick.level,
+      rng: createRng(pick.seed),
+      nickname: cleanNickname(pick.nickname),
     }),
   )
-  s.roster = [starter, ...extras]
   s.run.phase = 'MORNING'
 }
 

@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import type { Attrs } from '../types/index.ts'
+import { ATTR_KEYS } from '../types/index.ts'
 import type { MissionTemplate } from '../data/types.ts'
+import { ATTR_MAX } from './constants.ts'
 import { createRng } from './rng.ts'
-import { CATEGORY_RULES } from './balance.ts'
+import { NORMAL_TEMPLATES, POKECENTER_TEMPLATE, MUSEUM_TEMPLATE } from '../data/missionTemplates.ts'
 import {
   agilityTravelFactor,
   createMissionInstance,
-  effectiveDanger,
-  effectiveRequirement,
   executionMs,
+  generateRequirement,
   graphTravelMs,
   missionDurationMs,
   missionFailureDamage,
@@ -17,14 +17,13 @@ import {
 } from './missions.ts'
 import { fixedRng, makeAttrs, makeMon } from './testkit.ts'
 
-function template(requirement: Attrs, danger = 4): MissionTemplate {
+function template(danger = 4): MissionTemplate {
   return {
     id: 'tpl',
     name: 'Teste',
     themeIcon: '❓',
-    category: 'freeArea',
-    requirement,
-    baseTravelMs: 20_000,
+    gen: 'normal',
+    primaryAttr: 'batalha',
     baseExecutionMs: 30_000,
     danger,
   }
@@ -84,7 +83,7 @@ describe('missionFailureDamage (PLAN §4.2)', () => {
 describe('resolveMission (PLAN §4.2)', () => {
   it('sucesso garantido (P=1) não altera o time', () => {
     const team = [makeMon({ baseAttrs: makeAttrs({}, 50) })]
-    const out = resolveMission(fixedRng(0), team, template(makeAttrs({}, 40)))
+    const out = resolveMission(fixedRng(0), team, makeAttrs({}, 40), 4)
     expect(out.success).toBe(true)
     expect(out.faintedIds).toEqual([])
     expect(out.team[0]?.currentHp).toBe(team[0]?.currentHp)
@@ -92,7 +91,7 @@ describe('resolveMission (PLAN §4.2)', () => {
 
   it('falha aplica dano e marca desmaiados (HP→0)', () => {
     const weak = makeMon({ id: 'w', baseAttrs: makeAttrs({}, 10) }) // hp 1
-    const out = resolveMission(fixedRng(0.999), [weak], template(makeAttrs({}, 100), 5))
+    const out = resolveMission(fixedRng(0.999), [weak], makeAttrs({}, 100), 5)
     expect(out.success).toBe(false)
     expect(out.team[0]?.currentHp).toBe(0)
     expect(out.faintedIds).toEqual(['w'])
@@ -100,43 +99,72 @@ describe('resolveMission (PLAN §4.2)', () => {
 
   it('não muta o time de entrada', () => {
     const weak = makeMon({ id: 'w', baseAttrs: makeAttrs({}, 10) })
-    resolveMission(fixedRng(0.999), [weak], template(makeAttrs({}, 100), 5))
+    resolveMission(fixedRng(0.999), [weak], makeAttrs({}, 100), 5)
     expect(weak.currentHp).toBe(weak.maxHp)
   })
 })
 
-describe('regras por categoria (dificuldade/efeitos)', () => {
-  it('center/mart endurecem a exigência; house/freeArea aliviam', () => {
-    const tpl = template(makeAttrs({}, 40))
-    expect(effectiveRequirement(tpl, CATEGORY_RULES.center).batalha).toBeGreaterThan(40)
-    expect(effectiveRequirement(tpl, CATEGORY_RULES.mart).batalha).toBeGreaterThan(40)
-    expect(effectiveRequirement(tpl, CATEGORY_RULES.house).batalha).toBeLessThan(40)
-    expect(effectiveRequirement(tpl, CATEGORY_RULES.freeArea).batalha).toBeLessThan(40)
+describe('generateRequirement (rebalanceamento)', () => {
+  const patrulha = NORMAL_TEMPLATES[0] as MissionTemplate // primaryAttr 'batalha'
+
+  it('é determinística (mesmo seed + dia + template)', () => {
+    const a = generateRequirement(createRng(42), 5, patrulha)
+    const b = generateRequirement(createRng(42), 5, patrulha)
+    expect(a).toEqual(b)
   })
 
-  it('museu é a categoria mais difícil (maior exigência efetiva)', () => {
-    const tpl = template(makeAttrs({}, 40))
-    const museum = effectiveRequirement(tpl, CATEGORY_RULES.museum).batalha
-    const center = effectiveRequirement(tpl, CATEGORY_RULES.center).batalha
-    expect(museum).toBeGreaterThan(center)
+  it('todo eixo fica em [0, 60]', () => {
+    for (let seed = 1; seed <= 20; seed++) {
+      const { requirement } = generateRequirement(createRng(seed), 7, patrulha)
+      for (const key of ATTR_KEYS) {
+        expect(requirement[key]).toBeGreaterThanOrEqual(0)
+        expect(requirement[key]).toBeLessThanOrEqual(ATTR_MAX)
+      }
+    }
   })
 
-  it('exigência efetiva fica capada em 100 por eixo', () => {
-    const tpl = template(makeAttrs({}, 90))
-    expect(effectiveRequirement(tpl, CATEGORY_RULES.center).batalha).toBeLessThanOrEqual(100)
+  it('normal: o atributo principal é o mais exigido', () => {
+    for (let seed = 1; seed <= 20; seed++) {
+      const { requirement } = generateRequirement(createRng(seed), 4, patrulha)
+      const max = Math.max(...ATTR_KEYS.map((k) => requirement[k]))
+      expect(requirement.batalha).toBe(max)
+    }
   })
 
-  it('perigo efetivo nunca cai abaixo de 1', () => {
-    const tpl = template(makeAttrs({}, 20), 1)
-    expect(effectiveDanger(tpl, CATEGORY_RULES.freeArea)).toBeGreaterThanOrEqual(1)
+  it('escala com o dia: principal cresce do dia 1 ao dia 9', () => {
+    // Usa um seed NÃO-mega (senão o dia 1 poderia já saturar em 60 e empatar).
+    let seed = 1
+    while (generateRequirement(createRng(seed), 5, patrulha).secondaryAttr === 'batalha') seed++
+    const day1 = generateRequirement(createRng(seed), 1, patrulha).requirement.batalha
+    const day9 = generateRequirement(createRng(seed), 9, patrulha).requirement.batalha
+    expect(day9).toBeGreaterThan(day1)
   })
 
-  it('mesma equipe: categoria difícil reduz a P de sucesso', () => {
-    const team = [makeMon({ baseAttrs: makeAttrs({}, 30) })]
-    const tpl = template(makeAttrs({}, 60))
-    const pHard = resolveMission(fixedRng(0.5), team, tpl, CATEGORY_RULES.center).pSuccess
-    const pEasy = resolveMission(fixedRng(0.5), team, tpl, CATEGORY_RULES.freeArea).pSuccess
-    expect(pEasy).toBeGreaterThan(pHard)
+  it('mega: secundário sorteado igual ao principal concentra tudo num eixo (~60)', () => {
+    // Varre seeds até cair no caso mega (secondaryAttr === principal).
+    let mega: ReturnType<typeof generateRequirement> | null = null
+    for (let seed = 1; seed <= 200 && !mega; seed++) {
+      const g = generateRequirement(createRng(seed), 8, patrulha)
+      if (g.secondaryAttr === 'batalha') mega = g
+    }
+    expect(mega).not.toBeNull()
+    expect(mega?.requirement.batalha).toBe(ATTR_MAX) // principal + secundário no dia 8 satura em 60
+  })
+
+  it('special5 (museu): exatamente 5 eixos principais + 1 resto', () => {
+    for (let seed = 1; seed <= 20; seed++) {
+      const { requirement, secondaryAttr } = generateRequirement(createRng(seed), 3, MUSEUM_TEMPLATE)
+      expect(secondaryAttr).toBeNull()
+      // Principal (dia≥1) sempre > 20; resto sempre ≤ 20 → contagem separa os dois grupos.
+      const principals = ATTR_KEYS.filter((k) => requirement[k] > 20).length
+      expect(principals).toBe(5)
+    }
+  })
+
+  it('special2 (pokecenter): ao menos 2 eixos principais e sem subtipo', () => {
+    const { requirement, secondaryAttr } = generateRequirement(createRng(3), 4, POKECENTER_TEMPLATE)
+    expect(secondaryAttr).toBeNull()
+    expect(ATTR_KEYS.filter((k) => requirement[k] > 20).length).toBeGreaterThanOrEqual(2)
   })
 })
 
@@ -173,7 +201,7 @@ describe('tempos de viagem/execução (PLAN §4.3)', () => {
 
   it('duração = ida + volta (deslocamento) + execução', () => {
     const team = [makeMon({ baseAttrs: makeAttrs({ agilidade: 30, inteligencia: 30 }) })]
-    const tpl = template(makeAttrs({}, 20))
+    const tpl = template()
     expect(missionDurationMs(team, 8, tpl)).toBeCloseTo(
       2 * graphTravelMs(8, team) + executionMs(team, tpl.baseExecutionMs),
       6,
@@ -185,6 +213,7 @@ describe('createMissionInstance (PLAN §3.1)', () => {
   it('é determinística e respeita ponto/timer', () => {
     const spec = {
       id: 'm1',
+      day: 1,
       category: 'freeArea' as const,
       node: 'q',
       spawnAtMs: 5_000,
@@ -205,12 +234,13 @@ describe('createMissionInstance (PLAN §3.1)', () => {
     const inst = createMissionInstance({
       id: 'm2',
       rng: createRng(1),
+      day: 5,
       category: 'museum',
       node: 'd',
       spawnAtMs: 0,
       lifetimeMs: 20_000,
-      templateId: 'museum-fossil',
+      templateId: 'museu',
     })
-    expect(inst.templateId).toBe('museum-fossil')
+    expect(inst.templateId).toBe('museu')
   })
 })

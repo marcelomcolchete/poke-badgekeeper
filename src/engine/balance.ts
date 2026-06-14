@@ -63,6 +63,25 @@ export const ALL_DEFENSES_WON_BONUS = 0.3
 /** Aprovação §4.7: fração das missões do dia que define a meta (metade, arredondando p/ cima). */
 export const MISSION_GOAL_FRACTION = 0.5
 
+/**
+ * Geração da EXIGÊNCIA das missões (rebalanceamento). Cada eixo é sorteado numa faixa-base
+ * e somado ao termo do dia: base + DAY_SCALE · dia / DAY_DIVISOR, com teto ATTR_MAX (60).
+ * Principal = mais exigido; secundário = 2º mais; resto = os demais eixos.
+ */
+export const MISSION_PRINCIPAL_MIN = 20
+export const MISSION_PRINCIPAL_MAX = 30
+export const MISSION_SECONDARY_MIN = 10
+export const MISSION_SECONDARY_MAX = 20
+export const MISSION_REST_MIN = 5
+export const MISSION_REST_MAX = 20
+/** Termo do dia: DAY_SCALE × dia ÷ DAY_DIVISOR somado à faixa-base (principal e secundário). */
+export const MISSION_DAY_SCALE = 10
+export const MISSION_DAY_DIVISOR = 3
+/** Quantos eixos principais/secundários cada modo especial gera. */
+export const SPECIAL2_PRINCIPALS = 2
+export const SPECIAL2_SECONDARIES = 1
+export const SPECIAL5_PRINCIPALS = 5
+
 /** Curva de dificuldade §4.8: faixa de missões/defesas por dia (×fatorCidade). */
 export const MIN_MISSIONS = 3
 export const MAX_MISSIONS = 8
@@ -95,29 +114,8 @@ export const MISSION_XP_REWARD = 120
 export const GYM_WIN_XP = 20
 
 /**
- * Regras por categoria de missão (PROVISÓRIAS) — onde nasce, dificuldade e recompensa.
- * reqMult escala a exigência (>1 = mais difícil; <1 = mais fácil); dangerMult escala
- * o dano em falha; healOnSuccess cura o time; goldOnSuccess rende ouro no sucesso.
- */
-export interface CategoryRules {
-  reqMult: number
-  dangerMult: number
-  healOnSuccess: boolean
-  goldOnSuccess: number
-}
-
-export const CATEGORY_RULES: Record<MissionCategory, CategoryRules> = {
-  center: { reqMult: 1.25, dangerMult: 1.2, healOnSuccess: true, goldOnSuccess: 0 },
-  mart: { reqMult: 1.25, dangerMult: 1.2, healOnSuccess: false, goldOnSuccess: 150 },
-  house: { reqMult: 0.85, dangerMult: 0.85, healOnSuccess: false, goldOnSuccess: 0 },
-  freeArea: { reqMult: 0.85, dangerMult: 0.85, healOnSuccess: false, goldOnSuccess: 0 },
-  // Museu: a mais difícil da run (+50% de exigência) — recompensa rara (Fossil).
-  museum: { reqMult: 1.5, dangerMult: 1.2, healOnSuccess: false, goldOnSuccess: 0 },
-}
-
-/**
  * Pool ponderado das categorias sorteadas a cada dia (museu é especial, fora daqui).
- * Áreas verdes são as mais comuns; centro/mart, mais raros.
+ * Áreas verdes e casas geram os 6 tipos normais; centro/mart geram as especiais.
  */
 export const DAILY_CATEGORY_POOL: MissionCategory[] = [
   'freeArea',

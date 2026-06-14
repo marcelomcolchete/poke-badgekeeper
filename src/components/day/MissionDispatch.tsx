@@ -3,20 +3,38 @@
 
 import { useState } from 'react'
 import type { Dispatch } from 'react'
-import type { Pokemon } from '../../types/index.ts'
+import type { AttrKey, Pokemon } from '../../types/index.ts'
 import type { GameState, MissionInstance } from '../../engine/state.ts'
 import type { GameAction } from '../../game/actions.ts'
+import type { MissionTemplate } from '../../data/types.ts'
 import { MAX_DISPATCH, MIN_DISPATCH } from '../../engine/constants.ts'
 import { getCity } from '../../data/cities.ts'
-import { getMissionTemplate } from '../../data/missionTemplates.ts'
+import { getMissionTemplate, missionReward } from '../../data/missionTemplates.ts'
+import { getSpecies } from '../../data/pokemon/index.ts'
 import { teamSum } from '../../engine/attributes.ts'
 import { missionDurationMs, missionSuccessProbability } from '../../engine/missions.ts'
 import { sortRoster } from '../../engine/roster.ts'
 import { pathDistance, shortestPath } from '../../engine/pathfinding.ts'
+import { ATTR_LABEL_PT } from '../common/visual.ts'
 import { HexRadar } from '../HexRadar/HexRadar.tsx'
 import { PokemonCard } from '../PokemonCard/PokemonCard.tsx'
 import { Overlay } from '../common/Overlay.tsx'
 import styles from './Panels.module.css'
+
+/** Descrição do subtipo (combinação de atributos) de uma missão. */
+function missionSubtitle(template: MissionTemplate, secondary: AttrKey | null | undefined): string | null {
+  if (template.gen !== 'normal' || !template.primaryAttr) return null
+  const primary = template.primaryAttr
+  if (secondary && secondary !== primary) {
+    return `${ATTR_LABEL_PT[primary]} + ${ATTR_LABEL_PT[secondary]}`
+  }
+  return `${ATTR_LABEL_PT[primary]} (mega)`
+}
+
+/** Nome exibido de um Pokémon (apelido ou nome da espécie). */
+function monName(mon: Pokemon): string {
+  return mon.nickname ?? getSpecies(mon.speciesId).displayName
+}
 
 interface Props {
   state: GameState
@@ -40,10 +58,13 @@ export function MissionDispatch({ state, dispatch, missionId, onClose }: Props) 
   const team: Pokemon[] = selected
     .map((id) => state.roster.find((p) => p.id === id))
     .filter((p): p is Pokemon => p !== undefined)
-  const probability = Math.round(missionSuccessProbability(team, template.requirement) * 100)
+  const probability = Math.round(missionSuccessProbability(team, mission.requirement) * 100)
   const distance = pathDistance(city.graph, shortestPath(city.graph, city.siteNodes.gym, mission.node))
   const durationS = Math.round(missionDurationMs(team, distance, template) / 1000)
   const valid = selected.length >= MIN_DISPATCH && selected.length <= MAX_DISPATCH
+  const subtitle = missionSubtitle(template, mission.secondaryAttr)
+  const reward = missionReward(template)
+  const remove = (id: string): void => setSelected((prev) => prev.filter((x) => x !== id))
 
   const toggle = (id: string): void => {
     setSelected((prev) =>
@@ -64,7 +85,13 @@ export function MissionDispatch({ state, dispatch, missionId, onClose }: Props) 
     <Overlay title={`MISSÃO — ${template.name.toUpperCase()}`} onClose={onClose} wide>
       <div className={styles.dispatch}>
         <div className={styles.radarSide}>
-          <HexRadar requirement={template.requirement} teamSum={teamSum(team)} />
+          {subtitle && <p className={styles.missionSubtitle}>{subtitle}</p>}
+          {reward && (
+            <p className={styles.missionReward}>
+              <span aria-hidden="true">{reward.icon}</span> {reward.label}
+            </p>
+          )}
+          <HexRadar requirement={mission.requirement} teamSum={teamSum(team)} />
           <div className={styles.stats}>
             <span>
               Sucesso: <b>{probability}%</b>
@@ -75,6 +102,34 @@ export function MissionDispatch({ state, dispatch, missionId, onClose }: Props) 
             <span>
               Time: <b>{selected.length}/{MAX_DISPATCH}</b>
             </span>
+          </div>
+          <div className={styles.selectedTeam}>
+            <span className={styles.selectedTitle}>Selecionados ({selected.length}/{MAX_DISPATCH})</span>
+            {team.length === 0 ? (
+              <span className={styles.selectedEmpty}>Escolha até {MAX_DISPATCH} Pokémon ao lado.</span>
+            ) : (
+              <ul className={styles.chipList}>
+                {team.map((mon) => (
+                  <li key={mon.id} className={styles.chip}>
+                    <img
+                      className={styles.chipSprite}
+                      src={getSpecies(mon.speciesId).spritePath}
+                      alt=""
+                      draggable={false}
+                    />
+                    <span className={styles.chipName}>{monName(mon)}</span>
+                    <button
+                      type="button"
+                      className={styles.chipRemove}
+                      onClick={() => remove(mon.id)}
+                      aria-label={`Remover ${monName(mon)} da missão`}
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
         <div className={styles.picker}>

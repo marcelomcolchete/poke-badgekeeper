@@ -122,3 +122,32 @@
   font-size: 16px;
   color: var(--c-hud-text);
 }
+
+.starterList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.starterRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-text);
+  font-size: 16px;
+  color: var(--c-hud-text);
+}
+
+.starterRow img {
+  width: 48px;
+  height: 48px;
+  image-rendering: pixelated;
+}
+
+.starterRow small {
+  color: var(--c-hud-muted);
+}

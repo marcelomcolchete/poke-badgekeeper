@@ -14,6 +14,7 @@ import type {
   MissionInstance,
 } from '../../engine/state.ts'
 import { getCity, markerPos } from '../../data/cities.ts'
+import { getMissionTemplate, missionReward } from '../../data/missionTemplates.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
 import { pointAlongPath } from '../../engine/pathfinding.ts'
 import { clamp } from '../../engine/math.ts'
@@ -270,15 +271,22 @@ function MissionMarker({
   onClick: () => void
 }) {
   const v = missionVisual(mission, now)
+  // Selo de recompensa (missões especiais) — só enquanto a missão está disponível.
+  const reward = mission.status === 'available' ? missionReward(getMissionTemplate(mission.templateId)) : null
   return (
     <button
       type="button"
       className={`${styles.ring} ${v.pulse ? '' : styles.ringBusy}`}
       style={ringStyle(v.fraction, v.ringColor)}
       onClick={onClick}
-      aria-label={v.ariaLabel}
+      aria-label={reward ? `${v.ariaLabel} — ${reward.label}` : v.ariaLabel}
     >
       <span className={`${styles.icon} ${v.iconClass}`}>{v.content}</span>
+      {reward && (
+        <span className={styles.rewardBadge} title={reward.label} aria-hidden="true">
+          {reward.icon}
+        </span>
+      )}
     </button>
   )
 }

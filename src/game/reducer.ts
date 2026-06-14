@@ -17,14 +17,7 @@ export function reducer(state: GameState, action: GameAction): GameState {
   const s = draft(state)
   switch (action.type) {
     case 'START_RUN':
-      startRun(
-        s,
-        action.gymTypes,
-        action.starterSpeciesId,
-        action.extraSpeciesIds,
-        action.starterNickname,
-        action.extraNicknames,
-      )
+      startRun(s, action.picks)
       break
     case 'SET_SPEED':
       setSpeed(s, action.speed)

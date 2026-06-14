@@ -103,12 +103,17 @@ describe('tabela de tipos (Gen 1)', () => {
 })
 
 describe('cidades, itens, missões, passivas', () => {
-  it('8 cidades com índices 0..7 e inicial válido', () => {
+  it('8 cidades com índices 0..7, tipos válidos e iniciais válidos', () => {
     expect(CITIES).toHaveLength(8)
     CITIES.forEach((c, i) => {
       expect(c.index).toBe(i)
       expect(TYPE_SET.has(c.primaryType)).toBe(true)
-      expect(() => getSpecies(c.starterSpeciesId)).not.toThrow()
+      expect(TYPE_SET.has(c.secondaryType)).toBe(true)
+      expect(c.starters.length).toBeGreaterThanOrEqual(2)
+      for (const st of c.starters) {
+        expect(() => getSpecies(st.speciesId)).not.toThrow()
+        expect(st.level).toBeGreaterThanOrEqual(1)
+      }
     })
   })
 
@@ -120,12 +125,18 @@ describe('cidades, itens, missões, passivas', () => {
     }
   })
 
-  it('exigências de missão ficam em 0–100', () => {
+  it('templates de missão: formato válido (tipo, perigo, execução)', () => {
     for (const tpl of MISSION_TEMPLATES) {
-      for (const key of ATTR_KEYS) {
-        expect(tpl.requirement[key]).toBeGreaterThanOrEqual(0)
-        expect(tpl.requirement[key]).toBeLessThanOrEqual(100)
+      expect(['normal', 'special2', 'special5']).toContain(tpl.gen)
+      // Tipos normais amarram um atributo principal; especiais não.
+      if (tpl.gen === 'normal') {
+        expect(tpl.primaryAttr).toBeDefined()
+        expect(ATTR_KEYS).toContain(tpl.primaryAttr)
+      } else {
+        expect(tpl.primaryAttr).toBeUndefined()
       }
+      expect(tpl.danger).toBeGreaterThanOrEqual(1)
+      expect(tpl.baseExecutionMs).toBeGreaterThan(0)
     }
   })
 
