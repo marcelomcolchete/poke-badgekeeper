@@ -91,6 +91,8 @@ export function startRun(
   gymTypes: PokemonType[],
   starterSpeciesId: number,
   extraSpeciesIds: number[],
+  starterNickname?: string,
+  extraNicknames: string[] = [],
 ): void {
   s.gym.types = [...gymTypes]
   const starter = createPokemon({
@@ -98,10 +100,23 @@ export function startRun(
     speciesId: starterSpeciesId,
     level: STARTER_LEVEL,
     rng: takeRng(s),
+    nickname: cleanNickname(starterNickname),
   })
-  const extras = extraSpeciesIds.map((speciesId) =>
-    createPokemon({ id: takeId(s, 'p'), speciesId, level: LEVEL_MIN, rng: takeRng(s) }),
+  const extras = extraSpeciesIds.map((speciesId, i) =>
+    createPokemon({
+      id: takeId(s, 'p'),
+      speciesId,
+      level: LEVEL_MIN,
+      rng: takeRng(s),
+      nickname: cleanNickname(extraNicknames[i]),
+    }),
   )
   s.roster = [starter, ...extras]
   s.run.phase = 'MORNING'
+}
+
+/** Apelido inicial: aparado; null quando vazio (cai no nome da espécie). */
+function cleanNickname(value: string | undefined): string | null {
+  const trimmed = value?.trim()
+  return trimmed ? trimmed : null
 }

@@ -5,7 +5,7 @@ import type { Pokemon } from '../../types/index.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
 import { maxHpOf, zeroAttrs } from '../../engine/attributes.ts'
 
-export function previewPokemon(speciesId: number, level: number): Pokemon {
+export function previewPokemon(speciesId: number, level: number, nickname?: string): Pokemon {
   const species = getSpecies(speciesId)
   const draft: Pokemon = {
     id: `preview-${speciesId}`,
@@ -21,7 +21,7 @@ export function previewPokemon(speciesId: number, level: number): Pokemon {
     passives: [],
     // Preview de candidato: o sexo só é sorteado de fato na captura.
     gender: 'genderless',
-    nickname: null,
+    nickname: nickname?.trim() || null,
   }
   const maxHp = maxHpOf(draft)
   return { ...draft, maxHp, currentHp: maxHp }

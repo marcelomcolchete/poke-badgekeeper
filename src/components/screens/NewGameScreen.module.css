@@ -81,6 +81,38 @@
   padding: 12px 18px;
 }
 
+.nameField {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.nameLabel {
+  font-family: var(--font-text);
+  font-size: 16px;
+  color: var(--c-hud-muted);
+}
+
+.nameInput {
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  color: var(--c-ink);
+  text-align: center;
+  background: var(--c-panel);
+  border: 3px solid var(--c-panel-border);
+  border-radius: var(--radius-pixel);
+  padding: 10px 12px;
+  width: 100%;
+  max-width: 260px;
+}
+
+.nameInput:focus {
+  outline: none;
+  border-color: var(--c-hud-accent);
+}
+
 .gymTypes {
   display: flex;
   align-items: center;

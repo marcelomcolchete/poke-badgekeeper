@@ -1,16 +1,17 @@
 // Resumo do dia (PLAN §3/§4.7): aprovação, ouro, missões, defesas, capturas e baixas.
-// No dia 10 mostra o resultado da cidade (efetivado se > 3 estrelas).
+// Layout em duas colunas — estatísticas à esquerda, Pokémon destaque num quadrado à
+// direita; estrelas com brilho na parte ganha (ou vermelho na perdida) e um selo de
+// veredito (PERFEITO / Bom trabalho / Melhore). No dia 10 mostra o resultado da cidade.
 
 import type { Dispatch } from 'react'
 import type { GameState } from '../../engine/state.ts'
 import type { GameAction } from '../../game/actions.ts'
-import { TOTAL_DAYS } from '../../engine/constants.ts'
+import { TOTAL_DAYS, STARS_MAX } from '../../engine/constants.ts'
 import { buildDaySummary } from '../../engine/daySummary.ts'
-import { isHired } from '../../engine/approval.ts'
+import { dailyGoalMet, isHired } from '../../engine/approval.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
 import type { Pokemon } from '../../types/index.ts'
 import { Textbox } from '../Textbox/Textbox.tsx'
-import { Stars } from '../common/Stars.tsx'
 import { TypeBadge } from '../common/TypeBadge.tsx'
 import { displayNameOf, genderColor, genderSymbol } from '../common/naming.ts'
 import styles from './SummaryScreen.module.css'
@@ -19,6 +20,15 @@ interface Props {
   state: GameState
   dispatch: Dispatch<GameAction>
   onRestart: () => void
+}
+
+type VerdictKind = 'perfect' | 'good' | 'bad'
+
+/** Selo do dia: todas as missões → PERFEITO; meta batida → Bom trabalho; abaixo → Melhore. */
+function dayVerdict(completed: number, total: number): { label: string; kind: VerdictKind } {
+  if (total > 0 && completed >= total) return { label: 'PERFEITO!', kind: 'perfect' }
+  if (dailyGoalMet(completed, total)) return { label: 'Bom trabalho', kind: 'good' }
+  return { label: 'Melhore', kind: 'bad' }
 }
 
 export function SummaryScreen({ state, dispatch, onRestart }: Props) {
@@ -33,32 +43,29 @@ export function SummaryScreen({ state, dispatch, onRestart }: Props) {
     capturedIds: state.today.capturedIds,
     roster: state.roster,
   })
-  const delta = summary.starsAfter - summary.starsBefore
   const mvp = summary.mvpId ? state.roster.find((p) => p.id === summary.mvpId) : undefined
   const lastDay = state.run.day >= TOTAL_DAYS
+  const verdict = dayVerdict(summary.missionsCompleted, summary.missionsTotal)
 
   return (
     <div className={styles.screen}>
       <div className={styles.header}>
         <span className={styles.title}>RESUMO — DIA {summary.day}/{TOTAL_DAYS}</span>
-        <div className={styles.approval}>
-          <Stars value={summary.starsAfter} />
-          <span className={styles.delta} data-sign={delta >= 0 ? 'up' : 'down'}>
-            {delta >= 0 ? '▲ +' : '▼ '}
-            {delta.toFixed(1)}
-          </span>
-        </div>
+        <span className={`${styles.verdict} ${styles[verdict.kind]}`}>{verdict.label}</span>
+        <DeltaStars before={summary.starsBefore} after={summary.starsAfter} />
       </div>
 
-      <MvpCard mvp={mvp} missions={summary.mvpMissions} />
+      <div className={styles.content}>
+        <div className={styles.statsCol}>
+          <Tile label="Missões" value={`${summary.missionsCompleted}/${summary.missionsTotal}`} icon="🎯" />
+          <Tile label="Defesas" value={`${summary.defensesWon}/${summary.defensesTotal}`} icon="🛡️" />
+          <Tile label="Ouro" value={`$${summary.goldEarned}`} icon="💰" accent />
+          <Tile label="Capturados" value={`${summary.captured}`} icon="⚪" />
+          <Tile label="Desmaiados" value={`${summary.fainted}`} icon="💤" danger={summary.fainted > 0} />
+          <Tile label="Disponíveis" value={`${summary.available}`} icon="✨" />
+        </div>
 
-      <div className={styles.tiles}>
-        <Tile label="Missões" value={`${summary.missionsCompleted}/${summary.missionsTotal}`} icon="🎯" />
-        <Tile label="Defesas" value={`${summary.defensesWon}/${summary.defensesTotal}`} icon="🛡️" />
-        <Tile label="Ouro" value={`$${summary.goldEarned}`} icon="💰" accent />
-        <Tile label="Capturados" value={`${summary.captured}`} icon="⚪" />
-        <Tile label="Desmaiados" value={`${summary.fainted}`} icon="💤" danger={summary.fainted > 0} />
-        <Tile label="Disponíveis" value={`${summary.available}`} icon="✨" />
+        <MvpSquare mvp={mvp} missions={summary.mvpMissions} />
       </div>
 
       {lastDay ? (
@@ -71,6 +78,45 @@ export function SummaryScreen({ state, dispatch, onRestart }: Props) {
           </button>
         </>
       )}
+    </div>
+  )
+}
+
+/**
+ * Estrelas da aprovação com destaque na variação do dia: a fatia ganha (antes→depois)
+ * brilha em dourado; se perdeu estrela, a fatia perdida (depois→antes) fica vermelha.
+ */
+function DeltaStars({ before, after }: { before: number; after: number }) {
+  const pct = (v: number): string => `${(v / STARS_MAX) * 100}%`
+  const delta = after - before
+  const gained = delta > 0
+  const lost = delta < 0
+  const solid = Math.min(before, after)
+  return (
+    <div className={styles.approval}>
+      <span className={styles.stars}>
+        <span className={styles.starsOff}>{'★'.repeat(STARS_MAX)}</span>
+        {/* Fatia perdida (vermelha) sob a base sólida. */}
+        {lost && (
+          <span className={`${styles.starsLayer} ${styles.starsLost}`} style={{ width: pct(before) }}>
+            {'★'.repeat(STARS_MAX)}
+          </span>
+        )}
+        {/* Fatia ganha (brilhando) sob a base sólida. */}
+        {gained && (
+          <span className={`${styles.starsLayer} ${styles.starsGain}`} style={{ width: pct(after) }}>
+            {'★'.repeat(STARS_MAX)}
+          </span>
+        )}
+        {/* Estrelas estáveis (não mudaram hoje). */}
+        <span className={`${styles.starsLayer} ${styles.starsSolid}`} style={{ width: pct(solid) }}>
+          {'★'.repeat(STARS_MAX)}
+        </span>
+      </span>
+      <span className={styles.delta} data-sign={delta >= 0 ? 'up' : 'down'}>
+        {delta >= 0 ? '▲ +' : '▼ '}
+        {delta.toFixed(1)}
+      </span>
     </div>
   )
 }
@@ -90,7 +136,7 @@ function FinalResult({ hired, stars, onRestart }: { hired: boolean; stars: numbe
   )
 }
 
-function MvpCard({ mvp, missions }: { mvp: Pokemon | undefined; missions: number }) {
+function MvpSquare({ mvp, missions }: { mvp: Pokemon | undefined; missions: number }) {
   if (!mvp) {
     return (
       <div className={`${styles.mvp} ${styles.mvpEmpty}`}>
@@ -104,28 +150,26 @@ function MvpCard({ mvp, missions }: { mvp: Pokemon | undefined; missions: number
   return (
     <div className={styles.mvp}>
       <span className={styles.mvpBadge}>★ DESTAQUE DO DIA</span>
-      <div className={styles.mvpRow}>
-        <img className={styles.mvpSprite} src={species.spritePath} alt={species.displayName} />
-        <div className={styles.mvpInfo}>
-          <span className={styles.mvpName}>
-            {displayNameOf(mvp)}
-            {symbol && (
-              <span className={styles.mvpGender} style={{ color: genderColor(mvp.gender) }}>
-                {symbol}
-              </span>
-            )}
-            <span className={styles.mvpLevel}>Nv {mvp.level}</span>
+      <img className={styles.mvpSprite} src={species.spritePath} alt={species.displayName} />
+      <span className={styles.mvpName}>
+        {displayNameOf(mvp)}
+        {symbol && (
+          <span className={styles.mvpGender} style={{ color: genderColor(mvp.gender) }}>
+            {symbol}
           </span>
-          <span className={styles.mvpTypes}>
-            {mvp.types.map((t) => (
-              <TypeBadge key={t} type={t} />
-            ))}
-          </span>
-          <span className={styles.mvpDeed}>
-            Venceu <b>{missions}</b> {missions === 1 ? 'missão' : 'missões'} hoje
-          </span>
-        </div>
-      </div>
+        )}
+      </span>
+      <span className={styles.mvpMeta}>
+        <span className={styles.mvpLevel}>Nv {mvp.level}</span>
+        <span className={styles.mvpTypes}>
+          {mvp.types.map((t) => (
+            <TypeBadge key={t} type={t} />
+          ))}
+        </span>
+      </span>
+      <span className={styles.mvpDeed}>
+        Venceu <b>{missions}</b> {missions === 1 ? 'missão' : 'missões'} hoje
+      </span>
     </div>
   )
 }
