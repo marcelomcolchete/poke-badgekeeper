@@ -183,6 +183,48 @@
   color: var(--c-grass-dark);
 }
 
+.meterHp {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-text);
+  font-size: 15px;
+  color: var(--c-ink-muted);
+}
+
+.meterHp b {
+  color: var(--c-ink);
+}
+
+.hpHit {
+  color: var(--c-hp-low) !important;
+}
+
+.hpLoss {
+  font-style: normal;
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: #fff;
+  background: var(--c-hp-low);
+  border-radius: 4px;
+  padding: 2px 5px;
+  animation: hpLossPop 0.35s ease-out;
+}
+
+@keyframes hpLossPop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
 .meterTrack {
   position: relative;
   height: 16px;
