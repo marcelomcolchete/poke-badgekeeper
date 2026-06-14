@@ -6,6 +6,7 @@
 import type { Pokemon } from '../types/index.ts'
 import type { MissionTemplate } from '../data/types.ts'
 import type { GameState, MissionInstance, MissionStatus } from '../engine/state.ts'
+import type { Rng } from '../engine/rng.ts'
 import { getCity } from '../data/cities.ts'
 import { getMissionTemplate } from '../data/missionTemplates.ts'
 import { MAX_DISPATCH, MIN_DISPATCH } from '../engine/constants.ts'
@@ -120,7 +121,10 @@ export function resolveMissionNow(s: GameState, mission: MissionInstance): void 
   const rules = rulesFor(template)
   const team = teamOf(s, mission.teamIds)
   const outcome = resolveMission(takeRng(s), team, template, rules)
-  for (const member of outcome.team) replaceMon(s, applyOutcome(member, outcome.success, rules))
+  const evoRng = takeRng(s) // sorteio de evolução (ex.: Eevee) no ganho de XP
+  for (const member of outcome.team) {
+    replaceMon(s, applyOutcome(member, outcome.success, rules, evoRng))
+  }
   if (outcome.success) applyMissionRewards(s, template, rules)
 
   mission.status = 'returning'
@@ -153,8 +157,13 @@ function applyMissionRewards(s: GameState, template: MissionTemplate, rules: Cat
  * Efeitos no Pokémon ao terminar a execução: XP (só em sucesso) e cura se a categoria
  * curar (Centro Pokémon). Mantém-no ocupado ('returning') — a liberação é na volta.
  */
-function applyOutcome(member: Pokemon, success: boolean, rules: CategoryRules): Pokemon {
-  let mon = success ? addXp(member, MISSION_XP_REWARD).pokemon : member
+function applyOutcome(
+  member: Pokemon,
+  success: boolean,
+  rules: CategoryRules,
+  rng: Rng,
+): Pokemon {
+  let mon = success ? addXp(member, MISSION_XP_REWARD, rng).pokemon : member
   if (success && rules.healOnSuccess) mon = { ...mon, currentHp: mon.maxHp }
   return { ...mon, status: 'returning' }
 }

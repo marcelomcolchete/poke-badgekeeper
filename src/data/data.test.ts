@@ -51,7 +51,7 @@ describe('espécies da Gen 1', () => {
       expect(s.minWildLevel).toBeGreaterThanOrEqual(LEVEL_MIN)
       expect(s.minWildLevel).toBeLessThanOrEqual(LEVEL_MAX)
       if (s.evolvesTo) {
-        expect(() => getSpecies(s.evolvesTo!.id)).not.toThrow()
+        for (const id of s.evolvesTo.ids) expect(() => getSpecies(id)).not.toThrow()
         expect(s.evolvesTo.atLevel).toBeGreaterThanOrEqual(LEVEL_MIN)
         expect(s.evolvesTo.atLevel).toBeLessThanOrEqual(LEVEL_MAX)
       }
@@ -59,7 +59,7 @@ describe('espécies da Gen 1', () => {
   })
 
   it('Charmander (4) evolui em Charmeleon (5)', () => {
-    expect(getSpecies(4).evolvesTo?.id).toBe(5)
+    expect(getSpecies(4).evolvesTo?.ids).toEqual([5])
   })
 
   it('toda espécie tem raridade válida', () => {
@@ -69,8 +69,10 @@ describe('espécies da Gen 1', () => {
   it('a forma evoluída sempre tem total de atributos maior que a anterior (§4.1)', () => {
     for (const s of species) {
       if (!s.evolvesTo) continue
-      const evolved = getSpecies(s.evolvesTo.id)
-      expect(attrTotal(evolved.baseAttrs)).toBeGreaterThan(attrTotal(s.baseAttrs))
+      for (const id of s.evolvesTo.ids) {
+        const evolved = getSpecies(id)
+        expect(attrTotal(evolved.baseAttrs)).toBeGreaterThan(attrTotal(s.baseAttrs))
+      }
     }
   })
 
