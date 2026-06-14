@@ -108,16 +108,25 @@ describe('resolveDefense (PLAN §4.4)', () => {
 })
 
 describe('generateDefenseEnemies', () => {
-  it('respeita o tamanho, escala com o dia e usa tipos válidos', () => {
+  const avgBattle = (es: EnemyUnit[]): number =>
+    es.reduce((s, e) => s + e.battle, 0) / es.length
+
+  it('respeita o tamanho, escala com o dia (média) e usa tipos válidos', () => {
     const typeSet = new Set<string>(POKEMON_TYPES)
-    const day1 = generateDefenseEnemies(createRng(1), 1, 4)
-    const day9 = generateDefenseEnemies(createRng(1), 9, 4)
-    expect(day1).toHaveLength(4)
-    expect(day9[0]?.battle).toBeGreaterThan(day1[0]?.battle ?? 0)
+    const day1 = generateDefenseEnemies(createRng(1), 1, 8)
+    const day9 = generateDefenseEnemies(createRng(1), 9, 8)
+    expect(day1).toHaveLength(8)
+    expect(avgBattle(day9)).toBeGreaterThan(avgBattle(day1))
     for (const e of day1) {
       expect(e.battle).toBeLessThanOrEqual(ATTR_MAX)
+      expect(e.battle).toBeGreaterThanOrEqual(0)
       for (const t of e.types) expect(typeSet.has(t)).toBe(true)
     }
+  })
+
+  it('cada desafiante tem o seu próprio poder de batalha (não são todos iguais)', () => {
+    const enemies = generateDefenseEnemies(createRng(1), 5, 6)
+    expect(new Set(enemies.map((e) => e.battle)).size).toBeGreaterThan(1)
   })
 
   it('é determinística para a mesma seed', () => {

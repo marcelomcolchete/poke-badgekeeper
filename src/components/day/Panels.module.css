@@ -176,23 +176,6 @@
   opacity: 0.5;
 }
 
-/* HP do seu Pokémon sobreposto no topo do sprite. */
-.hpTag {
-  position: absolute;
-  top: -7px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-family: var(--font-pixel);
-  font-size: 7px;
-  line-height: 1;
-  white-space: nowrap;
-  color: #fff;
-  background: rgba(20, 12, 8, 0.92);
-  border: 1px solid var(--c-panel-border);
-  border-radius: 999px;
-  padding: 2px 4px;
-}
-
 /* Selo "−1" estourando sobre a foto de quem perdeu o duelo. */
 .hpMinus {
   position: absolute;
@@ -209,8 +192,8 @@
   animation: hpLossPop 0.35s ease-out;
 }
 
-/* Atributo Batalha abaixo do sprite; sobe (verde ▲) ou desce (vermelho ▼) por tipo. */
-.battleTag {
+/* Badges abaixo do sprite: HP (verde) e Batalha (sobe ▲ / desce ▼ por vantagem de tipo). */
+.statTag {
   font-family: var(--font-pixel);
   font-size: 8px;
   line-height: 1;
@@ -219,6 +202,12 @@
   background: rgba(0, 0, 0, 0.08);
   border-radius: 4px;
   padding: 2px 4px;
+}
+
+/* HP do seu Pokémon: mesma badge, em verde (como a barra de HP do jogo). */
+.hpTag {
+  color: #1f8a3b;
+  background: rgba(45, 210, 79, 0.2);
 }
 
 .battleUp {
