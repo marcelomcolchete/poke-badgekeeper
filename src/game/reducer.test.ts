@@ -223,11 +223,40 @@ describe('fluxo de captura (PLAN §4.5)', () => {
     expect(dismissed.roster[0]?.status).toBe('idle')
   })
 
-  it('roster cheio bloqueia a busca', () => {
-    const full = Array.from({ length: MAX_ROSTER_SIZE }, (_, i) => strong(`r${i}`))
-    let s = dayState({ roster: full })
+  it('com roster cheio a busca continua liberada (captura exige descartar)', () => {
+    const full = Array.from({ length: MAX_ROSTER_SIZE }, (_, i) =>
+      makeMon({ id: `r${i}`, baseAttrs: makeAttrs({ percepcao: 50 }) }),
+    )
+    let s = dayState({ roster: full, captureSpots: ['q'] })
     s = reducer(s, { type: 'START_SEARCH', searcherId: 'r0', spotIndex: 0 })
-    expect(s.captureSearches).toHaveLength(0)
+    expect(s.captureSearches).toHaveLength(1)
+  })
+
+  it('capturar com roster cheio descarta o escolhido e mantém 6', () => {
+    const full = Array.from({ length: MAX_ROSTER_SIZE }, (_, i) =>
+      makeMon({ id: `r${i}`, baseAttrs: makeAttrs({ percepcao: 50 }) }),
+    )
+    let s = dayState({ roster: full, captureSpots: ['q'] })
+    s = reducer(s, { type: 'START_SEARCH', searcherId: 'r0', spotIndex: 0 })
+    s = reducer(s, { type: 'TICK', deltaMs: 60_000 })
+    const pick = s.encounters[0]?.candidateSpeciesIds[0]
+    expect(pick).toBeDefined()
+
+    // Sem releaseId, a captura é no-op (roster cheio).
+    const blocked = reducer(s, { type: 'CAPTURE_PICK', searcherId: 'r0', speciesId: pick as number })
+    expect(blocked.roster).toHaveLength(MAX_ROSTER_SIZE)
+    expect(blocked.encounters).toHaveLength(1)
+
+    // Descartando 'r5', captura e segue com 6 (sem o descartado, com o novo).
+    const after = reducer(s, {
+      type: 'CAPTURE_PICK',
+      searcherId: 'r0',
+      speciesId: pick as number,
+      releaseId: 'r5',
+    })
+    expect(after.roster).toHaveLength(MAX_ROSTER_SIZE)
+    expect(after.roster.some((p) => p.id === 'r5')).toBe(false)
+    expect(after.today.capturedIds).toHaveLength(1)
   })
 })
 

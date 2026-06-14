@@ -11,9 +11,11 @@ import { graphTravelMs } from '../engine/missions.ts'
 import { pathDistance, shortestPath } from '../engine/pathfinding.ts'
 import { findMon, replaceMon, takeId, takeRng } from './runtime.ts'
 
-/** Manda um Pokémon idle viajar até um spot e procurar; bloqueado com o roster cheio (§4.5). */
+/**
+ * Manda um Pokémon idle viajar até um spot e procurar. Com o roster cheio a busca continua
+ * liberada (§4.5, ajuste): ao capturar, o jogador escolhe um Pokémon para descartar.
+ */
 export function startSearch(s: GameState, searcherId: string, spotIndex: number): void {
-  if (rosterIsFull(s.roster)) return
   const searcher = findMon(s, searcherId)
   if (!searcher || searcher.status !== 'idle') return
   if (s.captureSearches.some((c) => c.searcherId === searcherId)) return
@@ -77,7 +79,7 @@ function consumeSpot(s: GameState, spotIndex: number): void {
 }
 
 /** Inicia a viagem de volta do procurador ao ginásio (fica idle só ao chegar). */
-function startReturn(s: GameState, searcherId: string, spotIndex: number): void {
+function startReturn(s: GameState, searcherId: string, spotIndex: number, captured: boolean): void {
   const searcher = findMon(s, searcherId)
   if (!searcher) return
   const city = getCity(s.run.cityIndex)
@@ -86,7 +88,15 @@ function startReturn(s: GameState, searcherId: string, spotIndex: number): void 
   const oneWay = graphTravelMs(pathDistance(city.graph, path), [searcher])
   const now = s.clock.dayElapsedMs
   replaceMon(s, { ...searcher, status: 'returning' })
-  s.captureReturns.push({ searcherId, node, path, departAtMs: now, arriveAtMs: now + oneWay })
+  s.captureReturns.push({
+    searcherId,
+    spotIndex,
+    captured,
+    node,
+    path,
+    departAtMs: now,
+    arriveAtMs: now + oneWay,
+  })
 }
 
 /** Procurador chegou de volta ao ginásio → idle; remove do conjunto de retornos. */
@@ -97,22 +107,39 @@ export function advanceCaptureReturn(s: GameState, ret: CaptureReturn, nowMs: nu
   s.captureReturns = s.captureReturns.filter((r) => r !== ret)
 }
 
-/** Captura o candidato escolhido (se houver espaço), encerra a área e inicia a volta. */
-export function capturePick(s: GameState, searcherId: string, speciesId: number): void {
-  const encounter = popEncounter(s, searcherId)
+/**
+ * Captura o candidato escolhido, encerra a área e inicia a volta. Com o roster cheio é
+ * preciso indicar `releaseId` — o Pokémon descartado para abrir vaga (§4.5, ajuste). Nunca
+ * descarta o próprio procurador (ainda em campo).
+ */
+export function capturePick(
+  s: GameState,
+  searcherId: string,
+  speciesId: number,
+  releaseId?: string,
+): void {
+  // Valida ANTES de consumir o encontro: uma captura bloqueada (time cheio sem descarte)
+  // não pode descartar o trio do encontro.
+  const encounter = s.encounters.find((e) => e.searcherId === searcherId)
   if (!encounter || !encounter.candidateSpeciesIds.includes(speciesId)) return
-  if (!rosterIsFull(s.roster)) {
-    const id = takeId(s, 'p')
-    s.roster = captureWild({
-      roster: s.roster,
-      species: getSpecies(speciesId),
-      level: encounter.level,
-      rng: takeRng(s),
-      id,
-    })
-    s.today.capturedIds.push(id)
+
+  if (rosterIsFull(s.roster)) {
+    if (!releaseId || releaseId === searcherId) return
+    if (!s.roster.some((p) => p.id === releaseId)) return
+    s.roster = s.roster.filter((p) => p.id !== releaseId)
   }
-  startReturn(s, searcherId, encounter.spotIndex)
+  s.encounters = s.encounters.filter((e) => e !== encounter)
+  const id = takeId(s, 'p')
+  s.roster = captureWild({
+    roster: s.roster,
+    species: getSpecies(speciesId),
+    level: encounter.level,
+    rng: takeRng(s),
+    id,
+  })
+  s.today.capturedIds.push(id)
+
+  startReturn(s, searcherId, encounter.spotIndex, true)
   consumeSpot(s, encounter.spotIndex)
 }
 
@@ -128,6 +155,6 @@ export function renamePokemon(s: GameState, pokemonId: string, nickname: string)
 export function captureDismiss(s: GameState, searcherId: string): void {
   const encounter = popEncounter(s, searcherId)
   if (!encounter) return
-  startReturn(s, searcherId, encounter.spotIndex)
+  startReturn(s, searcherId, encounter.spotIndex, false)
   consumeSpot(s, encounter.spotIndex)
 }

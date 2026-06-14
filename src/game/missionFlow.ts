@@ -6,11 +6,15 @@
 import type { Pokemon } from '../types/index.ts'
 import type { MissionTemplate } from '../data/types.ts'
 import type { GameState, MissionInstance, MissionStatus } from '../engine/state.ts'
-import type { Rng } from '../engine/rng.ts'
 import { getCity } from '../data/cities.ts'
 import { getMissionTemplate } from '../data/missionTemplates.ts'
 import { MAX_DISPATCH, MIN_DISPATCH } from '../engine/constants.ts'
-import { CATEGORY_RULES, MISSION_XP_REWARD, type CategoryRules } from '../engine/balance.ts'
+import {
+  CATEGORY_RULES,
+  MISSION_XP_REWARD,
+  RETURN_SPEED_BONUS_ON_SUCCESS,
+  type CategoryRules,
+} from '../engine/balance.ts'
 import {
   effectiveRequirement,
   executionMs,
@@ -20,6 +24,7 @@ import {
 } from '../engine/missions.ts'
 import { pathDistance, shortestPath } from '../engine/pathfinding.ts'
 import { addXp } from '../engine/leveling.ts'
+import { createRng, type Rng } from '../engine/rng.ts'
 import { findMon, replaceMon, settleFaint, takeRng } from './runtime.ts'
 
 function rulesFor(template: MissionTemplate): CategoryRules {
@@ -113,22 +118,27 @@ export function advanceMission(s: GameState, mission: MissionInstance, nowMs: nu
 }
 
 /**
- * Aplica o desfecho NO LOCAL (Bernoulli semeado): HP/XP/cura/ouro/passiva e registra o
- * resultado. O time continua ocupado ('returning') até chegar de volta ao ginásio (§4.2).
+ * Aplica o desfecho NO LOCAL (Bernoulli semeado): só HP/dano, ouro/passiva e registra o
+ * resultado. O XP e a cura ficam para a VOLTA — o Pokémon "só sobe de nível ao chegar ao
+ * ginásio" (§4.1, ajuste). Em sucesso, a volta é 50% mais rápida (§4.3, ajuste). O time
+ * continua ocupado ('returning') até chegar de volta ao ginásio (§4.2).
  */
 export function resolveMissionNow(s: GameState, mission: MissionInstance): void {
   const template = getMissionTemplate(mission.templateId)
   const rules = rulesFor(template)
   const team = teamOf(s, mission.teamIds)
   const outcome = resolveMission(takeRng(s), team, template, rules)
-  const evoRng = takeRng(s) // sorteio de evolução (ex.: Eevee) no ganho de XP
+  // Aplica só o dano (HP) agora; XP/cura/evolução são adiados para freeOnReturn.
   for (const member of outcome.team) {
-    replaceMon(s, applyOutcome(member, outcome.success, rules, evoRng))
+    replaceMon(s, { ...member, status: 'returning' })
   }
+  // Seed de evolução sorteado AGORA (mantém o cursor do RNG estável); usado só na volta.
+  mission.xpSeed = takeRng(s).int(0, 0x7fffffff)
   if (outcome.success) applyMissionRewards(s, template, rules)
 
   mission.status = 'returning'
   mission.result = outcome.success ? 'success' : 'failure'
+  if (outcome.success) speedUpReturn(mission)
   s.today.missionResults.push({
     templateId: mission.templateId,
     success: outcome.success,
@@ -136,9 +146,25 @@ export function resolveMissionNow(s: GameState, mission: MissionInstance): void 
   })
 }
 
-/** Libera o time ao chegar de volta ao ginásio: vivo→idle, desmaiado→fainted (ou revive). */
+/** Encurta o trecho de volta em sucesso: time volta animado, 50% mais rápido (§4.3, ajuste). */
+function speedUpReturn(mission: MissionInstance): void {
+  if (mission.resolveAtMs === null || mission.returnEndsAtMs === null) return
+  const returnLeg = mission.returnEndsAtMs - mission.resolveAtMs
+  mission.returnEndsAtMs = mission.resolveAtMs + returnLeg / RETURN_SPEED_BONUS_ON_SUCCESS
+}
+
+/**
+ * Libera o time ao chegar de volta ao ginásio: aplica o XP/cura adiados (o level-up só
+ * "aparece" aqui), depois vivo→idle e desmaiado→fainted (ou revive) — §4.1 (ajuste).
+ */
 export function freeOnReturn(s: GameState, mission: MissionInstance): void {
-  for (const member of teamOf(s, mission.teamIds)) replaceMon(s, settleFaint(s, member))
+  const template = getMissionTemplate(mission.templateId)
+  const rules = rulesFor(template)
+  const success = mission.result === 'success'
+  const evoRng = createRng(mission.xpSeed ?? 0) // mesma sequência sorteada ao resolver
+  for (const member of teamOf(s, mission.teamIds)) {
+    replaceMon(s, settleFaint(s, applyOutcome(member, success, rules, evoRng)))
+  }
   mission.status = 'resolved'
 }
 
@@ -154,8 +180,8 @@ function applyMissionRewards(s: GameState, template: MissionTemplate, rules: Cat
 }
 
 /**
- * Efeitos no Pokémon ao terminar a execução: XP (só em sucesso) e cura se a categoria
- * curar (Centro Pokémon). Mantém-no ocupado ('returning') — a liberação é na volta.
+ * Efeitos aplicados na VOLTA ao ginásio: XP (só em sucesso, pode subir nível/evoluir) e
+ * cura se a categoria curar (Centro Pokémon). O status final é definido por settleFaint.
  */
 function applyOutcome(
   member: Pokemon,
@@ -165,5 +191,5 @@ function applyOutcome(
 ): Pokemon {
   let mon = success ? addXp(member, MISSION_XP_REWARD, rng).pokemon : member
   if (success && rules.healOnSuccess) mon = { ...mon, currentHp: mon.maxHp }
-  return { ...mon, status: 'returning' }
+  return mon
 }

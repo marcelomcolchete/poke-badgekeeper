@@ -1,7 +1,6 @@
 // Coluna fixa à direita na fase Dia: relatório ao vivo do dia — progresso de
 // missões rumo à meta, defesas, ouro e capturas. Substitui o antigo modal.
 
-import { useEffect, useRef } from 'react'
 import type { GameState } from '../../engine/state.ts'
 import type { GuideMessage } from './DayScreen.tsx'
 import { STARS_MAX } from '../../engine/constants.ts'
@@ -26,13 +25,6 @@ export function ReportSidebar({ state, messages }: Props) {
   const completedPct = total > 0 ? clamp(completed / total, 0, 1) * 100 : 0
   const goalPct = total > 0 ? clamp(goal / total, 0, 1) * 100 : 0
   const starsPct = `${(state.approval.stars / STARS_MAX) * 100}%`
-
-  // Mantém o histórico rolado até a fala mais recente.
-  const logRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    const el = logRef.current
-    if (el) el.scrollTop = el.scrollHeight
-  }, [messages])
 
   return (
     <aside className={styles.panel} aria-label="Relatório do dia">
@@ -84,9 +76,9 @@ export function ReportSidebar({ state, messages }: Props) {
           <span className={styles.statIcon}>⚔️</span>
           <span className={styles.statVal}>
             {t.defensesWon}
-            <span className={styles.statSub}>/{t.defensesTotal}</span>
+            <span className={styles.statSub}>/{state.defenses.length}</span>
           </span>
-          <span className={styles.statLabel}>Defesas</span>
+          <span className={styles.statLabel}>Batalhas previstas</span>
         </li>
         <li className={styles.stat}>
           <span className={styles.statIcon}>💰</span>
@@ -107,7 +99,7 @@ export function ReportSidebar({ state, messages }: Props) {
           </span>
           <span className={styles.guideName}>Antigo Líder</span>
         </div>
-        <div className={styles.log} ref={logRef}>
+        <div className={styles.log}>
           {messages.map((m) => (
             <div key={m.id} className={styles.msg}>
               <span className={styles.msgAvatar} aria-hidden="true">

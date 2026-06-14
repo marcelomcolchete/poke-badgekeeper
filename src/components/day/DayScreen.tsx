@@ -2,7 +2,7 @@
 // mapa da cidade ao centro (HUD no topo + textbox na base) e RELATÓRIO à direita.
 // O desistir virou um ícone no header; painéis de evento abrem como modais por cima.
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Dispatch } from 'react'
 import type { GameSpeed } from '../../types/index.ts'
 import type { GameState } from '../../engine/state.ts'
@@ -32,6 +32,9 @@ export interface GuideMessage {
   text: string
 }
 
+/** Cada fala do guia some sozinha depois disto (tempo real) — chat efêmero (ajuste). */
+const GUIDE_MESSAGE_TTL_MS = 10_000
+
 interface Props {
   state: GameState
   dispatch: Dispatch<GameAction>
@@ -44,13 +47,35 @@ export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) 
   const [open, setOpen] = useState<Selection>(null)
   // Membro do time aberto em detalhe (coluna esquerda → modal).
   const [memberId, setMemberId] = useState<string | null>(null)
-  // Histórico de falas do guia (antigo líder): acumula cada dica nova do dia.
-  const [messages, setMessages] = useState<GuideMessage[]>(() => [
-    { id: 0, text: 'Bem-vindo ao ginásio! Eu te guio durante o dia — fica de olho aqui.' },
-    { id: 1, text: dayHint(state) },
-  ])
-  const msgCounter = useRef(2)
-  const lastMsg = useRef(dayHint(state))
+  // Falas do guia (antigo líder): cada uma vive ~10s e some sozinha (chat efêmero).
+  const [messages, setMessages] = useState<GuideMessage[]>([])
+  const msgCounter = useRef(0)
+  const lastMsg = useRef('')
+  const timers = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map())
+
+  // Adiciona uma fala e agenda sua remoção depois do tempo de vida (tempo real).
+  const pushMessage = useCallback((text: string): void => {
+    const id = msgCounter.current++
+    setMessages((prev) => [...prev, { id, text }])
+    const handle = setTimeout(() => {
+      setMessages((prev) => prev.filter((m) => m.id !== id))
+      timers.current.delete(id)
+    }, GUIDE_MESSAGE_TTL_MS)
+    timers.current.set(id, handle)
+  }, [])
+
+  // Fala inicial (uma vez); ao desmontar/recriar, limpa timers e zera o histórico.
+  useEffect(() => {
+    pushMessage('Bem-vindo ao ginásio! Eu te guio durante o dia — fica de olho aqui.')
+    const handles = timers.current
+    return () => {
+      for (const h of handles.values()) clearTimeout(h)
+      handles.clear()
+      lastMsg.current = ''
+      setMessages([])
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   // Missão a revelar (modal de conclusão com os gráficos) e controles de "já visto".
   const [revealId, setRevealId] = useState<string | null>(null)
   const revealedMissions = useRef<Set<string>>(new Set())
@@ -92,13 +117,13 @@ export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) 
   }
   const revealMission = revealId ? state.missions.find((m) => m.id === revealId) : undefined
 
-  // Fala do guia: sempre que a dica contextual muda, registra uma nova mensagem no histórico.
+  // Fala do guia: sempre que a dica contextual muda, dispara uma nova fala efêmera.
   useEffect(() => {
     const text = dayHint(state)
     if (text === lastMsg.current) return
     lastMsg.current = text
-    setMessages((prev) => [...prev, { id: msgCounter.current++, text }])
-  }, [state])
+    pushMessage(text)
+  }, [state, pushMessage])
 
   // Atalhos de teclado: 1/2/3 = velocidade; 4 = pausa/play (segue a ordem dos botões).
   useEffect(() => {

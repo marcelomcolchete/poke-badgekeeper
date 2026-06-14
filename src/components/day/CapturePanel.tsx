@@ -1,12 +1,13 @@
 // Captura (PLAN §4.5): escolher quem procura, acompanhar a busca e resolver o
-// encontro (capturar 1 / trazer de volta / seguir procurando).
+// encontro (capturar 1 / trazer de volta / seguir procurando). Com o time cheio a
+// captura continua possível: o jogador escolhe um Pokémon para descartar (ajuste).
 
 import { useState } from 'react'
 import type { Dispatch } from 'react'
 import type { GameState } from '../../engine/state.ts'
 import type { GameAction } from '../../game/actions.ts'
 import { rosterIsFull } from '../../engine/capture.ts'
-import { MAX_ROSTER_SIZE } from '../../engine/constants.ts'
+import { getSpecies } from '../../data/pokemon/index.ts'
 import { PokemonCard } from '../PokemonCard/PokemonCard.tsx'
 import { previewPokemon } from '../common/preview.ts'
 import { Overlay } from '../common/Overlay.tsx'
@@ -24,6 +25,8 @@ export function CapturePanel({ state, dispatch, spotIndex, onClose }: Props) {
   const encounter = state.encounters.find((e) => e.spotIndex === spotIndex)
   const searching = state.captureSearches.some((c) => c.spotIndex === spotIndex)
   const full = rosterIsFull(state.roster)
+  // Espécie escolhida aguardando a escolha de quem descartar (só quando o roster está cheio).
+  const [discardFor, setDiscardFor] = useState<number | null>(null)
   // Após capturar, abre o modal de apelido para o Pokémon recém-pego (último capturado).
   const [awaitingRename, setAwaitingRename] = useState(false)
   const lastCapturedId = state.today.capturedIds.at(-1) ?? null
@@ -44,6 +47,48 @@ export function CapturePanel({ state, dispatch, spotIndex, onClose }: Props) {
     )
   }
 
+  const capture = (speciesId: number, releaseId?: string): void => {
+    if (!encounter) return
+    dispatch({ type: 'CAPTURE_PICK', searcherId: encounter.searcherId, speciesId, releaseId })
+    setAwaitingRename(true)
+  }
+
+  // Passo de descarte: time cheio + candidato escolhido → escolher quem liberar.
+  if (encounter && discardFor !== null) {
+    const newcomer = getSpecies(discardFor).displayName
+    return (
+      <Overlay title="TIME CHEIO" onClose={onClose}>
+        <div className={styles.capture}>
+          <p className={styles.warn}>
+            Seu time está cheio. Escolha quem liberar para receber <b>{newcomer}</b> — o escolhido
+            é descartado para sempre.
+          </p>
+          <div className={styles.picker}>
+            {state.roster
+              .filter((mon) => mon.id !== encounter.searcherId)
+              .map((mon) => (
+                <PokemonCard
+                  key={mon.id}
+                  pokemon={mon}
+                  onClick={() => capture(discardFor, mon.id)}
+                />
+              ))}
+          </div>
+          <div className={styles.captureActions}>
+            <button
+              type="button"
+              className={styles.ghost}
+              data-sound="deselect"
+              onClick={() => setDiscardFor(null)}
+            >
+              Voltar
+            </button>
+          </div>
+        </div>
+      </Overlay>
+    )
+  }
+
   return (
     <Overlay title="ÁREA DE CAPTURA" onClose={onClose}>
       {encounter ? (
@@ -58,20 +103,14 @@ export function CapturePanel({ state, dispatch, spotIndex, onClose }: Props) {
               <PokemonCard
                 key={`${id}-${i}`}
                 pokemon={previewPokemon(id, encounter.level)}
-                disabled={full}
-                onClick={
-                  full
-                    ? undefined
-                    : () => {
-                        dispatch({ type: 'CAPTURE_PICK', searcherId: encounter.searcherId, speciesId: id })
-                        setAwaitingRename(true)
-                      }
-                }
+                onClick={() => (full ? setDiscardFor(id) : capture(id))}
               />
             ))}
           </div>
           {full && (
-            <p className={styles.warn}>Roster cheio ({MAX_ROSTER_SIZE}) — liberte espaço para capturar.</p>
+            <p className={styles.warn}>
+              Time cheio — ao capturar, você escolhe um Pokémon do time para descartar.
+            </p>
           )}
           <div className={styles.captureActions}>
             <button
@@ -89,10 +128,6 @@ export function CapturePanel({ state, dispatch, spotIndex, onClose }: Props) {
         </div>
       ) : searching ? (
         <p className={styles.hint}>A caminho / explorando… aguarde o encontro surgir aqui.</p>
-      ) : full ? (
-        <p className={styles.warn}>
-          Roster cheio ({MAX_ROSTER_SIZE}) — captura indisponível até liberar espaço.
-        </p>
       ) : (
         <div className={styles.capture}>
           <p className={styles.hint}>Quem vai explorar? Maior Percepção encontra mais rápido.</p>
