@@ -82,6 +82,7 @@ export function MissionDispatch({ state, dispatch, missionId, onClose }: Props) 
               key={mon.id}
               pokemon={mon}
               selected={selected.includes(mon.id)}
+              toggle
               disabled={mon.status !== 'idle'}
               onClick={mon.status === 'idle' ? () => toggle(mon.id) : undefined}
             />

@@ -25,10 +25,12 @@ interface Props {
   pokemon: Pokemon
   selected?: boolean
   disabled?: boolean
+  /** Quando true, vira um botão de alternância (aria-pressed) — habilita o som select/deselect. */
+  toggle?: boolean
   onClick?: () => void
 }
 
-export function PokemonCard({ pokemon, selected = false, disabled = false, onClick }: Props) {
+export function PokemonCard({ pokemon, selected = false, disabled = false, toggle = false, onClick }: Props) {
   const species = getSpecies(pokemon.speciesId)
   const pending = pendingPoints(pokemon)
   const atMaxLevel = pokemon.level >= LEVEL_MAX
@@ -44,7 +46,13 @@ export function PokemonCard({ pokemon, selected = false, disabled = false, onCli
   ].join(' ')
 
   return (
-    <button type="button" className={classes} onClick={onClick} disabled={disabled || !onClick}>
+    <button
+      type="button"
+      className={classes}
+      onClick={onClick}
+      disabled={disabled || !onClick}
+      aria-pressed={toggle ? selected : undefined}
+    >
       <div className={styles.head}>
         <img className={styles.sprite} src={species.spritePath} alt={species.displayName} />
         <div className={styles.id}>

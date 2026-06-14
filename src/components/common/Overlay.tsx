@@ -21,7 +21,13 @@ export function Overlay({ title, children, onClose, wide = false }: Props) {
         <div className={styles.header}>
           <span className={styles.title}>{title}</span>
           {onClose && (
-            <button type="button" className={styles.close} onClick={onClose} aria-label="Fechar">
+            <button
+              type="button"
+              className={styles.close}
+              onClick={onClose}
+              aria-label="Fechar"
+              data-sound="deselect"
+            >
               ✕
             </button>
           )}

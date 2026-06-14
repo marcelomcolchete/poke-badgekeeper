@@ -77,6 +77,7 @@ export function CapturePanel({ state, dispatch, spotIndex, onClose }: Props) {
             <button
               type="button"
               className={styles.ghost}
+              data-sound="deselect"
               onClick={() => {
                 dispatch({ type: 'CAPTURE_DISMISS', searcherId: encounter.searcherId })
                 onClose()

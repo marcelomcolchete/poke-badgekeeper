@@ -19,9 +19,24 @@ import { useGameSounds } from './audio/useGameSounds.ts'
 import { playSound } from './audio/sounds.ts'
 import styles from './App.module.css'
 
-// Som de clique global: qualquer botão da UI, sem precisar instrumentar um a um.
+// Nomes acessíveis que denotam cancelar/fechar/voltar → som de "deselect".
+const DESELECT_RE = /\b(fechar|cancelar|voltar|sair|dispensar|descartar)\b|^[✕×✖]$/i
+
+/** Decide o som de um botão da UI: 'select' (confirmar/escolher) ou 'deselect' (cancelar/fechar/desmarcar). */
+function uiSoundFor(el: HTMLElement): 'select' | 'deselect' {
+  const explicit = el.dataset.sound // override: data-sound="select|deselect"
+  if (explicit === 'select' || explicit === 'deselect') return explicit
+  const pressed = el.getAttribute('aria-pressed') // toggle: já selecionado → desmarca
+  if (pressed === 'true') return 'deselect'
+  if (pressed === 'false') return 'select'
+  const name = (el.getAttribute('aria-label') || el.textContent || '').trim()
+  return DESELECT_RE.test(name) ? 'deselect' : 'select'
+}
+
+// Som global de UI: qualquer botão, sem instrumentar um a um (capture roda antes do onClick do botão).
 function handleClickSound(e: React.MouseEvent): void {
-  if ((e.target as HTMLElement).closest('button, [role="button"]')) playSound('click')
+  const el = (e.target as HTMLElement).closest<HTMLElement>('button, [role="button"]')
+  if (el && !(el as HTMLButtonElement).disabled) playSound(uiSoundFor(el))
 }
 
 function freshState() {

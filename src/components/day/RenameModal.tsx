@@ -60,7 +60,7 @@ export function RenameModal({ pokemon, dispatch, onDone }: Props) {
         </label>
 
         <div className={styles.actions}>
-          <button type="button" className={styles.ghost} onClick={onDone}>
+          <button type="button" className={styles.ghost} data-sound="deselect" onClick={onDone}>
             Manter nome
           </button>
           <button type="button" className={styles.primary} onClick={confirm} disabled={!name.trim()}>

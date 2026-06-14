@@ -10,7 +10,8 @@ export type SoundKey =
   | 'missionFail'
   | 'timeWarning'
   | 'levelUp'
-  | 'click'
+  | 'select'
+  | 'deselect'
 
 const SOUND_FILES: Record<SoundKey, string> = {
   missionNew: '/sounds/mission-new.mp3',
@@ -18,17 +19,19 @@ const SOUND_FILES: Record<SoundKey, string> = {
   missionFail: '/sounds/mission-fail.mp3',
   timeWarning: '/sounds/time-warning.mp3',
   levelUp: '/sounds/level-up.mp3',
-  click: '/sounds/click.mp3',
+  select: '/sounds/select.mp3',
+  deselect: '/sounds/deselect.mp3',
 }
 
-/** Volume por som (0–1). O clique é o mais discreto por tocar o tempo todo. */
+/** Volume por som (0–1). Select/deselect são discretos por tocar o tempo todo. */
 const VOLUME: Record<SoundKey, number> = {
   missionNew: 0.7,
   missionSuccess: 0.8,
   missionFail: 0.8,
   timeWarning: 0.8,
   levelUp: 0.9,
-  click: 0.35,
+  select: 0.35,
+  deselect: 0.35,
 }
 
 // --- Estado de mute (compartilhado pelo botão e pelo player), persistido ---------------
