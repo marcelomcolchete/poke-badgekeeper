@@ -82,7 +82,12 @@ export function HexRadar({
               {ATTR_SHORT_PT[key]}
             </text>
             {showValues && values && (
-              <text className={styles.value} x={label.x} y={label.y + 10} textAnchor="middle">
+              <text
+                className={Math.round(values[key]) >= AXIS_MAX ? styles.valueMax : styles.value}
+                x={label.x}
+                y={label.y + 10}
+                textAnchor="middle"
+              >
                 {Math.round(values[key])}
               </text>
             )}

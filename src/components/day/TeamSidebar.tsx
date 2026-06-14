@@ -8,7 +8,7 @@ import type { GameState } from '../../engine/state.ts'
 import type { Pokemon } from '../../types/index.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
 import { getMissionTemplate } from '../../data/missionTemplates.ts'
-import { LEVEL_MAX } from '../../engine/constants.ts'
+import { ATTR_MAX, LEVEL_MAX } from '../../engine/constants.ts'
 import { MISSION_XP_REWARD } from '../../engine/balance.ts'
 import { effectiveAttr } from '../../engine/attributes.ts'
 import { addXp, pendingPoints, xpToNext } from '../../engine/leveling.ts'
@@ -139,12 +139,20 @@ export function TeamSidebar({ state, onSelect }: Props) {
 
                 {/* Atributos por escrito (6 eixos). */}
                 <dl className={styles.attrs}>
-                  {ATTR_KEYS.map((k) => (
-                    <div key={k} className={styles.attr}>
-                      <dt className={styles.attrName}>{ATTR_LABEL_PT[k]}</dt>
-                      <dd className={styles.attrVal}>{effectiveAttr(mon, k)}</dd>
-                    </div>
-                  ))}
+                  {ATTR_KEYS.map((k) => {
+                    const val = effectiveAttr(mon, k)
+                    return (
+                      <div key={k} className={styles.attr}>
+                        <dt className={styles.attrName}>{ATTR_LABEL_PT[k]}</dt>
+                        <dd
+                          className={styles.attrVal}
+                          style={val >= ATTR_MAX ? { color: '#e0a020', fontWeight: 'bold' } : undefined}
+                        >
+                          {val}
+                        </dd>
+                      </div>
+                    )
+                  })}
                 </dl>
 
                 <span className={styles.status}>

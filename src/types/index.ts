@@ -63,7 +63,9 @@ export interface Pokemon {
   types: PokemonType[]
   /** Base curada por espécie (10–50). */
   baseAttrs: Attrs
-  /** Pontos alocados por nível; efetivo = base + alocação * modificador de natureza. */
+  /** Variação sorteada no encontro/criação: −10 a +10 por eixo (pode zerar o atributo). */
+  ivs: Attrs
+  /** Pontos alocados por nível; efetivo = base + iv + alocação * modificador de natureza. */
   allocations: Attrs
   currentHp: number
   maxHp: number

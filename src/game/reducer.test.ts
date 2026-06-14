@@ -202,7 +202,7 @@ describe('fluxo de captura (PLAN §4.5)', () => {
     expect(s.encounters).toHaveLength(1)
     const pick = s.encounters[0]?.candidateSpeciesIds[0]
     expect(pick).toBeDefined()
-    let after = reducer(s, { type: 'CAPTURE_PICK', searcherId: 'a', speciesId: pick as number })
+    let after = reducer(s, { type: 'CAPTURE_PICK', searcherId: 'a', candidateIndex: 0 })
     expect(after.roster).toHaveLength(2)
     expect(after.today.capturedIds).toHaveLength(1)
     expect(after.today.exploredSpots).toContain(0) // área some do dia
@@ -243,7 +243,7 @@ describe('fluxo de captura (PLAN §4.5)', () => {
     expect(pick).toBeDefined()
 
     // Sem releaseId, a captura é no-op (roster cheio).
-    const blocked = reducer(s, { type: 'CAPTURE_PICK', searcherId: 'r0', speciesId: pick as number })
+    const blocked = reducer(s, { type: 'CAPTURE_PICK', searcherId: 'r0', candidateIndex: 0 })
     expect(blocked.roster).toHaveLength(MAX_ROSTER_SIZE)
     expect(blocked.encounters).toHaveLength(1)
 
@@ -251,7 +251,7 @@ describe('fluxo de captura (PLAN §4.5)', () => {
     const after = reducer(s, {
       type: 'CAPTURE_PICK',
       searcherId: 'r0',
-      speciesId: pick as number,
+      candidateIndex: 0,
       releaseId: 'r5',
     })
     expect(after.roster).toHaveLength(MAX_ROSTER_SIZE)
