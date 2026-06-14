@@ -25,6 +25,8 @@ export type GameAction =
   | { type: 'ACCEPT_MISSION'; missionId: string; teamIds: string[] }
   /** Atribui o esquadrão (≥1) a uma defesa ativa; resolve na hora — PLAN §4.4. */
   | { type: 'ASSIGN_DEFENSE'; defenseId: string; squadIds: string[] }
+  /** Conclui a batalha de defesa (após a animação): aplica o XP/level-up das vitórias — §4.4. */
+  | { type: 'COMPLETE_DEFENSE'; defenseId: string }
   /** Manda um Pokémon explorar uma área de captura — PLAN §4.5. */
   | { type: 'START_SEARCH'; searcherId: string; spotIndex: number }
   /** No encontro: captura o candidato (por índice); com roster cheio, `releaseId` descarta um — §4.5. */

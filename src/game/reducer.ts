@@ -9,7 +9,7 @@ import { tick } from './dayClock.ts'
 import { startRun } from './setup.ts'
 import { advancePhase, setSpeed } from './phaseFlow.ts'
 import { acceptMission } from './missionFlow.ts'
-import { assignDefense } from './defenseFlow.ts'
+import { assignDefense, completeDefense } from './defenseFlow.ts'
 import { capturePick, captureDismiss, renamePokemon, startSearch } from './captureFlow.ts'
 import { allocatePoint, applyItem, buyItem } from './marketFlow.ts'
 
@@ -40,6 +40,9 @@ export function reducer(state: GameState, action: GameAction): GameState {
       break
     case 'ASSIGN_DEFENSE':
       assignDefense(s, action.defenseId, action.squadIds)
+      break
+    case 'COMPLETE_DEFENSE':
+      completeDefense(s, action.defenseId)
       break
     case 'START_SEARCH':
       startSearch(s, action.searcherId, action.spotIndex)

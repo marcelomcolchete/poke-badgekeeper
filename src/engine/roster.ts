@@ -1,6 +1,7 @@
 // Ordem de exibição do roster (sidebar e seletores de missão/defesa): primeiro os
 // DISPONÍVEIS (idle), depois por qualidade decrescente — facilita escolher quem mandar.
 //
+//   0. derrotado (desmaiado) SEMPRE por último
 //   1. disponível (idle) antes de ocupado
 //   2. nível mais alto
 //   3. rank mais alto (F→S)
@@ -30,6 +31,10 @@ function rarityIndex(p: Pokemon): number {
 
 /** Comparador da ordem de exibição (ver topo do arquivo). */
 export function compareRoster(a: Pokemon, b: Pokemon): number {
+  // Derrotados (desmaiados) sempre no fim, independentemente do resto.
+  const aFaint = a.currentHp <= 0
+  const bFaint = b.currentHp <= 0
+  if (aFaint !== bFaint) return aFaint ? 1 : -1
   const availDiff = Number(isAvailable(b)) - Number(isAvailable(a))
   if (availDiff !== 0) return availDiff
   if (b.level !== a.level) return b.level - a.level

@@ -137,6 +137,32 @@ describe('fluxo de defesa (PLAN §4.4/§4.6)', () => {
     expect(s.roster.every((p) => p.status === 'idle')).toBe(true)
   })
 
+  it('XP/level-up das vitórias só é aplicado ao CONCLUIR a batalha (COMPLETE_DEFENSE)', () => {
+    const weak: EnemyUnit[] = [
+      { battle: 1, types: ['normal'] },
+      { battle: 1, types: ['normal'] },
+    ]
+    let s = dayState({ roster: [strong('a')], defenses: [defense(weak)] })
+    s.today.defensesTotal = 1
+    const xpBefore = s.roster[0]?.xp ?? 0
+
+    s = reducer(s, { type: 'ASSIGN_DEFENSE', defenseId: 'd1', squadIds: ['a'] })
+    expect(s.defenses[0]?.status).toBe('won')
+    // Ainda NÃO subiu: XP do dia zerado, XP do Pokémon inalterado, marcado como não aplicado.
+    expect(s.today.xpEarned).toBe(0)
+    expect(s.roster[0]?.xp).toBe(xpBefore)
+    expect(s.defenses[0]?.xpApplied).toBe(false)
+
+    s = reducer(s, { type: 'COMPLETE_DEFENSE', defenseId: 'd1' })
+    expect(s.today.xpEarned).toBeGreaterThan(0)
+    expect(s.defenses[0]?.xpApplied).toBe(true)
+
+    // Idempotente: concluir de novo não aplica XP duas vezes.
+    const xpEarnedOnce = s.today.xpEarned
+    s = reducer(s, { type: 'COMPLETE_DEFENSE', defenseId: 'd1' })
+    expect(s.today.xpEarned).toBe(xpEarnedOnce)
+  })
+
   it('esquadrão vazio é rejeitado', () => {
     let s = dayState({ roster: [strong('a'), strong('b')], defenses: [defense([{ battle: 1, types: ['normal'] }])] })
     s = reducer(s, { type: 'ASSIGN_DEFENSE', defenseId: 'd1', squadIds: [] })
