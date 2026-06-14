@@ -11,7 +11,8 @@ hífen, sem acento). O Vite serve `public/` direto, então em código o caminho 
 | `mission-fail.mp3` | Missão fracassou | tom descendente / "buzz" |
 | `time-warning.mp3` | Missão **ou** defesa de ginásio prestes a expirar sem ação | alerta tenso, tique-taque |
 | `level-up.mp3` | Pokémon subiu de nível | fanfarra clássica de level-up ⭐ |
-| `click.mp3` | Clicar em qualquer botão | "blip" bem curto e baixo |
+| `select.mp3` | Confirmar / selecionar algo (default de qualquer botão) | "blip" curto e baixo, ascendente |
+| `deselect.mp3` | Cancelar / fechar / desmarcar algo | "blip" curto e baixo, descendente |
 
 ## Dicas
 - **Formato:** `.mp3` (pedido), mono, ~96–128 kbps já basta. Mantenha curtos (< 2 s,
