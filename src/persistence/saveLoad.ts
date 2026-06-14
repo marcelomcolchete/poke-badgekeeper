@@ -102,6 +102,15 @@ function migrate(file: Partial<SaveFile>): SaveFile | null {
     version = 14
   }
 
+  // v14 → v15: lista de inimigos derrotados em defesas no dia (MVP por derrotas).
+  if (version === 14) {
+    const today = state.today as Record<string, unknown> | undefined
+    if (today && typeof today === 'object') {
+      state = { ...state, today: { defenseKills: [], ...today } }
+    }
+    version = 15
+  }
+
   if (version !== SAVE_VERSION) return null
   return { version, savedAtMs: (file as SaveFile).savedAtMs, state } as unknown as SaveFile
 }

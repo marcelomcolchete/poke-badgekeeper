@@ -26,17 +26,49 @@ import {
 import { displayNameOf, genderColor, genderSymbol } from '../common/naming.ts'
 import styles from './TeamSidebar.module.css'
 
-/** Texto contextual do que o Pokémon está fazendo (missão pelo nome, defesa, caça…). */
-function activityLabel(state: GameState, mon: Pokemon): string {
+/** Cor da faixa por tipo de atividade (cada coisa que o Pokémon faz tem a sua). */
+const ACTIVITY_COLOR = {
+  mission: '#f0c020', // Em missão → amarelo
+  traveling: '#a05fd0', // A caminho → roxo
+  hunting: '#5fbf6f', // Explorando/caçando → verde
+  returning: '#57a6dc', // Voltando → azul
+  defending: '#e0683c', // Defendendo → laranja-vermelho
+  center: '#9b6cff', // No Centro → lilás
+  other: '#8a8f9c', // fallback
+} as const
+
+/**
+ * O que o Pokémon está fazendo agora: rótulo contextual + cor da faixa. Cada atividade
+ * tem cor própria (missão amarelo, a caminho roxo, explorando verde, etc.).
+ */
+function activityInfo(state: GameState, mon: Pokemon): { label: string; color: string } {
+  if (mon.status === 'defending') {
+    return { label: 'Defendendo ginásio', color: ACTIVITY_COLOR.defending }
+  }
+  if (state.captureSearches.some((c) => c.searcherId === mon.id)) {
+    return { label: 'Explorando a grama', color: ACTIVITY_COLOR.hunting }
+  }
+  if (state.captureReturns.some((r) => r.searcherId === mon.id)) {
+    return { label: 'Voltando da caça', color: ACTIVITY_COLOR.hunting }
+  }
+  if (mon.status === 'atCenter') {
+    return { label: STATUS_LABEL_PT.atCenter, color: ACTIVITY_COLOR.center }
+  }
   const base = STATUS_LABEL_PT[mon.status]
-  if (mon.status === 'defending') return 'Defendendo ginásio'
-  if (state.captureSearches.some((c) => c.searcherId === mon.id)) return 'Caçando na grama'
-  if (state.captureReturns.some((r) => r.searcherId === mon.id)) return 'Voltando da caça'
   const mission = state.missions.find(
     (m) => m.teamIds.includes(mon.id) && m.status !== 'resolved',
   )
-  if (mission) return `${base}: ${getMissionTemplate(mission.templateId).name}`
-  return base
+  if (mission) {
+    const label = `${base}: ${getMissionTemplate(mission.templateId).name}`
+    const color =
+      mon.status === 'traveling'
+        ? ACTIVITY_COLOR.traveling
+        : mon.status === 'returning'
+          ? ACTIVITY_COLOR.returning
+          : ACTIVITY_COLOR.mission
+    return { label, color }
+  }
+  return { label: base, color: ACTIVITY_COLOR.other }
 }
 
 /**
@@ -98,6 +130,7 @@ export function TeamSidebar({ state, onSelect }: Props) {
           // dizendo o que faz e quando volta a ficar disponível.
           const busy = !isAvailable(mon) && !fainted
           const etaS = busy ? availableInSeconds(state, mon) : null
+          const activity = busy ? activityInfo(state, mon) : null
           const memberClass = [
             styles.member,
             fainted ? styles.faintedMember : '',
@@ -205,10 +238,15 @@ export function TeamSidebar({ state, onSelect }: Props) {
                   })}
                 </dl>
 
-                {busy && (
+                {busy && activity && (
                   <span className={styles.busyOverlay}>
-                    <span className={styles.busyBanner}>
-                      <span className={styles.busyText}>{activityLabel(state, mon)}</span>
+                    <span
+                      className={styles.busyBanner}
+                      style={{
+                        background: `linear-gradient(180deg, ${activity.color}, color-mix(in srgb, ${activity.color} 70%, #000))`,
+                      }}
+                    >
+                      <span className={styles.busyText}>{activity.label}</span>
                       <span className={styles.busyEta}>
                         {etaS !== null ? `Disponível em ~${etaS}s` : 'Indisponível'}
                       </span>

@@ -66,6 +66,7 @@ export function finalizeDay(s: GameState): void {
     missionResults: s.today.missionResults,
     defensesWon: s.today.defensesWon,
     defensesTotal: s.today.defensesTotal,
+    defenseKills: s.today.defenseKills,
     goldEarned: s.today.goldEarned,
     capturedIds: s.today.capturedIds,
     roster: s.roster,

@@ -51,9 +51,18 @@ export function assignDefense(s: GameState, defenseId: string, squadIds: string[
   const resolution = resolveDefense(takeRng(s), squad, defense.enemies)
 
   // Quantos duelos cada Pokémon venceu — cada vitória rende um pouco de XP (PLAN §4.4).
+  // E registra o desafiante derrotado (defeaterId + espécie) para o MVP/relatório.
   const winsById = new Map<string, number>()
+  let theirs = 0
   for (const duel of resolution.duels) {
-    if (duel.youWon) winsById.set(duel.yourId, (winsById.get(duel.yourId) ?? 0) + 1)
+    if (duel.youWon) {
+      winsById.set(duel.yourId, (winsById.get(duel.yourId) ?? 0) + 1)
+      s.today.defenseKills.push({
+        defeaterId: duel.yourId,
+        speciesId: defense.enemies[theirs]?.speciesId,
+      })
+      theirs += 1
+    }
   }
 
   for (const member of resolution.squad) {

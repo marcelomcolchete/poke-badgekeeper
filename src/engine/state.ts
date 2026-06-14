@@ -155,6 +155,13 @@ export interface MissionResultLog {
   teamIds: string[]
 }
 
+/** Um inimigo derrotado numa defesa do dia: quem derrotou + espécie (sprite no relatório). */
+export interface DefenseKill {
+  defeaterId: string
+  /** Espécie do desafiante derrotado — usada só para a miniatura no relatório. */
+  speciesId?: number
+}
+
 /** Acumulador do dia em curso (zerado a cada manhã) — base do resumo/aprovação. */
 export interface DayTally {
   missionResults: MissionResultLog[]
@@ -174,6 +181,8 @@ export interface DayTally {
   fossilUsed: boolean
   /** Áreas de captura já exploradas hoje (índices em captureSpots) — somem do mapa. */
   exploredSpots: number[]
+  /** Inimigos derrotados em defesas hoje (MVP por derrotas + miniaturas no relatório). */
+  defenseKills: DefenseKill[]
 }
 
 export interface DayLog {
@@ -225,6 +234,7 @@ export function emptyTally(): DayTally {
     starsBefore: 0,
     fossilUsed: false,
     exploredSpots: [],
+    defenseKills: [],
   }
 }
 
