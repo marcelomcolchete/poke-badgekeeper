@@ -160,6 +160,8 @@ export interface DayTally {
   missionResults: MissionResultLog[]
   defensesTotal: number
   defensesWon: number
+  /** Defesas LUTADAS e perdidas no dia (relatório de falhas). */
+  defensesLost: number
   capturedIds: string[]
   goldEarned: number
   /** XP total concedido em missões bem-sucedidas no dia (relatório) — somado na volta. */
@@ -215,6 +217,7 @@ export function emptyTally(): DayTally {
     missionResults: [],
     defensesTotal: 0,
     defensesWon: 0,
+    defensesLost: 0,
     capturedIds: [],
     goldEarned: 0,
     xpEarned: 0,

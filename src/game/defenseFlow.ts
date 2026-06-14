@@ -5,6 +5,8 @@ import type { Pokemon } from '../types/index.ts'
 import type { DefenseEvent, GameState } from '../engine/state.ts'
 import { canDefend, resolveDefense } from '../engine/gymDefense.ts'
 import { goldForDefense } from '../engine/economy.ts'
+import { addXp } from '../engine/leveling.ts'
+import { GYM_WIN_XP } from '../engine/balance.ts'
 import { findMon, replaceMon, settleFaint, takeRng } from './runtime.ts'
 
 /** Promove a defesa a 'active' (símbolo no ginásio) e conta no total do dia (PLAN §3.1). */
@@ -47,8 +49,19 @@ export function assignDefense(s: GameState, defenseId: string, squadIds: string[
   if (!canDefend(squad)) return
 
   const resolution = resolveDefense(takeRng(s), squad, defense.enemies)
+
+  // Quantos duelos cada Pokémon venceu — cada vitória rende um pouco de XP (PLAN §4.4).
+  const winsById = new Map<string, number>()
+  for (const duel of resolution.duels) {
+    if (duel.youWon) winsById.set(duel.yourId, (winsById.get(duel.yourId) ?? 0) + 1)
+  }
+
   for (const member of resolution.squad) {
-    replaceMon(s, settleFaint(s, member))
+    const wins = winsById.get(member.id) ?? 0
+    // XP aplicado já aqui (a defesa resolve toda de uma vez): o level-up só "aparece" ao final.
+    const leveled = wins > 0 ? addXp(member, wins * GYM_WIN_XP, takeRng(s)).pokemon : member
+    if (wins > 0) s.today.xpEarned += wins * GYM_WIN_XP
+    replaceMon(s, settleFaint(s, leveled))
   }
 
   defense.squadIds = squad.map((p) => p.id)
@@ -61,4 +74,5 @@ export function assignDefense(s: GameState, defenseId: string, squadIds: string[
   s.today.goldEarned += gold
   s.today.defenseGold += gold
   if (resolution.won) s.today.defensesWon += 1
+  else s.today.defensesLost += 1
 }

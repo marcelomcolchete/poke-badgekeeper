@@ -8,14 +8,16 @@ import type { GameState } from '../../engine/state.ts'
 import type { Pokemon } from '../../types/index.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
 import { getMissionTemplate } from '../../data/missionTemplates.ts'
-import { ATTR_MAX, LEVEL_MAX } from '../../engine/constants.ts'
+import { ATTR_MAX, ATTR_PER_POINT, LEVEL_MAX } from '../../engine/constants.ts'
 import { MISSION_XP_REWARD } from '../../engine/balance.ts'
-import { effectiveAttr } from '../../engine/attributes.ts'
+import { effectiveAttr, perPointGain } from '../../engine/attributes.ts'
 import { addXp, pendingPoints, xpToNext } from '../../engine/leveling.ts'
+import { pokemonRank } from '../../engine/ranking.ts'
 import { HpBar } from '../common/HpBar.tsx'
 import { TypeBadge } from '../common/TypeBadge.tsx'
 import {
-  ATTR_LABEL_PT,
+  ATTR_SHORT_PT,
+  RANK_COLOR,
   RARITY_COLOR,
   RARITY_LABEL_PT,
   STATUS_COLOR,
@@ -68,6 +70,7 @@ export function TeamSidebar({ state, onSelect }: Props) {
           const species = getSpecies(mon.speciesId)
           const pending = pendingPoints(mon)
           const fainted = mon.currentHp <= 0
+          const rank = pokemonRank(mon)
           const willLevelUp = willLevelUpOnReturn(state, mon)
           const atMax = mon.level >= LEVEL_MAX
           const xpNeeded = xpToNext(mon.level)
@@ -85,6 +88,13 @@ export function TeamSidebar({ state, onSelect }: Props) {
                 <div className={styles.top}>
                   <span className={styles.avatar}>
                     <img src={species.spritePath} alt={species.displayName} draggable={false} />
+                    <span
+                      className={styles.rank}
+                      style={{ color: RANK_COLOR[rank], borderColor: RANK_COLOR[rank] }}
+                      aria-label={`Rank ${rank}`}
+                    >
+                      {rank}
+                    </span>
                     {pending > 0 && <span className={styles.badge}>+{pending}</span>}
                     {willLevelUp && (
                       <span className={styles.levelTag} aria-label="Vai subir de nível">
@@ -137,16 +147,29 @@ export function TeamSidebar({ state, onSelect }: Props) {
                   </span>
                 </div>
 
-                {/* Atributos por escrito (6 eixos). */}
+                {/* Atributos: 6 eixos numa linha (abreviados). Dourado = maximizado;
+                    azul/vermelho = favorecido/penalizado pela natureza. */}
                 <dl className={styles.attrs}>
                   {ATTR_KEYS.map((k) => {
                     const val = effectiveAttr(mon, k)
+                    const gain = perPointGain(mon, k)
+                    // Prioridade: maximizado (dourado) > natureza (azul favorecido / vermelho penalizado).
+                    const color =
+                      val >= ATTR_MAX
+                        ? '#e0a020'
+                        : gain > ATTR_PER_POINT
+                          ? '#6db4ff'
+                          : gain < ATTR_PER_POINT
+                            ? '#ff8a8a'
+                            : undefined
                     return (
                       <div key={k} className={styles.attr}>
-                        <dt className={styles.attrName}>{ATTR_LABEL_PT[k]}</dt>
+                        <dt className={styles.attrName} style={color ? { color } : undefined}>
+                          {ATTR_SHORT_PT[k]}
+                        </dt>
                         <dd
                           className={styles.attrVal}
-                          style={val >= ATTR_MAX ? { color: '#e0a020', fontWeight: 'bold' } : undefined}
+                          style={color ? { color, fontWeight: 'bold' } : undefined}
                         >
                           {val}
                         </dd>

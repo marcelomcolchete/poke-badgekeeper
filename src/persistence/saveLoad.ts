@@ -93,6 +93,15 @@ function migrate(file: Partial<SaveFile>): SaveFile | null {
     version = 13
   }
 
+  // v13 → v14: contador de defesas perdidas no dia (relatório de falhas).
+  if (version === 13) {
+    const today = state.today as Record<string, unknown> | undefined
+    if (today && typeof today === 'object') {
+      state = { ...state, today: { defensesLost: 0, ...today } }
+    }
+    version = 14
+  }
+
   if (version !== SAVE_VERSION) return null
   return { version, savedAtMs: (file as SaveFile).savedAtMs, state } as unknown as SaveFile
 }

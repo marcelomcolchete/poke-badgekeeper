@@ -120,6 +120,95 @@
   color: var(--c-hp-high);
 }
 
+/* Placar do dia: missões/batalhas com sucessos (verde) e falhas (vermelho). */
+.score {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  background: rgba(28, 86, 50, 0.5);
+  border: 2px solid var(--c-hud-border);
+  border-radius: var(--radius-pixel);
+}
+
+.scoreRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.scoreRow + .scoreRow {
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.scoreLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-text);
+  font-size: 15px;
+  color: var(--c-hud-muted);
+}
+
+.scoreIcon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.scoreChips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chip {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  line-height: 1;
+  padding: 4px 6px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+}
+
+.chipWin {
+  color: #6fcf3f;
+  background: rgba(111, 207, 63, 0.12);
+}
+
+.chipLoss {
+  color: #ff7a7a;
+  background: rgba(255, 122, 122, 0.12);
+}
+
+.scoreTotal {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--c-hud-muted);
+}
+
+/* Tile de captura do dia: a foto do Pokémon ou "Nenhum" (1 captura/dia). */
+.captured {
+  justify-content: center;
+}
+
+.capturedSprite {
+  width: 34px;
+  height: 34px;
+  image-rendering: pixelated;
+  object-fit: contain;
+}
+
+.capturedNone {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  color: var(--c-hud-muted);
+  height: 34px;
+  display: grid;
+  place-items: center;
+}
+
 /* Grade de indicadores do dia (2 colunas por padrão). */
 .stats {
   list-style: none;

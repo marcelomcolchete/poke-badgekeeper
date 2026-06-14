@@ -12,13 +12,12 @@ import {
   HP_MIN,
   NATURE_BOOSTED_PER_POINT,
   NATURE_REDUCED_PER_POINT,
+  RESISTANCE_PER_HP,
 } from './constants.ts'
 import { clamp } from './math.ts'
 
 /** Constante geométrica do radar de 6 eixos a 60° (PLAN §4.2). */
 const SIN_60 = Math.sin(Math.PI / 3)
-/** Resistência por ponto de HP: 100/10 = 10 (PLAN §4.1). */
-const RESISTANCE_PER_HP = ATTR_MAX / HP_MAX
 
 /** Constrói um Attrs aplicando `fn` a cada eixo canônico (sem `any`, todos os 6 presentes). */
 export function mapAttrs(fn: (key: AttrKey) => number): Attrs {
@@ -43,6 +42,15 @@ function natureBonusPerPoint(nature: Nature | null, key: AttrKey): number {
   if (entry.boosted === key) return NATURE_BOOSTED_PER_POINT
   if (entry.reduced === key) return NATURE_REDUCED_PER_POINT
   return ATTR_PER_POINT
+}
+
+/**
+ * Quanto cada ponto alocado nesse eixo rende para ESTE Pokémon: 15 (favorecido pela
+ * natureza), 5 (penalizado) ou 10 (neutro). Exposto para a UI do level-up mostrar o
+ * incremento real (+5/+10/+15) em vez do +10 fixo.
+ */
+export function perPointGain(p: Pokemon, key: AttrKey): number {
+  return natureBonusPerPoint(p.nature, key)
 }
 
 /** Atributo efetivo = clamp(base + iv + alocação·modificador, 0, 60) — PLAN §4.1. */
@@ -81,9 +89,12 @@ export function axisMin(a: Attrs, b: Attrs): Attrs {
   return mapAttrs((k) => Math.min(a[k], b[k]))
 }
 
-/** HP inteiro 1–10 derivado da Resistência: clamp(round(res/10), 1, 10) — PLAN §4.1. */
+/**
+ * HP inteiro derivado da Resistência: 1 de vida a cada 10 pontos — clamp(floor(res/10),
+ * 1, 10). A faixa 0–10 também rende 1 (o piso do clamp). Ex.: 20→2, 35→3, 60→6 (PLAN §4.1).
+ */
 export function hpFromResistance(resistencia: number): number {
-  return clamp(Math.round(resistencia / RESISTANCE_PER_HP), HP_MIN, HP_MAX)
+  return clamp(Math.floor(resistencia / RESISTANCE_PER_HP), HP_MIN, HP_MAX)
 }
 
 /** HP máximo de um Pokémon a partir da Resistência efetiva. */

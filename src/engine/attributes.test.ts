@@ -106,9 +106,11 @@ describe('hexagonArea / axisMin', () => {
 })
 
 describe('HP derivado da Resistência', () => {
-  it('mapeia o teto→10 e o piso→1, no intervalo 1–10', () => {
-    expect(hpFromResistance(ATTR_MAX)).toBe(HP_MAX)
+  it('mapeia cada 10 de Resistência em 1 de vida e respeita o piso 1', () => {
+    expect(hpFromResistance(ATTR_MAX)).toBe(6) // floor(60/10)
     expect(hpFromResistance(0)).toBe(HP_MIN)
+    expect(hpFromResistance(10)).toBe(1) // 0–10 → 1 (piso do clamp)
+    expect(hpFromResistance(20)).toBe(2)
     for (let res = 10; res <= ATTR_MAX; res += 7) {
       const hp = hpFromResistance(res)
       expect(hp).toBeGreaterThanOrEqual(HP_MIN)
@@ -119,7 +121,7 @@ describe('HP derivado da Resistência', () => {
 
   it('maxHpOf usa a Resistência efetiva', () => {
     const mon = makeMon({ baseAttrs: makeAttrs({ resistencia: 50 }) })
-    expect(maxHpOf(mon)).toBe(8) // round(50/6)
+    expect(maxHpOf(mon)).toBe(5) // floor(50/10)
   })
 
   it('recomputeMaxHp acompanha a alocação em Resistência', () => {
@@ -128,7 +130,7 @@ describe('HP derivado da Resistência', () => {
       allocations: { ...zeroAttrs(), resistencia: 2 },
     })
     const fixed = recomputeMaxHp(mon)
-    expect(fixed.maxHp).toBe(8) // round((30 + 20)/6)
+    expect(fixed.maxHp).toBe(5) // floor((30 + 20)/10)
   })
 })
 
@@ -190,11 +192,11 @@ describe('natureza — effectiveAttr com modificador', () => {
 
 describe('applyDamage / heal / isFainted', () => {
   it('dano reduz HP e desmaia ao chegar a 0 (sem mutar a entrada)', () => {
-    const mon = makeMon({ baseAttrs: makeAttrs({ resistencia: 50 }) }) // maxHp 8
+    const mon = makeMon({ baseAttrs: makeAttrs({ resistencia: 50 }) }) // maxHp 5
     const hit = applyDamage(mon, 2)
-    expect(hit.currentHp).toBe(6)
+    expect(hit.currentHp).toBe(3)
     expect(hit.status).toBe('idle')
-    expect(mon.currentHp).toBe(8) // entrada intacta
+    expect(mon.currentHp).toBe(5) // entrada intacta
     const ko = applyDamage(mon, 99)
     expect(ko.currentHp).toBe(0)
     expect(ko.status).toBe('fainted')
@@ -203,7 +205,7 @@ describe('applyDamage / heal / isFainted', () => {
 
   it('heal não passa do máximo nem revive (HP 0 segue 0)', () => {
     const mon = makeMon({ baseAttrs: makeAttrs({ resistencia: 50 }), currentHp: 1 })
-    expect(heal(mon, 99).currentHp).toBe(8)
+    expect(heal(mon, 99).currentHp).toBe(5)
     const downed = makeMon({ baseAttrs: makeAttrs({ resistencia: 50 }), currentHp: 0 })
     expect(heal(downed, 0).currentHp).toBe(0)
   })

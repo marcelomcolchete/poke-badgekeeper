@@ -118,6 +118,25 @@
   image-rendering: pixelated;
 }
 
+/* Badge de Rank (F–S) no canto superior esquerdo do avatar — cor vem do estilo inline. */
+.rank {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  display: grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  line-height: 1;
+  background: rgba(8, 18, 12, 0.92);
+  border: 2px solid currentColor;
+  border-radius: 999px;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
+}
+
 .badge {
   position: absolute;
   top: -6px;
@@ -237,37 +256,37 @@
   flex: none;
 }
 
-/* Atributos por escrito: grade 2 colunas (rótulo PT + valor efetivo). */
+/* Atributos: 6 eixos abreviados numa única linha (6 colunas), rótulo em cima e valor embaixo. */
 .attrs {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2px 8px;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 3px;
   margin: 0;
 }
 
 .attr {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 4px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 3px 1px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
 }
 
 .attrName {
-  font-family: var(--font-text);
-  font-size: 12px;
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  letter-spacing: 0.02em;
   color: var(--c-hud-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .attrVal {
   font-family: var(--font-pixel);
-  font-size: 8px;
+  font-size: 10px;
   color: var(--c-hud-text);
   margin: 0;
-  flex: none;
 }
 
 .status {
