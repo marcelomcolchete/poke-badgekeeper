@@ -17,7 +17,8 @@ function strong(id: string): Pokemon {
 function controlledMission(over: Partial<MissionInstance> = {}): MissionInstance {
   return {
     id: 'm1',
-    templateId: 'patrol',
+    templateId: 'patrulha',
+    requirement: makeAttrs({}, 40), // time forte (50/eixo) cobre → P=1
     node: 'q', // grama 3.6 (longe do ginásio) → viagem real de ida/volta
     path: [],
     spawnAtMs: 0,

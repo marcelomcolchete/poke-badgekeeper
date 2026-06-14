@@ -36,6 +36,63 @@
   font-style: italic;
 }
 
+.secret {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  border-radius: 4px;
+  border: 2px solid var(--c-panel-border);
+  background: var(--c-panel);
+}
+
+.secretOff {
+  border-style: dashed;
+  opacity: 0.8;
+}
+
+.secretOn {
+  border-color: #e0a020;
+  background: linear-gradient(180deg, rgba(224, 160, 32, 0.18), rgba(160, 95, 208, 0.12));
+  box-shadow: inset 0 0 0 1px rgba(224, 160, 32, 0.4);
+}
+
+.secretHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: var(--c-ink-muted);
+  text-transform: uppercase;
+}
+
+.secretOn .secretHead {
+  color: #e0a020;
+}
+
+.secretIcon {
+  font-size: 12px;
+}
+
+.secretName {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  color: var(--c-ink);
+}
+
+.secretOff .secretName {
+  color: var(--c-ink-muted);
+  letter-spacing: 2px;
+}
+
+.secretDesc {
+  font-family: var(--font-text);
+  font-size: 13px;
+  color: var(--c-ink-muted);
+  line-height: 1.35;
+}
+
 .alloc {
   background: var(--c-panel);
   border: 2px solid var(--c-panel-border);

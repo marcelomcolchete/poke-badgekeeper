@@ -15,7 +15,8 @@ export const MAP_ASPECT_H = 9
 /** Roster: 1–6 Pokémon; despacho de 1–6; defesa exige ≥1 (PLAN §3 / §4.4 / §4.5). */
 export const MAX_ROSTER_SIZE = 6
 export const MIN_DISPATCH = 1
-export const MAX_DISPATCH = 6
+/** Despacho de missão: no máximo 3 Pokémon por missão (rebalanceamento). */
+export const MAX_DISPATCH = 3
 export const MIN_DEFENSE_SQUAD = 1
 
 /** Atributos: mínimo 10, máximo natural por espécie 50, teto efetivo 60 (PLAN §4.1). */
@@ -32,9 +33,11 @@ export const ATTR_EFFECTIVE_MIN = 0
 export const IV_MIN = -10
 export const IV_MAX = 10
 
-/** Sub-seeds estáveis do novo jogo: tornam o card do preview = Pokémon obtido. */
-export const STARTER_SEED_SALT = 0x57a27
-export const RECRUIT_SEED_SALT = 0x5ec17
+/**
+ * Sub-seeds estáveis do novo jogo (um por SLOT de inicial): tornam o card do preview =
+ * Pokémon obtido. O roll escolhido entra como 3º componente: deriveSeed(seed, salt, roll).
+ */
+export const STARTER_SLOT_SALTS = [0x57a27, 0x5ec17] as const
 
 /** Natureza: modificadores do valor por ponto alocado (+15 favorecido, +5 penalizado). */
 export const NATURE_BOOSTED_PER_POINT = 15
@@ -93,6 +96,10 @@ export const DRAFT_CHOICES = 3
  * candidateSeeds nos encontros para preview = captura.
  * v14: defesas perdidas no dia (today.defensesLost) para o placar de falhas do relatório;
  * XP por duelo vencido no ginásio e HP = 1 a cada 10 de Resistência (floor, piso 1).
- * v15: inimigos derrotados em defesas no dia (today.defenseKills) p/ MVP por derrotas. */
-export const SAVE_VERSION = 15
+ * v15: inimigos derrotados em defesas no dia (today.defenseKills) p/ MVP por derrotas.
+ * v16: Habilidade Secreta — desbloqueio do Destaque do Dia gravado em today.secretUnlock.
+ * v17: rebalanceamento das missões — exigência gerada por dia gravada na instância
+ * (requirement + secondaryAttr), 6 tipos + 3 especiais, despacho máx. 3. A migração limpa
+ * missões antigas (templateIds incompatíveis) e libera Pokémon presos nelas. */
+export const SAVE_VERSION = 17
 export const SAVE_KEY = 'poke-badgekeeper:save'

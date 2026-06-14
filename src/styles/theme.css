@@ -69,4 +69,6 @@
   --type-rock: #b8a038;
   --type-ghost: #705898;
   --type-dragon: #7038f8;
+  /* Aço (não-Gen 1) — adicionado para o ginásio de Vermilion */
+  --type-steel: #b8b8d0;
 }

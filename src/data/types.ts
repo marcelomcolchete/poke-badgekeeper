@@ -1,6 +1,6 @@
 // Tipos da camada de dados estáticos (PLAN §5).
 
-import type { Attrs, MapPos, MissionCategory, PokemonType, Rarity } from '../types/index.ts'
+import type { AttrKey, Attrs, MapPos, PokemonType, Rarity } from '../types/index.ts'
 
 /** Espécie como sai do gerador (sem informação de evolução). */
 export interface SpeciesBase {
@@ -74,14 +74,21 @@ export interface CitySiteNodes {
   green: string[]
 }
 
+/** Inicial fixo da cidade: espécie + nível fixos; a UI sorteia 3 versões para escolher. */
+export interface CityStarter {
+  speciesId: number
+  level: number
+}
+
 /** Cidade de Kanto (PLAN §3.1 / §4.7 / §4.8). */
 export interface CityData {
   index: number
   name: string
-  /** Tipo primário fixo do ginásio. */
+  /** Tipos fixos do ginásio (primário + secundário). */
   primaryType: PokemonType
-  /** Pokémon inicial (nível 3) do tipo primário. */
-  starterSpeciesId: number
+  secondaryType: PokemonType
+  /** Iniciais fixos da cidade (espécie + nível); a UI deixa escolher entre 3 versões de cada. */
+  starters: CityStarter[]
   /** Arte top-down de fundo da fase Dia. */
   mapImage: string
   /** Capa ilustrada (perspectiva) para o card do menu de seleção. */
@@ -109,21 +116,38 @@ export interface ItemData {
   description: string
 }
 
-/** Modelo de missão: a exigência por eixo desenha o hexágono (PLAN §4.2). */
+/**
+ * Modo de geração da exigência de uma missão (rolada por dia no spawn):
+ * - 'normal': 1 atributo principal (primaryAttr) + 1 secundário sorteado (pode coincidir
+ *   com o principal → "mega"); demais eixos são "resto".
+ * - 'special2': 2 principais + 1 secundário + 3 restos, todos com eixos sorteados (Pokecenter/Pokemart).
+ * - 'special5': 5 principais + 1 resto, eixos sorteados (Museu).
+ */
+export type MissionGen = 'normal' | 'special2' | 'special5'
+
+/**
+ * Modelo (tipo) de missão. A exigência por eixo NÃO é estática: é gerada e gravada na
+ * instância no momento do spawn (escala com o dia) — ver engine/missions.ts. O template
+ * descreve só o tipo, o perigo, o tempo de execução e as recompensas.
+ */
 export interface MissionTemplate {
   id: string
   name: string
-  /** Ícone/emoji do tema (exibido no popup do mapa) — PLAN §3.1. */
+  /** Ícone/emoji do tema (exibido no popup/marcador do mapa) — PLAN §3.1. */
   themeIcon: string
-  /** Categoria temática: define o sítio onde surge e as regras (cura/ouro/dificuldade). */
-  category: MissionCategory
-  requirement: Attrs
-  /** Tempo-base de viagem e execução (ms de jogo) — PLAN §4.3. */
-  baseTravelMs: number
+  /** Como a exigência é gerada (ver MissionGen). */
+  gen: MissionGen
+  /** Atributo principal (mais exigido) — apenas tipos normais (gen 'normal'). */
+  primaryAttr?: AttrKey
+  /** Tempo-base de execução no local (ms de jogo) — PLAN §4.3. */
   baseExecutionMs: number
   /** Perigo da missão (dano em caso de falha) — PLAN §4.2. */
   danger: number
-  /** Passiva concedida ao concluir (usado pelas missões de museu). */
+  /** Recompensa: cura o time no sucesso (Pokecenter). */
+  healOnSuccess?: boolean
+  /** Recompensa: ouro concedido no sucesso (Pokemart). */
+  goldOnSuccess?: number
+  /** Recompensa: passiva concedida ao concluir (Museu). */
   grantsPassive?: string
 }
 

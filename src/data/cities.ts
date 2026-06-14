@@ -112,31 +112,102 @@ const PEWTER_SITE_NODES: CitySiteNodes = {
 interface CitySeed {
   name: string
   primaryType: CityData['primaryType']
-  starterSpeciesId: number
+  secondaryType: CityData['secondaryType']
+  /** Iniciais fixos: [Nv 3, Nv 1]. */
+  starters: CityData['starters']
   difficultyFactor: number
   graph?: CityGraph
   siteNodes?: CitySiteNodes
   museumMissionId?: string
 }
 
-// Inicial = um Pokémon não-evoluído do tipo primário (nível 3), à la Onix em Pewter.
+// Tipos do ginásio fixos (primário + secundário) e DOIS iniciais fixos por cidade
+// (um Nv 3 + um Nv 1). A UI deixa o jogador escolher entre 3 versões aleatórias de cada.
+// Só Pewter está calibrada/jogável; as demais são apenas configuração por ora.
 const SEEDS: CitySeed[] = [
   {
     name: 'Pewter',
     primaryType: 'rock',
-    starterSpeciesId: 95,
+    secondaryType: 'ground',
+    starters: [
+      { speciesId: 95, level: 3 }, // Onix
+      { speciesId: 74, level: 1 }, // Geodude
+    ],
     difficultyFactor: 1.0,
     graph: PEWTER_GRAPH,
     siteNodes: PEWTER_SITE_NODES,
-    museumMissionId: 'museum-fossil',
+    museumMissionId: 'museu',
   },
-  { name: 'Cerulean', primaryType: 'water', starterSpeciesId: 120, difficultyFactor: 1.1 },
-  { name: 'Vermilion', primaryType: 'electric', starterSpeciesId: 100, difficultyFactor: 1.25 },
-  { name: 'Celadon', primaryType: 'grass', starterSpeciesId: 43, difficultyFactor: 1.4 },
-  { name: 'Fuchsia', primaryType: 'poison', starterSpeciesId: 23, difficultyFactor: 1.5 },
-  { name: 'Saffron', primaryType: 'psychic', starterSpeciesId: 63, difficultyFactor: 1.65 },
-  { name: 'Cinnabar', primaryType: 'fire', starterSpeciesId: 58, difficultyFactor: 1.8 },
-  { name: 'Viridian', primaryType: 'ground', starterSpeciesId: 27, difficultyFactor: 2.0 },
+  {
+    name: 'Cerulean',
+    primaryType: 'water',
+    secondaryType: 'ice',
+    starters: [
+      { speciesId: 120, level: 3 }, // Staryu
+      { speciesId: 118, level: 1 }, // Goldeen
+    ],
+    difficultyFactor: 1.1,
+  },
+  {
+    name: 'Vermilion',
+    primaryType: 'electric',
+    secondaryType: 'steel',
+    starters: [
+      { speciesId: 25, level: 3 }, // Pikachu
+      { speciesId: 81, level: 1 }, // Magnemite
+    ],
+    difficultyFactor: 1.25,
+  },
+  {
+    name: 'Celadon',
+    primaryType: 'grass',
+    secondaryType: 'poison',
+    starters: [
+      { speciesId: 44, level: 3 }, // Gloom
+      { speciesId: 1, level: 1 }, // Bulbasaur
+    ],
+    difficultyFactor: 1.4,
+  },
+  {
+    name: 'Fuchsia',
+    primaryType: 'poison',
+    secondaryType: 'flying',
+    starters: [
+      { speciesId: 109, level: 3 }, // Koffing
+      { speciesId: 41, level: 1 }, // Zubat
+    ],
+    difficultyFactor: 1.5,
+  },
+  {
+    name: 'Saffron',
+    primaryType: 'psychic',
+    secondaryType: 'ghost',
+    starters: [
+      { speciesId: 63, level: 3 }, // Abra
+      { speciesId: 92, level: 1 }, // Gastly
+    ],
+    difficultyFactor: 1.65,
+  },
+  {
+    name: 'Cinnabar',
+    primaryType: 'fire',
+    secondaryType: 'dragon',
+    starters: [
+      { speciesId: 58, level: 3 }, // Growlithe
+      { speciesId: 147, level: 1 }, // Dratini
+    ],
+    difficultyFactor: 1.8,
+  },
+  {
+    name: 'Viridian',
+    primaryType: 'ground',
+    secondaryType: 'normal',
+    starters: [
+      { speciesId: 33, level: 3 }, // Nidorino
+      { speciesId: 52, level: 1 }, // Meowth
+    ],
+    difficultyFactor: 2.0,
+  },
 ]
 
 // Todos os mapas têm o mesmo tamanho (16:9).
@@ -147,7 +218,8 @@ export const CITIES: CityData[] = SEEDS.map((s, index) => ({
   index,
   name: s.name,
   primaryType: s.primaryType,
-  starterSpeciesId: s.starterSpeciesId,
+  secondaryType: s.secondaryType,
+  starters: s.starters,
   mapImage: `/maps/kanto/${index + 1}.png`,
   coverImage: `/maps/kanto/${index + 1}_capa.png`,
   mapW: MAP_W,

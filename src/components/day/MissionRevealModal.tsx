@@ -9,12 +9,14 @@ import { ATTR_KEYS } from '../../types/index.ts'
 import type { GameState, MissionInstance } from '../../engine/state.ts'
 import { getMissionTemplate } from '../../data/missionTemplates.ts'
 import { teamSum } from '../../engine/attributes.ts'
+import { ATTR_MAX } from '../../engine/constants.ts'
 import { HexRadar } from '../HexRadar/HexRadar.tsx'
 import { Overlay } from '../common/Overlay.tsx'
 import styles from './MissionRevealModal.module.css'
 
 const SIZE = 260
-const AXIS_MAX = 100
+// Escala do ponto = teto de atributos (mesma do HexRadar) p/ o pouso casar com o desenho.
+const AXIS_MAX = ATTR_MAX
 const SETTLE_MS = 1400
 
 interface Props {
@@ -65,7 +67,7 @@ export function MissionRevealModal({ state, mission, onClose }: Props) {
   const team: Pokemon[] = mission.teamIds
     .map((id) => state.roster.find((p) => p.id === id))
     .filter((p): p is Pokemon => p !== undefined)
-  const requirement = template.requirement
+  const requirement = mission.requirement
   const sum = teamSum(team)
   const success = mission.result === 'success'
   const percent = mission.pSuccess !== null ? Math.round(mission.pSuccess * 100) : null

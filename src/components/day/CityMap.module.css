@@ -99,6 +99,7 @@
 }
 
 .ring {
+  position: relative;
   display: grid;
   place-items: center;
   width: 46px;
@@ -107,6 +108,22 @@
   border-radius: 50%;
   border: none;
   animation: bob 1.4s ease-in-out infinite;
+}
+
+/* Selo de recompensa no canto do marcador (missões especiais). */
+.rewardBadge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  font-size: 12px;
+  background: var(--c-panel);
+  border: 2px solid var(--c-ink);
+  border-radius: 50%;
+  pointer-events: none;
 }
 
 .defenseRing {

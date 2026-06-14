@@ -1,7 +1,7 @@
 // Missões: probabilidade de sucesso (interseção de hexágonos), resolução, dano em
 // falha, tempos de viagem/execução e geração de instância (PLAN §4.2/§4.3).
 
-import type { Attrs, MissionCategory, Pokemon } from '../types/index.ts'
+import type { AttrKey, Attrs, MissionCategory, Pokemon } from '../types/index.ts'
 import { ATTR_KEYS } from '../types/index.ts'
 import type { Rng } from './rng.ts'
 import type { MissionTemplate } from '../data/types.ts'
@@ -10,9 +10,19 @@ import type { MissionInstance } from './state.ts'
 import { ATTR_MAX, MIN_FAILURE_DAMAGE, SPECIES_BASE_MAX } from './constants.ts'
 import {
   AGILITY_TIME_REDUCTION_PER_POINT,
+  MISSION_DAY_DIVISOR,
+  MISSION_DAY_SCALE,
+  MISSION_PRINCIPAL_MAX,
+  MISSION_PRINCIPAL_MIN,
+  MISSION_REST_MAX,
+  MISSION_REST_MIN,
+  MISSION_SECONDARY_MAX,
+  MISSION_SECONDARY_MIN,
   RUN_AWAY_TRAVEL_FACTOR,
+  SPECIAL2_PRINCIPALS,
+  SPECIAL2_SECONDARIES,
+  SPECIAL5_PRINCIPALS,
   TRAVEL_MS_PER_DISTANCE,
-  type CategoryRules,
 } from './balance.ts'
 import {
   applyDamage,
@@ -22,29 +32,79 @@ import {
   isFainted,
   teamAxisSum,
   teamSum,
+  zeroAttrs,
 } from './attributes.ts'
 import { average, clamp } from './math.ts'
 
-/** Regra neutra (sem ajuste de dificuldade/efeitos) — padrão de resolveMission. */
-export const NEUTRAL_RULES: CategoryRules = {
-  reqMult: 1,
-  dangerMult: 1,
-  healOnSuccess: false,
-  goldOnSuccess: 0,
+/** Termo do dia somado às faixas-base (principal/secundário): SCALE · dia / DIVISOR. */
+function dayTerm(day: number): number {
+  return (MISSION_DAY_SCALE * day) / MISSION_DAY_DIVISOR
 }
 
-/** Exigência escalada pela regra da categoria (clamp 0–100 por eixo). */
-export function effectiveRequirement(template: MissionTemplate, rules: CategoryRules): Attrs {
-  const out = {} as Attrs
-  for (const key of ATTR_KEYS) {
-    out[key] = clamp(Math.round(template.requirement[key] * rules.reqMult), 0, ATTR_MAX)
+/** Valor de um eixo principal: rand(20..30) + termo do dia, com teto ATTR_MAX. */
+function principalValue(rng: Rng, day: number): number {
+  return clamp(
+    Math.round(rng.int(MISSION_PRINCIPAL_MIN, MISSION_PRINCIPAL_MAX) + dayTerm(day)),
+    0,
+    ATTR_MAX,
+  )
+}
+
+/** Valor de um eixo secundário: rand(10..20) + termo do dia, com teto ATTR_MAX. */
+function secondaryValue(rng: Rng, day: number): number {
+  return clamp(
+    Math.round(rng.int(MISSION_SECONDARY_MIN, MISSION_SECONDARY_MAX) + dayTerm(day)),
+    0,
+    ATTR_MAX,
+  )
+}
+
+/** Valor de um eixo "resto" (nem principal, nem secundário): rand(5..20). */
+function restValue(rng: Rng): number {
+  return clamp(rng.int(MISSION_REST_MIN, MISSION_REST_MAX), 0, ATTR_MAX)
+}
+
+export interface GeneratedRequirement {
+  requirement: Attrs
+  /** Atributo secundário das normais (subtipo); igual ao principal = "mega". Null nas especiais. */
+  secondaryAttr: AttrKey | null
+}
+
+/**
+ * Gera a exigência da missão escalando com o dia (rebalanceamento). Todo eixo começa em
+ * "resto" (5..20) e os escolhidos recebem principal/secundário. Normais: principal no
+ * primaryAttr + 1 secundário sorteado (se coincidir, vira "mega" = principal+secundário).
+ * Especiais: eixos sorteados (special2 = 2 princ + 1 sec; special5 = 5 princ).
+ */
+export function generateRequirement(
+  rng: Rng,
+  day: number,
+  template: MissionTemplate,
+): GeneratedRequirement {
+  const out = zeroAttrs()
+  for (const key of ATTR_KEYS) out[key] = restValue(rng)
+
+  if (template.gen === 'normal') {
+    const primary = template.primaryAttr as AttrKey
+    const secondary = rng.pick(ATTR_KEYS)
+    if (secondary === primary) {
+      // "Mega": o eixo soma principal + secundário (com teto ATTR_MAX → ~60).
+      out[primary] = clamp(principalValue(rng, day) + secondaryValue(rng, day), 0, ATTR_MAX)
+    } else {
+      out[primary] = principalValue(rng, day)
+      out[secondary] = secondaryValue(rng, day)
+    }
+    return { requirement: out, secondaryAttr: secondary }
   }
-  return out
-}
 
-/** Perigo (dano em falha) escalado pela regra da categoria, mínimo 1. */
-export function effectiveDanger(template: MissionTemplate, rules: CategoryRules): number {
-  return Math.max(MIN_FAILURE_DAMAGE, Math.round(template.danger * rules.dangerMult))
+  // Especiais: sorteia os eixos principais/secundários sem repetição.
+  const principals = template.gen === 'special5' ? SPECIAL5_PRINCIPALS : SPECIAL2_PRINCIPALS
+  const secondaries = template.gen === 'special5' ? 0 : SPECIAL2_SECONDARIES
+  const axes = rng.shuffle(ATTR_KEYS)
+  let i = 0
+  for (let k = 0; k < principals; k++, i++) out[axes[i] as AttrKey] = principalValue(rng, day)
+  for (let k = 0; k < secondaries; k++, i++) out[axes[i] as AttrKey] = secondaryValue(rng, day)
+  return { requirement: out, secondaryAttr: null }
 }
 
 /**
@@ -72,20 +132,20 @@ export interface MissionOutcome {
 }
 
 /**
- * Sorteio de Bernoulli com P_sucesso; em falha, cada Pokémon perde HP inteiro.
- * `rules` ajusta exigência/perigo pela categoria (padrão neutro p/ compatibilidade).
+ * Sorteio de Bernoulli com P_sucesso (sobre a exigência gravada na instância); em falha,
+ * cada Pokémon perde HP inteiro proporcional ao perigo da missão.
  */
 export function resolveMission(
   rng: Rng,
   team: readonly Pokemon[],
-  template: MissionTemplate,
-  rules: CategoryRules = NEUTRAL_RULES,
+  requirement: Attrs,
+  danger: number,
 ): MissionOutcome {
-  const pSuccess = missionSuccessProbability(team, effectiveRequirement(template, rules))
+  const pSuccess = missionSuccessProbability(team, requirement)
   if (rng.bool(pSuccess)) {
     return { success: true, pSuccess, team: [...team], faintedIds: [] }
   }
-  const damage = missionFailureDamage(pSuccess, effectiveDanger(template, rules))
+  const damage = missionFailureDamage(pSuccess, danger)
   const updated = team.map((p) => applyDamage(p, damage))
   return {
     success: false,
@@ -139,6 +199,8 @@ export function rollMissionTemplate(rng: Rng, category: MissionCategory): Missio
 export interface MissionInstanceSpec {
   id: string
   rng: Rng
+  /** Dia atual — escala a exigência gerada (rebalanceamento). */
+  day: number
   /** Categoria sorteada — define de qual pool tirar o template. */
   category: MissionCategory
   /** Ponto do grafo (já resolvido) onde a missão surge. */
@@ -150,16 +212,19 @@ export interface MissionInstanceSpec {
 }
 
 /**
- * Cria a instância de missão (template + ponto + timer) agendada para o dia.
- * Nasce 'scheduled'; o relógio a promove a 'available' no spawnAtMs (PLAN §3.1).
+ * Cria a instância de missão (template + exigência gerada + ponto + timer) agendada para o
+ * dia. Nasce 'scheduled'; o relógio a promove a 'available' no spawnAtMs (PLAN §3.1).
  */
 export function createMissionInstance(spec: MissionInstanceSpec): MissionInstance {
   const template = spec.templateId
     ? getMissionTemplate(spec.templateId)
     : rollMissionTemplate(spec.rng, spec.category)
+  const { requirement, secondaryAttr } = generateRequirement(spec.rng, spec.day, template)
   return {
     id: spec.id,
     templateId: template.id,
+    requirement,
+    secondaryAttr,
     node: spec.node,
     path: [],
     spawnAtMs: spec.spawnAtMs,

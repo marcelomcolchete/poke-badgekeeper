@@ -6,6 +6,7 @@ import { ATTR_KEYS } from '../../types/index.ts'
 import type { GameState } from '../../engine/state.ts'
 import type { GameAction } from '../../game/actions.ts'
 import { getNatureEntry, NATURE_LABEL_PT } from '../../data/natures.ts'
+import { secretAbilityFor } from '../../data/secretAbilities.ts'
 import { pendingPoints } from '../../engine/leveling.ts'
 import { PokemonCard } from '../PokemonCard/PokemonCard.tsx'
 import { Overlay } from '../common/Overlay.tsx'
@@ -30,6 +31,8 @@ export function MemberDetail({ state, dispatch, pokemonId, onClose }: Props) {
 
   const pending = pendingPoints(mon)
   const natureEntry = mon.nature ? getNatureEntry(mon.nature) : null
+  const secret = secretAbilityFor(mon.speciesId)
+  const secretUnlocked = secret ? mon.passives.includes(secret.id) : false
   const hurt = mon.currentHp > 0 && mon.currentHp < mon.maxHp
   const fainted = mon.currentHp <= 0
   const potions = count(state, 'potion')
@@ -52,6 +55,19 @@ export function MemberDetail({ state, dispatch, pokemonId, onClose }: Props) {
             {!natureEntry?.boosted && !natureEntry?.reduced && (
               <span className={styles.natureNeutral}>(neutra)</span>
             )}
+          </div>
+        )}
+
+        {secret && (
+          <div className={`${styles.secret} ${secretUnlocked ? styles.secretOn : styles.secretOff}`}>
+            <span className={styles.secretHead}>
+              <span className={styles.secretIcon}>{secretUnlocked ? '✦' : '🔒'}</span>
+              Habilidade Secreta
+            </span>
+            <span className={styles.secretName}>{secretUnlocked ? secret.name : '? ? ?'}</span>
+            <span className={styles.secretDesc}>
+              {secretUnlocked ? secret.description : 'Desbloqueie sendo o Destaque do Dia.'}
+            </span>
           </div>
         )}
 

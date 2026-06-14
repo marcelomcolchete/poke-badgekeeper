@@ -10,6 +10,7 @@ import { TOTAL_DAYS, STARS_MAX } from '../../engine/constants.ts'
 import { buildDaySummary } from '../../engine/daySummary.ts'
 import { dailyGoalMet, isHired } from '../../engine/approval.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
+import { secretAbilityFor } from '../../data/secretAbilities.ts'
 import type { Pokemon } from '../../types/index.ts'
 import { Textbox } from '../Textbox/Textbox.tsx'
 import { TypeBadge } from '../common/TypeBadge.tsx'
@@ -53,6 +54,10 @@ export function SummaryScreen({ state, dispatch, onRestart }: Props) {
     : []
   const lastDay = state.run.day >= TOTAL_DAYS
   const verdict = dayVerdict(summary.missionsCompleted, summary.missionsTotal)
+  // Reveal da Habilidade Secreta desbloqueada hoje pelo Destaque (PLAN §3, ajuste).
+  const unlock = state.today.secretUnlock
+  const unlockMon = unlock ? state.roster.find((p) => p.id === unlock.pokemonId) : undefined
+  const unlockedAbility = unlockMon ? secretAbilityFor(unlockMon.speciesId) : null
 
   return (
     <div className={styles.screen}>
@@ -79,6 +84,21 @@ export function SummaryScreen({ state, dispatch, onRestart }: Props) {
           killSpecies={mvpKillSpecies}
         />
       </div>
+
+      {unlockedAbility && unlockMon && (
+        <div className={styles.secretReveal}>
+          <img
+            className={styles.secretRevealSprite}
+            src={getSpecies(unlockMon.speciesId).spritePath}
+            alt={getSpecies(unlockMon.speciesId).displayName}
+          />
+          <div className={styles.secretRevealText}>
+            <span className={styles.secretRevealBadge}>✦ HABILIDADE SECRETA DESBLOQUEADA</span>
+            <span className={styles.secretRevealName}>{unlockedAbility.name}</span>
+            <span className={styles.secretRevealDesc}>{unlockedAbility.description}</span>
+          </div>
+        </div>
+      )}
 
       {lastDay ? (
         <FinalResult hired={isHired(summary.starsAfter)} stars={summary.starsAfter} onRestart={onRestart} />

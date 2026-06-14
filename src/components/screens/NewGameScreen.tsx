@@ -1,70 +1,71 @@
-// Fluxo de novo jogo (PLAN §3): inicial do tipo primário + uma rodada de
-// "sorteia 3 tipos → escolhe 1 → sorteia 3 recrutas → escolhe 1".
+// Fluxo de novo jogo (PLAN §3): tipos do ginásio são FIXOS da cidade; o jogador escolhe,
+// para cada inicial fixo (espécie + nível), entre 3 VERSÕES aleatórias (IVs/natureza/rank/sexo).
 
 import { useMemo, useState } from 'react'
 import type { Dispatch, ReactNode } from 'react'
-import type { PokemonType } from '../../types/index.ts'
-import { POKEMON_TYPES } from '../../types/index.ts'
 import type { GameState } from '../../engine/state.ts'
 import type { GameAction } from '../../game/actions.ts'
+import type { StarterPick } from '../../game/setup.ts'
 import { getCity } from '../../data/cities.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
-import { createRng, deriveSeed } from '../../engine/rng.ts'
-import { rollRecruitChoices, rollTypeChoices } from '../../engine/recruit.ts'
-import { RECRUIT_SEED_SALT, STARTER_LEVEL, STARTER_SEED_SALT } from '../../engine/constants.ts'
+import { deriveSeed } from '../../engine/rng.ts'
+import { DRAFT_CHOICES, STARTER_SLOT_SALTS } from '../../engine/constants.ts'
 import { PokemonCard } from '../PokemonCard/PokemonCard.tsx'
 import { Textbox } from '../Textbox/Textbox.tsx'
 import { TypeBadge } from '../common/TypeBadge.tsx'
-import { TYPE_LABEL_PT, typeColorVar } from '../common/visual.ts'
 import { previewPokemon } from '../common/preview.ts'
 import styles from './NewGameScreen.module.css'
 
-type Stage =
-  | { kind: 'intro' }
-  | { kind: 'type'; round: number }
-  | { kind: 'recruit'; round: number; type: PokemonType }
-  | { kind: 'confirm' }
+/** Versão escolhida (sem apelido — só é aplicado na confirmação). */
+type Chosen = { speciesId: number; level: number; seed: number }
+
+type Stage = { kind: 'intro' } | { kind: 'pick'; slot: number } | { kind: 'confirm' }
+
+/** Seed estável de uma versão (slot, roll): preview = Pokémon obtido. */
+function rollSeed(runSeed: number, slot: number, roll: number): number {
+  const salt = STARTER_SLOT_SALTS[slot] ?? STARTER_SLOT_SALTS[0]
+  return deriveSeed(runSeed, salt as number, roll)
+}
 
 export function NewGameScreen({ state, dispatch }: { state: GameState; dispatch: Dispatch<GameAction> }) {
   const city = getCity(state.run.cityIndex)
   const seed = state.run.seed
+  const starters = city.starters
   const [stage, setStage] = useState<Stage>({ kind: 'intro' })
-  const [chosenTypes, setChosenTypes] = useState<PokemonType[]>([])
-  const [chosenExtras, setChosenExtras] = useState<number[]>([])
-  const [starterName, setStarterName] = useState('')
-  const [recruitName, setRecruitName] = useState('')
+  const [picks, setPicks] = useState<Chosen[]>([])
+  const [names, setNames] = useState<string[]>(() => starters.map(() => ''))
 
-  const typeChoices = useMemo(() => {
-    if (stage.kind !== 'type') return []
-    return rollTypeChoices(createRng(deriveSeed(seed, 1000 + stage.round)), [city.primaryType, ...chosenTypes])
-  }, [stage, seed, city.primaryType, chosenTypes])
-
-  const recruitChoices = useMemo(() => {
-    if (stage.kind !== 'recruit') return []
-    const salt = 2000 + stage.round * 100 + POKEMON_TYPES.indexOf(stage.type)
-    return rollRecruitChoices(createRng(deriveSeed(seed, salt)), stage.type)
-  }, [stage, seed])
-
-  const pickType = (type: PokemonType): void => {
-    if (stage.kind === 'type') setStage({ kind: 'recruit', round: stage.round, type })
-  }
-  const pickRecruit = (speciesId: number): void => {
-    if (stage.kind !== 'recruit') return
-    const types = [...chosenTypes, stage.type]
-    const extras = [...chosenExtras, speciesId]
-    setChosenTypes(types)
-    setChosenExtras(extras)
-    setStage({ kind: 'confirm' })
-  }
-  const confirm = (): void => {
-    dispatch({
-      type: 'START_RUN',
-      gymTypes: [city.primaryType, ...chosenTypes],
-      starterSpeciesId: city.starterSpeciesId,
-      extraSpeciesIds: chosenExtras,
-      starterNickname: starterName.trim() || undefined,
-      extraNicknames: [recruitName.trim() || ''],
+  // As 3 versões do slot atual (mesma espécie/nível, seeds distintos → IVs/natureza variam).
+  const choices = useMemo(() => {
+    if (stage.kind !== 'pick') return []
+    const starter = starters[stage.slot]
+    if (!starter) return []
+    return Array.from({ length: DRAFT_CHOICES }, (_, roll) => {
+      const s = rollSeed(seed, stage.slot, roll)
+      return { roll, seed: s, pokemon: previewPokemon(starter.speciesId, starter.level, { seed: s }) }
     })
+  }, [stage, seed, starters])
+
+  const pickVersion = (slot: number, chosen: Chosen): void => {
+    const next = [...picks]
+    next[slot] = chosen
+    setPicks(next)
+    if (slot + 1 < starters.length) setStage({ kind: 'pick', slot: slot + 1 })
+    else setStage({ kind: 'confirm' })
+  }
+
+  const setName = (slot: number, value: string): void => {
+    setNames((prev) => prev.map((n, i) => (i === slot ? value : n)))
+  }
+
+  const confirm = (): void => {
+    const finalPicks: StarterPick[] = picks.map((p, i) => ({
+      speciesId: p.speciesId,
+      level: p.level,
+      seed: p.seed,
+      nickname: names[i]?.trim() || undefined,
+    }))
+    dispatch({ type: 'START_RUN', picks: finalPicks })
   }
 
   return (
@@ -72,61 +73,51 @@ export function NewGameScreen({ state, dispatch }: { state: GameState; dispatch:
       <header className={styles.header}>
         <span className={styles.title}>GINÁSIO DE {city.name.toUpperCase()}</span>
         <span className={styles.sub}>
-          Tipo primário <TypeBadge type={city.primaryType} />
+          Tipos do ginásio <TypeBadge type={city.primaryType} /> <TypeBadge type={city.secondaryType} />
         </span>
       </header>
 
       {stage.kind === 'intro' && (
-        <Section
-          hint={`Seu inicial é um Pokémon de ${TYPE_LABEL_PT[city.primaryType]}, nível ${STARTER_LEVEL}. Em seguida você escolhe mais 1 tipo do ginásio.`}
-        >
-          <div className={styles.single}>
-            <PokemonCard
-              pokemon={previewPokemon(city.starterSpeciesId, STARTER_LEVEL, {
-                seed: deriveSeed(seed, STARTER_SEED_SALT),
-              })}
-            />
+        <Section hint="Os tipos do ginásio são fixos. Você recebe 2 Pokémon iniciais — para cada um, escolha entre 3 versões (atributos, ranking e natureza variam).">
+          <div className={styles.gymTypes}>
+            <TypeBadge type={city.primaryType} />
+            <TypeBadge type={city.secondaryType} />
           </div>
-          <NameField
-            label="Dar um apelido ao seu inicial?"
-            value={starterName}
-            speciesId={city.starterSpeciesId}
-            onChange={setStarterName}
-          />
-          <button type="button" className={styles.primary} onClick={() => setStage({ kind: 'type', round: 0 })}>
-            Começar ▶
+          <ul className={styles.starterList}>
+            {starters.map((st) => {
+              const sp = getSpecies(st.speciesId)
+              return (
+                <li key={st.speciesId} className={styles.starterRow}>
+                  <img src={sp.spritePath} alt={sp.displayName} draggable={false} />
+                  <span>
+                    {sp.displayName} <small>Nv {st.level}</small>
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+          <button type="button" className={styles.primary} onClick={() => setStage({ kind: 'pick', slot: 0 })}>
+            Escolher versões ▶
           </button>
         </Section>
       )}
 
-      {stage.kind === 'type' && (
-        <Section hint="Escolha o tipo secundário do ginásio.">
-          <div className={styles.typeGrid}>
-            {typeChoices.map((type) => (
-              <button
-                key={type}
-                type="button"
-                className={styles.typeChoice}
-                style={{ backgroundColor: typeColorVar(type) }}
-                onClick={() => pickType(type)}
-              >
-                {TYPE_LABEL_PT[type]}
-              </button>
-            ))}
-          </div>
-        </Section>
-      )}
-
-      {stage.kind === 'recruit' && (
-        <Section hint={`Tipo ${TYPE_LABEL_PT[stage.type]} — escolha 1 dos 3 recrutas (nível 1).`}>
+      {stage.kind === 'pick' && starters[stage.slot] && (
+        <Section
+          hint={`Inicial ${stage.slot + 1} de ${starters.length}: ${getSpecies(starters[stage.slot]!.speciesId).displayName} (Nv ${starters[stage.slot]!.level}) — escolha 1 das 3 versões.`}
+        >
           <div className={styles.cardGrid}>
-            {recruitChoices.map((species, i) => (
+            {choices.map((c) => (
               <PokemonCard
-                key={`${species.id}-${i}`}
-                pokemon={previewPokemon(species.id, 1, {
-                  seed: deriveSeed(seed, RECRUIT_SEED_SALT, species.id),
-                })}
-                onClick={() => pickRecruit(species.id)}
+                key={c.roll}
+                pokemon={c.pokemon}
+                onClick={() =>
+                  pickVersion(stage.slot, {
+                    speciesId: starters[stage.slot]!.speciesId,
+                    level: starters[stage.slot]!.level,
+                    seed: c.seed,
+                  })
+                }
               />
             ))}
           </div>
@@ -136,32 +127,27 @@ export function NewGameScreen({ state, dispatch }: { state: GameState; dispatch:
       {stage.kind === 'confirm' && (
         <Section hint="Seu time inicial está pronto. Boa sorte, líder!">
           <div className={styles.cardGrid}>
-            <PokemonCard
-              pokemon={previewPokemon(city.starterSpeciesId, STARTER_LEVEL, {
-                nickname: starterName.trim(),
-                seed: deriveSeed(seed, STARTER_SEED_SALT),
-              })}
-            />
-            {chosenExtras.map((id, i) => (
+            {picks.map((p, i) => (
               <PokemonCard
-                key={`${id}-${i}`}
-                pokemon={previewPokemon(id, 1, {
-                  nickname: recruitName.trim(),
-                  seed: deriveSeed(seed, RECRUIT_SEED_SALT, id),
+                key={i}
+                pokemon={previewPokemon(p.speciesId, p.level, {
+                  nickname: names[i]?.trim(),
+                  seed: p.seed,
                 })}
               />
             ))}
           </div>
-          {chosenExtras[0] !== undefined && (
+          {picks.map((p, i) => (
             <NameField
-              label="Dar um apelido ao seu recruta?"
-              value={recruitName}
-              speciesId={chosenExtras[0]}
-              onChange={setRecruitName}
+              key={i}
+              label={`Apelido para ${getSpecies(p.speciesId).displayName}?`}
+              value={names[i] ?? ''}
+              speciesId={p.speciesId}
+              onChange={(v) => setName(i, v)}
             />
-          )}
+          ))}
           <div className={styles.gymTypes}>
-            Ginásio: {[city.primaryType, ...chosenTypes].map((t) => <TypeBadge key={t} type={t} />)}
+            Ginásio: <TypeBadge type={city.primaryType} /> <TypeBadge type={city.secondaryType} />
           </div>
           <button type="button" className={styles.primary} onClick={confirm}>
             Iniciar período de testes ▶

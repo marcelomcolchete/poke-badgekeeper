@@ -10,6 +10,7 @@ import { STARS_MIN, TOTAL_DAYS } from '../engine/constants.ts'
 import { ALL_DEFENSES_WON_BONUS } from '../engine/balance.ts'
 import { applyApproval, approvalDelta, dailyGoalMet } from '../engine/approval.ts'
 import { buildDaySummary, toDayLog } from '../engine/daySummary.ts'
+import { secretAbilityFor } from '../data/secretAbilities.ts'
 import { expireMission, freeOnReturn, resolveMissionNow } from './missionFlow.ts'
 import { expireDefense } from './defenseFlow.ts'
 import { setupDay } from './setup.ts'
@@ -71,9 +72,27 @@ export function finalizeDay(s: GameState): void {
     capturedIds: s.today.capturedIds,
     roster: s.roster,
   })
+  unlockSecretAbility(s, summary.mvpId)
   s.history.push(toDayLog(summary))
   s.run.phase = 'SUMMARY'
   s.clock.speed = 0
+}
+
+/**
+ * Destaque do Dia desbloqueia a Habilidade Secreta da sua LINHA, gravada no INDIVÍDUO
+ * (sobrevive à evolução). Registra em today.secretUnlock para o reveal no resumo.
+ */
+function unlockSecretAbility(s: GameState, mvpId: string | null): void {
+  s.today.secretUnlock = null
+  if (!mvpId) return
+  const mon = s.roster.find((p) => p.id === mvpId)
+  if (!mon) return
+  const ability = secretAbilityFor(mon.speciesId)
+  if (!ability || mon.passives.includes(ability.id)) return
+  s.roster = s.roster.map((p) =>
+    p.id === mon.id ? { ...p, passives: [...p.passives, ability.id] } : p,
+  )
+  s.today.secretUnlock = { pokemonId: mon.id, abilityId: ability.id }
 }
 
 /** Bônus de +30% sobre o ouro de defesas se TODAS as defesas do dia foram vencidas (PLAN §4.6). */

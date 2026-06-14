@@ -7,8 +7,8 @@ import type { PokemonType } from '../types/index.ts'
 type Chart = Partial<Record<PokemonType, Partial<Record<PokemonType, number>>>>
 
 const TYPE_CHART: Chart = {
-  normal: { rock: 0.5, ghost: 0 },
-  fire: { fire: 0.5, water: 0.5, grass: 2, ice: 2, bug: 2, rock: 0.5, dragon: 0.5 },
+  normal: { rock: 0.5, ghost: 0, steel: 0.5 },
+  fire: { fire: 0.5, water: 0.5, grass: 2, ice: 2, bug: 2, rock: 0.5, dragon: 0.5, steel: 2 },
   water: { fire: 2, water: 0.5, grass: 0.5, ground: 2, rock: 2, dragon: 0.5 },
   electric: { water: 2, electric: 0.5, grass: 0.5, ground: 0, flying: 2, dragon: 0.5 },
   grass: {
@@ -21,8 +21,9 @@ const TYPE_CHART: Chart = {
     bug: 0.5,
     rock: 2,
     dragon: 0.5,
+    steel: 0.5,
   },
-  ice: { fire: 0.5, water: 0.5, grass: 2, ice: 0.5, ground: 2, flying: 2, dragon: 2 },
+  ice: { fire: 0.5, water: 0.5, grass: 2, ice: 0.5, ground: 2, flying: 2, dragon: 2, steel: 0.5 },
   fighting: {
     normal: 2,
     ice: 2,
@@ -32,11 +33,12 @@ const TYPE_CHART: Chart = {
     bug: 0.5,
     rock: 2,
     ghost: 0,
+    steel: 2,
   },
-  poison: { grass: 2, poison: 0.5, ground: 0.5, bug: 2, rock: 0.5, ghost: 0.5 },
-  ground: { fire: 2, electric: 2, grass: 0.5, poison: 2, flying: 0, bug: 0.5, rock: 2 },
-  flying: { electric: 0.5, grass: 2, fighting: 2, bug: 2, rock: 0.5 },
-  psychic: { fighting: 2, poison: 2, psychic: 0.5 },
+  poison: { grass: 2, poison: 0.5, ground: 0.5, bug: 2, rock: 0.5, ghost: 0.5, steel: 0 },
+  ground: { fire: 2, electric: 2, grass: 0.5, poison: 2, flying: 0, bug: 0.5, rock: 2, steel: 2 },
+  flying: { electric: 0.5, grass: 2, fighting: 2, bug: 2, rock: 0.5, steel: 0.5 },
+  psychic: { fighting: 2, poison: 2, psychic: 0.5, steel: 0.5 },
   bug: {
     fire: 0.5,
     grass: 2,
@@ -45,10 +47,13 @@ const TYPE_CHART: Chart = {
     flying: 0.5,
     psychic: 2,
     ghost: 0.5,
+    steel: 0.5,
   },
-  rock: { fire: 2, ice: 2, fighting: 0.5, ground: 0.5, flying: 2, bug: 2 },
+  rock: { fire: 2, ice: 2, fighting: 0.5, ground: 0.5, flying: 2, bug: 2, steel: 0.5 },
   ghost: { normal: 0, psychic: 0, ghost: 2 },
-  dragon: { dragon: 2 },
+  dragon: { dragon: 2, steel: 0.5 },
+  // Aço (não-Gen 1) — matchups modernos: forte vs gelo/pedra, fraco vs fogo/água/elétrico/aço.
+  steel: { ice: 2, rock: 2, fire: 0.5, water: 0.5, electric: 0.5, steel: 0.5 },
 }
 
 /** Multiplicador de um tipo atacante contra UM tipo defensor (1 se neutro). */

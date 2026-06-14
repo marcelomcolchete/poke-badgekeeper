@@ -42,6 +42,7 @@ export const TYPE_LABEL_PT: Record<PokemonType, string> = {
   rock: 'Pedra',
   ghost: 'Fantasma',
   dragon: 'Dragão',
+  steel: 'Aço',
 }
 
 export const ATTR_LABEL_PT: Record<AttrKey, string> = {
