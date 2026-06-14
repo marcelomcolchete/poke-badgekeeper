@@ -7,6 +7,9 @@ dist-ssr/
 *.local
 *.tsbuildinfo
 
+# Saída gerada por scripts (ex.: CSV de export); a fonte de verdade fica em scripts/data/
+scripts/out/
+
 # Local Claude Code settings
 .claude/settings.local.json
 

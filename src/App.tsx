@@ -14,7 +14,15 @@ import { SummaryScreen } from './components/screens/SummaryScreen.tsx'
 import { GameOverScreen } from './components/screens/GameOverScreen.tsx'
 import { DayScreen } from './components/day/DayScreen.tsx'
 import { LevelUpModal } from './components/LevelUpModal/LevelUpModal.tsx'
+import { MuteButton } from './audio/MuteButton.tsx'
+import { useGameSounds } from './audio/useGameSounds.ts'
+import { playSound } from './audio/sounds.ts'
 import styles from './App.module.css'
+
+// Som de clique global: qualquer botão da UI, sem precisar instrumentar um a um.
+function handleClickSound(e: React.MouseEvent): void {
+  if ((e.target as HTMLElement).closest('button, [role="button"]')) playSound('click')
+}
 
 function freshState() {
   return createInitialState(Math.floor(Date.now()))
@@ -32,13 +40,17 @@ export default function App() {
   // O relógio congela com qualquer painel aberto OU enquanto há level-up a distribuir.
   useGameClock(state, dispatch, uiPaused || levelingUp !== undefined)
 
+  // Sons disparados por transições do estado (nova missão, sucesso/fracasso, level-up, aviso).
+  useGameSounds(state)
+
   const restart = (): void => {
     clearSave()
     window.location.reload()
   }
 
   return (
-    <div className={styles.app}>
+    <div className={styles.app} onClickCapture={handleClickSound}>
+      <MuteButton />
       <div className={styles.frame}>
         {needsSetup ? (
           cityChosen ? (

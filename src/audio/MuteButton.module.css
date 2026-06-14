@@ -1,0 +1,28 @@
+/* Pílula fixa no canto inferior direito, acima de tudo (a fase Dia é full-screen). */
+.muteBtn {
+  position: fixed;
+  right: 14px;
+  bottom: 14px;
+  z-index: 1000;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  line-height: 1;
+  background: var(--c-hud-border, rgba(28, 86, 50, 0.9));
+  border: 2px solid var(--c-hud-accent, #8bd17c);
+  border-radius: 999px;
+  cursor: pointer;
+  opacity: 0.85;
+  transition: opacity 0.15s ease, transform 0.05s ease;
+}
+
+.muteBtn:hover {
+  opacity: 1;
+}
+
+.muteBtn:active {
+  transform: scale(0.92);
+}
