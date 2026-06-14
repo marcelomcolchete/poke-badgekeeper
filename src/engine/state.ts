@@ -94,6 +94,11 @@ export interface DefenseEvent {
   enemies: EnemyUnit[]
   /** Log da cadeia de duelos, preenchido ao resolver — alimenta o modal de batalha (§4.4). */
   duels: DuelLog[]
+  /** Sub-seed de evolução do XP por vitória, sorteado ao resolver; o XP só é aplicado ao
+   * FECHAR a batalha (o level-up "aparece" depois da animação) — guardar mantém a evolução determinística. */
+  xpSeed?: number
+  /** XP por vitórias já aplicado (ao concluir a batalha)? Evita aplicar duas vezes ao reabrir. */
+  xpApplied?: boolean
 }
 
 /** Busca de captura em andamento: um Pokémon viaja até o spot e procura até gerar encontro (PLAN §4.5). */

@@ -37,6 +37,9 @@ const ACTIVITY_COLOR = {
   other: '#8a8f9c', // fallback
 } as const
 
+/** Cor da faixa de Pokémon derrotado (vermelho-escuro acinzentado, com caveira). */
+const FAINTED_COLOR = '#8a3a3a'
+
 /**
  * O que o Pokémon está fazendo agora: rótulo contextual + cor da faixa. Cada atividade
  * tem cor própria (missão amarelo, a caminho roxo, explorando verde, etc.).
@@ -238,20 +241,35 @@ export function TeamSidebar({ state, onSelect }: Props) {
                   })}
                 </dl>
 
-                {busy && activity && (
+                {fainted ? (
                   <span className={styles.busyOverlay}>
                     <span
                       className={styles.busyBanner}
                       style={{
-                        background: `linear-gradient(180deg, ${activity.color}, color-mix(in srgb, ${activity.color} 70%, #000))`,
+                        background: `linear-gradient(180deg, ${FAINTED_COLOR}, color-mix(in srgb, ${FAINTED_COLOR} 65%, #000))`,
                       }}
                     >
-                      <span className={styles.busyText}>{activity.label}</span>
-                      <span className={styles.busyEta}>
-                        {etaS !== null ? `Disponível em ~${etaS}s` : 'Indisponível'}
-                      </span>
+                      <span className={styles.busyText}>💀 Derrotado</span>
+                      <span className={styles.busyEta}>Sem condições de lutar</span>
                     </span>
                   </span>
+                ) : (
+                  busy &&
+                  activity && (
+                    <span className={styles.busyOverlay}>
+                      <span
+                        className={styles.busyBanner}
+                        style={{
+                          background: `linear-gradient(180deg, ${activity.color}, color-mix(in srgb, ${activity.color} 70%, #000))`,
+                        }}
+                      >
+                        <span className={styles.busyText}>{activity.label}</span>
+                        <span className={styles.busyEta}>
+                          {etaS !== null ? `Disponível em ~${etaS}s` : 'Indisponível'}
+                        </span>
+                      </span>
+                    </span>
+                  )
                 )}
               </button>
             </li>

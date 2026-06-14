@@ -6,6 +6,7 @@ import type { DefenseEvent, GameState } from '../engine/state.ts'
 import { canDefend, resolveDefense } from '../engine/gymDefense.ts'
 import { goldForDefense } from '../engine/economy.ts'
 import { addXp } from '../engine/leveling.ts'
+import { createRng } from '../engine/rng.ts'
 import { GYM_WIN_XP } from '../engine/balance.ts'
 import { findMon, replaceMon, settleFaint, takeRng } from './runtime.ts'
 
@@ -39,8 +40,9 @@ function squadOf(s: GameState, ids: readonly string[]): Pokemon[] {
 }
 
 /**
- * Atribui o esquadrão (≥1 disponível) e resolve a cadeia de duelos 1v1 na hora.
- * Vitória rende ouro ∝ Carisma; perdedores de duelo perdem 1 HP (PLAN §4.4/§4.6).
+ * Atribui o esquadrão (≥1 disponível) e resolve a cadeia de duelos 1v1 na hora: aplica HP
+ * (perdedor de duelo perde 1), ouro (∝ Carisma) e registra os desafiantes derrotados. O
+ * XP/level-up das vitórias é ADIADO para o fim da animação (completeDefense) — PLAN §4.4/§4.6.
  */
 export function assignDefense(s: GameState, defenseId: string, squadIds: string[]): void {
   const defense = s.defenses.find((d) => d.id === defenseId)
@@ -50,13 +52,10 @@ export function assignDefense(s: GameState, defenseId: string, squadIds: string[
 
   const resolution = resolveDefense(takeRng(s), squad, defense.enemies)
 
-  // Quantos duelos cada Pokémon venceu — cada vitória rende um pouco de XP (PLAN §4.4).
-  // E registra o desafiante derrotado (defeaterId + espécie) para o MVP/relatório.
-  const winsById = new Map<string, number>()
+  // Registra o desafiante derrotado (defeaterId + espécie) para o MVP/relatório.
   let theirs = 0
   for (const duel of resolution.duels) {
     if (duel.youWon) {
-      winsById.set(duel.yourId, (winsById.get(duel.yourId) ?? 0) + 1)
       s.today.defenseKills.push({
         defeaterId: duel.yourId,
         speciesId: defense.enemies[theirs]?.speciesId,
@@ -65,17 +64,15 @@ export function assignDefense(s: GameState, defenseId: string, squadIds: string[
     }
   }
 
-  for (const member of resolution.squad) {
-    const wins = winsById.get(member.id) ?? 0
-    // XP aplicado já aqui (a defesa resolve toda de uma vez): o level-up só "aparece" ao final.
-    const leveled = wins > 0 ? addXp(member, wins * GYM_WIN_XP, takeRng(s)).pokemon : member
-    if (wins > 0) s.today.xpEarned += wins * GYM_WIN_XP
-    replaceMon(s, settleFaint(s, leveled))
-  }
+  // HP/desmaio aplicados já (a batalha acontece agora); o XP fica para completeDefense.
+  for (const member of resolution.squad) replaceMon(s, settleFaint(s, member))
 
   defense.squadIds = squad.map((p) => p.id)
   defense.duels = resolution.duels
   defense.status = resolution.won ? 'won' : 'lost'
+  // Seed de evolução sorteado agora (cursor do RNG estável); usado ao aplicar o XP depois.
+  defense.xpSeed = takeRng(s).int(0, 0x7fffffff)
+  defense.xpApplied = false
 
   // Ouro é pago por participar da batalha, vencendo OU perdendo (PLAN §4.6, ajuste).
   const gold = goldForDefense(squad)
@@ -84,4 +81,29 @@ export function assignDefense(s: GameState, defenseId: string, squadIds: string[
   s.today.defenseGold += gold
   if (resolution.won) s.today.defensesWon += 1
   else s.today.defensesLost += 1
+}
+
+/**
+ * Conclui a defesa ao FIM da animação: aplica o XP de cada vitória (1 duelo vencido =
+ * GYM_WIN_XP), podendo subir nível/evoluir — o level-up só "aparece" agora (PLAN §4.4,
+ * ajuste). Idempotente: só aplica uma vez (xpApplied).
+ */
+export function completeDefense(s: GameState, defenseId: string): void {
+  const defense = s.defenses.find((d) => d.id === defenseId)
+  if (!defense || defense.xpApplied) return
+  if (defense.status !== 'won' && defense.status !== 'lost') return
+
+  const winsById = new Map<string, number>()
+  for (const duel of defense.duels) {
+    if (duel.youWon) winsById.set(duel.yourId, (winsById.get(duel.yourId) ?? 0) + 1)
+  }
+
+  const evoRng = createRng(defense.xpSeed ?? 0)
+  for (const [id, wins] of winsById) {
+    const mon = findMon(s, id)
+    if (!mon || wins <= 0) continue
+    replaceMon(s, addXp(mon, wins * GYM_WIN_XP, evoRng).pokemon)
+    s.today.xpEarned += wins * GYM_WIN_XP
+  }
+  defense.xpApplied = true
 }

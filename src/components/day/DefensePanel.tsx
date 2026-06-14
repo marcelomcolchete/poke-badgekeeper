@@ -34,7 +34,7 @@ export function DefensePanel({ state, dispatch, defenseId, onClose }: Props) {
 
   // Já resolvida (venceu/perdeu) → tela de batalha; caso contrário, seleção do esquadrão.
   if (fighting || defense.status === 'won' || defense.status === 'lost') {
-    return <BattleView state={state} defense={defense} onClose={onClose} />
+    return <BattleView state={state} dispatch={dispatch} defense={defense} onClose={onClose} />
   }
 
   const enemyTypes = [...new Set(defense.enemies.flatMap((e) => e.types))] as PokemonType[]
@@ -137,10 +137,12 @@ function clamp01(n: number): number {
 
 function BattleView({
   state,
+  dispatch,
   defense,
   onClose,
 }: {
   state: GameState
+  dispatch: Dispatch<GameAction>
   defense: DefenseEvent
   onClose: () => void
 }) {
@@ -148,6 +150,13 @@ function BattleView({
   const [step, setStep] = useState(0)
   const done = step >= rounds.length
   const current = done ? null : (rounds[step] as Round)
+
+  // Ao fechar (só liberado quando a animação termina), aplica o XP/level-up das vitórias —
+  // o level-up "aparece" agora, depois da batalha. Idempotente no reducer (xpApplied).
+  const finish = (): void => {
+    dispatch({ type: 'COMPLETE_DEFENSE', defenseId: defense.id })
+    onClose()
+  }
 
   const nameOf = (id: string): string => {
     const mon = state.roster.find((p) => p.id === id)
@@ -177,7 +186,7 @@ function BattleView({
     adjusted > base ? 'up' : adjusted < base ? 'down' : 'flat'
 
   return (
-    <Overlay title="DEFESA — BATALHA" onClose={done ? onClose : undefined} wide>
+    <Overlay title="DEFESA — BATALHA" onClose={done ? finish : undefined} wide>
       <div className={styles.battle}>
         <div className={styles.battleSide}>
           <span className={styles.battleLabel}>Seu esquadrão</span>
@@ -254,7 +263,7 @@ function BattleView({
           </p>
         )}
 
-        <button type="button" className={styles.confirm} onClick={onClose} disabled={!done}>
+        <button type="button" className={styles.confirm} onClick={finish} disabled={!done}>
           Continuar ▶
         </button>
       </div>
