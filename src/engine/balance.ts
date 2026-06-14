@@ -91,6 +91,9 @@ export const ENEMY_SQUAD_JITTER_FROM_DAY = 5
 /** Leveling §4.1: XP concedido a cada Pokémon do time numa missão bem-sucedida. */
 export const MISSION_XP_REWARD = 120
 
+/** Leveling §4.4: XP concedido por duelo VENCIDO numa defesa de ginásio (um pouco por batalha). */
+export const GYM_WIN_XP = 20
+
 /**
  * Regras por categoria de missão (PROVISÓRIAS) — onde nasce, dificuldade e recompensa.
  * reqMult escala a exigência (>1 = mais difícil; <1 = mais fácil); dangerMult escala

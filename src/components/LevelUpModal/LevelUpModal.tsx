@@ -7,7 +7,7 @@ import type { Dispatch } from 'react'
 import { ATTR_KEYS, type Pokemon } from '../../types/index.ts'
 import type { GameAction } from '../../game/actions.ts'
 import { pendingPoints } from '../../engine/leveling.ts'
-import { effectiveAttr } from '../../engine/attributes.ts'
+import { effectiveAttr, perPointGain } from '../../engine/attributes.ts'
 import { ATTR_MAX, ATTR_PER_POINT } from '../../engine/constants.ts'
 import { PokemonCard } from '../PokemonCard/PokemonCard.tsx'
 import { ATTR_LABEL_PT } from '../common/visual.ts'
@@ -40,6 +40,10 @@ export function LevelUpModal({ pokemon, dispatch }: Props) {
         <div className={styles.allocBtns}>
           {ATTR_KEYS.map((attr, i) => {
             const locked = !allMaxed && maxed[i]
+            // Incremento real do ponto: +15 (favorecido pela natureza), +5 (penalizado), +10 (neutro).
+            const gain = perPointGain(pokemon, attr)
+            const gainClass =
+              gain > ATTR_PER_POINT ? styles.gainUp : gain < ATTR_PER_POINT ? styles.gainDown : ''
             return (
               <button
                 key={attr}
@@ -48,7 +52,8 @@ export function LevelUpModal({ pokemon, dispatch }: Props) {
                 disabled={locked}
                 onClick={() => dispatch({ type: 'ALLOCATE_POINT', pokemonId: pokemon.id, attr })}
               >
-                {ATTR_LABEL_PT[attr]} {locked ? 'MÁX' : `+${ATTR_PER_POINT}`}
+                {ATTR_LABEL_PT[attr]}{' '}
+                {locked ? 'MÁX' : <span className={gainClass}>+{gain}</span>}
               </button>
             )
           })}

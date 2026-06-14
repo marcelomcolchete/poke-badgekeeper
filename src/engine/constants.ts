@@ -54,6 +54,9 @@ export const STARTING_GOLD = 500
 export const HP_MIN = 1
 export const HP_MAX = 10
 
+/** Conversão Resistência→HP: cada 10 pontos de Resistência = 1 de vida (0–10 → 1). */
+export const RESISTANCE_PER_HP = 10
+
 /** Aprovação: estrelas de 0 a 5, começa em 1, passo de 0,5; efetivado se > 3. Zerar = game over. */
 export const STARS_MIN = 0
 export const STARS_MAX = 5
@@ -87,6 +90,8 @@ export const DRAFT_CHOICES = 3
  * game over por reputação zerada (run.gameOverReason).
  * v12: sistema de naturezas (nature: Nature | null) em cada Pokémon do roster.
  * v13: variação de encontro por eixo (ivs: Attrs, −10..+10) e ranking F–S derivado;
- * candidateSeeds nos encontros para preview = captura. */
-export const SAVE_VERSION = 13
+ * candidateSeeds nos encontros para preview = captura.
+ * v14: defesas perdidas no dia (today.defensesLost) para o placar de falhas do relatório;
+ * XP por duelo vencido no ginásio e HP = 1 a cada 10 de Resistência (floor, piso 1). */
+export const SAVE_VERSION = 14
 export const SAVE_KEY = 'poke-badgekeeper:save'

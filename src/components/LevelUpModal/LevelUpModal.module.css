@@ -64,6 +64,26 @@
   color: var(--c-ink);
 }
 
+/* Incremento por ponto realçado pela natureza: +15 favorecido (azul) / +5 penalizado (vermelho). */
+.gainUp {
+  color: #6db4ff;
+  font-weight: bold;
+}
+
+.gainDown {
+  color: #ff8a8a;
+  font-weight: bold;
+}
+
+/* No hover o botão fica claro: mantém o realce legível com tons mais escuros. */
+.allocBtn:hover:not(:disabled) .gainUp {
+  color: #1b4f86;
+}
+
+.allocBtn:hover:not(:disabled) .gainDown {
+  color: #9a2020;
+}
+
 /* Atributo no teto (60): dourado e travado — não pode mais ser escolhido. */
 .allocBtnMax {
   background: #6b5a1f;

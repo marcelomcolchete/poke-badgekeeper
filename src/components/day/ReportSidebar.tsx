@@ -22,7 +22,12 @@ export function ReportSidebar({ state, messages }: Props) {
   const { mvpId, mvpMissions } = computeMvp(t.missionResults)
   const mvp = mvpId ? state.roster.find((p) => p.id === mvpId) : undefined
   const completed = t.missionResults.filter((m) => m.success).length
+  const failedMissions = t.missionResults.length - completed
   const total = state.missions.length
+  const battlesTotal = state.defenses.length
+  const captured = t.capturedIds.at(-1)
+  const capturedMon = captured ? state.roster.find((p) => p.id === captured) : undefined
+  const capturedSpecies = capturedMon ? getSpecies(capturedMon.speciesId) : undefined
   const goal = missionGoal(total)
   const goalMet = total > 0 && completed >= goal
   const allDone = total > 0 && completed >= total
@@ -72,21 +77,23 @@ export function ReportSidebar({ state, messages }: Props) {
         </p>
       </section>
 
-      <ul className={styles.stats}>
-        <li className={styles.stat}>
-          <span className={styles.statIcon}>🎯</span>
-          <span className={styles.statVal}>{goal}</span>
-          <span className={styles.statLabel}>Meta do dia</span>
-        </li>
-        <li className={styles.stat}>
-          <span className={styles.statIcon}>⚔️</span>
-          <span className={styles.statVal}>
-            {t.defensesWon}
-            <span className={styles.statSub}>/{state.defenses.length}</span>
-          </span>
-          <span className={styles.statLabel}>Batalhas previstas</span>
-        </li>
-      </ul>
+      {/* Placar do dia: sucessos (verde) e falhas (vermelho) de missões e batalhas. */}
+      <div className={styles.score}>
+        <ScoreRow
+          icon="🎯"
+          label="Missões"
+          won={completed}
+          lost={failedMissions}
+          total={total}
+        />
+        <ScoreRow
+          icon="⚔️"
+          label="Batalhas"
+          won={t.defensesWon}
+          lost={t.defensesLost}
+          total={battlesTotal}
+        />
+      </div>
 
       <ul className={`${styles.stats} ${styles.statsThree}`}>
         <li className={styles.stat}>
@@ -94,10 +101,17 @@ export function ReportSidebar({ state, messages }: Props) {
           <span className={styles.statVal}>$ {t.goldEarned}</span>
           <span className={styles.statLabel}>Ouro do dia</span>
         </li>
-        <li className={styles.stat}>
-          <span className={styles.statIcon}>🔴</span>
-          <span className={styles.statVal}>{t.capturedIds.length}</span>
-          <span className={styles.statLabel}>Capturados</span>
+        <li className={`${styles.stat} ${styles.captured}`}>
+          {capturedSpecies ? (
+            <img
+              className={styles.capturedSprite}
+              src={capturedSpecies.spritePath}
+              alt={capturedSpecies.displayName}
+            />
+          ) : (
+            <span className={styles.capturedNone}>Nenhum</span>
+          )}
+          <span className={styles.statLabel}>Capturado</span>
         </li>
         <li className={styles.stat}>
           <span className={styles.statIcon}>⭐</span>
@@ -127,6 +141,41 @@ export function ReportSidebar({ state, messages }: Props) {
         </div>
       </section>
     </aside>
+  )
+}
+
+/** Linha do placar: ícone + rótulo, contagem de vitórias (verde) e falhas (vermelho), total previsto. */
+function ScoreRow({
+  icon,
+  label,
+  won,
+  lost,
+  total,
+}: {
+  icon: string
+  label: string
+  won: number
+  lost: number
+  total: number
+}) {
+  return (
+    <div className={styles.scoreRow}>
+      <span className={styles.scoreLabel}>
+        <span className={styles.scoreIcon} aria-hidden="true">
+          {icon}
+        </span>
+        {label}
+      </span>
+      <span className={styles.scoreChips}>
+        <span className={`${styles.chip} ${styles.chipWin}`} title={`${won} com sucesso`}>
+          ✓ {won}
+        </span>
+        <span className={`${styles.chip} ${styles.chipLoss}`} title={`${lost} falhadas`}>
+          ✗ {lost}
+        </span>
+        <span className={styles.scoreTotal}>/ {total}</span>
+      </span>
+    </div>
   )
 }
 
