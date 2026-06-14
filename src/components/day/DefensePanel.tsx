@@ -9,6 +9,7 @@ import type { EnemyUnit, Pokemon, PokemonType } from '../../types/index.ts'
 import type { GameState, DefenseEvent } from '../../engine/state.ts'
 import type { GameAction } from '../../game/actions.ts'
 import { MIN_DEFENSE_SQUAD } from '../../engine/constants.ts'
+import { effectiveAttr } from '../../engine/attributes.ts'
 import { effectiveBattle, typeAdvantageMultiplier } from '../../engine/gymDefense.ts'
 import { sortRoster } from '../../engine/roster.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
@@ -84,29 +85,25 @@ export function DefensePanel({ state, dispatch, defenseId, onClose }: Props) {
   )
 }
 
+type Trend = 'up' | 'down' | 'flat'
+
 interface Round {
   enemyIndex: number
   enemy: EnemyUnit
   yourId: string
   youWon: boolean
   pWin: number
-  /** Poder de batalha efetivo do seu Pokémon contra os tipos deste inimigo. */
+  /** Poder de batalha efetivo do seu Pokémon contra os tipos deste inimigo (com vantagem/desvantagem). */
   yourBattle: number
   /** Poder de batalha efetivo do inimigo contra os tipos do seu Pokémon. */
   enemyBattle: number
-  /** HP do seu Pokémon ANTES do duelo (perde 1 se for derrotado). */
-  hpBefore: number
-  hpMax: number
 }
 
 /**
  * Reconstrói a ordem de confrontos a partir do log de duelos (mesma lógica da engine),
- * anexando poder de batalha individual e o HP do seu Pokémon em cada duelo. Como cada
- * Pokémon só perde 1 HP (e sai) ao ser derrotado, o HP de antes = HP atual no roster +
- * (1 se ele perdeu algum duelo nesta defesa).
+ * anexando o poder de batalha efetivo (já com vantagem/desvantagem de tipo) dos dois lados.
  */
 function buildRounds(defense: DefenseEvent, roster: readonly Pokemon[]): Round[] {
-  const lostOnce = new Set(defense.duels.filter((d) => !d.youWon).map((d) => d.yourId))
   const rounds: Round[] = []
   let theirs = 0
   for (const duel of defense.duels) {
@@ -117,7 +114,6 @@ function buildRounds(defense: DefenseEvent, roster: readonly Pokemon[]): Round[]
     const enemyBattle = mon
       ? Math.round(enemy.battle * typeAdvantageMultiplier(enemy.types, mon.types))
       : enemy.battle
-    const hpBefore = mon ? mon.currentHp + (lostOnce.has(duel.yourId) ? 1 : 0) : 0
     rounds.push({
       enemyIndex: theirs,
       enemy,
@@ -126,8 +122,6 @@ function buildRounds(defense: DefenseEvent, roster: readonly Pokemon[]): Round[]
       pWin: duel.pWin,
       yourBattle,
       enemyBattle,
-      hpBefore,
-      hpMax: mon?.maxHp ?? 0,
     })
     if (duel.youWon) theirs += 1
   }
@@ -167,7 +161,20 @@ function BattleView({
   const lostIds = new Set(
     rounds.slice(0, step).filter((r) => !r.youWon).map((r) => r.yourId),
   )
+  // Quem perde no DECORRER TODO da defesa (para reconstruir o HP de antes da batalha).
+  const lostOverall = new Set(defense.duels.filter((d) => !d.youWon).map((d) => d.yourId))
   const won = defense.status === 'won'
+
+  // HP do seu Pokémon a esta altura: HP atual no roster + 1 se ele perdeu em algum
+  // momento, menos 1 quando essa derrota já foi mostrada (perde 1 ao ser batido).
+  const hpOf = (id: string): { cur: number; max: number } => {
+    const mon = state.roster.find((p) => p.id === id)
+    if (!mon) return { cur: 0, max: 0 }
+    const pre = mon.currentHp + (lostOverall.has(id) ? 1 : 0)
+    return { cur: Math.max(0, pre - (lostIds.has(id) ? 1 : 0)), max: mon.maxHp }
+  }
+  const trendOf = (adjusted: number, base: number): Trend =>
+    adjusted > base ? 'up' : adjusted < base ? 'down' : 'flat'
 
   return (
     <Overlay title="DEFESA — BATALHA" onClose={done ? onClose : undefined} wide>
@@ -177,15 +184,22 @@ function BattleView({
           <div className={styles.battleRow}>
             {defense.squadIds.map((id) => {
               const mon = state.roster.find((p) => p.id === id)
-              return mon ? (
-                <img
+              if (!mon) return null
+              const base = Math.round(effectiveAttr(mon, 'batalha'))
+              const isCurrent = current?.yourId === id
+              const battle = isCurrent ? current.yourBattle : base
+              return (
+                <Fighter
                   key={id}
-                  className={`${styles.fighter} ${lostIds.has(id) ? styles.defeated : ''}`}
-                  src={getSpecies(mon.speciesId).spritePath}
+                  spritePath={getSpecies(mon.speciesId).spritePath}
                   alt={getSpecies(mon.speciesId).displayName}
-                  draggable={false}
+                  defeated={lostIds.has(id)}
+                  hp={hpOf(id)}
+                  showMinus={lostIds.has(id)}
+                  battle={battle}
+                  trend={isCurrent ? trendOf(battle, base) : 'flat'}
                 />
-              ) : null
+              )
             })}
           </div>
         </div>
@@ -195,15 +209,22 @@ function BattleView({
             Desafiantes ({enemiesDefeated}/{defense.enemies.length} derrotados)
           </span>
           <div className={styles.battleRow}>
-            {defense.enemies.map((enemy, i) => (
-              <img
-                key={i}
-                className={`${styles.fighter} ${i < enemiesDefeated ? styles.defeated : ''}`}
-                src={enemy.speciesId !== undefined ? getSpecies(enemy.speciesId).spritePath : ''}
-                alt=""
-                draggable={false}
-              />
-            ))}
+            {defense.enemies.map((enemy, i) => {
+              const isCurrent = current?.enemyIndex === i
+              const battle = isCurrent ? current.enemyBattle : enemy.battle
+              return (
+                <Fighter
+                  key={i}
+                  spritePath={
+                    enemy.speciesId !== undefined ? getSpecies(enemy.speciesId).spritePath : ''
+                  }
+                  alt=""
+                  defeated={i < enemiesDefeated}
+                  battle={battle}
+                  trend={isCurrent ? trendOf(battle, enemy.battle) : 'flat'}
+                />
+              )
+            })}
           </div>
         </div>
 
@@ -295,22 +316,10 @@ function DuelMeter({
 
   const verdictClass = settled ? (round.youWon ? styles.duelWin : styles.duelLose) : ''
 
-  // HP perde 1 só quando o duelo é resolvido como derrota.
-  const lostHp = settled && !round.youWon
-  const hpNow = lostHp ? Math.max(0, round.hpBefore - 1) : round.hpBefore
-
   return (
     <div className={styles.meterWrap}>
       <span className={styles.meterHead}>
-        <b>{yourName}</b> (Btl {round.yourBattle}) vs {enemyName} (Btl {round.enemyBattle}) —{' '}
-        {Math.round(winZone * 100)}% de vitória
-      </span>
-      <span className={styles.meterHp}>
-        HP de {yourName}:{' '}
-        <b className={lostHp ? styles.hpHit : ''}>
-          {hpNow}/{round.hpMax}
-        </b>
-        {lostHp && <em className={styles.hpLoss}>−1 HP</em>}
+        <b>{yourName}</b> vs {enemyName} — {Math.round(winZone * 100)}% de vitória
       </span>
       <div className={styles.meterTrack}>
         <span className={styles.meterZone} style={{ width: `${winZone * 100}%` }} />
@@ -325,6 +334,52 @@ function DuelMeter({
           : round.youWon
             ? 'Caiu na interseção — venceu! ✓'
             : 'Caiu fora da interseção — perdeu.'}
+      </span>
+    </div>
+  )
+}
+
+/**
+ * Lutador na cadeia de duelos: sprite com o HP do seu Pokémon e o selo "−1" sobrepostos,
+ * e o atributo Batalha abaixo (com ▲/▼ quando o tipo dá vantagem/desvantagem no confronto).
+ */
+function Fighter({
+  spritePath,
+  alt,
+  defeated,
+  hp,
+  showMinus,
+  battle,
+  trend,
+}: {
+  spritePath: string
+  alt: string
+  defeated: boolean
+  hp?: { cur: number; max: number }
+  showMinus?: boolean
+  battle: number
+  trend: Trend
+}) {
+  const trendCls = trend === 'up' ? styles.battleUp : trend === 'down' ? styles.battleDown : ''
+  return (
+    <div className={styles.fighterCell}>
+      <div className={styles.fighterArt}>
+        <img
+          className={`${styles.fighter} ${defeated ? styles.defeated : ''}`}
+          src={spritePath}
+          alt={alt}
+          draggable={false}
+        />
+        {hp && (
+          <span className={styles.hpTag}>
+            ♥ {hp.cur}/{hp.max}
+          </span>
+        )}
+        {showMinus && <span className={styles.hpMinus}>−1</span>}
+      </div>
+      <span className={`${styles.battleTag} ${trendCls}`}>
+        ⚔ {battle}
+        {trend === 'up' ? ' ▲' : trend === 'down' ? ' ▼' : ''}
       </span>
     </div>
   )

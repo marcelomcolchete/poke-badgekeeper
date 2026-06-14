@@ -19,6 +19,7 @@ function baseInput() {
     missionResults: results,
     defensesWon: 1,
     defensesTotal: 2,
+    defenseKills: [],
     goldEarned: 250,
     capturedIds: ['new1'],
     roster: [alive, downed],
@@ -38,19 +39,38 @@ describe('buildDaySummary', () => {
     expect(s.available).toBe(1)
   })
 
-  it('MVP é quem concluiu mais missões (só conta sucesso)', () => {
+  it('MVP é quem somou mais feitos (missões + derrotas)', () => {
     const s = buildDaySummary(baseInput())
     expect(s.mvpId).toBe('a') // 'a' em 2 sucessos, 'b' em 1, 'c' só na falha
     expect(s.mvpMissions).toBe(2)
+    expect(s.mvpDefeats).toBe(0)
   })
 
-  it('sem missões concluídas → MVP null', () => {
+  it('derrotas em defesa contam para o MVP e desempatam por missões', () => {
+    const s = buildDaySummary({
+      ...baseInput(),
+      // 'b' tem 1 missão; com 3 derrotas soma 4 feitos e ultrapassa 'a' (2 missões).
+      defenseKills: [
+        { defeaterId: 'b' },
+        { defeaterId: 'b' },
+        { defeaterId: 'b' },
+        { defeaterId: 'a' },
+      ],
+    })
+    expect(s.mvpId).toBe('b')
+    expect(s.mvpMissions).toBe(1)
+    expect(s.mvpDefeats).toBe(3)
+  })
+
+  it('sem missões nem derrotas → MVP null', () => {
     const s = buildDaySummary({
       ...baseInput(),
       missionResults: [{ templateId: 'x', success: false, teamIds: ['z'] }],
+      defenseKills: [],
     })
     expect(s.mvpId).toBeNull()
     expect(s.mvpMissions).toBe(0)
+    expect(s.mvpDefeats).toBe(0)
     expect(s.missionsCompleted).toBe(0)
   })
 

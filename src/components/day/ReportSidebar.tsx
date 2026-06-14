@@ -19,8 +19,13 @@ interface Props {
 
 export function ReportSidebar({ state, messages }: Props) {
   const t = state.today
-  const { mvpId, mvpMissions } = computeMvp(t.missionResults)
+  const { mvpId, mvpMissions, mvpDefeats } = computeMvp(t.missionResults, t.defenseKills)
   const mvp = mvpId ? state.roster.find((p) => p.id === mvpId) : undefined
+  const mvpKillSpecies = mvpId
+    ? t.defenseKills
+        .filter((k) => k.defeaterId === mvpId && k.speciesId !== undefined)
+        .map((k) => getSpecies(k.speciesId as number))
+    : []
   const completed = t.missionResults.filter((m) => m.success).length
   const failedMissions = t.missionResults.length - completed
   const total = state.missions.length
@@ -120,7 +125,12 @@ export function ReportSidebar({ state, messages }: Props) {
         </li>
       </ul>
 
-      <DayMvp mvp={mvp} missions={mvpMissions} />
+      <DayMvp
+        mvp={mvp}
+        missions={mvpMissions}
+        defeats={mvpDefeats}
+        killSpecies={mvpKillSpecies}
+      />
 
       <section className={styles.guide} aria-label="Mensagens do guia">
         <div className={styles.guideHead}>
@@ -180,12 +190,22 @@ function ScoreRow({
 }
 
 /** Destaque do dia ao vivo: o mesmo MVP que aparece no resumo final (compacto). */
-function DayMvp({ mvp, missions }: { mvp: Pokemon | undefined; missions: number }) {
+function DayMvp({
+  mvp,
+  missions,
+  defeats,
+  killSpecies,
+}: {
+  mvp: Pokemon | undefined
+  missions: number
+  defeats: number
+  killSpecies: ReturnType<typeof getSpecies>[]
+}) {
   if (!mvp) {
     return (
       <div className={`${styles.mvp} ${styles.mvpEmpty}`}>
         <span className={styles.mvpBadge}>★ DESTAQUE DO DIA</span>
-        <span className={styles.mvpEmptyText}>Nenhuma missão concluída ainda.</span>
+        <span className={styles.mvpEmptyText}>Nenhum feito registrado ainda.</span>
       </div>
     )
   }
@@ -197,9 +217,27 @@ function DayMvp({ mvp, missions }: { mvp: Pokemon | undefined; missions: number 
         <img className={styles.mvpSprite} src={species.spritePath} alt={species.displayName} />
         <span className={styles.mvpInfo}>
           <span className={styles.mvpName}>{displayNameOf(mvp)}</span>
-          <span className={styles.mvpDeed}>
-            {missions} {missions === 1 ? 'missão' : 'missões'} hoje
-          </span>
+          <ol className={styles.mvpDeeds}>
+            <li className={styles.mvpDeed}>
+              🎯 <b>{missions}</b> {missions === 1 ? 'missão' : 'missões'}
+            </li>
+            <li className={styles.mvpDeed}>
+              ⚔️ <b>{defeats}</b> {defeats === 1 ? 'derrotado' : 'derrotados'}
+              {killSpecies.length > 0 && (
+                <span className={styles.mvpKills}>
+                  {killSpecies.map((sp, i) => (
+                    <img
+                      key={i}
+                      className={styles.mvpKill}
+                      src={sp.spritePath}
+                      alt={sp.displayName}
+                      title={sp.displayName}
+                    />
+                  ))}
+                </span>
+              )}
+            </li>
+          </ol>
         </span>
       </div>
     </div>

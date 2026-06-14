@@ -92,6 +92,7 @@ export const DRAFT_CHOICES = 3
  * v13: variação de encontro por eixo (ivs: Attrs, −10..+10) e ranking F–S derivado;
  * candidateSeeds nos encontros para preview = captura.
  * v14: defesas perdidas no dia (today.defensesLost) para o placar de falhas do relatório;
- * XP por duelo vencido no ginásio e HP = 1 a cada 10 de Resistência (floor, piso 1). */
-export const SAVE_VERSION = 14
+ * XP por duelo vencido no ginásio e HP = 1 a cada 10 de Resistência (floor, piso 1).
+ * v15: inimigos derrotados em defesas no dia (today.defenseKills) p/ MVP por derrotas. */
+export const SAVE_VERSION = 15
 export const SAVE_KEY = 'poke-badgekeeper:save'

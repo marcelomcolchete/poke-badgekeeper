@@ -39,11 +39,18 @@ export function SummaryScreen({ state, dispatch, onRestart }: Props) {
     missionResults: state.today.missionResults,
     defensesWon: state.today.defensesWon,
     defensesTotal: state.today.defensesTotal,
+    defenseKills: state.today.defenseKills,
     goldEarned: state.today.goldEarned,
     capturedIds: state.today.capturedIds,
     roster: state.roster,
   })
   const mvp = summary.mvpId ? state.roster.find((p) => p.id === summary.mvpId) : undefined
+  // Espécies que o destaque derrotou em defesas — miniaturas/insígnia no quadro do MVP.
+  const mvpKillSpecies = summary.mvpId
+    ? state.today.defenseKills
+        .filter((k) => k.defeaterId === summary.mvpId && k.speciesId !== undefined)
+        .map((k) => getSpecies(k.speciesId as number))
+    : []
   const lastDay = state.run.day >= TOTAL_DAYS
   const verdict = dayVerdict(summary.missionsCompleted, summary.missionsTotal)
 
@@ -65,7 +72,12 @@ export function SummaryScreen({ state, dispatch, onRestart }: Props) {
           <Tile label="Disponíveis" value={`${summary.available}`} icon="✨" />
         </div>
 
-        <MvpSquare mvp={mvp} missions={summary.mvpMissions} />
+        <MvpSquare
+          mvp={mvp}
+          missions={summary.mvpMissions}
+          defeats={summary.mvpDefeats}
+          killSpecies={mvpKillSpecies}
+        />
       </div>
 
       {lastDay ? (
@@ -136,12 +148,22 @@ function FinalResult({ hired, stars, onRestart }: { hired: boolean; stars: numbe
   )
 }
 
-function MvpSquare({ mvp, missions }: { mvp: Pokemon | undefined; missions: number }) {
+function MvpSquare({
+  mvp,
+  missions,
+  defeats,
+  killSpecies,
+}: {
+  mvp: Pokemon | undefined
+  missions: number
+  defeats: number
+  killSpecies: ReturnType<typeof getSpecies>[]
+}) {
   if (!mvp) {
     return (
       <div className={`${styles.mvp} ${styles.mvpEmpty}`}>
         <span className={styles.mvpBadge}>★ DESTAQUE</span>
-        <span className={styles.mvpEmptyText}>Nenhuma missão concluída hoje.</span>
+        <span className={styles.mvpEmptyText}>Nenhum feito registrado hoje.</span>
       </div>
     )
   }
@@ -167,9 +189,29 @@ function MvpSquare({ mvp, missions }: { mvp: Pokemon | undefined; missions: numb
           ))}
         </span>
       </span>
-      <span className={styles.mvpDeed}>
-        Venceu <b>{missions}</b> {missions === 1 ? 'missão' : 'missões'} hoje
-      </span>
+      <ol className={styles.mvpDeeds}>
+        <li className={styles.mvpDeed}>
+          <span className={styles.mvpDeedIcon}>🎯</span>
+          <b>{missions}</b> {missions === 1 ? 'missão concluída' : 'missões concluídas'}
+        </li>
+        <li className={styles.mvpDeed}>
+          <span className={styles.mvpDeedIcon}>⚔️</span>
+          <b>{defeats}</b> {defeats === 1 ? 'derrotado na defesa' : 'derrotados na defesa'}
+          {killSpecies.length > 0 && (
+            <span className={styles.mvpKills}>
+              {killSpecies.map((sp, i) => (
+                <img
+                  key={i}
+                  className={styles.mvpKill}
+                  src={sp.spritePath}
+                  alt={sp.displayName}
+                  title={sp.displayName}
+                />
+              ))}
+            </span>
+          )}
+        </li>
+      </ol>
     </div>
   )
 }

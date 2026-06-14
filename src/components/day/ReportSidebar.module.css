@@ -315,10 +315,44 @@
   white-space: nowrap;
 }
 
+.mvpDeeds {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 2px 0 0;
+  padding: 0;
+}
+
 .mvpDeed {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
   font-family: var(--font-text);
   font-size: 13px;
   color: var(--c-hud-muted);
+}
+
+.mvpDeed b {
+  color: var(--c-hud-text);
+}
+
+/* Insígnia: miniaturas dos desafiantes derrotados pelo destaque. */
+.mvpKills {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-left: 2px;
+}
+
+.mvpKill {
+  width: 18px;
+  height: 18px;
+  image-rendering: pixelated;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--c-hud-border);
+  border-radius: 3px;
 }
 
 .mvpEmpty {
