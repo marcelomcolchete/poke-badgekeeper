@@ -13,10 +13,10 @@ export type SoundKey =
   | 'click'
 
 const SOUND_FILES: Record<SoundKey, string> = {
-  missionNew: '/sounds/new-mission.mp3',
+  missionNew: '/sounds/mission-new.mp3',
   missionSuccess: '/sounds/mission-success.mp3',
-  missionFail: '/sounds/mission-failure.mp3',
-  timeWarning: '/sounds/timer.mp3',
+  missionFail: '/sounds/mission-fail.mp3',
+  timeWarning: '/sounds/time-warning.mp3',
   levelUp: '/sounds/level-up.mp3',
   click: '/sounds/click.mp3',
 }

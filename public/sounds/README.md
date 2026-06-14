@@ -6,10 +6,10 @@ hífen, sem acento). O Vite serve `public/` direto, então em código o caminho 
 
 | Arquivo | Quando toca | Caráter sugerido |
 |---|---|---|
-| `new-mission.mp3` | Surge uma nova missão no mapa | notificação curta, "pling!" |
+| `mission-new.mp3` | Surge uma nova missão no mapa | notificação curta, "pling!" |
 | `mission-success.mp3` | Missão concluída com sucesso | jingle positivo curto |
-| `mission-failure.mp3` | Missão fracassou | tom descendente / "buzz" |
-| `timer.mp3` | Missão **ou** defesa de ginásio prestes a expirar sem ação | alerta tenso, tique-taque |
+| `mission-fail.mp3` | Missão fracassou | tom descendente / "buzz" |
+| `time-warning.mp3` | Missão **ou** defesa de ginásio prestes a expirar sem ação | alerta tenso, tique-taque |
 | `level-up.mp3` | Pokémon subiu de nível | fanfarra clássica de level-up ⭐ |
 | `click.mp3` | Clicar em qualquer botão | "blip" bem curto e baixo |
 
