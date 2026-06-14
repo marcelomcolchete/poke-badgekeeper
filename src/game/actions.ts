@@ -27,8 +27,8 @@ export type GameAction =
   | { type: 'ASSIGN_DEFENSE'; defenseId: string; squadIds: string[] }
   /** Manda um Pokémon explorar uma área de captura — PLAN §4.5. */
   | { type: 'START_SEARCH'; searcherId: string; spotIndex: number }
-  /** No encontro: captura o candidato escolhido — PLAN §4.5. */
-  | { type: 'CAPTURE_PICK'; searcherId: string; speciesId: number }
+  /** No encontro: captura o candidato escolhido; com roster cheio, `releaseId` descarta um — §4.5. */
+  | { type: 'CAPTURE_PICK'; searcherId: string; speciesId: number; releaseId?: string }
   /** No encontro: não pega nenhum e encerra a exploração — a área some do dia. */
   | { type: 'CAPTURE_DISMISS'; searcherId: string }
   /** Define/limpa o apelido de um Pokémon (renomear na captura) — PLAN §4.5. */

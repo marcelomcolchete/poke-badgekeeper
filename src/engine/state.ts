@@ -67,6 +67,11 @@ export interface MissionInstance {
   returnEndsAtMs: number | null
   result: MissionResult | null
   pSuccess: number | null
+  /**
+   * Sub-seed do RNG de evolução, sorteado ao resolver. O XP só é APLICADO na volta ao
+   * ginásio (PLAN §4.1, ajuste) — guardar o seed mantém a evolução determinística.
+   */
+  xpSeed?: number
 }
 
 export type DefenseStatus =
@@ -110,6 +115,10 @@ export interface CaptureSearch {
 /** Procurador voltando ao ginásio após capturar/dispensar — só fica idle ao chegar (PLAN §4.5). */
 export interface CaptureReturn {
   searcherId: string
+  /** Índice da área de captura (em captureSpots) de onde está voltando — marcador no mapa (#6). */
+  spotIndex: number
+  /** Capturou alguém nesta exploração? Define o ícone ✓/✗ do marcador na volta (#6). */
+  captured: boolean
   node: string
   path: string[]
   departAtMs: number

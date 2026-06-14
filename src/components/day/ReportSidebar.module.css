@@ -200,13 +200,16 @@
   letter-spacing: 0.04em;
 }
 
+/* Chat efêmero (ajuste): sem scrollbar; a mais velha fica no TOPO e as novas surgem
+   abaixo. Cada fala vive ~10s — quando a do topo some, as de baixo sobem para o lugar. */
 .log {
   display: flex;
   flex-direction: column;
+  justify-content: flex-start;
   gap: 8px;
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;
   padding-right: 2px;
 }
 
@@ -214,6 +217,27 @@
   display: flex;
   align-items: flex-start;
   gap: 6px;
+  /* Casado com GUIDE_MESSAGE_TTL_MS (10s): fade-in rápido, espera e fade-out no fim. */
+  animation: guideMsgLife 10s ease forwards;
+}
+
+@keyframes guideMsgLife {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  6% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  85% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
 }
 
 /* Retrato pequeno por mensagem (estilo chat) — placeholder até a arte do líder. */

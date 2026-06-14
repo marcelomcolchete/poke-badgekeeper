@@ -39,6 +39,12 @@ export const RUN_AWAY_TRAVEL_FACTOR = 0.5
 export const TRAVEL_MS_PER_DISTANCE = 2_200
 
 /**
+ * Missões §4.3 (ajuste): time que CUMPRE a missão volta animado — +50% de velocidade na
+ * volta (o trecho de retorno dura tempo / 1,5). Em falha, a volta é normal.
+ */
+export const RETURN_SPEED_BONUS_ON_SUCCESS = 1.5
+
+/**
  * Missões §4.3: a Agilidade total do time reduz o tempo de viagem em 0,5% por ponto
  * (10 → −5%, 100 → −50%). Como a soma do time é capada em 100, a redução máxima é 50%.
  */

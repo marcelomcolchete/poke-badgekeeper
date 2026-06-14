@@ -6,7 +6,13 @@
 import type { MouseEvent, ReactNode } from 'react'
 import type { MapPos, Pokemon } from '../../types/index.ts'
 import type { CityGraph } from '../../data/types.ts'
-import type { DefenseEvent, GameState, MissionInstance } from '../../engine/state.ts'
+import type {
+  CaptureReturn,
+  CaptureSearch,
+  DefenseEvent,
+  GameState,
+  MissionInstance,
+} from '../../engine/state.ts'
 import { getCity, markerPos } from '../../data/cities.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
 import { pointAlongPath } from '../../engine/pathfinding.ts'
@@ -89,22 +95,20 @@ export function CityMap({ state, onMission, onDefense, onSpot }: Props) {
         )}
 
         {state.captureSpots.map((node, i) => {
-          if (state.today.exploredSpots.includes(i)) return null // área já explorada hoje
           if (now < (state.captureSpotSpawnsAtMs[i] ?? 0)) return null // ainda não surgiu (#7)
-          const ready = state.encounters.some((e) => e.spotIndex === i)
-          const searching = state.captureSearches.some((c) => c.spotIndex === i)
+          const ret = state.captureReturns.find((r) => r.spotIndex === i)
+          // Área explorada some — mas se há um procurador VOLTANDO dela, mantém o ✓/✗ (#6).
+          if (state.today.exploredSpots.includes(i) && !ret) return null
           return (
             <div key={`spot-${i}`} className={styles.anchor} style={posStyle(markerPos(graph, node))}>
-              <button
-                type="button"
-                className={`${styles.disc} ${styles.capture} ${ready ? styles.ready : ''}`}
+              <ExplorationMarker
+                spotIndex={i}
+                search={state.captureSearches.find((c) => c.spotIndex === i)}
+                ret={ret}
+                ready={state.encounters.some((e) => e.spotIndex === i)}
+                now={now}
                 onClick={() => onSpot(i)}
-                aria-label={`Área de captura ${i + 1}`}
-              >
-                🌿
-                {ready && <span className={styles.tag}>!</span>}
-                {!ready && searching && <span className={styles.tag}>…</span>}
-              </button>
+              />
             </div>
           )
         })}
@@ -275,6 +279,122 @@ function MissionMarker({
       aria-label={v.ariaLabel}
     >
       <span className={`${styles.icon} ${v.iconClass}`}>{v.content}</span>
+    </button>
+  )
+}
+
+interface ExplorationVisual {
+  iconClass: string | undefined
+  ringColor: string
+  content: ReactNode
+  fraction: number
+  pulse: boolean
+  ariaLabel: string
+  /** Estados em ação (clicáveis); a volta é só informativa. */
+  interactive: boolean
+}
+
+/**
+ * Marcador da área de exploração espelhando o das missões (#6): 👣 + anel ao IR, "…" ao
+ * procurar, "!" no encontro e ✓/✗ + anel ao VOLTAR (capturou = ✓). Sem nada em ação,
+ * mostra a grama clicável (mandar um Pokémon procurar).
+ */
+function explorationVisual(
+  search: CaptureSearch | undefined,
+  ret: CaptureReturn | undefined,
+  ready: boolean,
+  now: number,
+): ExplorationVisual {
+  if (ret) {
+    const ok = ret.captured
+    return {
+      iconClass: ok ? styles.winIcon : styles.failIcon,
+      ringColor: ok ? '#4f9e3f' : '#e0683c',
+      content: ok ? '✓' : '✗',
+      fraction: remainingFraction(now, ret.departAtMs, ret.arriveAtMs),
+      pulse: false,
+      ariaLabel: ok ? 'Pokémon capturado, voltando' : 'Sem captura, voltando',
+      interactive: false,
+    }
+  }
+  if (ready) {
+    return {
+      iconClass: styles.bang,
+      ringColor: 'var(--c-hud-accent)',
+      content: '!',
+      fraction: 1,
+      pulse: true,
+      ariaLabel: 'Encontro pronto na área',
+      interactive: true,
+    }
+  }
+  if (search?.phase === 'searching') {
+    return {
+      iconClass: styles.workIcon,
+      ringColor: '#e0a93c',
+      content: <Dots />,
+      fraction: remainingFraction(now, search.arriveAtMs, search.readyAtMs),
+      pulse: false,
+      ariaLabel: 'Explorando a área',
+      interactive: true,
+    }
+  }
+  if (search?.phase === 'traveling') {
+    return {
+      iconClass: styles.travelIcon,
+      ringColor: '#4f86d6',
+      content: '👣',
+      fraction: remainingFraction(now, search.departAtMs, search.arriveAtMs),
+      pulse: false,
+      ariaLabel: 'A caminho da área de exploração',
+      interactive: true,
+    }
+  }
+  return {
+    iconClass: undefined,
+    ringColor: 'var(--c-grass-dark)',
+    content: '🌿',
+    fraction: 1,
+    pulse: true,
+    ariaLabel: 'Área de exploração',
+    interactive: true,
+  }
+}
+
+function ExplorationMarker({
+  spotIndex,
+  search,
+  ret,
+  ready,
+  now,
+  onClick,
+}: {
+  spotIndex: number
+  search: CaptureSearch | undefined
+  ret: CaptureReturn | undefined
+  ready: boolean
+  now: number
+  onClick: () => void
+}) {
+  const v = explorationVisual(search, ret, ready, now)
+  const className = `${styles.ring} ${v.pulse ? '' : styles.ringBusy}`
+  const inner = <span className={`${styles.icon} ${v.iconClass ?? ''}`}>{v.content}</span>
+  if (!v.interactive) {
+    return (
+      <span className={className} style={ringStyle(v.fraction, v.ringColor)} aria-label={v.ariaLabel}>
+        {inner}
+      </span>
+    )
+  }
+  return (
+    <button
+      type="button"
+      className={className}
+      style={ringStyle(v.fraction, v.ringColor)}
+      onClick={onClick}
+      aria-label={`${v.ariaLabel} ${spotIndex + 1}`}
+    >
+      {inner}
     </button>
   )
 }
