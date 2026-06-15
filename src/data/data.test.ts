@@ -9,7 +9,7 @@ import {
 } from '../engine/constants.ts'
 import { allSpecies, getSpecies, wildCandidates } from './pokemon/index.ts'
 import { singleTypeMultiplier, typeMultiplier } from './typeChart.ts'
-import { CITIES } from './cities.ts'
+import { CITIES, getCity, markerPos } from './cities.ts'
 import { ITEMS } from './items.ts'
 import { MISSION_TEMPLATES } from './missionTemplates.ts'
 import { PASSIVES } from './passives.ts'
@@ -155,5 +155,18 @@ describe('cidades, itens, missões, passivas', () => {
         expect(nodes[id], `sítio ${id} fora do grafo`).toBeDefined()
       }
     }
+  })
+
+  it('marcador fica SOBRE o número (não na letra) e desempata ponto com 2 números', () => {
+    const g = getCity(0).graph
+    // 'g' hospeda casa (6.2) e grama (3.3): cada tipo cai no seu número, em lugares distintos.
+    const house = markerPos(g, 'g', 'house')
+    const green = markerPos(g, 'g', 'green')
+    expect(house).not.toEqual(green)
+    expect(green).toEqual(g.markers.g) // verde usa o marcador do próprio ponto (3.3)
+    expect(markerPos(g, 'g')).toEqual(g.markers.g) // sem tipo → marcador do ponto, não a letra
+    // Ponto de número único (centro): o tipo não muda nada e fica sobre o prédio (≠ letra).
+    expect(markerPos(g, 'p', 'center')).toEqual(g.markers.p)
+    expect(markerPos(g, 'p', 'center')).not.toEqual(g.nodes.p)
   })
 })

@@ -13,32 +13,31 @@ import type { CityData, CityGraph, CitySiteNodes } from './types.ts'
 // classes; as demais cidades REPLICAM essa lista por enquanto, até terem elenco próprio.
 const PEWTER_TRAINERS: TrainerId[] = [...TRAINER_IDS]
 
-// Pewter (1.png): grafo calibrado sobre a arte anotada. 19 pontos (a–s); o ginásio é 'j'.
+// Pewter (1.png): grafo calibrado sobre a arte anotada. 17 pontos (a–q); o ginásio é 'j'.
 // Posições normalizadas (0–1) — estimadas da arte e refináveis com o DEV picker do CityMap.
 const PEWTER_NODES: Record<string, MapPos> = {
-  a: { x: 0.555, y: 0.207 },
-  b: { x: 0.672, y: 0.208 },
-  c: { x: 0.307, y: 0.282 },
-  d: { x: 0.423, y: 0.282 },
-  e: { x: 0.492, y: 0.282 },
-  f: { x: 0.492, y: 0.364 },
-  g: { x: 0.615, y: 0.364 },
-  h: { x: 0.672, y: 0.364 },
-  i: { x: 0.305, y: 0.468 },
-  j: { x: 0.4, y: 0.468 },
-  k: { x: 0.497, y: 0.507 },
-  l: { x: 0.555, y: 0.507 },
-  m: { x: 0.672, y: 0.507 },
-  n: { x: 0.423, y: 0.657 },
-  o: { x: 0.493, y: 0.657 },
-  p: { x: 0.327, y: 0.752 },
-  q: { x: 0.493, y: 0.752 },
-  r: { x: 0.594, y: 0.752 },
-  s: { x: 0.672, y: 0.752 },
+  a: { x: 0.53, y: 0.165 },
+  b: { x: 0.803, y: 0.162 },
+  c: { x: 0.154, y: 0.302 },
+  d: { x: 0.365, y: 0.301 },
+  e: { x: 0.488, y: 0.302 },
+  f: { x: 0.488, y: 0.441 },
+  g: { x: 0.706, y: 0.441 },
+  h: { x: 0.803, y: 0.441 },
+  i: { x: 0.155, y: 0.626 },
+  j: { x: 0.323, y: 0.623 },
+  k: { x: 0.488, y: 0.699 },
+  l: { x: 0.58, y: 0.699 },
+  m: { x: 0.805, y: 0.699 },
+  n: { x: 0.241, y: 0.779 },
+  o: { x: 0.241, y: 0.959 },
+  p: { x: 0.365, y: 0.959 },
+  q: { x: 0.473, y: 0.959 },
 }
 
-// Arestas NÃO-direcionadas (o '-' liga os dois sentidos). Derivadas da anotação do mapa;
-// 'm' liga a 'l' (não a 'i', que fica na ponta oposta), confirmando o exemplo j→…→q.
+// Arestas NÃO-direcionadas (o '-' liga os dois sentidos), conforme o CSV de Pewter.
+// O cluster n–o–p–q é alcançado a partir do resto só por 'q' (q–k); 'j' (ginásio) e 'a'/'n'
+// são becos sem saída de 1 vizinho.
 const PEWTER_EDGES: [string, string][] = [
   ['a', 'b'],
   ['b', 'h'],
@@ -52,14 +51,11 @@ const PEWTER_EDGES: [string, string][] = [
   ['h', 'm'],
   ['i', 'j'],
   ['k', 'l'],
-  ['k', 'o'],
+  ['k', 'q'],
   ['l', 'm'],
-  ['m', 's'],
   ['n', 'o'],
-  ['o', 'q'],
+  ['o', 'p'],
   ['p', 'q'],
-  ['q', 'r'],
-  ['r', 's'],
 ]
 
 /** Monta a adjacência simétrica a partir da lista de arestas (vizinhos ordenados). */
@@ -79,22 +75,22 @@ function buildAdjacency(
 
 // Âncoras de EXIBIÇÃO (PLAN §3.1): onde o popup/marcador aparece SOBRE a arte — os
 // "números" da imagem anotada (3.1, 6.2, o "1" do ginásio…), distintos do ponto de
-// PARADA (a letra para onde o Pokémon caminha). Ex.: a captura 3.6 aparece no fim do
-// caminho de baixo, mas o time só desce até o ponto 'q'. Estimadas da arte e refináveis
-// com o DEV picker do CityMap. Nós sem entrada usam o próprio ponto do grafo.
+// PARADA (a letra para onde o Pokémon caminha). Estimadas da arte e refináveis com o DEV
+// picker do CityMap. Nós sem entrada usam o próprio ponto do grafo.
+// OBS.: 'g' hospeda DOIS números (6.2 casa + 3.3 grama). O marcador desempata por TIPO:
+// chave composta "g:house" → casa (6.2); o 'g' simples cobre o verde/captura (3.3).
 const PEWTER_MARKERS: Record<string, MapPos> = {
-  j: { x: 0.401, y: 0.4 }, // 1 — ginásio (sobre o prédio)
-  n: { x: 0.423, y: 0.578 }, // 2 — centro
-  l: { x: 0.543, y: 0.435 }, // 4 — mart
-  d: { x: 0.423, y: 0.198 }, // 5 — museu
-  p: { x: 0.327, y: 0.685 }, // 6.1 — casa
-  a: { x: 0.518, y: 0.197 }, // 6.2 — casa
-  g: { x: 0.612, y: 0.298 }, // 6.3 — casa
-  c: { x: 0.305, y: 0.193 }, // 3.1 — área verde
-  b: { x: 0.628, y: 0.193 }, // 3.2 — área verde
-  m: { x: 0.727, y: 0.542 }, // 3.4 — área verde
-  r: { x: 0.594, y: 0.676 }, // 3.5 — horta
-  q: { x: 0.477, y: 0.878 }, // 3.6 — área verde (fim do caminho de baixo)
+  j: { x: 0.323, y: 0.435 }, // 1 — ginásio (sobre o prédio)
+  p: { x: 0.365, y: 0.778 }, // 2 — centro (sobre o P.C)
+  l: { x: 0.58, y: 0.537 }, // 4 — mart (sobre o prédio)
+  d: { x: 0.358, y: 0.072 }, // 5 — museu
+  a: { x: 0.529, y: 0.042 }, // 6.1 — casa (prédio rosa, topo)
+  g: { x: 0.704, y: 0.569 }, // 3.3 — grama (padrão de 'g': verde/captura)
+  'g:house': { x: 0.703, y: 0.299 }, // 6.2 — casa (quando a missão é de casa)
+  c: { x: 0.161, y: 0.054 }, // 3.1 — grama
+  b: { x: 0.74, y: 0.056 }, // 3.2 — grama
+  m: { x: 0.924, y: 0.731 }, // 3.4 — grama
+  n: { x: 0.159, y: 0.778 }, // 3.5 — grama
 }
 
 const PEWTER_GRAPH: CityGraph = {
@@ -106,11 +102,11 @@ const PEWTER_GRAPH: CityGraph = {
 // Sítio → ponto do grafo (números da imagem anotada).
 const PEWTER_SITE_NODES: CitySiteNodes = {
   gym: 'j', // 1 (ginásio)
-  center: 'n', // 2 (centro)
+  center: 'p', // 2 (centro)
   mart: 'l', // 4 (mart)
-  museum: 'd', // 5 (museu)
-  houses: ['p', 'a', 'g'], // 6.1, 6.2, 6.3
-  green: ['c', 'b', 'm', 'r', 'q'], // 3.1, 3.2, 3.4, 3.5, 3.6
+  museum: 'd', // 5 (museu / Rocket Team)
+  houses: ['a', 'g'], // 6.1, 6.2
+  green: ['c', 'b', 'g', 'm', 'n'], // 3.1, 3.2, 3.3, 3.4, 3.5
 }
 
 interface CitySeed {
@@ -237,11 +233,17 @@ export function nodePos(graph: CityGraph, id: string): MapPos {
 }
 
 /**
- * Âncora de EXIBIÇÃO de um marcador (popup de missão/captura/defesa) — PLAN §3.1.
- * Usa a posição enumerada do mapa quando definida; senão, cai no ponto de parada.
- * Os Pokémon continuam caminhando até `nodePos`; só o ícone é desenhado aqui.
+ * Âncora de EXIBIÇÃO de um marcador (popup de missão/captura/defesa) — PLAN §3.1: o ícone
+ * aparece SOBRE o número da arte, não sobre a letra (ponto de parada). Quando um ponto
+ * hospeda mais de um número (ex.: 'g' = casa 6.2 + grama 3.3), `kind` desempata via a chave
+ * composta "ponto:tipo" (ex.: "g:house"). Sem chave composta, usa o marcador do ponto;
+ * sem marcador, cai no próprio ponto. Os Pokémon continuam caminhando até `nodePos`.
  */
-export function markerPos(graph: CityGraph, id: string): MapPos {
+export function markerPos(graph: CityGraph, id: string, kind?: SiteKind): MapPos {
+  if (kind) {
+    const keyed = graph.markers[`${id}:${kind}`]
+    if (keyed) return keyed
+  }
   return graph.markers[id] ?? nodePos(graph, id)
 }
 

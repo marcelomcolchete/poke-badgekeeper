@@ -279,6 +279,7 @@ export function createMissionInstance(spec: MissionInstanceSpec): MissionInstanc
   return {
     id: spec.id,
     templateId: template.id,
+    category: spec.category,
     requirement,
     secondaryAttr,
     node: spec.node,
