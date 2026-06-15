@@ -103,7 +103,7 @@ export const SECRET_ABILITIES: Record<number, SecretAbility> = {
   142: {
     id: 'secret-aerodactyl',
     name: 'Fly',
-    description: 'Leva o time voando direto do ginásio até o local da tarefa (viagem instantânea).',
+    description: 'Voa em linha reta do ginásio até o local da tarefa — bem mais rápido. Só quando despachado sozinho.',
   },
 }
 

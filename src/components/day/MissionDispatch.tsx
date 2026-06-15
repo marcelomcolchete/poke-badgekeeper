@@ -11,7 +11,7 @@ import { MAX_DISPATCH, MIN_DISPATCH, TEAM_ATTR_MAX } from '../../engine/constant
 import { getCity } from '../../data/cities.ts'
 import { getMissionTemplate, missionReward } from '../../data/missionTemplates.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
-import { missionDurationMs, missionSuccessProbabilityCtx } from '../../engine/missions.ts'
+import { missionDurationMs, missionSuccessProbabilityCtx, travelRoute } from '../../engine/missions.ts'
 import {
   teamHasAttrBoost,
   teamSecretSum,
@@ -19,7 +19,7 @@ import {
   type MissionSecretCtx,
 } from '../../engine/secretEffects.ts'
 import { sortRoster } from '../../engine/roster.ts'
-import { graphWithTunnel, pathDistance, shortestPath } from '../../engine/pathfinding.ts'
+import { graphWithTunnel } from '../../engine/pathfinding.ts'
 import { ATTR_LABEL_PT } from '../common/visual.ts'
 import { HexRadar } from '../HexRadar/HexRadar.tsx'
 import { PokemonCard } from '../PokemonCard/PokemonCard.tsx'
@@ -66,7 +66,7 @@ export function MissionDispatch({ state, dispatch, missionId, onClose }: Props) 
   const ctx: MissionSecretCtx = { team, template, runtime: state.today.secretRuntime }
   const probability = Math.round(missionSuccessProbabilityCtx(ctx, mission.requirement) * 100)
   const graph = graphWithTunnel(city.graph, state.today.digTunnel)
-  const distance = pathDistance(graph, shortestPath(graph, city.siteNodes.gym, mission.node))
+  const { flying, distance } = travelRoute(graph, city.siteNodes.gym, mission.node, team)
   const speedMult = teamTravelSpeedMultiplier(team, state.today.secretRuntime)
   const durationS = Math.round(missionDurationMs(team, distance, template, speedMult) / 1000)
   const boosted = teamHasAttrBoost(ctx)
@@ -104,6 +104,11 @@ export function MissionDispatch({ state, dispatch, missionId, onClose }: Props) 
           {boosted && (
             <p className={styles.missionReward}>
               <span aria-hidden="true">✦</span> Habilidade Secreta ativa nesta missão
+            </p>
+          )}
+          {flying && (
+            <p className={styles.missionReward}>
+              <span aria-hidden="true">🪽</span> Voando em linha reta (Fly, só sozinho)
             </p>
           )}
           <div className={styles.stats}>

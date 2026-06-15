@@ -27,6 +27,7 @@ import {
   graphTravelMs,
   missionSuccessProbabilityCtx,
   resolveMission,
+  travelRoute,
   type MissionOutcome,
 } from '../engine/missions.ts'
 import {
@@ -36,7 +37,7 @@ import {
   teamTravelSpeedMultiplier,
   type MissionSecretCtx,
 } from '../engine/secretEffects.ts'
-import { graphWithTunnel, pathDistance, shortestPath } from '../engine/pathfinding.ts'
+import { graphWithTunnel } from '../engine/pathfinding.ts'
 import { addXp } from '../engine/leveling.ts'
 import { createRng, type Rng } from '../engine/rng.ts'
 import { findMon, replaceMon, settleFaint, takeRng } from './runtime.ts'
@@ -92,14 +93,15 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
   const template = getMissionTemplate(mission.templateId)
   const now = s.clock.dayElapsedMs
   const graph = graphWithTunnel(city.graph, s.today.digTunnel)
-  const path = shortestPath(graph, city.siteNodes.gym, mission.node)
+  const { flying, path, distance } = travelRoute(graph, city.siteNodes.gym, mission.node, team)
   const speedMult = teamTravelSpeedMultiplier(team, s.today.secretRuntime)
-  const oneWay = graphTravelMs(pathDistance(graph, path), team, speedMult)
+  const oneWay = graphTravelMs(distance, team, speedMult)
   const execution = executionMs(team, template.baseExecutionMs)
   const ctx: MissionSecretCtx = { team, template, runtime: s.today.secretRuntime }
 
   mission.teamIds = team.map((p) => p.id)
   mission.path = path
+  mission.flying = flying
   mission.status = 'traveling'
   mission.acceptedAtMs = now
   mission.arriveAtMs = now + oneWay

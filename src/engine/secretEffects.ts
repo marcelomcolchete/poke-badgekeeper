@@ -96,9 +96,17 @@ export function teamSecretSum(ctx: MissionSecretCtx): Attrs {
 
 // ---- Viagem: velocidade do time e voo ----
 
-/** O time viaja instantâneo? (passiva Fly do museu OU Aerodactyl desbloqueado). */
+/** O time tem um voador? (passiva Fly do museu OU Aerodactyl desbloqueado). */
 export function teamHasFly(team: readonly Pokemon[]): boolean {
   return team.some((p) => p.passives.includes('fly') || activeSecretId(p) === 'secret-aerodactyl')
+}
+
+/**
+ * O time VOA nesta tarefa? Fly só funciona com o Pokémon SOZINHO (um único despachado):
+ * voa em linha reta do ginásio até o ponto (caminho andado bem menor → bem mais rápido).
+ */
+export function teamFliesSolo(team: readonly Pokemon[]): boolean {
+  return team.length === 1 && teamHasFly(team)
 }
 
 /**

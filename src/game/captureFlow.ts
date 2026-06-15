@@ -7,8 +7,8 @@ import type { CaptureReturn, CaptureSearch } from '../engine/state.ts'
 import { getCity } from '../data/cities.ts'
 import { getSpecies } from '../data/pokemon/index.ts'
 import { captureWild, rollEncounter, rosterIsFull, searchMs } from '../engine/capture.ts'
-import { graphTravelMs } from '../engine/missions.ts'
-import { graphWithTunnel, pathDistance, shortestPath } from '../engine/pathfinding.ts'
+import { graphTravelMs, travelRoute } from '../engine/missions.ts'
+import { graphWithTunnel } from '../engine/pathfinding.ts'
 import { createRng } from '../engine/rng.ts'
 import { findMon, replaceMon, takeId, takeRng } from './runtime.ts'
 
@@ -27,8 +27,8 @@ export function startSearch(s: GameState, searcherId: string, spotIndex: number)
 
   const city = getCity(s.run.cityIndex)
   const graph = graphWithTunnel(city.graph, s.today.digTunnel)
-  const path = shortestPath(graph, city.siteNodes.gym, node)
-  const oneWay = graphTravelMs(pathDistance(graph, path), [searcher])
+  const { flying, path, distance } = travelRoute(graph, city.siteNodes.gym, node, [searcher])
+  const oneWay = graphTravelMs(distance, [searcher])
   const now = s.clock.dayElapsedMs
   const arriveAtMs = now + oneWay
 
@@ -38,6 +38,7 @@ export function startSearch(s: GameState, searcherId: string, spotIndex: number)
     spotIndex,
     node,
     path,
+    flying,
     phase: 'traveling',
     departAtMs: now,
     arriveAtMs,
@@ -91,8 +92,8 @@ function startReturn(s: GameState, searcherId: string, spotIndex: number, captur
   const city = getCity(s.run.cityIndex)
   const node = s.captureSpots[spotIndex] ?? city.siteNodes.gym
   const graph = graphWithTunnel(city.graph, s.today.digTunnel)
-  const path = shortestPath(graph, city.siteNodes.gym, node)
-  const oneWay = graphTravelMs(pathDistance(graph, path), [searcher])
+  const { flying, path, distance } = travelRoute(graph, city.siteNodes.gym, node, [searcher])
+  const oneWay = graphTravelMs(distance, [searcher])
   const now = s.clock.dayElapsedMs
   replaceMon(s, { ...searcher, status: 'returning' })
   s.captureReturns.push({
@@ -101,6 +102,7 @@ function startReturn(s: GameState, searcherId: string, spotIndex: number, captur
     captured,
     node,
     path,
+    flying,
     departAtMs: now,
     arriveAtMs: now + oneWay,
   })
