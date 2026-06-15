@@ -13,8 +13,8 @@ import {
   sturdyPerGame,
 } from '../engine/secretEffects.ts'
 import { goldForDefense } from '../engine/economy.ts'
-import { addXp } from '../engine/leveling.ts'
 import { createRng } from '../engine/rng.ts'
+import { applyAutoItems, applyXpGains } from './itemFlow.ts'
 import { findMon, replaceMon, settleFaint, takeRng } from './runtime.ts'
 
 /** Promove a defesa a 'active' (símbolo no ginásio) e conta no total do dia (PLAN §3.1). */
@@ -101,7 +101,10 @@ export function assignDefense(s: GameState, defenseId: string, squadIds: string[
   const sturdyAvailableIds = new Set(
     squad.filter((p) => sturdyAvailable(p, s.today.secretRuntime)).map((p) => p.id),
   )
-  const resolution = resolveDefense(takeRng(s), squad, defense.enemies, { sturdyAvailableIds })
+  const resolution = resolveDefense(takeRng(s), squad, defense.enemies, {
+    sturdyAvailableIds,
+    runItems: s.runItems,
+  })
 
   // Registra o desafiante derrotado (defeaterId + espécie) para o MVP/relatório.
   let theirs = 0
@@ -118,6 +121,8 @@ export function assignDefense(s: GameState, defenseId: string, squadIds: string[
   // HP/desmaio aplicados já (a batalha acontece agora); o XP fica para completeDefense.
   for (const member of resolution.squad) replaceMon(s, settleFaint(member))
   applyBattleSecretRuntime(s, squad, resolution)
+  // Itens automáticos: Potion cura feridos; Revive traz desmaiados de volta.
+  applyAutoItems(s)
 
   defense.squadIds = squad.map((p) => p.id)
   defense.duels = resolution.duels
@@ -157,11 +162,7 @@ export function completeDefense(s: GameState, defenseId: string): void {
   }
 
   const evoRng = createRng(defense.xpSeed ?? 0)
-  for (const [id, xp] of xpById) {
-    const mon = findMon(s, id)
-    if (!mon || xp <= 0) continue
-    replaceMon(s, addXp(mon, xp, evoRng).pokemon)
-    s.today.xpEarned += xp
-  }
+  applyXpGains(s, xpById, evoRng)
+  for (const xp of xpById.values()) s.today.xpEarned += xp
   defense.xpApplied = true
 }

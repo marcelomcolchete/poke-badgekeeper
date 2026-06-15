@@ -11,6 +11,7 @@ import { ALL_DEFENSES_WON_BONUS } from '../engine/balance.ts'
 import { applyApproval, approvalDelta, dailyGoalMet } from '../engine/approval.ts'
 import { buildDaySummary, toDayLog } from '../engine/daySummary.ts'
 import { secretAbilityFor, SECRET_MAX_LEVEL, secretLevelOf } from '../data/secretAbilities.ts'
+import { recomputeMaxHp } from '../engine/attributes.ts'
 import {
   completeRocketBattle,
   expireMission,
@@ -172,7 +173,13 @@ function startNextDay(s: GameState): void {
   s.clock.speed = 0
 }
 
-/** Cura todos os Pokémon e os deixa disponíveis (descanso entre dias). */
+/**
+ * Cura todos os Pokémon e os deixa disponíveis (descanso entre dias). Também limpa os buffs
+ * diários de itens x_* (dayBuffs) e recalcula o HP — o efeito só vale no dia da compra.
+ */
 function healRoster(s: GameState): void {
-  s.roster = s.roster.map((p) => ({ ...p, currentHp: p.maxHp, status: 'idle' }))
+  s.roster = s.roster.map((p) => {
+    const cleared = recomputeMaxHp({ ...p, dayBuffs: undefined })
+    return { ...cleared, currentHp: cleared.maxHp, status: 'idle' }
+  })
 }

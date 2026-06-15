@@ -63,11 +63,16 @@ export function MissionDispatch({ state, dispatch, missionId, onClose }: Props) 
   const team: Pokemon[] = selected
     .map((id) => state.roster.find((p) => p.id === id))
     .filter((p): p is Pokemon => p !== undefined)
-  const ctx: MissionSecretCtx = { team, template, runtime: state.today.secretRuntime }
+  const ctx: MissionSecretCtx = {
+    team,
+    template,
+    runtime: state.today.secretRuntime,
+    runItems: state.runItems,
+  }
   const probability = Math.round(missionSuccessProbabilityCtx(ctx, mission.requirement) * 100)
   const graph = graphWithTunnel(city.graph, state.today.digTunnel)
   const { flying, distance } = travelRoute(graph, city.siteNodes.gym, mission.node, team)
-  const speedMult = teamTravelSpeedMultiplier(team, state.today.secretRuntime)
+  const speedMult = teamTravelSpeedMultiplier(team, state.today.secretRuntime, state.runItems)
   const durationS = Math.round(missionDurationMs(team, distance, template, speedMult) / 1000)
   const boosted = teamHasAttrBoost(ctx)
   const valid = selected.length >= MIN_DISPATCH && selected.length <= MAX_DISPATCH

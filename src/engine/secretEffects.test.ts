@@ -29,8 +29,13 @@ const ENSINO = getMissionTemplate('ensino')
 const PATRULHA = getMissionTemplate('patrulha')
 const PALESTRA = getMissionTemplate('palestra')
 
-function ctxOf(team: ReturnType<typeof makeMon>[], template = PALESTRA, runtime = {}): MissionSecretCtx {
-  return { team, template, runtime }
+function ctxOf(
+  team: ReturnType<typeof makeMon>[],
+  template = PALESTRA,
+  runtime = {},
+  runItems: string[] = [],
+): MissionSecretCtx {
+  return { team, template, runtime, runItems }
 }
 
 describe('activeSecretId', () => {

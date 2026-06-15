@@ -19,6 +19,7 @@ import { MissionRevealModal } from './MissionRevealModal.tsx'
 import { DefensePanel } from './DefensePanel.tsx'
 import { RocketBattlePanel } from './RocketBattlePanel.tsx'
 import { CapturePanel } from './CapturePanel.tsx'
+import { ItemsBar } from '../common/ItemsBar.tsx'
 import styles from './DayScreen.module.css'
 
 type Selection =
@@ -175,6 +176,10 @@ export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) 
             onSpeedChange={setSpeed}
             onQuit={() => setOpen({ kind: 'quit' })}
           />
+        </div>
+
+        <div className={styles.itemsFloat}>
+          <ItemsBar state={state} />
         </div>
       </div>
 

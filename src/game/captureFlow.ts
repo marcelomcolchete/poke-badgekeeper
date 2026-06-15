@@ -29,10 +29,12 @@ export function startSearch(s: GameState, searcherId: string, spotIndex: number)
   const city = getCity(s.run.cityIndex)
   const graph = graphWithTunnel(city.graph, s.today.digTunnel)
   const { flying, path, distance } = travelRoute(graph, city.siteNodes.gym, node, [searcher])
-  const speedMult = teamTravelSpeedMultiplier([searcher], s.today.secretRuntime)
+  const speedMult = teamTravelSpeedMultiplier([searcher], s.today.secretRuntime, s.runItems)
   const oneWay = graphTravelMs(distance, [searcher], speedMult)
   const now = s.clock.dayElapsedMs
   const arriveAtMs = now + oneWay
+  // Fast Ball: a busca é resolvida na hora em que o Pokémon chega na área (sem tempo de busca).
+  const instant = s.runItems.includes('fast-ball')
 
   replaceMon(s, { ...searcher, status: 'traveling' })
   s.captureSearches.push({
@@ -44,7 +46,7 @@ export function startSearch(s: GameState, searcherId: string, spotIndex: number)
     phase: 'traveling',
     departAtMs: now,
     arriveAtMs,
-    readyAtMs: arriveAtMs + searchMs(searcher),
+    readyAtMs: instant ? arriveAtMs : arriveAtMs + searchMs(searcher),
   })
 }
 
@@ -95,7 +97,7 @@ function startReturn(s: GameState, searcherId: string, spotIndex: number, captur
   const node = s.captureSpots[spotIndex] ?? city.siteNodes.gym
   const graph = graphWithTunnel(city.graph, s.today.digTunnel)
   const { flying, path, distance } = travelRoute(graph, city.siteNodes.gym, node, [searcher])
-  const speedMult = teamTravelSpeedMultiplier([searcher], s.today.secretRuntime)
+  const speedMult = teamTravelSpeedMultiplier([searcher], s.today.secretRuntime, s.runItems)
   const oneWay = graphTravelMs(distance, [searcher], speedMult)
   const now = s.clock.dayElapsedMs
   replaceMon(s, { ...searcher, status: 'returning' })

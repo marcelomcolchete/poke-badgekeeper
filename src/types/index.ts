@@ -108,6 +108,11 @@ export interface Pokemon {
    * habilidade ainda não desbloqueada (ou save antigo, migrado para 1 se já tinha a passiva).
    */
   secretLevel?: number
+  /**
+   * Buffs temporários por eixo aplicados por itens x_* (somados ao atributo efetivo, afetando
+   * inclusive o HP). Valem só no dia da compra e são limpos na virada do dia. Ausente = sem buff.
+   */
+  dayBuffs?: Partial<Attrs>
   /** Sexo sorteado na captura/criação pela proporção da espécie (PLAN §4.5). */
   gender: Gender
   /** Apelido dado pelo jogador na captura; null = usa o nome da espécie. */

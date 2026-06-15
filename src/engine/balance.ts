@@ -206,7 +206,17 @@ export const DIG_GYM_ANCHOR_LEVEL = 3
 /** Dig (Diglett): custo do túnel entre os pontos (distância-do-grafo, bem baixa = atalho). */
 export const DIG_TUNNEL_COST = 0.4
 
-/** Itens §4.6: cura/revive (HP é 1–10, então poucos pontos já contam). */
-export const POTION_HEAL = 3
-export const SUPER_POTION_HEAL = 7
-export const REVIVE_HP_FRACTION = 0.5
+// ---- Sistema de Itens (PLAN — Itens) ----
+
+/** x_*: quanto cada item de atributo soma a todo o time no dia. */
+export const STAT_BUFF_AMOUNT = 5
+/** Eviolite: multiplicador de missão p/ Pokémon que ainda não chegaram à última evolução. */
+export const EVIOLITE_MISSION_MULT = 1.1
+/** Lagging Tail: +50% em missões e batalhas, porém 50% mais lento nas viagens de missão. */
+export const LAGGING_TAIL_MISSION_MULT = 1.5
+export const LAGGING_TAIL_BATTLE_MULT = 1.5
+export const LAGGING_TAIL_TRAVEL_MULT = 0.5
+/** Thick Club: +50% em batalhas para Pokémon do tipo Ground. */
+export const THICK_CLUB_BATTLE_MULT = 1.5
+/** Exp Share: fração da XP de um Pokémon repassada ao resto do time. */
+export const EXP_SHARE_RATE = 0.05

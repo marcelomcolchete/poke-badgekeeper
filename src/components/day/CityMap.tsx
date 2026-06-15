@@ -179,7 +179,7 @@ function MapTravelers({ state, graph, now }: { state: GameState; graph: CityGrap
         const team = m.teamIds
           .map((id) => state.roster.find((p) => p.id === id))
           .filter((p): p is Pokemon => p !== undefined)
-        const speedy = teamTravelSpeedMultiplier(team, state.today.secretRuntime) > 1
+        const speedy = teamTravelSpeedMultiplier(team, state.today.secretRuntime, state.runItems) > 1
         return (
           <TravelerGroup
             key={`m-${m.id}`}

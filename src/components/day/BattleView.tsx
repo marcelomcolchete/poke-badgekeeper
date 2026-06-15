@@ -9,6 +9,7 @@ import type { DuelLog } from '../../engine/gymDefense.ts'
 import type { TrainerDef } from '../../data/trainers.ts'
 import { effectiveAttr } from '../../engine/attributes.ts'
 import { effectiveBattle, enemyRank, typeAdvantageMultiplier } from '../../engine/gymDefense.ts'
+import { itemBattleMultiplier } from '../../engine/itemEffects.ts'
 import { pokemonRank, type Rank } from '../../engine/ranking.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
 import { RANK_COLOR } from '../common/visual.ts'
@@ -34,14 +35,21 @@ interface Round {
  * Reconstrói a ordem de confrontos a partir do log de duelos (mesma lógica da engine),
  * anexando o poder de batalha efetivo (já com vantagem/desvantagem de tipo) dos dois lados.
  */
-function buildRounds(enemies: readonly EnemyUnit[], duels: readonly DuelLog[], roster: readonly Pokemon[]): Round[] {
+function buildRounds(
+  enemies: readonly EnemyUnit[],
+  duels: readonly DuelLog[],
+  roster: readonly Pokemon[],
+  runItems: readonly string[],
+): Round[] {
   const rounds: Round[] = []
   let theirs = 0
   for (const duel of duels) {
     const enemy = enemies[theirs]
     if (!enemy) break
     const mon = roster.find((p) => p.id === duel.yourId)
-    const yourBattle = mon ? Math.round(effectiveBattle(mon, enemy.types)) : 0
+    const yourBattle = mon
+      ? Math.round(effectiveBattle(mon, enemy.types) * itemBattleMultiplier(mon, runItems))
+      : 0
     const enemyBattle = mon
       ? Math.round(enemy.battle * typeAdvantageMultiplier(enemy.types, mon.types))
       : enemy.battle
@@ -95,7 +103,7 @@ export function BattleView({
   lostText,
   onFinish,
 }: BattleViewProps) {
-  const rounds = buildRounds(enemies, duels, state.roster)
+  const rounds = buildRounds(enemies, duels, state.roster, state.runItems)
   const [step, setStep] = useState(0)
   const done = step >= rounds.length
   const current = done ? null : (rounds[step] as Round)
