@@ -91,7 +91,7 @@ export function assignDefense(s: GameState, defenseId: string, squadIds: string[
   }
 
   // HP/desmaio aplicados já (a batalha acontece agora); o XP fica para completeDefense.
-  for (const member of resolution.squad) replaceMon(s, settleFaint(s, member))
+  for (const member of resolution.squad) replaceMon(s, settleFaint(member))
 
   defense.squadIds = squad.map((p) => p.id)
   defense.duels = resolution.duels

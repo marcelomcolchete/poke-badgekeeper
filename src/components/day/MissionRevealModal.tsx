@@ -25,6 +25,8 @@ interface Props {
   state: GameState
   mission: MissionInstance
   onClose: () => void
+  /** Missão Rocket cumprida: inicia a batalha (em vez de "Continuar"). */
+  onBattle?: () => void
 }
 
 interface Pt {
@@ -64,8 +66,10 @@ function landingPoint(requirement: Attrs, team: Attrs, success: boolean): Pt {
   return axis((mid / AXIS_MAX) * RADIUS, worst)
 }
 
-export function MissionRevealModal({ state, mission, onClose }: Props) {
+export function MissionRevealModal({ state, mission, onClose, onBattle }: Props) {
   const template = getMissionTemplate(mission.templateId)
+  // Rocket cumprida e ainda sem batalha: a tela mostra "Batalhar" e nenhuma recompensa.
+  const rocketPending = !!mission.rocket && !mission.rocket.resolved
   const team: Pokemon[] = mission.teamIds
     .map((id) => state.roster.find((p) => p.id === id))
     .filter((p): p is Pokemon => p !== undefined)
@@ -105,7 +109,11 @@ export function MissionRevealModal({ state, mission, onClose }: Props) {
   }, [landing])
 
   return (
-    <Overlay title={`MISSÃO — ${template.name.toUpperCase()}`} onClose={onClose}>
+    // Rocket cumprida: a batalha é obrigatória — sem fechar a tela (só o botão "Batalhar").
+    <Overlay
+      title={`MISSÃO — ${template.name.toUpperCase()}`}
+      onClose={rocketPending ? undefined : onClose}
+    >
       <div className={styles.reveal}>
         <div className={styles.radarWrap}>
           <HexRadar requirement={requirement} teamSum={sum} size={SIZE} axisMax={AXIS_MAX} />
@@ -127,7 +135,13 @@ export function MissionRevealModal({ state, mission, onClose }: Props) {
         </p>
         {percent !== null && <p className={styles.chance}>Chance de sucesso: {percent}%</p>}
 
-        {settled && (
+        {settled && rocketPending && (
+          <p className={styles.chance}>
+            ⚔️ A Equipe Rocket apareceu! Vença a batalha para receber ouro + 3× XP.
+          </p>
+        )}
+
+        {settled && !rocketPending && (
           <div className={styles.results}>
             <span className={styles.resultsTitle}>
               {success ? 'Recompensas' : 'Time de volta ao ginásio'}
@@ -174,9 +188,20 @@ export function MissionRevealModal({ state, mission, onClose }: Props) {
           </div>
         )}
 
-        <button type="button" className={styles.continue} onClick={onClose} disabled={!settled}>
-          Continuar ▶
-        </button>
+        {rocketPending ? (
+          <button
+            type="button"
+            className={styles.continue}
+            onClick={onBattle}
+            disabled={!settled || !onBattle}
+          >
+            Batalhar ⚔️
+          </button>
+        ) : (
+          <button type="button" className={styles.continue} onClick={onClose} disabled={!settled}>
+            Continuar ▶
+          </button>
+        )}
       </div>
     </Overlay>
   )

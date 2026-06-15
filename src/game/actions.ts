@@ -22,6 +22,10 @@ export type GameAction =
   | { type: 'ASSIGN_DEFENSE'; defenseId: string; squadIds: string[] }
   /** Conclui a batalha de defesa (após a animação): aplica o XP/level-up das vitórias — §4.4. */
   | { type: 'COMPLETE_DEFENSE'; defenseId: string }
+  /** Resolve a batalha da missão Equipe Rocket (cadeia de duelos com o time despachado). */
+  | { type: 'RESOLVE_ROCKET_BATTLE'; missionId: string }
+  /** Conclui a batalha Rocket (após a animação): na vitória, ouro-bônus + 3× XP — Rocket Team. */
+  | { type: 'COMPLETE_ROCKET_BATTLE'; missionId: string }
   /** Manda um Pokémon explorar uma área de captura — PLAN §4.5. */
   | { type: 'START_SEARCH'; searcherId: string; spotIndex: number }
   /** No encontro: captura o candidato (por índice); com roster cheio, `releaseId` descarta um — §4.5. */

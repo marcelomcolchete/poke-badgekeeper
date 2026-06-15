@@ -23,11 +23,6 @@ export const PASSIVES: PassiveData[] = [
     name: 'Quick Claw',
     description: 'Aumenta a chance de agir primeiro nas batalhas de defesa.',
   },
-  {
-    id: 'fossil',
-    name: 'Fossil',
-    description: 'O primeiro Pokémon a desmaiar no dia revive com o HP cheio (1×/dia).',
-  },
 ]
 
 export function getPassive(id: string): PassiveData {

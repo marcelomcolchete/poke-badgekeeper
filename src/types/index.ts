@@ -63,7 +63,15 @@ export const TRAINER_IDS = [
   'RED',
 ] as const
 
-export type TrainerId = (typeof TRAINER_IDS)[number]
+/**
+ * Treinadores da Equipe Rocket (missão Rocket Team). Ficam FORA do pool de invasores do
+ * ginásio (TRAINER_IDS): só aparecem na batalha da missão Rocket (PLAN — Rocket Team).
+ */
+export const ROCKET_TRAINER_IDS = ['ROCKET_TEAM_MALE', 'ROCKET_TEAM_FEMALE'] as const
+
+export type RocketTrainerId = (typeof ROCKET_TRAINER_IDS)[number]
+
+export type TrainerId = (typeof TRAINER_IDS)[number] | RocketTrainerId
 
 /** Estado de um Pokémon do roster durante o dia (PLAN §5). */
 export type PokemonStatus =
@@ -108,17 +116,17 @@ export const SITE_KINDS = ['gym', 'center', 'mart', 'museum', 'house', 'green'] 
 export type SiteKind = (typeof SITE_KINDS)[number]
 
 /** Categoria temática de uma missão; cada uma só nasce no seu tipo de sítio. */
-export const MISSION_CATEGORIES = ['center', 'mart', 'house', 'freeArea', 'museum'] as const
+export const MISSION_CATEGORIES = ['center', 'mart', 'house', 'freeArea', 'rocket'] as const
 
 export type MissionCategory = (typeof MISSION_CATEGORIES)[number]
 
-/** Sítio onde cada categoria de missão surge no mapa. */
+/** Sítio onde cada categoria de missão surge no mapa (Rocket nasce no antigo ponto do museu). */
 export const CATEGORY_SITE: Record<MissionCategory, SiteKind> = {
   center: 'center',
   mart: 'mart',
   house: 'house',
   freeArea: 'green',
-  museum: 'museum',
+  rocket: 'museum',
 }
 
 /** Fase do dia (PLAN §3 / §5). GAMEOVER = derrota imediata (ex.: ginásio indefeso). */
@@ -139,4 +147,6 @@ export interface EnemyUnit {
   types: PokemonType[]
   /** Espécie do invasor — usada só para exibir o sprite na batalha (pode faltar em dados antigos/testes). */
   speciesId?: number
+  /** Desafiante em destaque: recebeu +15 de Batalha e exibe medalha (1 por esquadrão). */
+  buffed?: boolean
 }

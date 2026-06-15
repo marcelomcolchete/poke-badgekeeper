@@ -25,7 +25,7 @@ export interface RunInfo {
   seed: number
   phase: GamePhase
   /** Motivo da derrota quando phase === 'GAMEOVER' (mensagem da tela de fim de jogo). */
-  gameOverReason?: 'gym' | 'stars'
+  gameOverReason?: 'gym' | 'stars' | 'rocket'
 }
 
 export interface ClockState {
@@ -44,6 +44,7 @@ export type MissionStatus =
   | 'available' // popup no mapa, aceitável até expirar
   | 'traveling' // time a caminho da missão (ida) — PLAN §4.3
   | 'inProgress' // executando no local
+  | 'battle' // Rocket Team: parte de atributos concluída, aguardando a batalha do jogador
   | 'returning' // desfecho aplicado; time voltando ao ginásio
   | 'resolved' // concluída e time já em casa (ver result)
 
@@ -93,6 +94,30 @@ export interface MissionInstance {
    * tela de finalização. Ausente em falha/missões antigas (cai no fallback 0).
    */
   xpAwards?: Record<string, number>
+  /**
+   * Batalha da Equipe Rocket: presente só nas missões Rocket que CUMPRIRAM a parte de
+   * atributos. O time enfrenta o treinador na ordem em que foi despachado; as recompensas
+   * (ouro-bônus + 3× XP) só são aplicadas ao VENCER (PLAN — Rocket Team).
+   */
+  rocket?: RocketBattle
+}
+
+/** Batalha da missão Equipe Rocket (anexada à instância após cumprir a parte de atributos). */
+export interface RocketBattle {
+  /** Treinador Rocket sorteado (define o elenco e a arte). */
+  trainerId: TrainerId
+  /** Esquadrão inimigo (mesma quantidade por dia que a defesa de ginásio), um em destaque. */
+  enemies: EnemyUnit[]
+  /** Log da cadeia de duelos, preenchido ao resolver a batalha. */
+  duels?: DuelLog[]
+  /** Venceu a batalha? (definido ao resolver). */
+  won?: boolean
+  /** Batalha já resolvida (HP/ouro aplicados)? Evita resolver duas vezes ao reabrir. */
+  resolved?: boolean
+  /** XP/recompensas já aplicados ao concluir a animação? (idempotência). */
+  rewardApplied?: boolean
+  /** Sub-seed de evolução do XP por vitória, sorteado ao resolver. */
+  xpSeed?: number
 }
 
 export type DefenseStatus =
@@ -215,8 +240,6 @@ export interface DayTally {
   defenseGold: number
   /** Estrelas no início do dia (preenchido no fechamento) — para o resumo. */
   starsBefore: number
-  /** Fossil já reviveu alguém hoje? (efeito 1×/dia). */
-  fossilUsed: boolean
   /** Áreas de captura já exploradas hoje (índices em captureSpots) — somem do mapa. */
   exploredSpots: number[]
   /** Inimigos derrotados em defesas hoje (MVP por derrotas + miniaturas no relatório). */
@@ -255,7 +278,7 @@ export interface GameState {
   approval: Approval
   gold: number
   inventory: ItemStack[]
-  /** Itens/passivas permanentes da run (ex.: 'fossil' do museu). */
+  /** Itens/passivas permanentes da run. */
   runItems: string[]
   today: DayTally
   history: DayLog[]
@@ -276,7 +299,6 @@ export function emptyTally(): DayTally {
     xpEarned: 0,
     defenseGold: 0,
     starsBefore: 0,
-    fossilUsed: false,
     exploredSpots: [],
     defenseKills: [],
     secretUnlock: null,

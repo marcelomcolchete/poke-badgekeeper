@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { POKEMON_TYPES } from '../types/index.ts'
 import { ATTR_MAX, DEFENSE_SQUAD_BY_DAY } from './constants.ts'
+import { DEFENSE_BUFF_BATTLE } from './balance.ts'
 import { createRng } from './rng.ts'
 import { getTrainer } from '../data/trainers.ts'
 import { getSpecies } from '../data/pokemon/index.ts'
@@ -149,17 +150,29 @@ describe('trainerSquadSpecies (PLAN §4.4)', () => {
 })
 
 describe('generateDefenseEnemies', () => {
-  it('respeita o tamanho, usa o elenco do treinador e a Batalha-base ±10', () => {
+  it('respeita o tamanho, usa o elenco do treinador e a Batalha-base ±10 (exceto o destaque)', () => {
     const typeSet = new Set<string>(POKEMON_TYPES)
     const brock = getTrainer('BROCK')
     const enemies = generateDefenseEnemies(createRng(1), brock, 6)
     expect(enemies).toHaveLength(6)
     for (const e of enemies) {
-      expect(e.battle).toBeLessThanOrEqual(ATTR_MAX)
       expect(e.battle).toBeGreaterThanOrEqual(0)
       const base = getSpecies(e.speciesId as number).baseAttrs.batalha
-      expect(Math.abs(e.battle - base)).toBeLessThanOrEqual(10)
+      // O destaque ganha +15 (pode passar do teto normal); os demais ficam em base ±10 e ≤ teto.
+      if (e.buffed) {
+        expect(e.battle - base).toBeLessThanOrEqual(10 + DEFENSE_BUFF_BATTLE)
+      } else {
+        expect(e.battle).toBeLessThanOrEqual(ATTR_MAX)
+        expect(Math.abs(e.battle - base)).toBeLessThanOrEqual(10)
+      }
       for (const t of e.types) expect(typeSet.has(t)).toBe(true)
+    }
+  })
+
+  it('exatamente um desafiante sai em destaque (+15 de Batalha e medalha)', () => {
+    for (let seed = 1; seed <= 20; seed++) {
+      const enemies = generateDefenseEnemies(createRng(seed), getTrainer('BROCK'), 4)
+      expect(enemies.filter((e) => e.buffed).length).toBe(1)
     }
   })
 

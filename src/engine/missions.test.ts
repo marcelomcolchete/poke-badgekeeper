@@ -3,7 +3,7 @@ import { ATTR_KEYS } from '../types/index.ts'
 import type { MissionTemplate } from '../data/types.ts'
 import { TEAM_ATTR_MAX } from './constants.ts'
 import { createRng } from './rng.ts'
-import { NORMAL_TEMPLATES, POKECENTER_TEMPLATE, MUSEUM_TEMPLATE } from '../data/missionTemplates.ts'
+import { NORMAL_TEMPLATES, POKECENTER_TEMPLATE, ROCKET_TEAM_TEMPLATE } from '../data/missionTemplates.ts'
 import {
   agilityTravelFactor,
   createMissionInstance,
@@ -151,14 +151,14 @@ describe('generateRequirement (rebalanceamento)', () => {
     expect(mega?.requirement.batalha).toBe(TEAM_ATTR_MAX) // principal + secundário no dia 8 satura em 70
   })
 
-  it('special5 (museu): 5 eixos principais + 1 resto e ao menos um no máximo (70)', () => {
+  it('special5 (Equipe Rocket): 5 eixos principais + 1 resto e ao menos um no máximo (70)', () => {
     for (let seed = 1; seed <= 20; seed++) {
-      const { requirement, secondaryAttr } = generateRequirement(createRng(seed), 3, MUSEUM_TEMPLATE)
+      const { requirement, secondaryAttr } = generateRequirement(createRng(seed), 3, ROCKET_TEAM_TEMPLATE)
       expect(secondaryAttr).toBeNull()
       // Principal (dia≥1) sempre > 20; resto sempre ≤ 20 → contagem separa os dois grupos.
       const principals = ATTR_KEYS.filter((k) => requirement[k] > 20).length
       expect(principals).toBe(5)
-      // Regra do museu: pelo menos um dos 5 principais obrigatoriamente no teto.
+      // Regra Rocket: pelo menos um dos 5 principais obrigatoriamente no teto.
       expect(ATTR_KEYS.some((k) => requirement[k] === TEAM_ATTR_MAX)).toBe(true)
     }
   })
@@ -232,17 +232,17 @@ describe('createMissionInstance (PLAN §3.1)', () => {
     expect(inst.teamIds).toEqual([])
   })
 
-  it('usa templateId fixo quando informado (missão de museu)', () => {
+  it('usa templateId fixo quando informado (missão Equipe Rocket)', () => {
     const inst = createMissionInstance({
       id: 'm2',
       rng: createRng(1),
       day: 5,
-      category: 'museum',
+      category: 'rocket',
       node: 'd',
       spawnAtMs: 0,
       lifetimeMs: 20_000,
-      templateId: 'museu',
+      templateId: 'rocket',
     })
-    expect(inst.templateId).toBe('museu')
+    expect(inst.templateId).toBe('rocket')
   })
 })

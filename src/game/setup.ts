@@ -26,6 +26,8 @@ export function setupDay(s: GameState): void {
   s.missions = schedule.missions.map((slot) => {
     const nodes = nodesForCategory(city.siteNodes, slot.category)
     const node = nodes[slot.siteIndex % nodes.length] ?? city.siteNodes.gym
+    // A missão Rocket dura igual a uma defesa de ginásio (timer mais longo); demais, o normal.
+    const lifetimeMs = slot.templateId === 'rocket' ? DEFENSE_LIFETIME_MS : MISSION_LIFETIME_MS
     return createMissionInstance({
       id: takeId(s, 'm'),
       rng: createRng(slot.seed),
@@ -33,7 +35,7 @@ export function setupDay(s: GameState): void {
       category: slot.category,
       node,
       spawnAtMs: slot.atMs,
-      lifetimeMs: MISSION_LIFETIME_MS,
+      lifetimeMs,
       templateId: slot.templateId,
     })
   })

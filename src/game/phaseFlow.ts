@@ -11,7 +11,13 @@ import { ALL_DEFENSES_WON_BONUS } from '../engine/balance.ts'
 import { applyApproval, approvalDelta, dailyGoalMet } from '../engine/approval.ts'
 import { buildDaySummary, toDayLog } from '../engine/daySummary.ts'
 import { secretAbilityFor } from '../data/secretAbilities.ts'
-import { expireMission, freeOnReturn, resolveMissionNow } from './missionFlow.ts'
+import {
+  completeRocketBattle,
+  expireMission,
+  freeOnReturn,
+  resolveMissionNow,
+  resolveRocketBattle,
+} from './missionFlow.ts'
 import { expireDefense } from './defenseFlow.ts'
 import { setupDay } from './setup.ts'
 import { findMon, replaceMon } from './runtime.ts'
@@ -114,10 +120,19 @@ function resolveLeftovers(s: GameState): void {
     if (mission.status === 'scheduled' || mission.status === 'available') {
       expireMission(s, mission)
     } else if (mission.status === 'traveling' || mission.status === 'inProgress') {
-      resolveMissionNow(s, mission) // aplica o desfecho…
-      freeOnReturn(s, mission) // …e traz o time de volta (fim do dia)
+      resolveMissionNow(s, mission) // aplica o desfecho… (pode virar 'battle' p/ Rocket)
+      // Rocket bem-sucedida no fechamento: resolve a batalha automaticamente; senão, volta.
+      if ((mission.status as string) === 'battle') {
+        resolveRocketBattle(s, mission.id)
+        completeRocketBattle(s, mission.id)
+      } else {
+        freeOnReturn(s, mission) // …e traz o time de volta (fim do dia)
+      }
     } else if (mission.status === 'returning') {
       freeOnReturn(s, mission)
+    } else if (mission.status === 'battle') {
+      resolveRocketBattle(s, mission.id)
+      completeRocketBattle(s, mission.id)
     }
   }
   for (const defense of s.defenses) expireDefense(defense)

@@ -7,22 +7,20 @@ import type { CityData } from '../data/types.ts'
 import type { MissionCategory } from '../types/index.ts'
 import { nodesForCategory } from '../data/cities.ts'
 import { createRng, deriveSeed, type Rng } from './rng.ts'
-import { DAY_LENGTH_MS, DAY_SEGMENTS, TOTAL_DAYS } from './constants.ts'
+import { DAY_LENGTH_MS, DAY_SEGMENTS, ROCKET_SEED_SALT, TOTAL_DAYS } from './constants.ts'
 import {
   CAPTURE_SPOTS_PER_DAY,
   DAILY_CATEGORY_POOL,
   DAY1_FIRST_MISSION_DELAY_MS,
   DEFENSES_PER_DAY,
   MISSIONS_PER_DAY,
-  MUSEUM_DAY_MAX,
-  MUSEUM_DAY_MIN,
   NORMAL_CATEGORY_POOL,
+  ROCKET_DAY_MAX,
+  ROCKET_DAY_MIN,
+  ROCKET_MISSIONS_TOTAL,
   SPAWN_WINDOW_FRACTION,
 } from './balance.ts'
 import { clamp } from './math.ts'
-
-/** Salt fixo para derivar o dia do museu a partir do seed da run. */
-const MUSEUM_SEED_SALT = 0x4d757365 // 'Muse'
 
 /** Índice (0..9) na tabela por dia — clamp p/ dias fora de 1..10. */
 function dayIndex(day: number): number {
@@ -48,7 +46,7 @@ export interface MissionSlot {
   category: MissionCategory
   /** Índice do sítio (dentro da lista da categoria) onde a missão surge. */
   siteIndex: number
-  /** Template fixo (missão de museu); ausente = sorteia da categoria. */
+  /** Template fixo (missão Equipe Rocket); ausente = sorteia da categoria. */
   templateId?: string
 }
 
@@ -67,9 +65,17 @@ export interface DaySchedule {
   captureSpawnsAtMs: number[]
 }
 
-/** Dia (semeado) em que a missão única do museu surge na run — PLAN §3.1 (#5). */
-export function museumDay(seed: number): number {
-  return createRng(deriveSeed(seed, MUSEUM_SEED_SALT)).int(MUSEUM_DAY_MIN, MUSEUM_DAY_MAX)
+/**
+ * Os 2 dias (semeados, DISTINTOS) em que a missão EXTRA da Equipe Rocket surge na run —
+ * fora do agendamento normal (PLAN — Rocket Team).
+ */
+export function rocketDays(seed: number): number[] {
+  const rng = createRng(deriveSeed(seed, ROCKET_SEED_SALT))
+  const pool = Array.from({ length: ROCKET_DAY_MAX - ROCKET_DAY_MIN + 1 }, (_, i) => ROCKET_DAY_MIN + i)
+  return rng
+    .shuffle(pool)
+    .slice(0, ROCKET_MISSIONS_TOTAL)
+    .sort((a, b) => a - b)
 }
 
 /** Duração de cada um dos 3 momentos (minutos) do dia. */
@@ -170,13 +176,14 @@ export function buildDaySchedule(seed: number, day: number, city: CityData): Day
     }),
   )
 
-  // 2) Missão única do museu (#5): entra no rateio dos 3 momentos como as demais.
-  if (city.museumMissionId && day === museumDay(seed)) {
+  // 2) Missão EXTRA da Equipe Rocket: 2× na run, em dias sorteados; nasce no antigo ponto do
+  //    museu e entra no rateio dos 3 momentos como as demais (PLAN — Rocket Team).
+  if (rocketDays(seed).includes(day)) {
     specs.push({
       seed: rng.int(0, 0x7fffffff),
-      category: 'museum',
+      category: 'rocket',
       siteIndex: 0,
-      templateId: city.museumMissionId,
+      templateId: 'rocket',
     })
   }
 

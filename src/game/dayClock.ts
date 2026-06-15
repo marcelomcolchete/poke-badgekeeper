@@ -5,7 +5,8 @@
 
 import type { Pokemon } from '../types/index.ts'
 import type { GameState } from '../engine/state.ts'
-import { advanceMission, expireMission, promoteMission } from './missionFlow.ts'
+import { getMissionTemplate } from '../data/missionTemplates.ts'
+import { advanceMission, expireMission, loseRunByRocket, promoteMission } from './missionFlow.ts'
 import { expireDefense, loseRunByUndefendedGym, spawnDefense } from './defenseFlow.ts'
 import { advanceCaptureReturn, advanceSearch } from './captureFlow.ts'
 import { finalizeDay } from './phaseFlow.ts'
@@ -32,16 +33,22 @@ export function tick(s: GameState, deltaMs: number): void {
 
 function processMissions(s: GameState, now: number, overtime: boolean): void {
   for (const mission of s.missions) {
+    // Rocket disponível ANTES deste tick: deixar o timer zerar sem despachar = derrota
+    // imediata. Surgir e expirar no mesmo salto de tempo (aba oculta) apenas a descarta.
+    const wasAvailableRocket =
+      mission.status === 'available' && getMissionTemplate(mission.templateId).isRocket
     if (overtime) {
       // Encerramento: missões não despachadas viram oportunidade perdida (não surgem mais).
       if (mission.status === 'scheduled' || mission.status === 'available') {
         expireMission(s, mission)
+        if (wasAvailableRocket) loseRunByRocket(s)
         continue
       }
     } else {
       promoteMission(s, mission, now)
       if (mission.status === 'available' && now >= mission.expiresAtMs) {
         expireMission(s, mission)
+        if (wasAvailableRocket) loseRunByRocket(s)
         continue
       }
     }
