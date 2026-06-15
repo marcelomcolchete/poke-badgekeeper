@@ -38,5 +38,7 @@ export type GameAction =
   | { type: 'BUY_ITEM'; itemId: string; quantity?: number }
   /** Usa um item (Potion/Revive…) num Pokémon do roster — PLAN §4.6. */
   | { type: 'USE_ITEM'; itemId: string; targetId: string }
+  /** Compra um Rare Candy e o aplica no Pokémon escolhido (+1 nível) — PLAN — Itens. */
+  | { type: 'USE_RARE_CANDY'; pokemonId: string }
   /** Aloca o ponto de um level-up no atributo escolhido (modal) — PLAN §4.1. */
   | { type: 'ALLOCATE_POINT'; pokemonId: string; attr: AttrKey }

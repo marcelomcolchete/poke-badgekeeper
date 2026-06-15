@@ -30,6 +30,7 @@ import {
   rolloutBonusPerWin,
   sturdyHealsFull,
 } from './secretEffects.ts'
+import { itemBattleMultiplier } from './itemEffects.ts'
 import { attrRank, type Rank } from './ranking.ts'
 import { rollGender } from './gender.ts'
 import { clamp } from './math.ts'
@@ -168,6 +169,8 @@ export interface DefenseResolution {
 export interface ResolveDefenseOpts {
   /** Pokémon (ids) que ainda têm o Sturdy disponível hoje (consome ao usar, 1×/dia). */
   sturdyAvailableIds?: ReadonlySet<string>
+  /** Itens passivos da run (Thick Club/Lagging Tail) — entram na Batalha efetiva do seu lado. */
+  runItems?: readonly string[]
 }
 
 /**
@@ -186,6 +189,7 @@ export function resolveDefense(
   opts: ResolveDefenseOpts = {},
 ): DefenseResolution {
   const result = squad.map((p) => ({ ...p }))
+  const runItems = opts.runItems ?? []
   const duels: DuelLog[] = []
   const sturdyUsed = new Set<string>()
   let yours = 0
@@ -195,6 +199,8 @@ export function resolveDefense(
     const you = result[yours] as Pokemon
     const enemy = enemies[theirs] as EnemyUnit
     let yourEff = effectiveBattle(you, enemy.types)
+    // Itens passivos (Thick Club p/ Ground, Lagging Tail p/ todos) na Batalha do seu lado.
+    yourEff *= itemBattleMultiplier(you, runItems)
     // Rollout: bônus acumulado pelas vitórias seguidas deste mesmo lutador.
     yourEff *= 1 + rolloutBonusPerWin(you) * frontWins
     // Rivalidade (nv2+): vantagem contra oponente do mesmo gênero.

@@ -11,7 +11,7 @@ import { advancePhase, setSpeed } from './phaseFlow.ts'
 import { acceptMission, completeRocketBattle, resolveRocketBattle } from './missionFlow.ts'
 import { assignDefense, completeDefense } from './defenseFlow.ts'
 import { capturePick, captureDismiss, renamePokemon, startSearch } from './captureFlow.ts'
-import { allocatePoint, applyItem, buyItem } from './marketFlow.ts'
+import { allocatePoint, applyItem, buyItem, useRareCandy } from './marketFlow.ts'
 
 export function reducer(state: GameState, action: GameAction): GameState {
   const s = draft(state)
@@ -60,6 +60,9 @@ export function reducer(state: GameState, action: GameAction): GameState {
       break
     case 'USE_ITEM':
       applyItem(s, action.itemId, action.targetId)
+      break
+    case 'USE_RARE_CANDY':
+      useRareCandy(s, action.pokemonId)
       break
     case 'ALLOCATE_POINT':
       allocatePoint(s, action.pokemonId, action.attr)

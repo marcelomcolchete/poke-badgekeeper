@@ -62,6 +62,9 @@ export const TRAINER_SEED_SALT = 0x713a
 /** Sub-seed que sorteia os 2 dias da missão Equipe Rocket na run (extra, fora da agenda). */
 export const ROCKET_SEED_SALT = 0x526f636b // 'Rock'
 
+/** Sub-seed do mercado da manhã: sorteia os 3 itens do dia (por seed+dia+cidade). */
+export const SHOP_SEED_SALT = 0x53686f70 // 'Shop'
+
 /**
  * Quantidade de Pokémon do treinador invasor por dia (PLAN §4.4). Indexado pelo dia (1–10);
  * a posição 0 é só preenchimento. Cresce de 1 (dia 1) a 6 (dias 9–10).
@@ -138,6 +141,9 @@ export const DRAFT_CHOICES = 3
  * desafiante em destaque (+15 e medalha) e nota E–S na batalha. A migração descarta missões
  * de museu antigas (templateId 'museu'), remove 'fossil' de runItems e libera Pokémon presos.
  * v21: níveis (Bronze/Prata/Ouro) das Habilidades Secretas — pokemon.secretLevel. A migração
- * dá nível 1 (Bronze) a quem já tinha a passiva 'secret-*' desbloqueada. */
-export const SAVE_VERSION = 21
+ * dá nível 1 (Bronze) a quem já tinha a passiva 'secret-*' desbloqueada.
+ * v22: sistema de itens — buffs diários por atributo (pokemon.dayBuffs, opcional) e itens
+ * passivos run-wide reaproveitando s.runItems (exp-share/fast-ball/eviolite/lagging-tail/
+ * thick-club). dayBuffs é opcional e some na virada do dia; migração é passthrough. */
+export const SAVE_VERSION = 22
 export const SAVE_KEY = 'poke-badgekeeper:save'

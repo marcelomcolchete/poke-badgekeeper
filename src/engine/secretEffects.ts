@@ -24,6 +24,7 @@ import {
   WEAK_ARMOR_SPEED_BONUS_BY_LEVEL,
 } from './balance.ts'
 import { effectiveAttr, mapAttrs } from './attributes.ts'
+import { itemMissionMultiplier, itemTravelSpeedMultiplier } from './itemEffects.ts'
 
 export type SecretRuntimeMap = Record<string, SecretRuntime>
 
@@ -105,6 +106,8 @@ export interface MissionSecretCtx {
   team: readonly Pokemon[]
   template: MissionTemplate
   runtime: SecretRuntimeMap
+  /** Itens passivos da run (Eviolite/Lagging Tail…) — entram no multiplicador de atributos. */
+  runItems: readonly string[]
 }
 
 /**
@@ -114,10 +117,12 @@ export interface MissionSecretCtx {
  * só uma habilidade). Tudo escala com o nível.
  */
 export function missionAttrMultiplier(p: Pokemon, ctx: MissionSecretCtx): number {
+  // Itens passivos (Eviolite/Lagging Tail) valem para QUALQUER Pokémon (com ou sem habilidade),
+  // então entram aqui na base — assim o radar e o teamHasAttrBoost já os refletem.
+  let mult = itemMissionMultiplier(p, ctx.runItems)
   const id = activeSecretId(p)
-  if (!id) return 1
+  if (!id) return mult
   const level = secretLevelOf(p)
-  let mult = 1
   if (RIVALRY_IDS.has(id)) {
     const allies = ctx.team.filter((o) => o.id !== p.id && o.gender === p.gender).length
     mult *= 1 + byLevel(RIVALRY_ATTR_PER_ALLY_BY_LEVEL, level) * allies
@@ -192,6 +197,7 @@ export function teamFlies(team: readonly Pokemon[]): boolean {
 export function teamTravelSpeedMultiplier(
   team: readonly Pokemon[],
   runtime: SecretRuntimeMap,
+  runItems: readonly string[] = [],
 ): number {
   let speed = 1
   for (const p of team) {
@@ -203,6 +209,8 @@ export function teamTravelSpeedMultiplier(
     }
   }
   if (teamFlies(team)) speed += byLevel(FLY_SPEED_BONUS_BY_LEVEL, teamFlyLevel(team))
+  // Lagging Tail: time mais lento nas viagens de missão (multiplicativo sobre a velocidade).
+  speed *= itemTravelSpeedMultiplier(runItems)
   return Math.max(speed, 0.0001)
 }
 

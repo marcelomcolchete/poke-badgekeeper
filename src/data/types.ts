@@ -110,14 +110,34 @@ export interface CityData {
   trainers: TrainerId[]
 }
 
-export type ItemKind = 'usable' | 'passive'
+/** As duas famílias de itens (PLAN — Sistema de Itens): consumível dura até disparar; passivo, a run toda. */
+export type ItemKind = 'consumable' | 'passive'
+
+/**
+ * Efeito concreto de um item (união discriminada). Dirige tanto a compra (marketFlow) quanto
+ * os efeitos na engine:
+ * - autoPotion/autoRevive: vão pro inventário com `uses` cargas e disparam sozinhos.
+ * - statBuff: +amount num atributo de TODO o time, só no dia (dayBuffs); não vai pro inventário.
+ * - passive: adiciona o `id` do item a s.runItems (efeito permanente lido pela engine).
+ * - rareCandy: na compra, escolhe um Pokémon que sobe 1 nível.
+ */
+export type ItemEffect =
+  | { kind: 'autoPotion'; uses: number }
+  | { kind: 'autoRevive'; uses: number }
+  | { kind: 'statBuff'; attr: AttrKey; amount: number }
+  | { kind: 'passive' }
+  | { kind: 'rareCandy' }
 
 export interface ItemData {
   id: string
   name: string
-  kind: ItemKind
+  /** Família para exibição (consumível × passivo). */
+  type: ItemKind
   price: number
   description: string
+  /** Caminho da sprite (public/sprites/itens/<id>.png). */
+  sprite: string
+  effect: ItemEffect
 }
 
 /**

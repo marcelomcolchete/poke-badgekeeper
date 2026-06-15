@@ -42,6 +42,70 @@
   gap: 8px;
 }
 
+/* Mercado: 3 cards lado a lado (foto, nome, efeito, preço). */
+.shop {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  background: var(--c-panel);
+  border: 3px solid var(--c-panel-border);
+  border-radius: var(--radius-pixel);
+  padding: 12px 10px;
+}
+
+.cardKind {
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  color: var(--c-hud-muted);
+  letter-spacing: 0.5px;
+}
+
+.cardBadge {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--c-hud-accent);
+}
+
+.cardImg {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.cardName {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--c-ink);
+}
+
+.cardEffect {
+  font-family: var(--font-text);
+  font-size: 14px;
+  color: var(--c-ink-muted);
+  line-height: 1.25;
+  flex: 1;
+}
+
+.candyHint {
+  font-family: var(--font-text);
+  font-size: 15px;
+  color: var(--c-ink-muted);
+  margin-bottom: 10px;
+}
+
 .items {
   list-style: none;
   display: flex;

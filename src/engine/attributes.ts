@@ -54,11 +54,19 @@ export function perPointGain(p: Pokemon, key: AttrKey): number {
   return natureBonusPerPoint(p.nature, key)
 }
 
-/** Atributo efetivo = clamp(base + iv + alocação·modificador, 0, 60) — PLAN §4.1. */
+/**
+ * Atributo efetivo = clamp(base + iv + alocação·modificador + buff de item, 0, 60) — PLAN §4.1.
+ * O `dayBuffs` (itens x_*) entra aqui, então propaga sozinho para missões, batalha, HP e cards.
+ */
 export function effectiveAttr(p: Pokemon, key: AttrKey): number {
   const perPoint = natureBonusPerPoint(p.nature, key)
   const iv = p.ivs?.[key] ?? 0
-  return clamp(p.baseAttrs[key] + iv + p.allocations[key] * perPoint, ATTR_EFFECTIVE_MIN, ATTR_MAX)
+  const buff = p.dayBuffs?.[key] ?? 0
+  return clamp(
+    p.baseAttrs[key] + iv + p.allocations[key] * perPoint + buff,
+    ATTR_EFFECTIVE_MIN,
+    ATTR_MAX,
+  )
 }
 
 export function effectiveAttrs(p: Pokemon): Attrs {

@@ -41,9 +41,9 @@ import {
   type MissionSecretCtx,
 } from '../engine/secretEffects.ts'
 import { graphWithTunnel } from '../engine/pathfinding.ts'
-import { addXp } from '../engine/leveling.ts'
-import { createRng, type Rng } from '../engine/rng.ts'
+import { createRng } from '../engine/rng.ts'
 import { applyBattleSecretRuntime } from './defenseFlow.ts'
+import { applyAutoItems, applyXpGains } from './itemFlow.ts'
 import { findMon, replaceMon, settleFaint, takeRng } from './runtime.ts'
 
 /** Status que "ocupam" um ponto do mapa (já visível ou com time em trânsito/ação). */
@@ -98,10 +98,15 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
   const now = s.clock.dayElapsedMs
   const graph = graphWithTunnel(city.graph, s.today.digTunnel)
   const { flying, path, distance } = travelRoute(graph, city.siteNodes.gym, mission.node, team)
-  const speedMult = teamTravelSpeedMultiplier(team, s.today.secretRuntime)
+  const speedMult = teamTravelSpeedMultiplier(team, s.today.secretRuntime, s.runItems)
   const oneWay = graphTravelMs(distance, team, speedMult)
   const execution = executionMs(team, template.baseExecutionMs)
-  const ctx: MissionSecretCtx = { team, template, runtime: s.today.secretRuntime }
+  const ctx: MissionSecretCtx = {
+    team,
+    template,
+    runtime: s.today.secretRuntime,
+    runItems: s.runItems,
+  }
 
   mission.teamIds = team.map((p) => p.id)
   mission.path = path
@@ -145,7 +150,12 @@ export function advanceMission(s: GameState, mission: MissionInstance, nowMs: nu
 export function resolveMissionNow(s: GameState, mission: MissionInstance): void {
   const template = getMissionTemplate(mission.templateId)
   const team = teamOf(s, mission.teamIds)
-  const ctx: MissionSecretCtx = { team, template, runtime: s.today.secretRuntime }
+  const ctx: MissionSecretCtx = {
+    team,
+    template,
+    runtime: s.today.secretRuntime,
+    runItems: s.runItems,
+  }
   const pSuccess = missionSuccessProbabilityCtx(ctx, mission.requirement)
   const outcome = resolveMission(takeRng(s), team, mission.requirement, template.danger, pSuccess)
   // Habilidades Secretas: atualiza stacks (Sand Rush), ativa Weak Armor e consome Battle Armor.
@@ -173,6 +183,8 @@ export function resolveMissionNow(s: GameState, mission: MissionInstance): void 
     }
     replaceMon(s, { ...mon, status: 'returning' })
   }
+  // Itens automáticos: Potion cura quem perdeu HP; Revive traz desmaiados de volta.
+  applyAutoItems(s)
   // Seed de evolução sorteado AGORA (mantém o cursor do RNG estável); usado só na volta.
   mission.xpSeed = takeRng(s).int(0, 0x7fffffff)
   if (outcome.success) {
@@ -206,11 +218,19 @@ function speedUpReturn(mission: MissionInstance): void {
 export function freeOnReturn(s: GameState, mission: MissionInstance): void {
   const template = getMissionTemplate(mission.templateId)
   const success = mission.result === 'success'
+  const team = teamOf(s, mission.teamIds)
   const evoRng = createRng(mission.xpSeed ?? 0) // mesma sequência sorteada ao resolver
-  for (const member of teamOf(s, mission.teamIds)) {
-    const xp = success ? (mission.xpAwards?.[member.id] ?? 0) : 0
-    replaceMon(s, settleFaint(applyOutcome(member, xp, success, template, evoRng)))
-    if (success) s.today.xpEarned += xp // XP do dia (relatório) — soma dos shares = pool
+  if (success) {
+    // XP do pool por participante + distribuição do Exp Share ao resto do time.
+    const gains = new Map(team.map((p) => [p.id, mission.xpAwards?.[p.id] ?? 0]))
+    applyXpGains(s, gains, evoRng)
+    for (const xp of gains.values()) s.today.xpEarned += xp // relatório — soma dos shares = pool
+  }
+  // Status final (e cura do Pokecenter) por participante, relendo do roster pós-XP.
+  for (const member of team) {
+    let mon = findMon(s, member.id) ?? member
+    if (success && template.healOnSuccess) mon = { ...mon, currentHp: mon.maxHp }
+    replaceMon(s, settleFaint(mon))
   }
   mission.status = 'resolved'
 }
@@ -248,23 +268,6 @@ function applyMissionRewards(s: GameState, template: MissionTemplate): void {
   }
 }
 
-/**
- * Efeitos aplicados na VOLTA ao ginásio: XP (só em sucesso — o share do pool deste
- * Pokémon, pode subir nível/evoluir) e cura se o template curar (Pokecenter). O status
- * final é definido por settleFaint.
- */
-function applyOutcome(
-  member: Pokemon,
-  xp: number,
-  success: boolean,
-  template: MissionTemplate,
-  rng: Rng,
-): Pokemon {
-  let mon = success ? addXp(member, xp, rng).pokemon : member
-  if (success && template.healOnSuccess) mon = { ...mon, currentHp: mon.maxHp }
-  return mon
-}
-
 // ---- Equipe Rocket (batalha após a parte de atributos) — PLAN — Rocket Team ----
 
 /**
@@ -295,7 +298,10 @@ export function resolveRocketBattle(s: GameState, missionId: string): void {
   const sturdyAvailableIds = new Set(
     team.filter((p) => sturdyAvailable(p, s.today.secretRuntime)).map((p) => p.id),
   )
-  const resolution = resolveDefense(takeRng(s), team, mission.rocket.enemies, { sturdyAvailableIds })
+  const resolution = resolveDefense(takeRng(s), team, mission.rocket.enemies, {
+    sturdyAvailableIds,
+    runItems: s.runItems,
+  })
   // Registra os desafiantes derrotados (MVP/relatório).
   let theirs = 0
   for (const duel of resolution.duels) {
@@ -311,6 +317,8 @@ export function resolveRocketBattle(s: GameState, missionId: string): void {
   // Habilidades Secretas de batalha (Battle Armor/Weak Armor/Shell Armor/Sturdy) — a missão
   // Rocket conta como batalha para o Battle Armor.
   applyBattleSecretRuntime(s, team, resolution)
+  // Itens automáticos: Potion/Revive disparam após a batalha.
+  applyAutoItems(s)
   mission.rocket.duels = resolution.duels
   mission.rocket.won = resolution.won
   mission.rocket.resolved = true
@@ -333,10 +341,9 @@ export function completeRocketBattle(s: GameState, missionId: string): void {
     const share = team.length > 0 ? Math.floor(pool / team.length) : 0
     mission.xpAwards = Object.fromEntries(team.map((p) => [p.id, share]))
     const evoRng = createRng(mission.rocket.xpSeed ?? 0)
-    for (const member of team) {
-      replaceMon(s, addXp(member, share, evoRng).pokemon)
-      s.today.xpEarned += share
-    }
+    const gains = new Map(team.map((p) => [p.id, share]))
+    applyXpGains(s, gains, evoRng)
+    s.today.xpEarned += share * team.length
     const gold = goldForDefense(team) + ROCKET_GOLD_BONUS
     s.gold += gold
     s.today.goldEarned += gold

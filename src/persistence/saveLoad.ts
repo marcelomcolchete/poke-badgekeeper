@@ -198,6 +198,12 @@ function migrate(file: Partial<SaveFile>): SaveFile | null {
     version = 21
   }
 
+  // v21 → v22: sistema de itens. dayBuffs (itens x_*) é opcional e some na virada do dia; os
+  // itens passivos reaproveitam s.runItems (já existente). Nada a preencher — passthrough.
+  if (version === 21) {
+    version = 22
+  }
+
   if (version !== SAVE_VERSION) return null
   return { version, savedAtMs: (file as SaveFile).savedAtMs, state } as unknown as SaveFile
 }

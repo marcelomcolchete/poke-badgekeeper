@@ -23,6 +23,15 @@
   z-index: 3;
 }
 
+/* Itens ativos: flutua no canto inferior esquerdo do mapa, acima da arte. */
+.itemsFloat {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  z-index: 3;
+  max-width: min(60%, 420px);
+}
+
 /* Telas estreitas: encolhe as colunas laterais para o mapa respirar. */
 @media (max-width: 860px) {
   .screen {
