@@ -135,6 +135,155 @@
   padding-right: 2px;
 }
 
+/* ---- Defesa: lista ordenada do esquadrão (ordem dos duelos) ---- */
+.orderList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.orderChip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--c-bg, rgba(0, 0, 0, 0.04));
+  border: 2px solid var(--c-panel-border);
+  border-radius: var(--radius-pixel);
+  padding: 4px 6px;
+  cursor: grab;
+}
+
+.orderChip:active {
+  cursor: grabbing;
+}
+
+.dragging {
+  opacity: 0.5;
+  border-style: dashed;
+  border-color: var(--c-hud-accent);
+}
+
+.orderNum {
+  flex: none;
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--c-ink);
+  background: var(--c-hud-accent);
+  border: 2px solid var(--c-ink);
+  border-radius: var(--radius-pixel);
+  padding: 3px 5px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.orderName {
+  flex: 1;
+  font-family: var(--font-text);
+  font-size: 15px;
+  color: var(--c-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.orderBattle {
+  flex: none;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: var(--c-hp-low);
+  white-space: nowrap;
+}
+
+/* ---- Defesa: carta compacta de seleção (só Batalha, sem radar) ---- */
+.battlePick {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  background: var(--c-panel);
+  border: 3px solid var(--c-panel-border);
+  border-radius: var(--radius-pixel);
+  padding: 6px 8px;
+  cursor: pointer;
+}
+
+.battlePick:hover:not(:disabled) {
+  border-color: var(--c-grass-dark);
+}
+
+.battlePickOn {
+  border-color: var(--c-hud-accent);
+  box-shadow:
+    0 0 0 2px var(--c-hud-accent) inset,
+    0 0 8px rgba(255, 203, 5, 0.5);
+}
+
+.battlePickOff {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.battlePickSprite {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  image-rendering: pixelated;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+.battlePickInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.battlePickName {
+  font-family: var(--font-text);
+  font-size: 16px;
+  color: var(--c-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.battlePickTypes {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.battlePickStat {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 4px 6px;
+  background: rgba(214, 60, 60, 0.12);
+  border: 2px solid var(--c-panel-border);
+  border-radius: var(--radius-pixel);
+}
+
+.battlePickStatVal {
+  font-family: var(--font-pixel);
+  font-size: 13px;
+  color: var(--c-hp-low);
+  line-height: 1;
+}
+
+.battlePickStatLbl {
+  font-family: var(--font-pixel);
+  font-size: 6px;
+  text-transform: uppercase;
+  color: var(--c-ink-muted);
+}
+
 .confirm {
   margin-top: 10px;
   width: 100%;

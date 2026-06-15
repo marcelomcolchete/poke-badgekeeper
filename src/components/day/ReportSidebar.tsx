@@ -177,11 +177,11 @@ function ScoreRow({
         {label}
       </span>
       <span className={styles.scoreChips}>
-        <span className={`${styles.chip} ${styles.chipWin}`} title={`${won} com sucesso`}>
-          ✓ {won}
-        </span>
-        <span className={`${styles.chip} ${styles.chipLoss}`} title={`${lost} falhadas`}>
+        <span className={`${styles.chip} ${styles.chipLoss}`} title={`${lost} não concluídas`}>
           ✗ {lost}
+        </span>
+        <span className={`${styles.chip} ${styles.chipWin}`} title={`${won} concluídas`}>
+          ✓ {won}
         </span>
         <span className={styles.scoreTotal}>/ {total}</span>
       </span>

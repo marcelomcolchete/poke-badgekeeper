@@ -9,12 +9,12 @@ import type { EnemyUnit, Pokemon, PokemonType } from '../../types/index.ts'
 import type { GameState, DefenseEvent } from '../../engine/state.ts'
 import type { GameAction } from '../../game/actions.ts'
 import { MIN_DEFENSE_SQUAD } from '../../engine/constants.ts'
+import { GYM_WIN_XP } from '../../engine/balance.ts'
 import { effectiveAttr } from '../../engine/attributes.ts'
 import { effectiveBattle, typeAdvantageMultiplier } from '../../engine/gymDefense.ts'
 import { sortRoster } from '../../engine/roster.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
 import { TypeBadge } from '../common/TypeBadge.tsx'
-import { PokemonCard } from '../PokemonCard/PokemonCard.tsx'
 import { Overlay } from '../common/Overlay.tsx'
 import { displayNameOf } from '../common/naming.ts'
 import styles from './Panels.module.css'
@@ -30,6 +30,7 @@ export function DefensePanel({ state, dispatch, defenseId, onClose }: Props) {
   const defense = state.defenses.find((d) => d.id === defenseId)
   const [selected, setSelected] = useState<string[]>([])
   const [fighting, setFighting] = useState(false)
+  const [dragIndex, setDragIndex] = useState<number | null>(null)
   if (!defense) return null
 
   // Já resolvida (venceu/perdeu) → tela de batalha; caso contrário, seleção do esquadrão.
@@ -40,9 +41,25 @@ export function DefensePanel({ state, dispatch, defenseId, onClose }: Props) {
   const enemyTypes = [...new Set(defense.enemies.flatMap((e) => e.types))] as PokemonType[]
   const maxBattle = defense.enemies.reduce((m, e) => Math.max(m, e.battle), 0)
   const valid = selected.length >= MIN_DEFENSE_SQUAD
+  // Esquadrão escolhido, na ORDEM dos duelos (a ordem importa: a frente luta primeiro).
+  const squad = selected
+    .map((id) => state.roster.find((p) => p.id === id))
+    .filter((p): p is Pokemon => p !== undefined)
+  const teamBattle = squad.reduce((sum, m) => sum + Math.round(effectiveAttr(m, 'batalha')), 0)
+  // 1 desafiante derrotado = GYM_WIN_XP; o teto é vencer todos os duelos.
+  const maxXp = defense.enemies.length * GYM_WIN_XP
 
   const toggle = (id: string): void =>
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+  const remove = (id: string): void => setSelected((prev) => prev.filter((x) => x !== id))
+  const reorder = (from: number, to: number): void =>
+    setSelected((prev) => {
+      if (from === to || from < 0 || to < 0 || from >= prev.length || to >= prev.length) return prev
+      const next = [...prev]
+      const [moved] = next.splice(from, 1)
+      next.splice(to, 0, moved as string)
+      return next
+    })
 
   const defend = (): void => {
     dispatch({ type: 'ASSIGN_DEFENSE', defenseId, squadIds: selected })
@@ -51,37 +68,155 @@ export function DefensePanel({ state, dispatch, defenseId, onClose }: Props) {
 
   return (
     <Overlay title="DEFESA DO GINÁSIO" onClose={onClose} wide>
-      <div className={styles.defenseInfo}>
-        <span>
-          Desafiantes: <b>{defense.enemies.length}</b>
-        </span>
-        <span className={styles.enemyTypes}>
-          {enemyTypes.map((t) => (
-            <TypeBadge key={t} type={t} />
+      <div className={styles.dispatch}>
+        <div className={styles.radarSide}>
+          <div className={styles.defenseInfo}>
+            <span>
+              Desafiantes: <b>{defense.enemies.length}</b>
+            </span>
+            <span className={styles.enemyTypes}>
+              {enemyTypes.map((t) => (
+                <TypeBadge key={t} type={t} />
+              ))}
+            </span>
+            <span>
+              Batalha inimiga: <b>{maxBattle}</b>
+            </span>
+          </div>
+
+          <div className={styles.stats}>
+            <span>
+              Batalha do time: <b>{teamBattle}</b>
+            </span>
+            <span>
+              EXP na batalha: <b>até {maxXp}</b> (×{GYM_WIN_XP}/vitória)
+            </span>
+            <span>
+              Esquadrão: <b>{selected.length}</b>
+            </span>
+          </div>
+
+          <div className={styles.selectedTeam}>
+            <span className={styles.selectedTitle}>Ordem dos duelos ({selected.length})</span>
+            {squad.length === 0 ? (
+              <span className={styles.selectedEmpty}>
+                Escolha ao menos {MIN_DEFENSE_SQUAD} ao lado. Arraste para reordenar.
+              </span>
+            ) : (
+              <ol className={styles.orderList}>
+                {squad.map((mon, i) => (
+                  <li
+                    key={mon.id}
+                    className={`${styles.orderChip} ${dragIndex === i ? styles.dragging : ''}`}
+                    draggable
+                    onDragStart={() => setDragIndex(i)}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={() => {
+                      if (dragIndex !== null) reorder(dragIndex, i)
+                      setDragIndex(null)
+                    }}
+                    onDragEnd={() => setDragIndex(null)}
+                  >
+                    <span className={styles.orderNum} aria-hidden="true">
+                      ⠿ {i + 1}
+                    </span>
+                    <img
+                      className={styles.chipSprite}
+                      src={getSpecies(mon.speciesId).spritePath}
+                      alt=""
+                      draggable={false}
+                    />
+                    <span className={styles.orderName}>{displayNameOf(mon)}</span>
+                    <span className={styles.orderBattle}>⚔ {Math.round(effectiveAttr(mon, 'batalha'))}</span>
+                    <button
+                      type="button"
+                      className={styles.chipRemove}
+                      onClick={() => remove(mon.id)}
+                      aria-label={`Remover ${displayNameOf(mon)} do esquadrão`}
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+        </div>
+
+        <div className={styles.picker}>
+          {sortRoster(state.roster).map((mon) => (
+            <BattlePick
+              key={mon.id}
+              mon={mon}
+              selected={selected.includes(mon.id)}
+              disabled={mon.status !== 'idle'}
+              onClick={mon.status === 'idle' ? () => toggle(mon.id) : undefined}
+            />
           ))}
-        </span>
-        <span>
-          Batalha inimiga: <b>{maxBattle}</b>
-        </span>
-      </div>
-      <p className={styles.hint}>
-        Escolha ao menos {MIN_DEFENSE_SQUAD} Pokémon disponíveis para a cadeia de duelos 1v1.
-      </p>
-      <div className={styles.picker}>
-        {sortRoster(state.roster).map((mon) => (
-          <PokemonCard
-            key={mon.id}
-            pokemon={mon}
-            selected={selected.includes(mon.id)}
-            disabled={mon.status !== 'idle'}
-            onClick={mon.status === 'idle' ? () => toggle(mon.id) : undefined}
-          />
-        ))}
+        </div>
       </div>
       <button type="button" className={styles.confirm} disabled={!valid} onClick={defend}>
         Batalhar ▶ ({selected.length})
       </button>
     </Overlay>
+  )
+}
+
+/**
+ * Carta compacta de seleção para a defesa: sprite, nome e tipos + SÓ o atributo Batalha
+ * (sem o radar hexagonal). A defesa é decidida pela Batalha, então é o único número útil.
+ */
+function BattlePick({
+  mon,
+  selected,
+  disabled,
+  onClick,
+}: {
+  mon: Pokemon
+  selected: boolean
+  disabled: boolean
+  onClick?: () => void
+}) {
+  const species = getSpecies(mon.speciesId)
+  const battle = Math.round(effectiveAttr(mon, 'batalha'))
+  const fainted = mon.currentHp <= 0
+  const classes = [
+    styles.battlePick,
+    selected ? styles.battlePickOn : '',
+    disabled ? styles.battlePickOff : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+  return (
+    <button
+      type="button"
+      className={classes}
+      onClick={onClick}
+      disabled={disabled || !onClick}
+      aria-pressed={selected}
+    >
+      <img
+        className={styles.battlePickSprite}
+        src={species.spritePath}
+        alt={species.displayName}
+        draggable={false}
+      />
+      <span className={styles.battlePickInfo}>
+        <span className={styles.battlePickName}>
+          {fainted && <span aria-hidden="true">💀 </span>}
+          {displayNameOf(mon)}
+        </span>
+        <span className={styles.battlePickTypes}>
+          {mon.types.map((t) => (
+            <TypeBadge key={t} type={t} />
+          ))}
+        </span>
+      </span>
+      <span className={styles.battlePickStat}>
+        <span className={styles.battlePickStatVal}>{battle}</span>
+        <span className={styles.battlePickStatLbl}>⚔ Batalha</span>
+      </span>
+    </button>
   )
 }
 

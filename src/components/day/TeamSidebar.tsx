@@ -8,6 +8,7 @@ import type { GameState } from '../../engine/state.ts'
 import type { Pokemon } from '../../types/index.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
 import { getMissionTemplate } from '../../data/missionTemplates.ts'
+import { secretAbilityFor } from '../../data/secretAbilities.ts'
 import { ATTR_MAX, ATTR_PER_POINT, LEVEL_MAX } from '../../engine/constants.ts'
 import { MISSION_XP_REWARD } from '../../engine/balance.ts'
 import { effectiveAttr, perPointGain } from '../../engine/attributes.ts'
@@ -126,6 +127,9 @@ export function TeamSidebar({ state, onSelect }: Props) {
           const fainted = mon.currentHp <= 0
           const rank = pokemonRank(mon)
           const willLevelUp = willLevelUpOnReturn(state, mon)
+          // Habilidade Secreta desbloqueada no indivíduo → card brilha + tooltip.
+          const secret = secretAbilityFor(mon.speciesId)
+          const secretActive = secret ? mon.passives.includes(secret.id) : false
           const atMax = mon.level >= LEVEL_MAX
           const xpNeeded = xpToNext(mon.level)
           const xpPct = atMax ? 100 : Math.min(100, (mon.xp / xpNeeded) * 100)
@@ -139,12 +143,18 @@ export function TeamSidebar({ state, onSelect }: Props) {
             fainted ? styles.faintedMember : '',
             busy ? styles.busyMember : '',
             willLevelUp ? styles.willLevelUp : '',
+            secretActive ? styles.secretActive : '',
           ]
             .filter(Boolean)
             .join(' ')
           return (
             <li key={mon.id}>
-              <button type="button" className={memberClass} onClick={() => onSelect(mon.id)}>
+              <button
+                type="button"
+                className={memberClass}
+                onClick={() => onSelect(mon.id)}
+                title={secretActive && secret ? `Habilidade Secreta ATIVA: ${secret.name}` : undefined}
+              >
                 <div className={styles.top}>
                   <span className={styles.avatar}>
                     <img src={species.spritePath} alt={species.displayName} draggable={false} />
@@ -156,6 +166,15 @@ export function TeamSidebar({ state, onSelect }: Props) {
                       {rank}
                     </span>
                     {pending > 0 && <span className={styles.badge}>+{pending}</span>}
+                    {secretActive && secret && (
+                      <span
+                        className={styles.secretBadge}
+                        title={`Habilidade Secreta ATIVA: ${secret.name}`}
+                        aria-label={`Habilidade Secreta ativa: ${secret.name}`}
+                      >
+                        ✦
+                      </span>
+                    )}
                     {willLevelUp && (
                       <span className={styles.levelTag} aria-label="Vai subir de nível">
                         ↑Nv
