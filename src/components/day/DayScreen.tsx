@@ -20,6 +20,7 @@ import { DefensePanel } from './DefensePanel.tsx'
 import { RocketBattlePanel } from './RocketBattlePanel.tsx'
 import { CapturePanel } from './CapturePanel.tsx'
 import { ItemsBar } from '../common/ItemsBar.tsx'
+import { getMissionTemplate } from '../../data/missionTemplates.ts'
 import styles from './DayScreen.module.css'
 
 type Selection =
@@ -30,9 +31,33 @@ type Selection =
   | { kind: 'quit' }
   | null
 
+/**
+ * Categoria de uma fala do log (define o símbolo e o estilo na ReportSidebar):
+ * - standard: avisos do dia (começou, encerrando…) — branco/azul, símbolo "G" (líder).
+ * - area: nova área de exploração surgiu — verde claro, graminha.
+ * - center: missão do Centro Pokémon — vermelho claro, símbolo de cura.
+ * - mart: missão do Pokémart — azul claro, símbolo de mercadinho.
+ * - general: missão normal disponível — estilo padrão, "!" vermelho.
+ * - rocket: missão da Equipe Rocket — preto/amarelo, "R" vermelho.
+ */
+export type GuideMsgKind = 'standard' | 'area' | 'center' | 'mart' | 'general' | 'rocket'
+
 export interface GuideMessage {
   id: number
   text: string
+  kind: GuideMsgKind
+}
+
+/** Mapeia uma missão recém-disponível para a fala tipada do log (texto + categoria). */
+function missionAnnouncement(templateId: string): { text: string; kind: GuideMsgKind } {
+  const tpl = getMissionTemplate(templateId)
+  if (tpl.isRocket)
+    return { kind: 'rocket', text: 'Equipe Rocket à vista! Despache seu time para enfrentá-los.' }
+  if (tpl.healOnSuccess)
+    return { kind: 'center', text: 'Missão no Centro Pokémon disponível — cura o time no sucesso!' }
+  if (tpl.goldOnSuccess)
+    return { kind: 'mart', text: 'Missão no Pokémart disponível — ouro garantido no sucesso!' }
+  return { kind: 'general', text: `Nova missão disponível: ${tpl.name}. Clique no "!" para despachar.` }
 }
 
 /** Cada fala do guia some sozinha depois disto (tempo real) — chat efêmero (ajuste). */
@@ -55,11 +80,14 @@ export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) 
   const msgCounter = useRef(0)
   const lastMsg = useRef('')
   const timers = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map())
+  // Eventos já anunciados no log (evita repetir): missões por id, áreas por índice do spot.
+  const announcedMissions = useRef<Set<string>>(new Set())
+  const announcedSpots = useRef<Set<number>>(new Set())
 
-  // Adiciona uma fala e agenda sua remoção depois do tempo de vida (tempo real).
-  const pushMessage = useCallback((text: string): void => {
+  // Adiciona uma fala (tipada) e agenda sua remoção depois do tempo de vida (tempo real).
+  const pushMessage = useCallback((text: string, kind: GuideMsgKind = 'standard'): void => {
     const id = msgCounter.current++
-    setMessages((prev) => [...prev, { id, text }])
+    setMessages((prev) => [...prev, { id, text, kind }])
     const handle = setTimeout(() => {
       setMessages((prev) => prev.filter((m) => m.id !== id))
       timers.current.delete(id)
@@ -128,13 +156,37 @@ export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) 
   }
   const revealMission = revealId ? state.missions.find((m) => m.id === revealId) : undefined
 
-  // Fala do guia: sempre que a dica contextual muda, dispara uma nova fala efêmera.
+  // Fala do guia: sempre que a dica contextual muda, dispara uma nova fala efêmera (padrão).
   useEffect(() => {
     const text = dayHint(state)
     if (text === lastMsg.current) return
     lastMsg.current = text
     pushMessage(text)
   }, [state, pushMessage])
+
+  // Falas tipadas por evento: missão que vira "disponível" (categoria define símbolo/cor)
+  // e nova área de exploração que surge no mapa (quando o relógio atinge o horário do spot).
+  useEffect(() => {
+    for (const m of state.missions) {
+      if (m.status !== 'available' || announcedMissions.current.has(m.id)) continue
+      announcedMissions.current.add(m.id)
+      const { text, kind } = missionAnnouncement(m.templateId)
+      pushMessage(text, kind)
+    }
+    const now = state.clock.dayElapsedMs
+    state.captureSpots.forEach((_, i) => {
+      if (announcedSpots.current.has(i)) return
+      if (now < (state.captureSpotSpawnsAtMs[i] ?? 0)) return // spot ainda não surgiu (#7)
+      announcedSpots.current.add(i)
+      pushMessage('Nova área de exploração descoberta — Pokémon selvagens à espreita!', 'area')
+    })
+  }, [
+    state.missions,
+    state.captureSpots,
+    state.captureSpotSpawnsAtMs,
+    state.clock.dayElapsedMs,
+    pushMessage,
+  ])
 
   // Atalhos de teclado: 1/2/3 = velocidade; 4 = pausa/play (segue a ordem dos botões).
   useEffect(() => {
@@ -228,8 +280,7 @@ function dayHint(state: GameState): string {
   // O dia só fecha quando todos voltarem ao ginásio (#3) — avisa no encerramento.
   const overtime = state.clock.dayElapsedMs >= state.clock.dayLengthMs
   if (overtime) return 'Tempo esgotado — encerrando o dia assim que o time voltar ao ginásio…'
-  const available = state.missions.filter((m) => m.status === 'available').length
-  if (available > 0) return `${available} missão(ões) disponível(is). Clique num "!" para despachar seu time.`
+  // Missões disponíveis ganham fala própria (tipada) no log; aqui fica só a dica de espera.
   return 'Dia em andamento. Aguarde novas missões surgirem pela cidade…'
 }
 

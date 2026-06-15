@@ -3,7 +3,7 @@
 
 import type { GameState } from '../../engine/state.ts'
 import type { Pokemon } from '../../types/index.ts'
-import type { GuideMessage } from './DayScreen.tsx'
+import type { GuideMessage, GuideMsgKind } from './DayScreen.tsx'
 import { STARS_MAX } from '../../engine/constants.ts'
 import type { DailyProgress } from '../../engine/approval.ts'
 import { approvalDelta, battleGoal, missionGoal } from '../../engine/approval.ts'
@@ -16,6 +16,23 @@ import styles from './ReportSidebar.module.css'
 interface Props {
   state: GameState
   messages: GuideMessage[]
+}
+
+/**
+ * Símbolo + estilo de cada tipo de fala do log. O símbolo é texto/emoji (sem assets) e as
+ * classes pintam o crachá e o balão com a cor da categoria (ver ReportSidebar.module.css).
+ * standard/general usam o balão padrão (branco/azul), por isso bubbleClass fica vazio.
+ */
+const MSG_META: Record<
+  GuideMsgKind,
+  { symbol: string; symClass: string | undefined; bubbleClass: string | undefined }
+> = {
+  standard: { symbol: 'G', symClass: styles.symStandard, bubbleClass: '' },
+  area: { symbol: '🌿', symClass: styles.symArea, bubbleClass: styles.bubbleArea },
+  center: { symbol: '✚', symClass: styles.symCenter, bubbleClass: styles.bubbleCenter },
+  mart: { symbol: '🛒', symClass: styles.symMart, bubbleClass: styles.bubbleMart },
+  general: { symbol: '!', symClass: styles.symGeneral, bubbleClass: '' },
+  rocket: { symbol: 'R', symClass: styles.symRocket, bubbleClass: styles.bubbleRocket },
 }
 
 export function ReportSidebar({ state, messages }: Props) {
@@ -122,22 +139,25 @@ export function ReportSidebar({ state, messages }: Props) {
         killSpecies={mvpKillSpecies}
       />
 
-      <section className={styles.guide} aria-label="Mensagens do guia">
+      <section className={styles.guide} aria-label="Log do dia">
         <div className={styles.guideHead}>
           <span className={styles.guideAvatar} aria-hidden="true">
-            👤
+            📋
           </span>
-          <span className={styles.guideName}>Antigo Líder</span>
+          <span className={styles.guideName}>LOG</span>
         </div>
         <div className={styles.log}>
-          {messages.map((m) => (
-            <div key={m.id} className={styles.msg}>
-              <span className={styles.msgAvatar} aria-hidden="true">
-                👤
-              </span>
-              <p className={styles.bubble}>{m.text}</p>
-            </div>
-          ))}
+          {messages.map((m) => {
+            const meta = MSG_META[m.kind] ?? MSG_META.standard
+            return (
+              <div key={m.id} className={styles.msg}>
+                <span className={`${styles.msgSym} ${meta.symClass}`} aria-hidden="true">
+                  {meta.symbol}
+                </span>
+                <p className={`${styles.bubble} ${meta.bubbleClass}`}>{m.text}</p>
+              </div>
+            )
+          })}
         </div>
       </section>
     </aside>
