@@ -1,17 +1,17 @@
-// Captura (PLAN §4.5): escolher quem procura, acompanhar a busca e resolver o
-// encontro (capturar 1 / trazer de volta / seguir procurando). Com o time cheio a
-// captura continua possível: o jogador escolhe um Pokémon para descartar (ajuste).
+// Área de Captura (PLAN §4.5, redesign): escolher QUEM explora (cartas enxutas com AGI/PER/INT
+// + Pokédex da área em silhuetas), acompanhar a busca e resolver o encontro (candidatos lado a
+// lado). Com o time cheio, a captura vai automaticamente para o Computador (PC) — sem descarte.
 
 import { useState } from 'react'
 import type { Dispatch } from 'react'
 import type { GameState } from '../../engine/state.ts'
 import type { GameAction } from '../../game/actions.ts'
 import { rosterIsFull } from '../../engine/capture.ts'
-import { getSpecies } from '../../data/pokemon/index.ts'
-import { PokemonCard } from '../PokemonCard/PokemonCard.tsx'
-import { previewPokemon } from '../common/preview.ts'
 import { Overlay } from '../common/Overlay.tsx'
 import { RenameModal } from './RenameModal.tsx'
+import { ExplorerPick } from './ExplorerPick.tsx'
+import { CapturePokedex } from './CapturePokedex.tsx'
+import { EncounterChoice } from './EncounterChoice.tsx'
 import styles from './Panels.module.css'
 
 interface Props {
@@ -25,20 +25,24 @@ export function CapturePanel({ state, dispatch, spotIndex, onClose }: Props) {
   const encounter = state.encounters.find((e) => e.spotIndex === spotIndex)
   const searching = state.captureSearches.some((c) => c.spotIndex === spotIndex)
   const full = rosterIsFull(state.roster)
-  // Candidato escolhido (índice + espécie) aguardando a escolha de quem descartar (roster cheio).
-  const [discardFor, setDiscardFor] = useState<{ index: number; speciesId: number } | null>(null)
-  // Após capturar, abre o modal de apelido para o Pokémon recém-pego (último capturado).
+  // Após capturar, abre o modal de apelido para o recém-pego (pode estar no time ou no PC).
   const [awaitingRename, setAwaitingRename] = useState(false)
   const lastCapturedId = state.today.capturedIds.at(-1) ?? null
   const justCaught = awaitingRename
-    ? state.roster.find((p) => p.id === lastCapturedId) ?? null
+    ? [...state.roster, ...state.box].find((p) => p.id === lastCapturedId) ?? null
     : null
+  const wentToBox = justCaught ? state.box.some((p) => p.id === justCaught.id) : false
 
   if (justCaught) {
     return (
       <RenameModal
         pokemon={justCaught}
         dispatch={dispatch}
+        note={
+          wentToBox
+            ? 'Seu time estava cheio — ele foi enviado ao Computador. Troque pela manhã.'
+            : undefined
+        }
         onDone={() => {
           setAwaitingRename(false)
           onClose()
@@ -47,93 +51,37 @@ export function CapturePanel({ state, dispatch, spotIndex, onClose }: Props) {
     )
   }
 
-  const capture = (candidateIndex: number, releaseId?: string): void => {
-    if (!encounter) return
-    dispatch({ type: 'CAPTURE_PICK', searcherId: encounter.searcherId, candidateIndex, releaseId })
-    setAwaitingRename(true)
-  }
-
-  // Passo de descarte: time cheio + candidato escolhido → escolher quem liberar.
-  if (encounter && discardFor !== null) {
-    const newcomer = getSpecies(discardFor.speciesId).displayName
-    return (
-      <Overlay title="TIME CHEIO" onClose={onClose}>
-        <div className={styles.capture}>
-          <p className={styles.warn}>
-            Seu time está cheio. Escolha quem liberar para receber <b>{newcomer}</b> — o escolhido
-            é descartado para sempre.
-          </p>
-          <div className={styles.picker}>
-            {state.roster
-              .filter((mon) => mon.id !== encounter.searcherId)
-              .map((mon) => (
-                <PokemonCard
-                  key={mon.id}
-                  pokemon={mon}
-                  onClick={() => capture(discardFor.index, mon.id)}
-                />
-              ))}
-          </div>
-          <div className={styles.captureActions}>
-            <button
-              type="button"
-              className={styles.ghost}
-              data-sound="deselect"
-              onClick={() => setDiscardFor(null)}
-            >
-              Voltar
-            </button>
-          </div>
-        </div>
-      </Overlay>
-    )
-  }
+  const caught = new Set<number>([
+    ...state.caughtSpecies,
+    ...state.roster.map((p) => p.speciesId),
+    ...state.box.map((p) => p.speciesId),
+  ])
 
   return (
-    <Overlay title="ÁREA DE CAPTURA" onClose={onClose}>
+    <Overlay title="ÁREA DE CAPTURA" onClose={onClose} wide>
       {encounter ? (
-        <div className={styles.capture}>
-          <p className={styles.hint}>
-            {encounter.candidateSpeciesIds.length === 1 ? 'Apareceu' : 'Apareceram'}{' '}
-            {encounter.candidateSpeciesIds.length} Pokémon (nível {encounter.level})! Capture um ou
-            continue explorando.
-          </p>
-          <div className={styles.picker}>
-            {encounter.candidateSpeciesIds.map((id, i) => (
-              <PokemonCard
-                key={`${id}-${i}`}
-                pokemon={previewPokemon(id, encounter.level, { seed: encounter.candidateSeeds?.[i] })}
-                onClick={() => (full ? setDiscardFor({ index: i, speciesId: id }) : capture(i))}
-              />
-            ))}
-          </div>
-          {full && (
-            <p className={styles.warn}>
-              Time cheio — ao capturar, você escolhe um Pokémon do time para descartar.
-            </p>
-          )}
-          <div className={styles.captureActions}>
-            <button
-              type="button"
-              className={styles.ghost}
-              data-sound="deselect"
-              onClick={() => {
-                dispatch({ type: 'CAPTURE_DISMISS', searcherId: encounter.searcherId })
-                onClose()
-              }}
-            >
-              Não capturar
-            </button>
-          </div>
-        </div>
+        <EncounterChoice
+          encounter={encounter}
+          full={full}
+          onPick={(candidateIndex) => {
+            dispatch({ type: 'CAPTURE_PICK', searcherId: encounter.searcherId, candidateIndex })
+            setAwaitingRename(true)
+          }}
+          onDismiss={() => {
+            dispatch({ type: 'CAPTURE_DISMISS', searcherId: encounter.searcherId })
+            onClose()
+          }}
+        />
       ) : searching ? (
         <p className={styles.hint}>A caminho / explorando… aguarde o encontro surgir aqui.</p>
       ) : (
         <div className={styles.capture}>
-          <p className={styles.hint}>Quem vai explorar? Maior Percepção encontra mais rápido.</p>
-          <div className={styles.picker}>
+          <p className={styles.hint}>
+            Quem vai explorar? Maior <b>Percepção</b> encontra mais rápido.
+          </p>
+          <div className={styles.explorerGrid}>
             {state.roster.map((mon) => (
-              <PokemonCard
+              <ExplorerPick
                 key={mon.id}
                 pokemon={mon}
                 disabled={mon.status !== 'idle'}
@@ -148,6 +96,7 @@ export function CapturePanel({ state, dispatch, spotIndex, onClose }: Props) {
               />
             ))}
           </div>
+          <CapturePokedex types={state.gym.types} caught={caught} />
         </div>
       )}
     </Overlay>

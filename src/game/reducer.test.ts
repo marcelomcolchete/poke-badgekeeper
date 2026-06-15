@@ -292,7 +292,7 @@ describe('fluxo de captura (PLAN §4.5)', () => {
     expect(dismissed.roster[0]?.status).toBe('idle')
   })
 
-  it('com roster cheio a busca continua liberada (captura exige descartar)', () => {
+  it('com roster cheio a busca continua liberada (captura vai pro PC)', () => {
     const full = Array.from({ length: MAX_ROSTER_SIZE }, (_, i) =>
       makeMon({ id: `r${i}`, baseAttrs: makeAttrs({ percepcao: 50 }) }),
     )
@@ -301,7 +301,7 @@ describe('fluxo de captura (PLAN §4.5)', () => {
     expect(s.captureSearches).toHaveLength(1)
   })
 
-  it('capturar com roster cheio descarta o escolhido e mantém 6', () => {
+  it('capturar com roster cheio envia o Pokémon ao Computador (PC) e mantém 6 no time', () => {
     const full = Array.from({ length: MAX_ROSTER_SIZE }, (_, i) =>
       makeMon({ id: `r${i}`, baseAttrs: makeAttrs({ percepcao: 50 }) }),
     )
@@ -311,21 +311,54 @@ describe('fluxo de captura (PLAN §4.5)', () => {
     const pick = s.encounters[0]?.candidateSpeciesIds[0]
     expect(pick).toBeDefined()
 
-    // Sem releaseId, a captura é no-op (roster cheio).
-    const blocked = reducer(s, { type: 'CAPTURE_PICK', searcherId: 'r0', candidateIndex: 0 })
-    expect(blocked.roster).toHaveLength(MAX_ROSTER_SIZE)
-    expect(blocked.encounters).toHaveLength(1)
-
-    // Descartando 'r5', captura e segue com 6 (sem o descartado, com o novo).
-    const after = reducer(s, {
-      type: 'CAPTURE_PICK',
-      searcherId: 'r0',
-      candidateIndex: 0,
-      releaseId: 'r5',
-    })
-    expect(after.roster).toHaveLength(MAX_ROSTER_SIZE)
-    expect(after.roster.some((p) => p.id === 'r5')).toBe(false)
+    const after = reducer(s, { type: 'CAPTURE_PICK', searcherId: 'r0', candidateIndex: 0 })
+    expect(after.roster).toHaveLength(MAX_ROSTER_SIZE) // time intacto
+    expect(after.box).toHaveLength(1) // novo Pokémon foi pro PC
+    expect(after.box[0]?.speciesId).toBe(pick)
     expect(after.today.capturedIds).toHaveLength(1)
+    expect(after.caughtSpecies).toContain(pick) // registrado na Pokédex
+    expect(after.encounters).toHaveLength(0)
+    expect(after.today.exploredSpots).toContain(0)
+  })
+})
+
+describe('Computador / PC (PLAN §4.5, redesign)', () => {
+  function morning(over: Partial<GameState> = {}): GameState {
+    return { ...createInitialState(SEED), gym: { types: GYM }, ...over } // phase MORNING
+  }
+
+  it('depositar move do time pro PC (manhã); manter ≥1 no time', () => {
+    let s = morning({ roster: [makeMon({ id: 'a' }), makeMon({ id: 'b' })], box: [] })
+    s = reducer(s, { type: 'DEPOSIT_POKEMON', pokemonId: 'b' })
+    expect(s.roster.map((p) => p.id)).toEqual(['a'])
+    expect(s.box.map((p) => p.id)).toEqual(['b'])
+
+    // Não pode esvaziar o time (resta 1).
+    const blocked = reducer(s, { type: 'DEPOSIT_POKEMON', pokemonId: 'a' })
+    expect(blocked.roster).toHaveLength(1)
+    expect(blocked.box).toHaveLength(1)
+  })
+
+  it('retirar move do PC pro time (manhã); exige vaga (< 6)', () => {
+    let s = morning({ roster: [makeMon({ id: 'a' })], box: [makeMon({ id: 'x' })] })
+    s = reducer(s, { type: 'WITHDRAW_POKEMON', pokemonId: 'x' })
+    expect(s.roster.map((p) => p.id)).toEqual(['a', 'x'])
+    expect(s.box).toHaveLength(0)
+
+    const full = Array.from({ length: MAX_ROSTER_SIZE }, (_, i) => makeMon({ id: `r${i}` }))
+    const noRoom = reducer(morning({ roster: full, box: [makeMon({ id: 'x' })] }), {
+      type: 'WITHDRAW_POKEMON',
+      pokemonId: 'x',
+    })
+    expect(noRoom.roster).toHaveLength(MAX_ROSTER_SIZE)
+    expect(noRoom.box).toHaveLength(1)
+  })
+
+  it('trocar fora da manhã é no-op (só de manhã)', () => {
+    const day = dayState({ roster: [makeMon({ id: 'a' }), makeMon({ id: 'b' })], box: [] })
+    const after = reducer(day, { type: 'DEPOSIT_POKEMON', pokemonId: 'b' })
+    expect(after.roster).toHaveLength(2)
+    expect(after.box).toHaveLength(0)
   })
 })
 

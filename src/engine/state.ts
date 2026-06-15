@@ -278,6 +278,10 @@ export interface GameState {
   gym: GymInfo
   /** 1..9 Pokémon (despacha 1–6 por missão). */
   roster: Pokemon[]
+  /** Pokémon guardados no Computador (PC) — fora do time; trocados só de manhã (capacidade ilimitada). */
+  box: Pokemon[]
+  /** Espécies (ids) já capturadas na run — base da Pokédex da área (persiste após evolução). */
+  caughtSpecies: number[]
   missions: MissionInstance[]
   defenses: DefenseEvent[]
   captureSearches: CaptureSearch[]
@@ -329,6 +333,8 @@ export function createInitialState(seed: number): GameState {
     clock: { dayElapsedMs: 0, dayLengthMs: DAY_LENGTH_MS, speed: 0 },
     gym: { types: [] },
     roster: [],
+    box: [],
+    caughtSpecies: [],
     missions: [],
     defenses: [],
     captureSearches: [],

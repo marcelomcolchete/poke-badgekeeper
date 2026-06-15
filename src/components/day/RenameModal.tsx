@@ -14,11 +14,13 @@ interface Props {
   pokemon: Pokemon
   dispatch: Dispatch<GameAction>
   onDone: () => void
+  /** Aviso opcional (ex.: "foi enviado ao Computador") exibido acima do campo de apelido. */
+  note?: string
 }
 
 const MAX_LEN = 16
 
-export function RenameModal({ pokemon, dispatch, onDone }: Props) {
+export function RenameModal({ pokemon, dispatch, onDone, note }: Props) {
   const species = getSpecies(pokemon.speciesId)
   const [name, setName] = useState('')
   const symbol = genderSymbol(pokemon.gender)
@@ -42,6 +44,8 @@ export function RenameModal({ pokemon, dispatch, onDone }: Props) {
           )}
           <span className={styles.level}>Nv {pokemon.level}</span>
         </span>
+
+        {note && <span className={styles.note}>{note}</span>}
 
         <label className={styles.field}>
           <span className={styles.label}>Dar um apelido?</span>

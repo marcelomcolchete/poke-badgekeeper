@@ -214,6 +214,17 @@ function migrate(file: Partial<SaveFile>): SaveFile | null {
     version = 23
   }
 
+  // v23 → v24: Computador (PC) e Pokédex da área. Inicia box vazio e caughtSpecies com as
+  // espécies já presentes no roster (o jogador "já capturou" o que tem em mãos).
+  if (version === 23) {
+    const roster = state.roster as Array<{ speciesId?: number }> | undefined
+    const caught = Array.isArray(roster)
+      ? [...new Set(roster.map((p) => p.speciesId).filter((id): id is number => typeof id === 'number'))]
+      : []
+    state = { box: [], caughtSpecies: caught, ...state }
+    version = 24
+  }
+
   if (version !== SAVE_VERSION) return null
   return { version, savedAtMs: (file as SaveFile).savedAtMs, state } as unknown as SaveFile
 }

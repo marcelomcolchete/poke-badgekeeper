@@ -32,7 +32,9 @@ export function ReportSidebar({ state, messages }: Props) {
   const total = state.missions.length
   const battlesTotal = state.defenses.length
   const captured = t.capturedIds.at(-1)
-  const capturedMon = captured ? state.roster.find((p) => p.id === captured) : undefined
+  const capturedMon = captured
+    ? [...state.roster, ...state.box].find((p) => p.id === captured)
+    : undefined
   const capturedSpecies = capturedMon ? getSpecies(capturedMon.speciesId) : undefined
 
   // Previsão de estrela do dia: depende de bater AS DUAS metas (missões E batalhas).

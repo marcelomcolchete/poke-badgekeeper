@@ -135,6 +135,295 @@
   padding-right: 2px;
 }
 
+/* ============ Área de Captura (redesign) ============ */
+
+/* Escolha do explorador: cartas enxutas, todo o time sem rolagem. */
+.explorerGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 8px;
+}
+
+.explorer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  text-align: left;
+  background: var(--c-panel);
+  border: 3px solid var(--c-panel-border);
+  border-radius: var(--radius-pixel);
+  padding: 7px 8px;
+  cursor: pointer;
+}
+
+.explorer:not(:disabled):hover {
+  border-color: var(--c-hud-accent);
+}
+
+.explorerOff {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.explorerSprite {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  image-rendering: pixelated;
+  background: #e9e4cf;
+  border: 2px solid var(--c-panel-border);
+  border-radius: 4px;
+}
+
+.explorerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  flex: 1;
+}
+
+.explorerName {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  line-height: 1.2;
+  color: var(--c-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.explorerLvl {
+  margin-left: 6px;
+  font-family: var(--font-text);
+  font-size: 13px;
+  color: var(--c-ink-muted);
+}
+
+.explorerStats {
+  display: flex;
+  gap: 5px;
+}
+
+.exStat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  flex: 1;
+  padding: 3px 2px;
+  background: rgba(0, 0, 0, 0.06);
+  border: 2px solid var(--c-panel-border);
+  border-radius: var(--radius-pixel);
+}
+
+.exStat b {
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  color: var(--c-ink);
+  line-height: 1;
+}
+
+.exStatLbl {
+  font-family: var(--font-pixel);
+  font-size: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--c-ink-muted);
+}
+
+/* Percepção em destaque: acelera a busca. */
+.exStatKey {
+  background: rgba(45, 210, 79, 0.16);
+  border-color: var(--c-grass-dark);
+}
+
+.exStatKey b {
+  color: var(--c-grass-dark);
+}
+
+.explorerStatus {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--c-ink);
+  background: var(--c-hud-accent);
+  border-radius: 4px;
+  padding: 2px 4px;
+}
+
+/* Pokédex da área: silhuetas dos não capturados. */
+.dex {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--c-panel);
+  border: 3px solid var(--c-panel-border);
+  border-radius: var(--radius-pixel);
+  padding: 8px 10px;
+}
+
+.dexHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.dexTitle {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--c-ink);
+}
+
+.dexCount {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--c-grass-dark);
+}
+
+.dexGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+  gap: 4px;
+  max-height: 196px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.dexTile {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  background: rgba(0, 0, 0, 0.05);
+  border: 2px solid var(--c-panel-border);
+  border-radius: 4px;
+}
+
+.dexImg {
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  object-fit: contain;
+}
+
+.dexTileLocked {
+  opacity: 0.85;
+}
+
+.dexTileLocked .dexImg {
+  filter: brightness(0);
+  opacity: 0.55;
+}
+
+/* Encontro: candidatos lado a lado, cartas grandes (sem rolagem). */
+.encGrid {
+  display: grid;
+  gap: 10px;
+}
+
+.encCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: var(--c-panel);
+  border: 3px solid var(--c-panel-border);
+  border-radius: var(--radius-pixel);
+  padding: 10px 8px;
+}
+
+.encRank {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  background: var(--c-panel);
+  border: 2px solid currentColor;
+  border-radius: 5px;
+}
+
+.encSprite {
+  width: 88px;
+  height: 88px;
+  image-rendering: pixelated;
+  object-fit: contain;
+  background: #e9e4cf;
+  border: 2px solid var(--c-panel-border);
+  border-radius: 6px;
+}
+
+.encName {
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  color: var(--c-ink);
+  text-align: center;
+}
+
+.encTypes {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.encStats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  width: 100%;
+}
+
+.encStat {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 3px 6px;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 4px;
+}
+
+.encStatLbl {
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  text-transform: uppercase;
+  color: var(--c-ink-muted);
+}
+
+.encStat b {
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  color: var(--c-ink);
+}
+
+.encBtn {
+  margin-top: 2px;
+  width: 100%;
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  color: var(--c-ink);
+  background: var(--c-hud-accent);
+  border: 3px solid var(--c-ink);
+  border-radius: var(--radius-pixel);
+  padding: 10px;
+  cursor: pointer;
+}
+
 /* Estado de "arrastando" (reutilizado pelas miniaturas do esquadrão da defesa). */
 .dragging {
   opacity: 0.5;

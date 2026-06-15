@@ -5,8 +5,9 @@
 import type { GameState } from '../engine/state.ts'
 import type { CaptureReturn, CaptureSearch } from '../engine/state.ts'
 import { getCity } from '../data/cities.ts'
-import { getSpecies } from '../data/pokemon/index.ts'
-import { captureWild, rollEncounter, rosterIsFull, searchMs } from '../engine/capture.ts'
+import { rollEncounter, rosterIsFull, searchMs } from '../engine/capture.ts'
+import { MAX_ROSTER_SIZE } from '../engine/constants.ts'
+import { createPokemon } from '../engine/leveling.ts'
 import { graphTravelMs, travelRoute } from '../engine/missions.ts'
 import { graphWithTunnel } from '../engine/pathfinding.ts'
 import { teamTravelSpeedMultiplier } from '../engine/secretEffects.ts'
@@ -122,43 +123,53 @@ export function advanceCaptureReturn(s: GameState, ret: CaptureReturn, nowMs: nu
 }
 
 /**
- * Captura o candidato escolhido, encerra a área e inicia a volta. Com o roster cheio é
- * preciso indicar `releaseId` — o Pokémon descartado para abrir vaga (§4.5, ajuste). Nunca
- * descarta o próprio procurador (ainda em campo).
+ * Captura o candidato escolhido, encerra a área e inicia a volta. Com o time cheio (6) o
+ * Pokémon vai automaticamente para o Computador (PC) — a troca com o time só acontece de manhã.
  */
-export function capturePick(
-  s: GameState,
-  searcherId: string,
-  candidateIndex: number,
-  releaseId?: string,
-): void {
-  // Valida ANTES de consumir o encontro: uma captura bloqueada (time cheio sem descarte)
-  // não pode descartar o trio do encontro.
+export function capturePick(s: GameState, searcherId: string, candidateIndex: number): void {
   const encounter = s.encounters.find((e) => e.searcherId === searcherId)
   const speciesId = encounter?.candidateSpeciesIds[candidateIndex]
   if (!encounter || speciesId === undefined) return
 
-  if (rosterIsFull(s.roster)) {
-    if (!releaseId || releaseId === searcherId) return
-    if (!s.roster.some((p) => p.id === releaseId)) return
-    s.roster = s.roster.filter((p) => p.id !== releaseId)
-  }
   s.encounters = s.encounters.filter((e) => e !== encounter)
   const id = takeId(s, 'p')
   // Recria o candidato a partir do seed do encontro (preview = captura); saves antigos
   // sem candidateSeeds caem no RNG da run.
   const seed = encounter.candidateSeeds?.[candidateIndex]
-  s.roster = captureWild({
-    roster: s.roster,
-    species: getSpecies(speciesId),
+  const caught = createPokemon({
+    id,
+    speciesId,
     level: encounter.level,
     rng: seed !== undefined ? createRng(seed) : takeRng(s),
-    id,
   })
+  // Time cheio → vai pro PC; senão entra no time.
+  if (rosterIsFull(s.roster)) s.box = [...s.box, caught]
+  else s.roster = [...s.roster, caught]
   s.today.capturedIds.push(id)
+  if (!s.caughtSpecies.includes(speciesId)) s.caughtSpecies = [...s.caughtSpecies, speciesId]
 
   startReturn(s, searcherId, encounter.spotIndex, true)
   consumeSpot(s, encounter.spotIndex)
+}
+
+/** Manhã: deposita um Pokémon do time no Computador (PC). Mantém pelo menos 1 no time. */
+export function depositPokemon(s: GameState, pokemonId: string): void {
+  if (s.run.phase !== 'MORNING') return
+  if (s.roster.length <= 1) return
+  const mon = s.roster.find((p) => p.id === pokemonId)
+  if (!mon) return
+  s.roster = s.roster.filter((p) => p.id !== pokemonId)
+  s.box = [...s.box, { ...mon, status: 'idle' }]
+}
+
+/** Manhã: retira um Pokémon do Computador (PC) para o time. Exige vaga (time < 6). */
+export function withdrawPokemon(s: GameState, pokemonId: string): void {
+  if (s.run.phase !== 'MORNING') return
+  if (s.roster.length >= MAX_ROSTER_SIZE) return
+  const mon = s.box.find((p) => p.id === pokemonId)
+  if (!mon) return
+  s.box = s.box.filter((p) => p.id !== pokemonId)
+  s.roster = [...s.roster, { ...mon, status: 'idle' }]
 }
 
 /** Define o apelido de um Pokémon (vazio = volta a usar o nome da espécie) — PLAN §4.5. */

@@ -14,6 +14,7 @@ import { getSpecies } from '../../data/pokemon/index.ts'
 import { effectiveAttr } from '../../engine/attributes.ts'
 import { PokemonCard } from '../PokemonCard/PokemonCard.tsx'
 import { TeamPanel } from '../TeamPanel/TeamPanel.tsx'
+import { BoxPanel } from '../BoxPanel/BoxPanel.tsx'
 import { Textbox } from '../Textbox/Textbox.tsx'
 import { Overlay } from '../common/Overlay.tsx'
 import { Stars } from '../common/Stars.tsx'
@@ -49,6 +50,7 @@ function shopState(item: ItemData, state: GameState): ShopState {
 
 export function MorningScreen({ state, dispatch }: Props) {
   const [teamOpen, setTeamOpen] = useState(false)
+  const [boxOpen, setBoxOpen] = useState(false)
   // Seletor de alvo do Rare Candy (null = fechado).
   const [candyOpen, setCandyOpen] = useState(false)
 
@@ -129,9 +131,14 @@ export function MorningScreen({ state, dispatch }: Props) {
           <span className={styles.sectionTitle}>
             SEU TIME ({state.roster.length}/{MAX_ROSTER_SIZE})
           </span>
-          <button type="button" className={styles.ghostBtn} onClick={() => setTeamOpen(true)}>
-            Gerenciar ▸
-          </button>
+          <span className={styles.teamActions}>
+            <button type="button" className={styles.ghostBtn} onClick={() => setBoxOpen(true)}>
+              Computador ({state.box.length}) ▸
+            </button>
+            <button type="button" className={styles.ghostBtn} onClick={() => setTeamOpen(true)}>
+              Gerenciar ▸
+            </button>
+          </span>
         </div>
         <div className={styles.roster}>
           {state.roster.map((mon) => (
@@ -141,6 +148,8 @@ export function MorningScreen({ state, dispatch }: Props) {
       </section>
 
       {teamOpen && <TeamPanel state={state} dispatch={dispatch} onClose={() => setTeamOpen(false)} />}
+
+      {boxOpen && <BoxPanel state={state} dispatch={dispatch} onClose={() => setBoxOpen(false)} />}
 
       {candyOpen && (
         <Overlay title="RARE CANDY — ESCOLHA UM POKÉMON" onClose={() => setCandyOpen(false)}>

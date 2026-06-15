@@ -10,7 +10,14 @@ import { startRun } from './setup.ts'
 import { advancePhase, setSpeed } from './phaseFlow.ts'
 import { acceptMission, completeRocketBattle, resolveRocketBattle } from './missionFlow.ts'
 import { assignDefense, completeDefense } from './defenseFlow.ts'
-import { capturePick, captureDismiss, renamePokemon, startSearch } from './captureFlow.ts'
+import {
+  capturePick,
+  captureDismiss,
+  depositPokemon,
+  renamePokemon,
+  startSearch,
+  withdrawPokemon,
+} from './captureFlow.ts'
 import { allocatePoint, applyItem, buyItem, useRareCandy } from './marketFlow.ts'
 
 export function reducer(state: GameState, action: GameAction): GameState {
@@ -47,10 +54,16 @@ export function reducer(state: GameState, action: GameAction): GameState {
       startSearch(s, action.searcherId, action.spotIndex)
       break
     case 'CAPTURE_PICK':
-      capturePick(s, action.searcherId, action.candidateIndex, action.releaseId)
+      capturePick(s, action.searcherId, action.candidateIndex)
       break
     case 'CAPTURE_DISMISS':
       captureDismiss(s, action.searcherId)
+      break
+    case 'DEPOSIT_POKEMON':
+      depositPokemon(s, action.pokemonId)
+      break
+    case 'WITHDRAW_POKEMON':
+      withdrawPokemon(s, action.pokemonId)
       break
     case 'RENAME_POKEMON':
       renamePokemon(s, action.pokemonId, action.nickname)

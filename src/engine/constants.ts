@@ -147,6 +147,9 @@ export const DRAFT_CHOICES = 3
  * thick-club). dayBuffs é opcional e some na virada do dia; migração é passthrough.
  * v23: mercado da manhã fixo no dia — today.shopOffer (3 itens ofertados) e
  * today.purchasedItems (vendidos hoje). A migração inicia ambos vazios (a UI deriva a oferta
- * quando vazia). */
-export const SAVE_VERSION = 23
+ * quando vazia).
+ * v24: Computador (PC) — s.box (Pokémon fora do time, trocados só de manhã) e Pokédex da área
+ * (s.caughtSpecies, espécies já capturadas). Com o time cheio, a captura agora vai pro PC em vez
+ * de exigir descarte. A migração inicia box vazio e caughtSpecies com as espécies do roster atual. */
+export const SAVE_VERSION = 24
 export const SAVE_KEY = 'poke-badgekeeper:save'

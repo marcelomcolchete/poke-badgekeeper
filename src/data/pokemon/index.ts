@@ -75,6 +75,18 @@ export function speciesByType(type: PokemonType): Species[] {
 }
 
 /**
+ * Pool capturável de uma área: todas as espécies dos tipos do ginásio (qualquer nível),
+ * deduplicadas e ordenadas por id — base da Pokédex da Área de Captura.
+ */
+export function capturePool(types: readonly PokemonType[]): Species[] {
+  const byId = new Map<number, Species>()
+  for (const type of types) {
+    for (const species of speciesByType(type)) byId.set(species.id, species)
+  }
+  return [...byId.values()].sort((a, b) => a.id - b.id)
+}
+
+/**
  * Espécies de um tipo elegíveis como selvagem no nível dado: o filtro de evolução
  * exige `nível ≥ minWildLevel` (PLAN §4.5).
  */
