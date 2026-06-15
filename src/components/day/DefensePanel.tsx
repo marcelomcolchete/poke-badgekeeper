@@ -105,12 +105,14 @@ export function DefensePanel({ state, dispatch, defenseId, onClose }: Props) {
             <span className={styles.barStat}>
               EXP até <b>{maxXp}</b>
             </span>
-            <span className={styles.barTypes}>
-              {myTypes.map((t) => (
-                <TypeBadge key={t} type={t} />
-              ))}
-            </span>
           </div>
+          <span className={styles.barTypes}>
+            {myTypes.length > 0 ? (
+              myTypes.map((t) => <TypeBadge key={t} type={t} />)
+            ) : (
+              <span className={styles.barTypesEmpty}>Tipos do seu time aparecem aqui</span>
+            )}
+          </span>
           {squad.length === 0 ? (
             <span className={styles.selectedEmpty}>
               Escolha ao menos {MIN_DEFENSE_SQUAD} abaixo. Arraste para reordenar os duelos.
