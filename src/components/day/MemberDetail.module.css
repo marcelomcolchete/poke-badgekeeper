@@ -22,7 +22,7 @@
 }
 
 .natureBoosted {
-  color: #4a90d9;
+  color: #2f8f3f;
   font-weight: bold;
 }
 
@@ -126,6 +126,10 @@
 }
 
 .allocBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
   font-family: var(--font-pixel);
   font-size: 8px;
   color: #fff;
@@ -135,9 +139,29 @@
   padding: 5px 3px;
 }
 
-.allocBtn:hover {
+.allocBtn:hover:not(:disabled) {
   background: var(--c-hud-accent);
   color: var(--c-ink);
+}
+
+.allocBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.allocName {
+  letter-spacing: 0.02em;
+}
+
+/* Ganho real do ponto neste eixo (+5/+10/+15). */
+.allocGain {
+  font-size: 9px;
+  color: #9fe6a8;
+}
+
+/* Ganho aparado pelo teto 60 (ex.: 59 → +1): alerta âmbar para "pensar se vale". */
+.allocBtnCapped .allocGain {
+  color: #ffcf5a;
 }
 
 .items {

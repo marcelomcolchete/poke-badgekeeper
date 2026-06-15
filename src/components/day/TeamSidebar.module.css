@@ -103,45 +103,20 @@
   }
 }
 
-/* Habilidade Secreta ATIVA: brilho violeta pulsante (distinto do dourado de level-up). */
-.secretActive {
-  border-color: #b388ff;
-  box-shadow:
-    0 0 0 1px rgba(179, 136, 255, 0.7) inset,
-    0 0 10px rgba(179, 136, 255, 0.5);
-  animation: secretGlow 1.6s ease-in-out infinite;
-}
-
-/* Se também vai subir de nível, o dourado tem prioridade (volta animação de level). */
-.willLevelUp.secretActive {
-  border-color: #f6c945;
-  animation: levelGlow 1.1s ease-in-out infinite;
-}
-
-@keyframes secretGlow {
-  50% {
-    box-shadow:
-      0 0 0 1px rgba(208, 178, 255, 0.95) inset,
-      0 0 16px rgba(179, 136, 255, 0.85);
-  }
-}
-
-/* Selo ✦ no canto inferior direito do avatar (Habilidade Secreta ativa). */
+/* Medalha 🏅 no canto inferior direito do avatar (Habilidade Secreta ativa).
+   Só o selo marca a secreta — sem brilho ao redor do card. */
 .secretBadge {
   position: absolute;
   bottom: -6px;
   right: -6px;
   display: grid;
   place-items: center;
-  width: 16px;
-  height: 16px;
-  font-size: 10px;
+  width: 18px;
+  height: 18px;
+  font-size: 13px;
   line-height: 1;
-  color: #2a1245;
-  background: #c8a6ff;
-  border: 2px solid var(--c-ink);
-  border-radius: 999px;
-  box-shadow: 0 0 6px rgba(179, 136, 255, 0.9);
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6));
+  pointer-events: none;
 }
 
 .avatar {

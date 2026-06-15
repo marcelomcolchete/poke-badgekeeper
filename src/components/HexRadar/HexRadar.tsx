@@ -25,9 +25,9 @@ interface Props {
   /** Desenha a moldura/fundo do painel (desligado quando embutido numa carta). */
   frame?: boolean
   size?: number
-  /** Eixo favorecido pela natureza — label e spoke em azul. */
+  /** Eixo favorecido pela natureza — label e spoke em verde, com sufixo "+". */
   boostedAxis?: AttrKey | null
-  /** Eixo penalizado pela natureza — label e spoke em vermelho. */
+  /** Eixo penalizado pela natureza — label e spoke em vermelho, com sufixo "−". */
   reducedAxis?: AttrKey | null
   /** Escala do eixo (valor no anel externo). Padrão = teto individual (60); missões usam 70. */
   axisMax?: number
@@ -78,11 +78,14 @@ export function HexRadar({
         const isReduced = key === reducedAxis
         const spokeClass = isBoosted ? styles.spokeBoosted : isReduced ? styles.spokeReduced : styles.spoke
         const labelClass = isBoosted ? styles.labelBoosted : isReduced ? styles.labelReduced : styles.label
+        // Favorecido pela natureza → verde "+"; penalizado → vermelho "−".
+        const sign = isBoosted ? '+' : isReduced ? '−' : ''
         return (
           <g key={key}>
             <line className={spokeClass} x1={cx} y1={cy} x2={spoke.x} y2={spoke.y} />
             <text className={labelClass} x={label.x} y={label.y} textAnchor="middle">
               {ATTR_SHORT_PT[key]}
+              {sign}
             </text>
             {showValues && values && (
               <text

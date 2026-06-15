@@ -5,7 +5,8 @@ import type { GameState } from '../../engine/state.ts'
 import type { Pokemon } from '../../types/index.ts'
 import type { GuideMessage } from './DayScreen.tsx'
 import { STARS_MAX } from '../../engine/constants.ts'
-import { missionGoal } from '../../engine/approval.ts'
+import type { DailyProgress } from '../../engine/approval.ts'
+import { approvalDelta, battleGoal, missionGoal } from '../../engine/approval.ts'
 import { computeMvp } from '../../engine/daySummary.ts'
 import { clamp } from '../../engine/math.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
@@ -33,13 +34,15 @@ export function ReportSidebar({ state, messages }: Props) {
   const captured = t.capturedIds.at(-1)
   const capturedMon = captured ? state.roster.find((p) => p.id === captured) : undefined
   const capturedSpecies = capturedMon ? getSpecies(capturedMon.speciesId) : undefined
-  const goal = missionGoal(total)
-  const goalMet = total > 0 && completed >= goal
-  const allDone = total > 0 && completed >= total
-  const remaining = Math.max(0, goal - completed)
 
-  const completedPct = total > 0 ? clamp(completed / total, 0, 1) * 100 : 0
-  const goalPct = total > 0 ? clamp(goal / total, 0, 1) * 100 : 0
+  // Previsão de estrela do dia: depende de bater AS DUAS metas (missões E batalhas).
+  const progress: DailyProgress = {
+    missionsCompleted: completed,
+    missionsTotal: total,
+    battlesWon: t.defensesWon,
+    battlesTotal,
+  }
+  const starDelta = approvalDelta(progress)
   const starsPct = `${(state.approval.stars / STARS_MAX) * 100}%`
 
   return (
@@ -54,33 +57,18 @@ export function ReportSidebar({ state, messages }: Props) {
         </span>
       </header>
 
-      <section className={styles.missions}>
-        <div className={styles.missionTop}>
-          <span className={styles.label}>Missões cumpridas</span>
-          <span className={styles.big}>
-            {completed}
-            <span className={styles.of}> / {total}</span>
-          </span>
-        </div>
-        <div className={styles.bar}>
-          <span className={styles.barFill} style={{ width: `${completedPct}%` }} />
-          {total > 0 && (
-            <span
-              className={styles.goalMark}
-              style={{ left: `${goalPct}%` }}
-              title={`Meta: ${goal}`}
-              aria-hidden="true"
-            />
-          )}
-        </div>
-        <p className={`${styles.hint} ${goalMet ? styles.hintGood : ''}`}>
-          {allDone
-            ? 'Todas cumpridas — +1 estrela! ★'
-            : goalMet
-              ? 'Meta batida — +½ estrela! ★½'
-              : `Faltam ${remaining} para a meta (½ estrela).`}
-        </p>
-      </section>
+      <GoalSection label="Missões cumpridas" done={completed} total={total} goal={missionGoal(total)} />
+      <GoalSection label="Batalhas vencidas" done={t.defensesWon} total={battlesTotal} goal={battleGoal(battlesTotal)} />
+
+      {/* Previsão da estrela do dia: precisa bater AS DUAS metas para o ½, e 100% nas
+          duas para o +1. */}
+      <p className={`${styles.hint} ${starDelta > 0 ? styles.hintGood : ''}`}>
+        {starDelta >= 1
+          ? 'Dia perfeito — +1 estrela! ★'
+          : starDelta > 0
+            ? 'Metas batidas — +½ estrela! ★½'
+            : 'Bata a meta de missões E de batalhas para ganhar ½ estrela.'}
+      </p>
 
       {/* Placar do dia: sucessos (verde) e falhas (vermelho) de missões e batalhas. */}
       <div className={styles.score}>
@@ -151,6 +139,56 @@ export function ReportSidebar({ state, messages }: Props) {
         </div>
       </section>
     </aside>
+  )
+}
+
+/**
+ * Bloco de progresso rumo à meta de um domínio do dia (missões ou batalhas): contador,
+ * barra com marcador da meta e dica de quanto falta. Idêntico para os dois.
+ */
+function GoalSection({
+  label,
+  done,
+  total,
+  goal,
+}: {
+  label: string
+  done: number
+  total: number
+  goal: number
+}) {
+  const goalMet = total > 0 && done >= goal
+  const remaining = Math.max(0, goal - done)
+  const donePct = total > 0 ? clamp(done / total, 0, 1) * 100 : 0
+  const goalPct = total > 0 ? clamp(goal / total, 0, 1) * 100 : 0
+  return (
+    <section className={styles.missions}>
+      <div className={styles.missionTop}>
+        <span className={styles.label}>{label}</span>
+        <span className={styles.big}>
+          {done}
+          <span className={styles.of}> / {total}</span>
+        </span>
+      </div>
+      <div className={styles.bar}>
+        <span className={styles.barFill} style={{ width: `${donePct}%` }} />
+        {total > 0 && (
+          <span
+            className={styles.goalMark}
+            style={{ left: `${goalPct}%` }}
+            title={`Meta: ${goal}`}
+            aria-hidden="true"
+          />
+        )}
+      </div>
+      <p className={`${styles.hint} ${goalMet ? styles.hintGood : ''}`}>
+        {total <= 0
+          ? 'Nenhuma hoje.'
+          : goalMet
+            ? `Meta batida (${goal})! ✓`
+            : `Faltam ${remaining} para a meta (${goal}).`}
+      </p>
+    </section>
   )
 }
 
