@@ -44,8 +44,8 @@ describe('shortestPath', () => {
     expect(shortestPath(GRAPH, 'j', 'zz')).toEqual([])
   })
 
-  it('exemplo do enunciado: j→q é o caminho único pelo topo', () => {
-    expect(shortestPath(GRAPH, 'j', 'q')).toEqual(['j', 'i', 'c', 'd', 'e', 'f', 'k', 'o', 'q'])
+  it('j→q é o caminho único (q só é alcançado via k)', () => {
+    expect(shortestPath(GRAPH, 'j', 'q')).toEqual(['j', 'i', 'c', 'd', 'e', 'f', 'k', 'q'])
   })
 
   it('é simétrico no conjunto de pontos (ida = volta invertida)', () => {
@@ -56,7 +56,7 @@ describe('shortestPath', () => {
 
   it('pontos próximos têm caminho mais curto que pontos distantes', () => {
     const near = pathDistance(GRAPH, shortestPath(GRAPH, 'j', 'd')) // museu (perto)
-    const far = pathDistance(GRAPH, shortestPath(GRAPH, 'j', 'q')) // grama 3.6 (longe)
+    const far = pathDistance(GRAPH, shortestPath(GRAPH, 'j', 'q')) // ponto distante (sul)
     expect(near).toBeGreaterThan(0)
     expect(far).toBeGreaterThan(near)
   })

@@ -9,6 +9,7 @@ import type {
   GamePhase,
   GameSpeed,
   MapPos,
+  MissionCategory,
   Pokemon,
   PokemonType,
   TrainerId,
@@ -58,6 +59,12 @@ export type MissionResult = 'success' | 'failure' | 'expired'
 export interface MissionInstance {
   id: string
   templateId: string
+  /**
+   * Categoria sorteada (sítio onde nasce). Define o MARCADOR quando um mesmo ponto hospeda
+   * mais de um número — ex.: 'g' é casa (6.2) e área verde (3.3); só a categoria desempata.
+   * Ausente em missões antigas (cai no marcador do ponto).
+   */
+  category?: MissionCategory
   /**
    * Exigência por eixo (0–60), GERADA e gravada no spawn escalando com o dia (ver
    * engine/missions.ts → generateRequirement). Desenha o hexágono e define a P_sucesso.

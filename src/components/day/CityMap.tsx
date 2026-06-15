@@ -5,6 +5,7 @@
 
 import type { MouseEvent, ReactNode } from 'react'
 import type { MapPos, Pokemon } from '../../types/index.ts'
+import { CATEGORY_SITE } from '../../types/index.ts'
 import type { CityGraph } from '../../data/types.ts'
 import type {
   CaptureReturn,
@@ -93,7 +94,7 @@ export function CityMap({ state, onMission, onDefense, onSpot }: Props) {
         {state.today.digTunnel && <DigTunnel graph={graph} tunnel={state.today.digTunnel} />}
 
         {activeDefense && (
-          <div className={styles.anchor} style={posStyle(markerPos(graph, city.siteNodes.gym))}>
+          <div className={styles.anchor} style={posStyle(markerPos(graph, city.siteNodes.gym, 'gym'))}>
             <DefenseMarker defense={activeDefense} now={now} onClick={() => onDefense(activeDefense.id)} />
           </div>
         )}
@@ -104,7 +105,7 @@ export function CityMap({ state, onMission, onDefense, onSpot }: Props) {
           // Área explorada some — mas se há um procurador VOLTANDO dela, mantém o ✓/✗ (#6).
           if (state.today.exploredSpots.includes(i) && !ret) return null
           return (
-            <div key={`spot-${i}`} className={styles.anchor} style={posStyle(markerPos(graph, node))}>
+            <div key={`spot-${i}`} className={styles.anchor} style={posStyle(markerPos(graph, node, 'green'))}>
               <ExplorationMarker
                 spotIndex={i}
                 search={state.captureSearches.find((c) => c.spotIndex === i)}
@@ -118,7 +119,13 @@ export function CityMap({ state, onMission, onDefense, onSpot }: Props) {
         })}
 
         {missions.map((mission) => (
-          <div key={mission.id} className={styles.anchor} style={posStyle(markerPos(graph, mission.node))}>
+          <div
+            key={mission.id}
+            className={styles.anchor}
+            style={posStyle(
+              markerPos(graph, mission.node, mission.category ? CATEGORY_SITE[mission.category] : undefined),
+            )}
+          >
             <MissionMarker mission={mission} now={now} onClick={() => onMission(mission.id)} />
           </div>
         ))}
