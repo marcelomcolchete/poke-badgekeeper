@@ -102,6 +102,12 @@ export interface Pokemon {
   maxHp: number
   status: PokemonStatus
   passives: string[]
+  /**
+   * Nível da Habilidade Secreta da LINHA, gravado no indivíduo: 1 = Bronze, 2 = Prata,
+   * 3 = Ouro (máximo). Sobe +1 a cada vez que o Pokémon é o Destaque do Dia. Ausente =
+   * habilidade ainda não desbloqueada (ou save antigo, migrado para 1 se já tinha a passiva).
+   */
+  secretLevel?: number
   /** Sexo sorteado na captura/criação pela proporção da espécie (PLAN §4.5). */
   gender: Gender
   /** Apelido dado pelo jogador na captura; null = usa o nome da espécie. */

@@ -214,14 +214,14 @@ export interface MissionResultLog {
 
 /** Estado por-Pokémon das Habilidades Secretas no dia (zera a cada manhã). */
 export interface SecretRuntime {
-  /** Sand Rush: tarefas concluídas com sucesso em sequência (cada uma = +25% de velocidade). */
-  sandRushStacks?: number
-  /** Weak Armor: já tomou dano hoje → +50% de velocidade em missões pelo resto do dia. */
+  /** Weak Armor: já tomou dano hoje → bônus de velocidade em missões pelo resto do dia. */
   weakArmorActive?: boolean
-  /** Battle Armor: defendeu o ginásio → +50% nos atributos da próxima missão (consome ao despachar). */
+  /** Battle Armor: participou de uma batalha → bônus nos atributos da próxima missão (consome ao resolver). */
   battleArmorPending?: boolean
-  /** Sturdy: já usou o "não desmaia" hoje (efeito 1×/dia). */
+  /** Sturdy: já usou o "não desmaia" hoje (escopo 1×/dia, níveis 2–3). */
   sturdyUsed?: boolean
+  /** Shell Armor: anulou dano → redução de velocidade na próxima missão (consome ao resolver). */
+  shellArmorSlow?: boolean
 }
 
 /** Um inimigo derrotado numa defesa do dia: quem derrotou + espécie (sprite no relatório). */
@@ -250,12 +250,15 @@ export interface DayTally {
   exploredSpots: number[]
   /** Inimigos derrotados em defesas hoje (MVP por derrotas + miniaturas no relatório). */
   defenseKills: DefenseKill[]
-  /** Habilidade Secreta desbloqueada HOJE pelo Destaque do Dia (reveal no resumo); null se nenhuma. */
-  secretUnlock: { pokemonId: string; abilityId: string } | null
+  /**
+   * Habilidade Secreta promovida HOJE pelo Destaque do Dia (reveal no resumo); null se
+   * nenhuma. `level` é o nível ALCANÇADO (1 = Bronze, 2 = Prata, 3 = Ouro).
+   */
+  secretUnlock: { pokemonId: string; abilityId: string; level: number } | null
   /** Estado por-Pokémon das Habilidades Secretas hoje (stacks/flags), por id de Pokémon. */
   secretRuntime: Record<string, SecretRuntime>
-  /** Túnel do Dig hoje: dois pontos do grafo ligados por baixo da terra; null se não há. */
-  digTunnel: [string, string] | null
+  /** Túnel do Dig hoje: 2–3 pontos do grafo ligados entre si por baixo da terra; null se não há. */
+  digTunnel: string[] | null
 }
 
 export interface DayLog {

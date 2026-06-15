@@ -4,7 +4,14 @@
 import type { Pokemon } from '../types/index.ts'
 import type { DefenseEvent, GameState } from '../engine/state.ts'
 import { canDefend, gymWinXp, resolveDefense, type DefenseResolution } from '../engine/gymDefense.ts'
-import { hasBattleArmor, hasSturdy, hasWeakArmor } from '../engine/secretEffects.ts'
+import {
+  hasBattleArmor,
+  hasShellArmor,
+  hasWeakArmor,
+  STURDY_SPENT_PASSIVE,
+  sturdyAvailable,
+  sturdyPerGame,
+} from '../engine/secretEffects.ts'
 import { goldForDefense } from '../engine/economy.ts'
 import { addXp } from '../engine/leveling.ts'
 import { createRng } from '../engine/rng.ts'
@@ -34,22 +41,41 @@ export function loseRunByUndefendedGym(s: GameState): void {
 }
 
 /**
- * Atualiza o estado diário das Habilidades Secretas após a defesa: consome o Sturdy usado
- * (1×/dia), marca Battle Armor (bônus na próxima missão) e ativa Weak Armor de quem tomou dano.
+ * Atualiza o estado diário das Habilidades Secretas após uma BATALHA (defesa de ginásio ou
+ * Equipe Rocket). Chamado DEPOIS de gravar o esquadrão (a marca persistente do Sturdy precisa
+ * do indivíduo já atualizado em estado):
+ *  - Battle Armor: bônus na próxima missão, só para quem REALMENTE lutou um duelo (venceu ou perdeu).
+ *  - Weak Armor: ativa o bônus de velocidade de quem tomou dano.
+ *  - Shell Armor: quem perdeu ≥1 duelo anulou dano → debuff de velocidade na próxima missão.
+ *  - Sturdy usado: per-dia no runtime; per-jogo (Bronze) grava a passiva no indivíduo.
  */
-function applyDefenseSecretRuntime(
+export function applyBattleSecretRuntime(
   s: GameState,
   before: readonly Pokemon[],
   resolution: DefenseResolution,
 ): void {
   const post = new Map(resolution.squad.map((p) => [p.id, p]))
-  for (const id of resolution.sturdyUsedIds) (s.today.secretRuntime[id] ??= {}).sturdyUsed = true
+  const fought = new Set(resolution.duels.map((d) => d.yourId))
+  const lostDuel = new Set(resolution.duels.filter((d) => !d.youWon).map((d) => d.yourId))
   for (const p of before) {
     const rt = (s.today.secretRuntime[p.id] ??= {})
-    if (hasBattleArmor(p)) rt.battleArmorPending = true
+    if (hasBattleArmor(p) && fought.has(p.id)) rt.battleArmorPending = true
     if (hasWeakArmor(p)) {
       const after = post.get(p.id)
       if (after && after.currentHp < p.currentHp) rt.weakArmorActive = true
+    }
+    if (hasShellArmor(p) && lostDuel.has(p.id)) rt.shellArmorSlow = true
+  }
+  // Consome o Sturdy gasto no escopo certo (per-jogo na passiva, per-dia no runtime).
+  for (const id of resolution.sturdyUsedIds) {
+    const mon = before.find((p) => p.id === id)
+    if (mon && sturdyPerGame(mon)) {
+      const cur = findMon(s, id)
+      if (cur && !cur.passives.includes(STURDY_SPENT_PASSIVE)) {
+        replaceMon(s, { ...cur, passives: [...cur.passives, STURDY_SPENT_PASSIVE] })
+      }
+    } else {
+      ;(s.today.secretRuntime[id] ??= {}).sturdyUsed = true
     }
   }
 }
@@ -71,12 +97,11 @@ export function assignDefense(s: GameState, defenseId: string, squadIds: string[
   const squad = squadOf(s, squadIds)
   if (!canDefend(squad)) return
 
-  // Sturdy disponível hoje (1×/dia) para quem tem a habilidade e ainda não usou.
+  // Sturdy disponível para quem tem a habilidade e ainda não usou (escopo por jogo/dia).
   const sturdyAvailableIds = new Set(
-    squad.filter((p) => hasSturdy(p) && !s.today.secretRuntime[p.id]?.sturdyUsed).map((p) => p.id),
+    squad.filter((p) => sturdyAvailable(p, s.today.secretRuntime)).map((p) => p.id),
   )
   const resolution = resolveDefense(takeRng(s), squad, defense.enemies, { sturdyAvailableIds })
-  applyDefenseSecretRuntime(s, squad, resolution)
 
   // Registra o desafiante derrotado (defeaterId + espécie) para o MVP/relatório.
   let theirs = 0
@@ -92,6 +117,7 @@ export function assignDefense(s: GameState, defenseId: string, squadIds: string[
 
   // HP/desmaio aplicados já (a batalha acontece agora); o XP fica para completeDefense.
   for (const member of resolution.squad) replaceMon(s, settleFaint(member))
+  applyBattleSecretRuntime(s, squad, resolution)
 
   defense.squadIds = squad.map((p) => p.id)
   defense.duels = resolution.duels

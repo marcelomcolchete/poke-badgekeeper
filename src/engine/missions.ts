@@ -37,7 +37,7 @@ import {
 } from './attributes.ts'
 import {
   combatDamageMultiplier,
-  teamFliesSolo,
+  teamFlies,
   teamSecretSum,
   type MissionSecretCtx,
 } from './secretEffects.ts'
@@ -219,7 +219,7 @@ export function travelRoute(
   node: string,
   team: readonly Pokemon[],
 ): { flying: boolean; path: string[]; distance: number } {
-  const flying = teamFliesSolo(team)
+  const flying = teamFlies(team)
   const path = flying ? [gym, node] : shortestPath(graph, gym, node)
   return { flying, path, distance: pathDistance(graph, path) }
 }

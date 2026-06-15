@@ -8,7 +8,7 @@ import type { GameState } from '../../engine/state.ts'
 import type { Pokemon } from '../../types/index.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
 import { getMissionTemplate } from '../../data/missionTemplates.ts'
-import { secretAbilityFor } from '../../data/secretAbilities.ts'
+import { secretAbilityFor, secretLevelOf, SECRET_TIER_LABEL } from '../../data/secretAbilities.ts'
 import { ATTR_MAX, ATTR_PER_POINT, LEVEL_MAX } from '../../engine/constants.ts'
 import { effectiveAttr, perPointGain } from '../../engine/attributes.ts'
 import { addXp, pendingPoints, xpToNext } from '../../engine/leveling.ts'
@@ -21,6 +21,7 @@ import {
   RANK_COLOR,
   RARITY_COLOR,
   RARITY_LABEL_PT,
+  SECRET_MEDAL,
   STATUS_LABEL_PT,
 } from '../common/visual.ts'
 import { displayNameOf, genderColor, genderSymbol } from '../common/naming.ts'
@@ -127,9 +128,14 @@ export function TeamSidebar({ state, onSelect }: Props) {
           const fainted = mon.currentHp <= 0
           const rank = pokemonRank(mon)
           const willLevelUp = willLevelUpOnReturn(state, mon)
-          // Habilidade Secreta desbloqueada no indivíduo → card brilha + tooltip.
+          // Habilidade Secreta desbloqueada no indivíduo → medalha do nível + tooltip.
           const secret = secretAbilityFor(mon.speciesId)
-          const secretActive = secret ? mon.passives.includes(secret.id) : false
+          const secretLevel = secretLevelOf(mon)
+          const secretActive = secretLevel > 0
+          const secretTip =
+            secretActive && secret
+              ? `Habilidade Secreta ATIVA: ${secret.name} (${SECRET_TIER_LABEL[secretLevel]})`
+              : undefined
           const atMax = mon.level >= LEVEL_MAX
           const xpNeeded = xpToNext(mon.level)
           const xpPct = atMax ? 100 : Math.min(100, (mon.xp / xpNeeded) * 100)
@@ -152,7 +158,7 @@ export function TeamSidebar({ state, onSelect }: Props) {
                 type="button"
                 className={memberClass}
                 onClick={() => onSelect(mon.id)}
-                title={secretActive && secret ? `Habilidade Secreta ATIVA: ${secret.name}` : undefined}
+                title={secretTip}
               >
                 <div className={styles.top}>
                   <span className={styles.avatar}>
@@ -166,12 +172,8 @@ export function TeamSidebar({ state, onSelect }: Props) {
                     </span>
                     {pending > 0 && <span className={styles.badge}>+{pending}</span>}
                     {secretActive && secret && (
-                      <span
-                        className={styles.secretBadge}
-                        title={`Habilidade Secreta ATIVA: ${secret.name}`}
-                        aria-label={`Habilidade Secreta ativa: ${secret.name}`}
-                      >
-                        🏅
+                      <span className={styles.secretBadge} title={secretTip} aria-label={secretTip}>
+                        {SECRET_MEDAL[secretLevel]}
                       </span>
                     )}
                     {willLevelUp && (

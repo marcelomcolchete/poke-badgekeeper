@@ -129,19 +129,25 @@ export function CityMap({ state, onMission, onDefense, onSpot }: Props) {
   )
 }
 
-/** Túnel do Dig: só os dois buracos nos pontos ligados (a ligação fica subentendida). */
-function DigTunnel({ graph, tunnel }: { graph: CityGraph; tunnel: readonly [string, string] }) {
-  const a = graph.nodes[tunnel[0]]
-  const b = graph.nodes[tunnel[1]]
-  if (!a || !b) return null
+/** Túnel do Dig: um buraco em cada ponto ligado (2–3; a ligação fica subentendida). */
+function DigTunnel({ graph, tunnel }: { graph: CityGraph; tunnel: readonly string[] }) {
   return (
     <>
-      <div className={styles.tunnelHole} style={posStyle(a)} title="Túnel (Dig)" aria-hidden="true">
-        🕳️
-      </div>
-      <div className={styles.tunnelHole} style={posStyle(b)} title="Túnel (Dig)" aria-hidden="true">
-        🕳️
-      </div>
+      {tunnel.map((id) => {
+        const pos = graph.nodes[id]
+        if (!pos) return null
+        return (
+          <div
+            key={id}
+            className={styles.tunnelHole}
+            style={posStyle(pos)}
+            title="Túnel (Dig)"
+            aria-hidden="true"
+          >
+            🕳️
+          </div>
+        )
+      })}
     </>
   )
 }

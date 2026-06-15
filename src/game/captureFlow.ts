@@ -9,6 +9,7 @@ import { getSpecies } from '../data/pokemon/index.ts'
 import { captureWild, rollEncounter, rosterIsFull, searchMs } from '../engine/capture.ts'
 import { graphTravelMs, travelRoute } from '../engine/missions.ts'
 import { graphWithTunnel } from '../engine/pathfinding.ts'
+import { teamTravelSpeedMultiplier } from '../engine/secretEffects.ts'
 import { createRng } from '../engine/rng.ts'
 import { findMon, replaceMon, takeId, takeRng } from './runtime.ts'
 
@@ -28,7 +29,8 @@ export function startSearch(s: GameState, searcherId: string, spotIndex: number)
   const city = getCity(s.run.cityIndex)
   const graph = graphWithTunnel(city.graph, s.today.digTunnel)
   const { flying, path, distance } = travelRoute(graph, city.siteNodes.gym, node, [searcher])
-  const oneWay = graphTravelMs(distance, [searcher])
+  const speedMult = teamTravelSpeedMultiplier([searcher], s.today.secretRuntime)
+  const oneWay = graphTravelMs(distance, [searcher], speedMult)
   const now = s.clock.dayElapsedMs
   const arriveAtMs = now + oneWay
 
@@ -93,7 +95,8 @@ function startReturn(s: GameState, searcherId: string, spotIndex: number, captur
   const node = s.captureSpots[spotIndex] ?? city.siteNodes.gym
   const graph = graphWithTunnel(city.graph, s.today.digTunnel)
   const { flying, path, distance } = travelRoute(graph, city.siteNodes.gym, node, [searcher])
-  const oneWay = graphTravelMs(distance, [searcher])
+  const speedMult = teamTravelSpeedMultiplier([searcher], s.today.secretRuntime)
+  const oneWay = graphTravelMs(distance, [searcher], speedMult)
   const now = s.clock.dayElapsedMs
   replaceMon(s, { ...searcher, status: 'returning' })
   s.captureReturns.push({

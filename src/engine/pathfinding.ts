@@ -33,24 +33,29 @@ function edgeCost(graph: CityGraph, a: string, b: string): number {
 }
 
 /**
- * Grafo do dia com o túnel do Dig: liga dois pontos por uma aresta de custo ínfimo
- * (DIG_TUNNEL_COST), sem mexer no grafo-base. Sem túnel, devolve o próprio grafo.
+ * Grafo do dia com o túnel do Dig: liga TODOS os pontos da lista entre si por arestas de
+ * custo ínfimo (DIG_TUNNEL_COST), sem mexer no grafo-base — o time atravessa de qualquer um
+ * a qualquer outro por baixo da terra. Sem túnel (null/<2 pontos válidos), devolve o grafo.
  */
 export function graphWithTunnel(
   graph: CityGraph,
-  tunnel: readonly [string, string] | null | undefined,
+  tunnel: readonly string[] | null | undefined,
 ): CityGraph {
   if (!tunnel) return graph
-  const [a, b] = tunnel
-  if (a === b || !graph.nodes[a] || !graph.nodes[b]) return graph
+  const nodes = [...new Set(tunnel)].filter((id) => graph.nodes[id])
+  if (nodes.length < 2) return graph
   const adj: Record<string, string[]> = { ...graph.adj }
-  adj[a] = adj[a]?.includes(b) ? adj[a] : [...(adj[a] ?? []), b]
-  adj[b] = adj[b]?.includes(a) ? adj[b] : [...(adj[b] ?? []), a]
-  return {
-    ...graph,
-    adj,
-    edgeCosts: { ...(graph.edgeCosts ?? {}), [tunnelKey(a, b)]: DIG_TUNNEL_COST },
+  const edgeCosts: Record<string, number> = { ...(graph.edgeCosts ?? {}) }
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i + 1; j < nodes.length; j++) {
+      const a = nodes[i] as string
+      const b = nodes[j] as string
+      adj[a] = adj[a]?.includes(b) ? adj[a] : [...(adj[a] ?? []), b]
+      adj[b] = adj[b]?.includes(a) ? adj[b] : [...(adj[b] ?? []), a]
+      edgeCosts[tunnelKey(a, b)] = DIG_TUNNEL_COST
+    }
   }
+  return { ...graph, adj, edgeCosts }
 }
 
 /**

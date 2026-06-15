@@ -14,8 +14,14 @@ import { createMissionInstance } from '../engine/missions.ts'
 import { enemySquadSizeForDay, generateDefenseEnemies } from '../engine/gymDefense.ts'
 import { createPokemon } from '../engine/leveling.ts'
 import { hasDig } from '../engine/secretEffects.ts'
+import { secretLevelOf } from '../data/secretAbilities.ts'
 import { createRng, deriveSeed } from '../engine/rng.ts'
-import { DEFENSE_LIFETIME_MS, MISSION_LIFETIME_MS } from '../engine/balance.ts'
+import {
+  DEFENSE_LIFETIME_MS,
+  DIG_GYM_ANCHOR_LEVEL,
+  DIG_HOLES_BY_LEVEL,
+  MISSION_LIFETIME_MS,
+} from '../engine/balance.ts'
 import { DIG_SEED_SALT, TRAINER_SEED_SALT } from '../engine/constants.ts'
 import { takeId } from './runtime.ts'
 
@@ -58,16 +64,26 @@ export function setupDay(s: GameState): void {
 }
 
 /**
- * Túnel do Dig (Habilidade Secreta do Diglett): se algum Pokémon do roster tem a habilidade
- * desbloqueada, sorteia dois pontos distintos do grafo ligados por baixo da terra hoje.
+ * Túnel do Dig (Habilidade Secreta do Diglett): se algum Pokémon do roster tem a habilidade,
+ * liga N pontos distintos do grafo por baixo da terra hoje. N escala com o MAIOR nível de Dig
+ * do roster (2 no Bronze, 3 na Prata/Ouro); no Ouro, um dos pontos é sempre o ginásio.
  */
-function computeDigTunnel(s: GameState, city: CityData): [string, string] | null {
-  if (!s.roster.some(hasDig)) return null
+function computeDigTunnel(s: GameState, city: CityData): string[] | null {
+  const digLevel = s.roster.reduce((max, p) => (hasDig(p) ? Math.max(max, secretLevelOf(p)) : max), 0)
+  if (digLevel <= 0) return null
   const ids = Object.keys(city.graph.nodes)
   if (ids.length < 2) return null
+  const holes = Math.min(DIG_HOLES_BY_LEVEL[digLevel - 1] ?? 2, ids.length)
   const rng = createRng(deriveSeed(s.run.seed, DIG_SEED_SALT, s.run.day))
-  const [a, b] = rng.shuffle(ids)
-  return a && b ? [a, b] : null
+  const gym = city.siteNodes.gym
+  const anchorGym = digLevel >= DIG_GYM_ANCHOR_LEVEL && ids.includes(gym)
+  // No Ouro o ginásio entra fixo; preenche o resto sorteando pontos distintos.
+  const picked: string[] = anchorGym ? [gym] : []
+  for (const id of rng.shuffle(ids)) {
+    if (picked.length >= holes) break
+    if (!picked.includes(id)) picked.push(id)
+  }
+  return picked.length >= 2 ? picked : null
 }
 
 function buildDefense(
