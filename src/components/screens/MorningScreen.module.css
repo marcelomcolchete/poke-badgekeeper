@@ -42,11 +42,11 @@
   gap: 8px;
 }
 
-/* Mercado: 3 cards lado a lado (foto, nome, efeito, preço). */
+/* Mercado: 5 cards lado a lado (Pokébola fixa à esquerda + 4/5 itens do dia). */
 .shop {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
 }
 
 .card {

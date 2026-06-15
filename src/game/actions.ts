@@ -40,6 +40,8 @@ export type GameAction =
   | { type: 'RENAME_POKEMON'; pokemonId: string; nickname: string }
   /** Compra no mercado (manhã) — PLAN §4.6. */
   | { type: 'BUY_ITEM'; itemId: string; quantity?: number }
+  /** Compra a próxima bola (Pokébola→…→Masterball): sobe run.ballLevel e libera mais raridades. */
+  | { type: 'BUY_BALL' }
   /** Usa um item (Potion/Revive…) num Pokémon do roster — PLAN §4.6. */
   | { type: 'USE_ITEM'; itemId: string; targetId: string }
   /** Compra um Rare Candy e o aplica no Pokémon escolhido (+1 nível) — PLAN — Itens. */

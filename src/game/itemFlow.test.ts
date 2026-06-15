@@ -75,12 +75,12 @@ describe('mercado — efeitos de compra (reducer)', () => {
     let s = createInitialState(SEED)
     s.gold = 1000
     s.roster = [makeMon({ id: 'a', baseAttrs: makeAttrs({ resistencia: 45 }) })]
-    expect(s.roster[0]?.maxHp).toBe(4) // floor(45/10)
+    expect(s.roster[0]?.maxHp).toBe(8) // floor(45/10) * 2
     s = reducer(s, { type: 'BUY_ITEM', itemId: 'x-RES' })
     expect(s.gold).toBe(600)
     expect(s.roster[0]?.dayBuffs?.resistencia).toBe(5)
-    expect(s.roster[0]?.maxHp).toBe(5) // res 50 → 5 de HP
-    expect(s.roster[0]?.currentHp).toBe(5)
+    expect(s.roster[0]?.maxHp).toBe(10) // res 50 → 10 de HP
+    expect(s.roster[0]?.currentHp).toBe(10)
   })
 
   it('o buff x_* some na virada do dia', () => {
@@ -88,11 +88,11 @@ describe('mercado — efeitos de compra (reducer)', () => {
     s.run.phase = 'SUMMARY'
     s.run.day = 1
     s.roster = [makeMon({ id: 'a', baseAttrs: makeAttrs({ resistencia: 45 }), dayBuffs: { resistencia: 5 } })]
-    expect(s.roster[0]?.maxHp).toBe(5)
+    expect(s.roster[0]?.maxHp).toBe(10)
     s = reducer(s, { type: 'ADVANCE_PHASE' }) // SUMMARY → próximo dia
     expect(s.run.day).toBe(2)
     expect(s.roster[0]?.dayBuffs).toBeUndefined()
-    expect(s.roster[0]?.maxHp).toBe(4)
+    expect(s.roster[0]?.maxHp).toBe(8)
   })
 
   it('item passivo entra em runItems e não é comprado duas vezes', () => {
@@ -129,8 +129,50 @@ describe('mercado — efeitos de compra (reducer)', () => {
   })
 })
 
+describe('mercado — bola evolutiva (BUY_BALL)', () => {
+  it('a Pokébola é grátis e sobe o ballLevel para 1', () => {
+    let s = createInitialState(SEED)
+    s.gold = 0 // sem ouro: a Pokébola inicial é grátis
+    expect(s.run.ballLevel).toBe(0)
+    s = reducer(s, { type: 'BUY_BALL' })
+    expect(s.run.ballLevel).toBe(1)
+    expect(s.gold).toBe(0)
+    expect(s.today.purchasedItems).toContain('poke-ball')
+  })
+
+  it('a próxima bola custa 500 e não é comprada duas vezes no mesmo dia', () => {
+    let s = createInitialState(SEED)
+    s.run.ballLevel = 1 // já tem Pokébola → próxima é Great Ball ($500)
+    s.gold = 500
+    s = reducer(s, { type: 'BUY_BALL' })
+    expect(s.run.ballLevel).toBe(2)
+    expect(s.gold).toBe(0)
+    expect(s.today.purchasedItems).toContain('great-ball')
+    s = reducer(s, { type: 'BUY_BALL' }) // já comprou bola hoje → no-op
+    expect(s.run.ballLevel).toBe(2)
+  })
+
+  it('sem ouro para a próxima bola é no-op', () => {
+    let s = createInitialState(SEED)
+    s.run.ballLevel = 1
+    s.gold = 100 // < 500
+    s = reducer(s, { type: 'BUY_BALL' })
+    expect(s.run.ballLevel).toBe(1)
+    expect(s.gold).toBe(100)
+  })
+
+  it('no topo (Masterball) BUY_BALL é no-op', () => {
+    let s = createInitialState(SEED)
+    s.run.ballLevel = 4
+    s.gold = 5000
+    s = reducer(s, { type: 'BUY_BALL' })
+    expect(s.run.ballLevel).toBe(4)
+    expect(s.gold).toBe(5000)
+  })
+})
+
 describe('mercado da manhã (oferta fixa do dia)', () => {
-  it('a virada do dia gera 3 itens, zera os vendidos e exclui passivos possuídos', () => {
+  it('a virada do dia gera 5 itens, zera os vendidos e exclui passivos possuídos', () => {
     let s = createInitialState(SEED)
     s.run.phase = 'SUMMARY'
     s.run.day = 1
@@ -138,7 +180,7 @@ describe('mercado da manhã (oferta fixa do dia)', () => {
     s.today.purchasedItems = ['potion'] // sobra do dia anterior
     s = reducer(s, { type: 'ADVANCE_PHASE' }) // SUMMARY → próxima manhã
     expect(s.run.day).toBe(2)
-    expect(s.today.shopOffer).toHaveLength(3)
+    expect(s.today.shopOffer).toHaveLength(5)
     expect(s.today.shopOffer).not.toContain('eviolite')
     expect(s.today.purchasedItems).toEqual([])
   })

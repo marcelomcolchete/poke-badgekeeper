@@ -33,7 +33,10 @@ export function EncounterChoice({ encounter, full, onPick, onDismiss }: Props) {
 
       <div className={styles.encGrid} style={{ gridTemplateColumns: `repeat(${ids.length}, 1fr)` }}>
         {ids.map((id, i) => {
-          const mon = previewPokemon(id, encounter.level, { seed: encounter.candidateSeeds?.[i] })
+          const mon = previewPokemon(id, encounter.level, {
+            seed: encounter.candidateSeeds?.[i],
+            rankWindow: encounter.rankWindow,
+          })
           const species = getSpecies(id)
           const rank = pokemonRank(mon)
           const symbol = genderSymbol(mon.gender)

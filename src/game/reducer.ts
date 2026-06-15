@@ -18,7 +18,7 @@ import {
   startSearch,
   withdrawPokemon,
 } from './captureFlow.ts'
-import { allocatePoint, applyItem, buyItem, useRareCandy } from './marketFlow.ts'
+import { allocatePoint, applyItem, buyBall, buyItem, useRareCandy } from './marketFlow.ts'
 
 export function reducer(state: GameState, action: GameAction): GameState {
   const s = draft(state)
@@ -70,6 +70,9 @@ export function reducer(state: GameState, action: GameAction): GameState {
       break
     case 'BUY_ITEM':
       buyItem(s, action.itemId, action.quantity)
+      break
+    case 'BUY_BALL':
+      buyBall(s)
       break
     case 'USE_ITEM':
       applyItem(s, action.itemId, action.targetId)

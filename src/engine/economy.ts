@@ -9,10 +9,20 @@ import { GOLD_BASE_PER_DEFENSE } from './balance.ts'
 import { effectiveAttr } from './attributes.ts'
 import { average } from './math.ts'
 
-/** Ouro de uma defesa vencida = ouroBase · (1 + médiaCarisma/100) — PLAN §4.6. */
+/** Ouro de uma defesa vencida = ouroBase · (1 + médiaCarisma/60) — PLAN §4.6. */
 export function goldForDefense(squad: readonly Pokemon[]): number {
   const avgCharisma = average(squad.map((p) => effectiveAttr(p, 'carisma')))
   return Math.round(GOLD_BASE_PER_DEFENSE * (1 + avgCharisma / ATTR_MAX))
+}
+
+/**
+ * Ouro de uma missão Pokémart escalado pelo Carisma do time: base · (1 + médiaCarisma/60),
+ * chegando a 2× com média 60. Sem participantes, devolve a base.
+ */
+export function goldForMart(team: readonly Pokemon[], base: number): number {
+  if (team.length === 0) return base
+  const avgCharisma = average(team.map((p) => effectiveAttr(p, 'carisma')))
+  return Math.round(base * (1 + avgCharisma / ATTR_MAX))
 }
 
 /** Soma do ouro de todas as defesas vencidas no dia (cada uma com seu esquadrão). */

@@ -178,11 +178,11 @@ describe('tempos de viagem/execução (PLAN §4.3)', () => {
     expect(graphTravelMs(10, fast)).toBeLessThan(graphTravelMs(10, slow))
   })
 
-  it('Agilidade reduz 0,5%/ponto: 10 → 0,95; soma capada no teto (70) → 0,65', () => {
+  it('Agilidade reduz 1%/ponto: 10 → 0,90; soma capada no teto (70) → piso 0,30', () => {
     const agi10 = [makeMon({ baseAttrs: makeAttrs({ agilidade: 10 }) })]
-    expect(agilityTravelFactor(agi10)).toBeCloseTo(0.95, 5)
+    expect(agilityTravelFactor(agi10)).toBeCloseTo(0.9, 5)
     const fifty = makeMon({ baseAttrs: makeAttrs({ agilidade: 50 }) })
-    expect(agilityTravelFactor([fifty, fifty])).toBeCloseTo(0.65, 5) // soma 100 → cap 70
+    expect(agilityTravelFactor([fifty, fifty])).toBeCloseTo(0.3, 5) // soma 100 → cap 70 → −70%
   })
 
   it('Fly (sozinho) voa em linha reta: caminho mais curto que o do grafo, mas não-zero', () => {

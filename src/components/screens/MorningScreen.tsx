@@ -10,6 +10,7 @@ import type { GameAction } from '../../game/actions.ts'
 import type { ItemData } from '../../data/types.ts'
 import { MAX_ROSTER_SIZE, LEVEL_MAX, TOTAL_DAYS } from '../../engine/constants.ts'
 import { getDailyShop, getItem } from '../../data/items.ts'
+import { currentBall, nextBall, RARITY_LABEL_PT, type BallDef } from '../../data/balls.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
 import { effectiveAttr } from '../../engine/attributes.ts'
 import { PokemonCard } from '../PokemonCard/PokemonCard.tsx'
@@ -48,6 +49,44 @@ function shopState(item: ItemData, state: GameState): ShopState {
   return { label: `$ ${item.price}`, disabled: !afford, sold: false, needsTarget: false }
 }
 
+/** Card fixo da Pokébola evolutiva: foto, raridade liberada e preço (GRÁTIS no 1º nível). */
+function BallCard({
+  ball,
+  sold,
+  gold,
+  onBuy,
+}: {
+  ball: BallDef
+  sold: boolean
+  gold: number
+  onBuy: () => void
+}) {
+  const free = ball.price === 0
+  const label = sold ? 'VENDIDO' : free ? 'GRÁTIS' : `$ ${ball.price}`
+  const disabled = sold || (!free && gold < ball.price)
+  return (
+    <div className={`${styles.card} ${sold ? styles.cardSold : ''}`}>
+      {free && !sold && <span className={styles.cardBadge}>GRÁTIS</span>}
+      <span className={styles.cardKind}>BOLA</span>
+      <img className={styles.cardImg} src={ball.sprite} alt={ball.name} />
+      <span className={styles.cardName}>{ball.name}</span>
+      <span className={styles.cardEffect}>
+        Libera Pokémon {RARITY_LABEL_PT[ball.ceiling]} na exploração.
+      </span>
+      <button
+        type="button"
+        className={styles.buyBtn}
+        disabled={disabled}
+        onClick={onBuy}
+        data-sound="select"
+      >
+        {label}
+      </button>
+      {sold && <span className={styles.soldStamp}>VENDIDO</span>}
+    </div>
+  )
+}
+
 export function MorningScreen({ state, dispatch }: Props) {
   const [teamOpen, setTeamOpen] = useState(false)
   const [boxOpen, setBoxOpen] = useState(false)
@@ -59,7 +98,13 @@ export function MorningScreen({ state, dispatch }: Props) {
     state.today.shopOffer.length > 0
       ? state.today.shopOffer
       : getDailyShop(state.run.seed, state.run.day, state.run.cityIndex, state.runItems)
-  const shop = offerIds.map(getItem)
+
+  // Pokébola evolutiva: slot fixo à esquerda. Após comprá-la hoje, mostra-a VENDIDA (só evolui
+  // no dia seguinte); senão, mostra a próxima bola comprável. Sem bola a mostrar = 5 itens normais.
+  const owned = currentBall(state.run.ballLevel)
+  const ballBoughtToday = owned ? state.today.purchasedItems.includes(owned.id) : false
+  const ballToShow: BallDef | null = ballBoughtToday ? owned : nextBall(state.run.ballLevel)
+  const shop = offerIds.slice(0, ballToShow ? 4 : 5).map(getItem)
 
   const buy = (item: ItemData): void => {
     if (item.effect.kind === 'rareCandy') setCandyOpen(true)
@@ -84,8 +129,16 @@ export function MorningScreen({ state, dispatch }: Props) {
       </header>
 
       <section className={styles.market}>
-        <span className={styles.sectionTitle}>MERCADO — 3 ITENS DO DIA</span>
+        <span className={styles.sectionTitle}>MERCADO — 5 ITENS DO DIA</span>
         <div className={styles.shop}>
+          {ballToShow && (
+            <BallCard
+              ball={ballToShow}
+              sold={ballBoughtToday}
+              gold={state.gold}
+              onBuy={() => dispatch({ type: 'BUY_BALL' })}
+            />
+          )}
           {shop.map((item) => {
             const s = shopState(item, state)
             return (

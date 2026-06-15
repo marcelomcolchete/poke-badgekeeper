@@ -9,7 +9,7 @@ import type { GameState, MissionInstance, MissionStatus } from '../engine/state.
 import { getCity } from '../data/cities.ts'
 import { getMissionTemplate } from '../data/missionTemplates.ts'
 import { getTrainer } from '../data/trainers.ts'
-import { MAX_DISPATCH, MIN_DISPATCH } from '../engine/constants.ts'
+import { damageForDay, MAX_DISPATCH, MIN_DISPATCH } from '../engine/constants.ts'
 import {
   MISSION_XP_POOL,
   RETURN_SPEED_BONUS_ON_SUCCESS,
@@ -21,7 +21,7 @@ import {
   generateDefenseEnemies,
   resolveDefense,
 } from '../engine/gymDefense.ts'
-import { goldForDefense } from '../engine/economy.ts'
+import { goldForDefense, goldForMart } from '../engine/economy.ts'
 import {
   executionMs,
   graphTravelMs,
@@ -157,7 +157,14 @@ export function resolveMissionNow(s: GameState, mission: MissionInstance): void 
     runItems: s.runItems,
   }
   const pSuccess = missionSuccessProbabilityCtx(ctx, mission.requirement)
-  const outcome = resolveMission(takeRng(s), team, mission.requirement, template.danger, pSuccess)
+  const outcome = resolveMission(
+    takeRng(s),
+    team,
+    mission.requirement,
+    template.danger,
+    pSuccess,
+    damageForDay(s.run.day),
+  )
   // Habilidades Secretas: atualiza stacks (Sand Rush), ativa Weak Armor e consome Battle Armor.
   applyMissionSecretRuntime(s, team, outcome)
 
@@ -191,7 +198,7 @@ export function resolveMissionNow(s: GameState, mission: MissionInstance): void 
     // Pool de XP da missão dividido igualmente entre os participantes (aplicado na volta).
     const share = team.length > 0 ? Math.floor(MISSION_XP_POOL / team.length) : 0
     mission.xpAwards = Object.fromEntries(team.map((p) => [p.id, share]))
-    applyMissionRewards(s, template)
+    applyMissionRewards(s, template, team)
   }
 
   mission.status = 'returning'
@@ -260,11 +267,12 @@ function applyMissionSecretRuntime(
   }
 }
 
-/** Recompensas de sucesso do template: ouro (Pokemart). */
-function applyMissionRewards(s: GameState, template: MissionTemplate): void {
+/** Recompensas de sucesso do template: ouro (Pokemart), escalado pelo Carisma do time (até 2×). */
+function applyMissionRewards(s: GameState, template: MissionTemplate, team: readonly Pokemon[]): void {
   if (template.goldOnSuccess) {
-    s.gold += template.goldOnSuccess
-    s.today.goldEarned += template.goldOnSuccess
+    const gold = goldForMart(team, template.goldOnSuccess)
+    s.gold += gold
+    s.today.goldEarned += gold
   }
 }
 
@@ -301,6 +309,7 @@ export function resolveRocketBattle(s: GameState, missionId: string): void {
   const resolution = resolveDefense(takeRng(s), team, mission.rocket.enemies, {
     sturdyAvailableIds,
     runItems: s.runItems,
+    damagePerLoss: damageForDay(s.run.day),
   })
   // Registra os desafiantes derrotados (MVP/relatório).
   let theirs = 0

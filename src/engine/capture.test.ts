@@ -16,6 +16,9 @@ import { makeAttrs, makeMon } from './testkit.ts'
 
 const GYM_TYPES: PokemonType[] = ['rock', 'water', 'grass']
 
+/** Teto de raridade que libera TODAS as raridades (Masterball) — usado nos sorteios dos testes. */
+const ALL_RARITIES = 4
+
 function rosterOf(n: number) {
   return Array.from({ length: n }, (_, i) => makeMon({ id: `r${i}` }))
 }
@@ -29,15 +32,15 @@ describe('limite de roster (PLAN §4.5)', () => {
 })
 
 describe('searchMs (PLAN §4.5)', () => {
-  it('mais Percepção = busca mais rápida', () => {
-    const slow = makeMon({ baseAttrs: makeAttrs({ percepcao: 10 }) })
-    const fast = makeMon({ baseAttrs: makeAttrs({ percepcao: 50 }) })
+  it('mais Inteligência = busca mais rápida', () => {
+    const slow = makeMon({ baseAttrs: makeAttrs({ inteligencia: 10 }) })
+    const fast = makeMon({ baseAttrs: makeAttrs({ inteligencia: 50 }) })
     expect(searchMs(fast)).toBeLessThan(searchMs(slow))
   })
 
   it('passiva Keen Eye acelera a busca', () => {
-    const base = makeMon({ baseAttrs: makeAttrs({ percepcao: 30 }) })
-    const keen = makeMon({ baseAttrs: makeAttrs({ percepcao: 30 }), passives: ['keen-eye'] })
+    const base = makeMon({ baseAttrs: makeAttrs({ inteligencia: 30 }) })
+    const keen = makeMon({ baseAttrs: makeAttrs({ inteligencia: 30 }), passives: ['keen-eye'] })
     expect(searchMs(keen)).toBeLessThan(searchMs(base))
   })
 })
@@ -59,7 +62,7 @@ describe('wildLevel (PLAN §4.5)', () => {
 describe('rollCandidates / rollEncounter (PLAN §4.5)', () => {
   it('sorteia até CAPTURE_CHOICES candidatos, todos dos tipos do ginásio e elegíveis', () => {
     for (let seed = 0; seed < 50; seed++) {
-      const candidates = rollCandidates(createRng(seed), GYM_TYPES, 5)
+      const candidates = rollCandidates(createRng(seed), GYM_TYPES, 5, ALL_RARITIES)
       expect(candidates.length).toBeLessThanOrEqual(CAPTURE_CHOICES)
       for (const s of candidates) {
         expect(s.types.some((t) => GYM_TYPES.includes(t))).toBe(true)
@@ -71,13 +74,13 @@ describe('rollCandidates / rollEncounter (PLAN §4.5)', () => {
   it('filtro de evolução: nível baixo não traz formas evoluídas', () => {
     // Venusaur (3) evolui no nível 6 → não aparece num sorteio de nível 3.
     for (let seed = 0; seed < 100; seed++) {
-      const ids = rollCandidates(createRng(seed), GYM_TYPES, 3).map((s) => s.id)
+      const ids = rollCandidates(createRng(seed), GYM_TYPES, 3, ALL_RARITIES).map((s) => s.id)
       expect(ids).not.toContain(3)
     }
   })
 
   it('rollEncounter casa nível e candidatos elegíveis', () => {
-    const enc = rollEncounter(createRng(11), GYM_TYPES, 7)
+    const enc = rollEncounter(createRng(11), GYM_TYPES, 7, ALL_RARITIES)
     expect(enc.level).toBeGreaterThanOrEqual(LEVEL_MIN)
     expect(enc.level).toBeLessThanOrEqual(LEVEL_MAX)
     for (const s of enc.candidates) {

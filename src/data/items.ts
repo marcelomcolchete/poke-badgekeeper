@@ -175,12 +175,13 @@ export function itemsForCity(cityIndex: number): string[] {
   return [...GLOBAL_ITEM_IDS, ...(CITY_ITEM_IDS[cityIndex] ?? [])]
 }
 
-/** Quantos itens o mercado oferece por dia. */
-export const SHOP_SIZE = 3
+/** Quantos itens o mercado oferece por dia (a Pokébola evolutiva é um slot fixo à parte). */
+export const SHOP_SIZE = 5
 
 /**
- * Mercado do dia: 3 itens DISTINTOS sorteados de forma determinística (seed+dia+cidade).
- * Garante ao menos 1 item obrigatório (potion/revive/x_*) e nunca repete o mesmo id. Os ids
+ * Mercado do dia: 5 itens DISTINTOS sorteados de forma determinística (seed+dia+cidade).
+ * Garante ao menos 1 item obrigatório (potion/revive/x_*) e nunca repete o mesmo id. A
+ * Pokébola evolutiva NÃO entra aqui — ela é um slot fixo à parte renderizado pelo mercado. Os ids
  * em `owned` (itens passivos já comprados na run) saem da pool — passivos são 1×/run.
  */
 export function getDailyShop(

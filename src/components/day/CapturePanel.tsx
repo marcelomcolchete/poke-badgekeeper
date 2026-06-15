@@ -7,6 +7,7 @@ import type { Dispatch } from 'react'
 import type { GameState } from '../../engine/state.ts'
 import type { GameAction } from '../../game/actions.ts'
 import { rosterIsFull } from '../../engine/capture.ts'
+import { maxRarityIndexForBall } from '../../data/balls.ts'
 import { Overlay } from '../common/Overlay.tsx'
 import { RenameModal } from './RenameModal.tsx'
 import { ExplorerPick } from './ExplorerPick.tsx'
@@ -77,7 +78,8 @@ export function CapturePanel({ state, dispatch, spotIndex, onClose }: Props) {
       ) : (
         <div className={styles.capture}>
           <p className={styles.hint}>
-            Quem vai explorar? Maior <b>Percepção</b> encontra mais rápido.
+            Quem vai explorar? Maior <b>Inteligência</b> encontra mais rápido; maior{' '}
+            <b>Percepção</b> atrai Pokémon de rank melhor.
           </p>
           <div className={styles.explorerGrid}>
             {state.roster.map((mon) => (
@@ -96,7 +98,11 @@ export function CapturePanel({ state, dispatch, spotIndex, onClose }: Props) {
               />
             ))}
           </div>
-          <CapturePokedex types={state.gym.types} caught={caught} />
+          <CapturePokedex
+            types={state.gym.types}
+            caught={caught}
+            maxRarityIndex={maxRarityIndexForBall(state.run.ballLevel)}
+          />
         </div>
       )}
     </Overlay>

@@ -13,6 +13,7 @@ import {
   sturdyPerGame,
 } from '../engine/secretEffects.ts'
 import { goldForDefense } from '../engine/economy.ts'
+import { damageForDay } from '../engine/constants.ts'
 import { createRng } from '../engine/rng.ts'
 import { applyAutoItems, applyXpGains } from './itemFlow.ts'
 import { findMon, replaceMon, settleFaint, takeRng } from './runtime.ts'
@@ -104,6 +105,7 @@ export function assignDefense(s: GameState, defenseId: string, squadIds: string[
   const resolution = resolveDefense(takeRng(s), squad, defense.enemies, {
     sturdyAvailableIds,
     runItems: s.runItems,
+    damagePerLoss: damageForDay(s.run.day),
   })
 
   // Registra o desafiante derrotado (defeaterId + espécie) para o MVP/relatório.
