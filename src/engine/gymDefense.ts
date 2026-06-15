@@ -25,6 +25,7 @@ import { DEFENSE_BUFF_BATTLE, GYM_XP_CAP_PER_WIN, GYM_XP_PER_BATTLE_POWER } from
 import { applyDamage, effectiveAttr } from './attributes.ts'
 import { combatDamageMultiplier, hasSturdy } from './secretEffects.ts'
 import { attrRank, type Rank } from './ranking.ts'
+import { rollGender } from './gender.ts'
 import { clamp } from './math.ts'
 
 /**
@@ -131,7 +132,8 @@ export function generateDefenseEnemies(rng: Rng, trainer: TrainerDef, size: numb
       ATTR_EFFECTIVE_MIN,
       ATTR_MAX,
     )
-    return { battle, types: [...species.types], speciesId } as EnemyUnit
+    const gender = rollGender(rng, speciesId)
+    return { battle, types: [...species.types], speciesId, gender } as EnemyUnit
   })
   // Destaque: um desafiante recebe +15 de Batalha e a medalha (sobe acima do teto normal).
   if (enemies.length > 0) {

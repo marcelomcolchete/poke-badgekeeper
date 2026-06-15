@@ -765,6 +765,26 @@
   pointer-events: none;
 }
 
+/* Símbolo de sexo (♂/♀) no canto superior direito da foto — batalha e preview.
+   A cor (azul macho / rosa fêmea) vem do estilo inline. */
+.genderBadge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: grid;
+  place-items: center;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 2px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  background: rgba(8, 18, 12, 0.92);
+  border: 2px solid currentColor;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
 /* Nota (E–S) no card de seleção do esquadrão (canto superior direito — pickPos fica à esquerda). */
 .pickRank {
   position: absolute;
@@ -784,54 +804,3 @@
   z-index: 1;
 }
 
-/* Lista dos desafiantes na seleção da defesa: sprite + nota E–S + medalha do destaque. */
-.enemyList {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.enemyChip {
-  position: relative;
-  width: 40px;
-  height: 40px;
-}
-
-.enemyChipSprite {
-  width: 40px;
-  height: 40px;
-  image-rendering: pixelated;
-  background: rgba(0, 0, 0, 0.18);
-  border: 2px solid var(--c-panel-border);
-  border-radius: 4px;
-}
-
-.enemyChipRank {
-  position: absolute;
-  top: -6px;
-  left: -6px;
-  display: grid;
-  place-items: center;
-  min-width: 15px;
-  height: 15px;
-  padding: 0 2px;
-  font-family: var(--font-pixel);
-  font-size: 8px;
-  line-height: 1;
-  background: rgba(8, 18, 12, 0.92);
-  border: 2px solid currentColor;
-  border-radius: 999px;
-}
-
-.enemyChipMedal {
-  position: absolute;
-  bottom: -5px;
-  right: -5px;
-  font-size: 12px;
-  line-height: 1;
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6));
-  pointer-events: none;
-}

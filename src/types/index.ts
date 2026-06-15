@@ -149,4 +149,6 @@ export interface EnemyUnit {
   speciesId?: number
   /** Desafiante em destaque: recebeu +15 de Batalha e exibe medalha (1 por esquadrão). */
   buffed?: boolean
+  /** Sexo sorteado pela proporção da espécie (exibido na foto; ausente em dados antigos). */
+  gender?: Gender
 }

@@ -192,6 +192,12 @@ describe('generateDefenseEnemies', () => {
       expect(typeof e.speciesId).toBe('number')
     }
   })
+
+  it('sorteia o sexo de cada desafiante (exibido na foto)', () => {
+    for (const e of generateDefenseEnemies(createRng(7), getTrainer('LASS'), 4)) {
+      expect(['male', 'female', 'genderless']).toContain(e.gender)
+    }
+  })
 })
 
 describe('enemySquadSizeForDay (PLAN §4.4)', () => {

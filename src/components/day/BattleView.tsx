@@ -3,7 +3,7 @@
 // destaque (+15). A resolução já vem do estado (log de duelos); aqui é só a visualização.
 
 import { useEffect, useState } from 'react'
-import type { EnemyUnit, Pokemon } from '../../types/index.ts'
+import type { EnemyUnit, Gender, Pokemon } from '../../types/index.ts'
 import type { GameState } from '../../engine/state.ts'
 import type { DuelLog } from '../../engine/gymDefense.ts'
 import type { TrainerDef } from '../../data/trainers.ts'
@@ -12,7 +12,7 @@ import { effectiveBattle, enemyRank, typeAdvantageMultiplier } from '../../engin
 import { pokemonRank, type Rank } from '../../engine/ranking.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
 import { RANK_COLOR } from '../common/visual.ts'
-import { displayNameOf } from '../common/naming.ts'
+import { displayNameOf, genderColor, genderSymbol } from '../common/naming.ts'
 import { Overlay } from '../common/Overlay.tsx'
 import styles from './Panels.module.css'
 
@@ -146,6 +146,7 @@ export function BattleView({
                   showMinus={lostIds.has(id)}
                   battle={battle}
                   rank={pokemonRank(mon)}
+                  gender={mon.gender}
                   trend={isCurrent ? trendOf(battle, base) : 'flat'}
                 />
               )
@@ -173,6 +174,7 @@ export function BattleView({
                   defeated={i < enemiesDefeated}
                   battle={battle}
                   rank={enemyRank(enemy)}
+                  gender={enemy.gender}
                   medal={enemy.buffed}
                   trend={isCurrent ? trendOf(battle, enemy.battle) : 'flat'}
                 />
@@ -300,6 +302,7 @@ function Fighter({
   showMinus,
   battle,
   rank,
+  gender,
   medal,
   trend,
 }: {
@@ -310,10 +313,12 @@ function Fighter({
   showMinus?: boolean
   battle: number
   rank?: Rank
+  gender?: Gender
   medal?: boolean
   trend: Trend
 }) {
   const trendCls = trend === 'up' ? styles.battleUp : trend === 'down' ? styles.battleDown : ''
+  const sex = genderSymbol(gender)
   return (
     <div className={styles.fighterCell}>
       <div className={styles.fighterArt}>
@@ -330,6 +335,15 @@ function Fighter({
             aria-label={`Nota ${rank}`}
           >
             {rank}
+          </span>
+        )}
+        {sex && (
+          <span
+            className={styles.genderBadge}
+            style={{ color: genderColor(gender) }}
+            aria-label={gender === 'female' ? 'Fêmea' : 'Macho'}
+          >
+            {sex}
           </span>
         )}
         {medal && (
