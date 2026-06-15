@@ -45,6 +45,15 @@ describe('getDailyShop', () => {
     expect(getDailyShop(123, 3, 0)).not.toEqual(getDailyShop(123, 4, 0))
   })
 
+  it('exclui passivos já possuídos da pool (1×/run)', () => {
+    const owned = ['eviolite', 'lagging-tail', 'thick-club', 'exp-share', 'fast-ball']
+    for (let seed = 0; seed < 80; seed++) {
+      const shop = getDailyShop(seed, 1, 0, owned)
+      expect(shop).toHaveLength(SHOP_SIZE)
+      for (const id of owned) expect(shop).not.toContain(id)
+    }
+  })
+
   it('só oferece os extras de Pewter na cidade 0', () => {
     const pewterOnly = CITY_ITEM_IDS[0] ?? []
     // Em qualquer outra cidade, os itens exclusivos de Pewter nunca aparecem.
