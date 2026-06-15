@@ -4,9 +4,10 @@
 import type { AttrKey, Attrs, MissionCategory, Pokemon } from '../types/index.ts'
 import { ATTR_KEYS } from '../types/index.ts'
 import type { Rng } from './rng.ts'
-import type { MissionTemplate } from '../data/types.ts'
+import type { MissionTemplate, CityGraph } from '../data/types.ts'
 import { getMissionTemplate, templatesForCategory } from '../data/missionTemplates.ts'
 import type { MissionInstance } from './state.ts'
+import { pathDistance, shortestPath } from './pathfinding.ts'
 import { MIN_FAILURE_DAMAGE, SPECIES_BASE_MAX, TEAM_ATTR_MAX } from './constants.ts'
 import {
   AGILITY_TIME_REDUCTION_PER_POINT,
@@ -36,7 +37,7 @@ import {
 } from './attributes.ts'
 import {
   combatDamageMultiplier,
-  teamHasFly,
+  teamFliesSolo,
   teamSecretSum,
   type MissionSecretCtx,
 } from './secretEffects.ts'
@@ -192,17 +193,35 @@ export function agilityTravelFactor(team: readonly Pokemon[]): number {
 }
 
 /**
- * Tempo de UM trecho (ida) do ginásio até a missão: distância-do-grafo × ms/unidade ×
- * fator de Agilidade ÷ velocidade de habilidade (Sand Rush/Weak Armor). Fly torna a viagem
- * instantânea — passiva do museu ou Aerodactyl desbloqueado (PLAN §4.3).
+ * Tempo de UM trecho (ida) do ginásio até o ponto: distância × ms/unidade × fator de
+ * Agilidade ÷ velocidade de habilidade (Sand Rush/Weak Armor). O voo (Fly, só sozinho) NÃO
+ * acelera o passo: ele encurta o CAMINHO (linha reta, ver travelRoute) e o tempo cai junto.
  */
 export function graphTravelMs(
   distance: number,
   team: readonly Pokemon[],
   speedMult = 1,
 ): number {
-  if (teamHasFly(team)) return 0
   return (distance * TRAVEL_MS_PER_DISTANCE * agilityTravelFactor(team)) / Math.max(speedMult, 0.0001)
+}
+
+/**
+ * Rota de deslocamento do time do ginásio até um ponto (PLAN §4.3 — Fly):
+ * - Voando (Fly + sozinho): liga ginásio→ponto em LINHA RETA (path `[gym, node]`). A
+ *   distância vira a reta 16:9-corrigida — bem menor que o caminho andado → tempo bem menor,
+ *   mas não-zero (velocidade normal).
+ * - Senão: menor caminho no grafo (Dijkstra).
+ * Devolve a flag de voo (símbolo no mapa), o caminho (animação) e a distância (tempo).
+ */
+export function travelRoute(
+  graph: CityGraph,
+  gym: string,
+  node: string,
+  team: readonly Pokemon[],
+): { flying: boolean; path: string[]; distance: number } {
+  const flying = teamFliesSolo(team)
+  const path = flying ? [gym, node] : shortestPath(graph, gym, node)
+  return { flying, path, distance: pathDistance(graph, path) }
 }
 
 /** Tempo de execução parado no local: baseExecução / (1 + médiaInteligência/50) — PLAN §4.3. */

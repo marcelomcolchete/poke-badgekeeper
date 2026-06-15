@@ -175,34 +175,47 @@ function MapTravelers({ state, graph, now }: { state: GameState; graph: CityGrap
           .filter((p): p is Pokemon => p !== undefined)
         const speedy = teamTravelSpeedMultiplier(team, state.today.secretRuntime) > 1
         return (
-          <TravelerGroup key={`m-${m.id}`} pos={pos} ids={m.teamIds} roster={state.roster} speedy={speedy} />
+          <TravelerGroup
+            key={`m-${m.id}`}
+            pos={pos}
+            ids={m.teamIds}
+            roster={state.roster}
+            speedy={speedy}
+            flying={m.flying}
+          />
         )
       })}
       {state.captureSearches.map((c) => {
         // Ao chegar no local, o procurador some (entra na grama); reaparece só na volta — #3.
         if (c.phase !== 'traveling') return null
         const pos = pointAlongPath(graph, c.path, elapsedFraction(now, c.departAtMs, c.arriveAtMs))
-        return <TravelerGroup key={`s-${c.searcherId}`} pos={pos} ids={[c.searcherId]} roster={state.roster} />
+        return (
+          <TravelerGroup key={`s-${c.searcherId}`} pos={pos} ids={[c.searcherId]} roster={state.roster} flying={c.flying} />
+        )
       })}
       {state.captureReturns.map((r) => {
         const pos = pointAlongPath(graph, [...r.path].reverse(), elapsedFraction(now, r.departAtMs, r.arriveAtMs))
-        return <TravelerGroup key={`r-${r.searcherId}`} pos={pos} ids={[r.searcherId]} roster={state.roster} />
+        return (
+          <TravelerGroup key={`r-${r.searcherId}`} pos={pos} ids={[r.searcherId]} roster={state.roster} flying={r.flying} />
+        )
       })}
     </>
   )
 }
 
-/** Grupo de até 3 sprites agrupados numa posição do mapa (aura de velocidade opcional). */
+/** Grupo de até 3 sprites agrupados numa posição do mapa (aura de velocidade/voo opcional). */
 function TravelerGroup({
   pos,
   ids,
   roster,
   speedy = false,
+  flying = false,
 }: {
   pos: MapPos
   ids: string[]
   roster: Pokemon[]
   speedy?: boolean
+  flying?: boolean
 }) {
   const mons = ids
     .map((id) => roster.find((p) => p.id === id))
@@ -210,8 +223,16 @@ function TravelerGroup({
     .slice(0, 3)
   if (mons.length === 0) return null
   return (
-    <div className={`${styles.travelers} ${speedy ? styles.speedy : ''}`} style={posStyle(pos)}>
+    <div
+      className={`${styles.travelers} ${speedy ? styles.speedy : ''} ${flying ? styles.flying : ''}`}
+      style={posStyle(pos)}
+    >
       {speedy && <span className={styles.speedAura} aria-hidden="true" />}
+      {flying && (
+        <span className={styles.flyBadge} title="Voando (Fly)" aria-hidden="true">
+          🪽
+        </span>
+      )}
       {mons.map((mon) => (
         <img
           key={mon.id}

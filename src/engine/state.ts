@@ -65,8 +65,10 @@ export interface MissionInstance {
   secondaryAttr?: AttrKey | null
   /** Ponto do grafo onde a missão surge — define o trajeto desde o ginásio (PLAN §3.1). */
   node: string
-  /** Menor caminho ginásio→ponto (ids), calculado ao aceitar; a volta é o reverso. */
+  /** Caminho ginásio→ponto (ids), calculado ao aceitar; a volta é o reverso. Voo = reta. */
   path: string[]
+  /** Time voando (Fly + sozinho): rota em linha reta e símbolo de voo no mapa — PLAN §4.3. */
+  flying?: boolean
   /** Momento (ms de jogo) em que aparece no mapa. */
   spawnAtMs: number
   /** Momento em que some se não for aceita — PLAN §3.1. */
@@ -153,8 +155,10 @@ export interface CaptureSearch {
   spotIndex: number
   /** Ponto da grama (do grafo) — define o trajeto desde o ginásio. */
   node: string
-  /** Menor caminho ginásio→ponto (ida); a volta é o reverso. */
+  /** Caminho ginásio→ponto (ida); a volta é o reverso. Voo (Fly + sozinho) = linha reta. */
   path: string[]
+  /** Procurador voando (Fly): rota em linha reta e símbolo de voo no mapa — PLAN §4.3. */
+  flying?: boolean
   /** Fase: 'traveling' (a caminho) ou 'searching' (procurando no local). */
   phase: 'traveling' | 'searching'
   /** Saída do ginásio (início da ida) — base da animação. */
@@ -174,6 +178,8 @@ export interface CaptureReturn {
   captured: boolean
   node: string
   path: string[]
+  /** Procurador voando (Fly): rota em linha reta e símbolo de voo no mapa — PLAN §4.3. */
+  flying?: boolean
   departAtMs: number
   arriveAtMs: number
 }

@@ -12,6 +12,7 @@ import {
   hasSturdy,
   hasWeakArmor,
   missionAttrMultiplier,
+  teamFliesSolo,
   teamHasFly,
   teamSecretAxisSum,
   teamTravelSpeedMultiplier,
@@ -86,6 +87,15 @@ describe('viagem e combate', () => {
     expect(teamHasFly([makeMon({ speciesId: 142, passives: ['secret-aerodactyl'] })])).toBe(true)
     expect(teamHasFly([makeMon({ passives: ['fly'] })])).toBe(true)
     expect(teamHasFly([makeMon({})])).toBe(false)
+  })
+
+  it('teamFliesSolo: voa só com um único Pokémon voador', () => {
+    const flyer = makeMon({ id: 'f', passives: ['fly'] })
+    const other = makeMon({ id: 'o' })
+    expect(teamFliesSolo([flyer])).toBe(true)
+    expect(teamFliesSolo([flyer, other])).toBe(false) // voador acompanhado não voa
+    expect(teamFliesSolo([other])).toBe(false)
+    expect(teamFliesSolo([])).toBe(false)
   })
 
   it('Weak Armor dobra o dano recebido', () => {

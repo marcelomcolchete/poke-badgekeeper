@@ -6,7 +6,7 @@ export const PASSIVES: PassiveData[] = [
   {
     id: 'fly',
     name: 'Fly',
-    description: 'Zera o tempo de viagem das missões (vai voando até o local).',
+    description: 'Voa em linha reta do ginásio até o local — bem mais rápido. Só sozinho na tarefa.',
   },
   {
     id: 'run-away',

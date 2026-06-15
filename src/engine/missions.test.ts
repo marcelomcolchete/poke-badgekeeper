@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ATTR_KEYS } from '../types/index.ts'
-import type { MissionTemplate } from '../data/types.ts'
+import type { CityGraph, MissionTemplate } from '../data/types.ts'
 import { TEAM_ATTR_MAX } from './constants.ts'
 import { createRng } from './rng.ts'
 import { NORMAL_TEMPLATES, POKECENTER_TEMPLATE, ROCKET_TEAM_TEMPLATE } from '../data/missionTemplates.ts'
@@ -14,6 +14,7 @@ import {
   missionFailureDamage,
   missionSuccessProbability,
   resolveMission,
+  travelRoute,
 } from './missions.ts'
 import { fixedRng, makeAttrs, makeMon } from './testkit.ts'
 
@@ -184,9 +185,40 @@ describe('tempos de viagem/execução (PLAN §4.3)', () => {
     expect(agilityTravelFactor([fifty, fifty])).toBeCloseTo(0.65, 5) // soma 100 → cap 70
   })
 
-  it('passiva Fly zera a viagem', () => {
-    const flyer = [makeMon({ passives: ['fly'] })]
-    expect(graphTravelMs(10, flyer)).toBe(0)
+  it('Fly (sozinho) voa em linha reta: caminho mais curto que o do grafo, mas não-zero', () => {
+    // L-shape: andando g→m→n (25); reta g→n (~18,36) é menor, mas continua > 0.
+    const graph: CityGraph = {
+      nodes: { g: { x: 0, y: 0 }, m: { x: 1, y: 0 }, n: { x: 1, y: 1 } },
+      adj: { g: ['m'], m: ['g', 'n'], n: ['m'] },
+      markers: {},
+    }
+    const flyer = makeMon({ id: 'f', passives: ['fly'] })
+    const walker = makeMon({ id: 'w' })
+
+    const flown = travelRoute(graph, 'g', 'n', [flyer])
+    expect(flown.flying).toBe(true)
+    expect(flown.path).toEqual(['g', 'n'])
+
+    const walked = travelRoute(graph, 'g', 'n', [walker])
+    expect(walked.flying).toBe(false)
+    expect(walked.path).toEqual(['g', 'm', 'n'])
+
+    expect(flown.distance).toBeGreaterThan(0)
+    expect(flown.distance).toBeLessThan(walked.distance)
+    expect(graphTravelMs(flown.distance, [flyer])).toBeLessThan(graphTravelMs(walked.distance, [walker]))
+  })
+
+  it('Fly acompanhado NÃO voa (exige estar sozinho): usa o caminho do grafo', () => {
+    const graph: CityGraph = {
+      nodes: { g: { x: 0, y: 0 }, m: { x: 1, y: 0 }, n: { x: 1, y: 1 } },
+      adj: { g: ['m'], m: ['g', 'n'], n: ['m'] },
+      markers: {},
+    }
+    const flyer = makeMon({ id: 'f', passives: ['fly'] })
+    const other = makeMon({ id: 'o' })
+    const route = travelRoute(graph, 'g', 'n', [flyer, other])
+    expect(route.flying).toBe(false)
+    expect(route.path).toEqual(['g', 'm', 'n'])
   })
 
   it('passiva Run Away reduz a viagem', () => {
