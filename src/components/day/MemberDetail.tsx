@@ -6,13 +6,18 @@ import { ATTR_KEYS } from '../../types/index.ts'
 import type { GameState } from '../../engine/state.ts'
 import type { GameAction } from '../../game/actions.ts'
 import { getNatureEntry, NATURE_LABEL_PT } from '../../data/natures.ts'
-import { secretAbilityFor } from '../../data/secretAbilities.ts'
+import {
+  secretAbilityFor,
+  secretLevelOf,
+  SECRET_MAX_LEVEL,
+  SECRET_TIER_LABEL,
+} from '../../data/secretAbilities.ts'
 import { ATTR_MAX } from '../../engine/constants.ts'
 import { effectiveAttr, perPointGain } from '../../engine/attributes.ts'
 import { pendingPoints } from '../../engine/leveling.ts'
 import { PokemonCard } from '../PokemonCard/PokemonCard.tsx'
 import { Overlay } from '../common/Overlay.tsx'
-import { ATTR_SHORT_PT } from '../common/visual.ts'
+import { ATTR_SHORT_PT, SECRET_MEDAL } from '../common/visual.ts'
 import { displayNameOf } from '../common/naming.ts'
 import styles from './MemberDetail.module.css'
 
@@ -34,7 +39,8 @@ export function MemberDetail({ state, dispatch, pokemonId, onClose }: Props) {
   const pending = pendingPoints(mon)
   const natureEntry = mon.nature ? getNatureEntry(mon.nature) : null
   const secret = secretAbilityFor(mon.speciesId)
-  const secretUnlocked = secret ? mon.passives.includes(secret.id) : false
+  const secretLevel = secretLevelOf(mon) // 0 = ainda não desbloqueada
+  const secretTiers = [1, 2, 3] as const
   const hurt = mon.currentHp > 0 && mon.currentHp < mon.maxHp
   const fainted = mon.currentHp <= 0
   const potions = count(state, 'potion')
@@ -61,15 +67,44 @@ export function MemberDetail({ state, dispatch, pokemonId, onClose }: Props) {
         )}
 
         {secret && (
-          <div className={`${styles.secret} ${secretUnlocked ? styles.secretOn : styles.secretOff}`}>
+          <div className={styles.secret}>
             <span className={styles.secretHead}>
-              <span className={styles.secretIcon}>{secretUnlocked ? '✦' : '🔒'}</span>
-              Habilidade Secreta
+              <span className={styles.secretIcon}>{secretLevel > 0 ? '✦' : '🔒'}</span>
+              Habilidade Secreta — {secretLevel > 0 ? secret.name : '? ? ?'}
             </span>
-            <span className={styles.secretName}>{secretUnlocked ? secret.name : '? ? ?'}</span>
-            <span className={styles.secretDesc}>
-              {secretUnlocked ? secret.description : 'Desbloqueie sendo o Destaque do Dia.'}
-            </span>
+            <ul className={styles.secretTiers}>
+              {secretTiers.map((tier) => {
+                const reached = secretLevel >= tier
+                const active = secretLevel === tier
+                const tierClass = [
+                  styles.secretTier,
+                  active ? styles.secretTierActive : '',
+                  reached && !active ? styles.secretTierReached : '',
+                  !reached ? styles.secretTierLocked : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')
+                return (
+                  <li key={tier} className={tierClass}>
+                    <span className={styles.secretTierMedal}>{SECRET_MEDAL[tier]}</span>
+                    <span className={styles.secretTierBody}>
+                      <span className={styles.secretTierName}>
+                        {SECRET_TIER_LABEL[tier]}
+                        {active && <span className={styles.secretTierFlag}>ATIVA</span>}
+                      </span>
+                      <span className={styles.secretTierDesc}>{secret.levels[tier - 1]}</span>
+                    </span>
+                  </li>
+                )
+              })}
+            </ul>
+            {secretLevel < SECRET_MAX_LEVEL && (
+              <span className={styles.secretFoot}>
+                {secretLevel === 0
+                  ? 'Desbloqueie sendo o Destaque do Dia.'
+                  : 'Suba de nível sendo o Destaque do Dia de novo.'}
+              </span>
+            )}
           </div>
         )}
 

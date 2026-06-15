@@ -11,10 +11,15 @@ import { buildDaySummary } from '../../engine/daySummary.ts'
 import type { DailyProgress } from '../../engine/approval.ts'
 import { dailyGoalMet, dailyPerfect, isHired } from '../../engine/approval.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
-import { secretAbilityFor } from '../../data/secretAbilities.ts'
+import {
+  secretAbilityFor,
+  secretDescriptionAt,
+  SECRET_TIER_LABEL,
+} from '../../data/secretAbilities.ts'
 import type { Pokemon } from '../../types/index.ts'
 import { Textbox } from '../Textbox/Textbox.tsx'
 import { TypeBadge } from '../common/TypeBadge.tsx'
+import { SECRET_MEDAL } from '../common/visual.ts'
 import { displayNameOf, genderColor, genderSymbol } from '../common/naming.ts'
 import styles from './SummaryScreen.module.css'
 
@@ -61,7 +66,7 @@ export function SummaryScreen({ state, dispatch, onRestart }: Props) {
     battlesWon: summary.defensesWon,
     battlesTotal: summary.defensesTotal,
   })
-  // Reveal da Habilidade Secreta desbloqueada hoje pelo Destaque (PLAN §3, ajuste).
+  // Reveal da Habilidade Secreta promovida hoje pelo Destaque (PLAN §3, ajuste).
   const unlock = state.today.secretUnlock
   const unlockMon = unlock ? state.roster.find((p) => p.id === unlock.pokemonId) : undefined
   const unlockedAbility = unlockMon ? secretAbilityFor(unlockMon.speciesId) : null
@@ -92,7 +97,7 @@ export function SummaryScreen({ state, dispatch, onRestart }: Props) {
         />
       </div>
 
-      {unlockedAbility && unlockMon && (
+      {unlockedAbility && unlockMon && unlock && (
         <div className={styles.secretReveal}>
           <img
             className={styles.secretRevealSprite}
@@ -100,9 +105,16 @@ export function SummaryScreen({ state, dispatch, onRestart }: Props) {
             alt={getSpecies(unlockMon.speciesId).displayName}
           />
           <div className={styles.secretRevealText}>
-            <span className={styles.secretRevealBadge}>✦ HABILIDADE SECRETA DESBLOQUEADA</span>
-            <span className={styles.secretRevealName}>{unlockedAbility.name}</span>
-            <span className={styles.secretRevealDesc}>{unlockedAbility.description}</span>
+            <span className={styles.secretRevealBadge}>
+              {SECRET_MEDAL[unlock.level]} HABILIDADE SECRETA —{' '}
+              {unlock.level === 1 ? 'DESBLOQUEADA' : `SUBIU PARA ${SECRET_TIER_LABEL[unlock.level]?.toUpperCase()}`}
+            </span>
+            <span className={styles.secretRevealName}>
+              {unlockedAbility.name} · {SECRET_TIER_LABEL[unlock.level]}
+            </span>
+            <span className={styles.secretRevealDesc}>
+              {secretDescriptionAt(unlockedAbility, unlock.level)}
+            </span>
           </div>
         </div>
       )}

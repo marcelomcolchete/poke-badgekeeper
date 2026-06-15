@@ -39,38 +39,14 @@
 .secret {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
   padding: 8px;
   border-radius: 4px;
-  border: 2px solid var(--c-panel-border);
-  background: var(--c-panel);
-}
-
-.secretOff {
-  border-style: dashed;
-  opacity: 0.8;
-}
-
-/* Habilidade ativa: painel ESCURO opaco (não deixa o verde do overlay vazar por trás) com
-   texto claro e acento âmbar/violeta — alto contraste para leitura. */
-.secretOn {
-  border-color: #f6c945;
+  border: 2px solid #f6c945;
   background: linear-gradient(180deg, #2a2342, #1b1730);
   box-shadow:
-    inset 0 0 0 1px rgba(246, 201, 69, 0.45),
-    0 0 12px rgba(179, 136, 255, 0.35);
-}
-
-.secretOn .secretHead {
-  color: #ffd86b;
-}
-
-.secretOn .secretName {
-  color: #fff3d6;
-}
-
-.secretOn .secretDesc {
-  color: #e7e0f6;
+    inset 0 0 0 1px rgba(246, 201, 69, 0.4),
+    0 0 12px rgba(179, 136, 255, 0.3);
 }
 
 .secretHead {
@@ -78,8 +54,8 @@
   align-items: center;
   gap: 6px;
   font-family: var(--font-pixel);
-  font-size: 8px;
-  color: var(--c-ink-muted);
+  font-size: 9px;
+  color: #ffd86b;
   text-transform: uppercase;
 }
 
@@ -87,22 +63,84 @@
   font-size: 12px;
 }
 
-.secretName {
+/* As três medalhas (Bronze/Prata/Ouro) empilhadas — a ativa em destaque, as não atingidas esmaecidas. */
+.secretTiers {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.secretTier {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+/* Nível ATIVO (atual) — moldura âmbar e leve brilho. */
+.secretTierActive {
+  border-color: #ffd86b;
+  background: rgba(246, 201, 69, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(246, 201, 69, 0.5);
+}
+
+/* Nível já conquistado, mas abaixo do atual — fica visível porém discreto. */
+.secretTierReached {
+  opacity: 0.75;
+}
+
+/* Nível ainda não atingido — esmaecido (mas a descrição fica legível como "prévia"). */
+.secretTierLocked {
+  opacity: 0.45;
+}
+
+.secretTierMedal {
+  font-size: 18px;
+  line-height: 1.1;
+}
+
+.secretTierBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.secretTierName {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-family: var(--font-pixel);
-  font-size: 10px;
-  color: var(--c-ink);
+  font-size: 9px;
+  color: #fff3d6;
+  text-transform: uppercase;
 }
 
-.secretOff .secretName {
-  color: var(--c-ink-muted);
-  letter-spacing: 2px;
+.secretTierFlag {
+  font-size: 7px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: #ffd86b;
+  color: #2a2342;
 }
 
-.secretDesc {
+.secretTierDesc {
   font-family: var(--font-text);
-  font-size: 13px;
-  color: var(--c-ink-muted);
+  font-size: 12px;
+  color: #e7e0f6;
   line-height: 1.35;
+}
+
+.secretFoot {
+  font-family: var(--font-text);
+  font-size: 11px;
+  color: var(--c-ink-muted);
+  font-style: italic;
 }
 
 .alloc {

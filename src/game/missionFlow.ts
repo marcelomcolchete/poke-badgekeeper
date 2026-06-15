@@ -31,15 +31,19 @@ import {
   type MissionOutcome,
 } from '../engine/missions.ts'
 import {
-  activeSecretId,
-  hasSturdy,
+  hasShellArmor,
   hasWeakArmor,
+  STURDY_SPENT_PASSIVE,
+  sturdyAvailable,
+  sturdyHealsFull,
+  sturdyPerGame,
   teamTravelSpeedMultiplier,
   type MissionSecretCtx,
 } from '../engine/secretEffects.ts'
 import { graphWithTunnel } from '../engine/pathfinding.ts'
 import { addXp } from '../engine/leveling.ts'
 import { createRng, type Rng } from '../engine/rng.ts'
+import { applyBattleSecretRuntime } from './defenseFlow.ts'
 import { findMon, replaceMon, settleFaint, takeRng } from './runtime.ts'
 
 /** Status que "ocupam" um ponto do mapa (já visível ou com time em trânsito/ação). */
@@ -156,8 +160,18 @@ export function resolveMissionNow(s: GameState, mission: MissionInstance): void 
   }
 
   // Aplica só o dano (HP) agora; XP/cura/evolução são adiados para freeOnReturn.
+  // Sturdy: salva do desmaio em missão (1× no escopo do nível) — fica com 1 de vida (ou cheia no Ouro).
+  const sturdyIds = new Set(
+    team.filter((p) => sturdyAvailable(p, s.today.secretRuntime)).map((p) => p.id),
+  )
   for (const member of outcome.team) {
-    replaceMon(s, { ...member, status: 'returning' })
+    let mon = member
+    if (mon.currentHp <= 0 && sturdyIds.has(mon.id)) {
+      mon = { ...mon, currentHp: sturdyHealsFull(mon) ? mon.maxHp : 1 }
+      if (sturdyPerGame(mon)) mon = { ...mon, passives: [...mon.passives, STURDY_SPENT_PASSIVE] }
+      else (s.today.secretRuntime[mon.id] ??= {}).sturdyUsed = true
+    }
+    replaceMon(s, { ...mon, status: 'returning' })
   }
   // Seed de evolução sorteado AGORA (mantém o cursor do RNG estável); usado só na volta.
   mission.xpSeed = takeRng(s).int(0, 0x7fffffff)
@@ -203,8 +217,10 @@ export function freeOnReturn(s: GameState, mission: MissionInstance): void {
 
 /**
  * Atualiza o estado diário das Habilidades Secretas após resolver a missão:
- * Sand Rush acumula/zera os stacks; Weak Armor ativa o buff de velocidade ao tomar dano;
- * Battle Armor é consumido (valeu para esta missão).
+ *  - Weak Armor ativa o bônus de velocidade de quem tomou dano.
+ *  - Shell Armor: numa missão fracassada o dano viria e foi anulado → debuff na PRÓXIMA missão.
+ *  - Consome o que valeu para ESTA missão: Battle Armor (bônus de atributos) e o debuff
+ *    anterior do Shell Armor (velocidade).
  */
 function applyMissionSecretRuntime(
   s: GameState,
@@ -214,14 +230,13 @@ function applyMissionSecretRuntime(
   const post = new Map(outcome.team.map((p) => [p.id, p]))
   for (const p of before) {
     const rt = (s.today.secretRuntime[p.id] ??= {})
-    if (activeSecretId(p) === 'secret-sandshrew') {
-      rt.sandRushStacks = outcome.success ? (rt.sandRushStacks ?? 0) + 1 : 0
-    }
     if (hasWeakArmor(p)) {
       const after = post.get(p.id)
       if (after && after.currentHp < p.currentHp) rt.weakArmorActive = true
     }
     if (rt.battleArmorPending) rt.battleArmorPending = false
+    // O debuff de velocidade valeu para a viagem desta missão; re-arma se ela fracassou.
+    rt.shellArmorSlow = hasShellArmor(p) && !outcome.success
   }
 }
 
@@ -278,18 +293,9 @@ export function resolveRocketBattle(s: GameState, missionId: string): void {
   if (!mission?.rocket || mission.rocket.resolved) return
   const team = teamOf(s, mission.teamIds) // ordem do despacho preservada
   const sturdyAvailableIds = new Set(
-    team.filter((p) => hasSturdy(p) && !s.today.secretRuntime[p.id]?.sturdyUsed).map((p) => p.id),
+    team.filter((p) => sturdyAvailable(p, s.today.secretRuntime)).map((p) => p.id),
   )
   const resolution = resolveDefense(takeRng(s), team, mission.rocket.enemies, { sturdyAvailableIds })
-  for (const id of resolution.sturdyUsedIds) (s.today.secretRuntime[id] ??= {}).sturdyUsed = true
-  // Atualiza Weak Armor de quem tomou dano (velocidade nas próximas missões do dia).
-  const post = new Map(resolution.squad.map((p) => [p.id, p]))
-  for (const p of team) {
-    if (hasWeakArmor(p)) {
-      const after = post.get(p.id)
-      if (after && after.currentHp < p.currentHp) (s.today.secretRuntime[p.id] ??= {}).weakArmorActive = true
-    }
-  }
   // Registra os desafiantes derrotados (MVP/relatório).
   let theirs = 0
   for (const duel of resolution.duels) {
@@ -302,6 +308,9 @@ export function resolveRocketBattle(s: GameState, missionId: string): void {
     }
   }
   for (const member of resolution.squad) replaceMon(s, settleFaint(member))
+  // Habilidades Secretas de batalha (Battle Armor/Weak Armor/Shell Armor/Sturdy) — a missão
+  // Rocket conta como batalha para o Battle Armor.
+  applyBattleSecretRuntime(s, team, resolution)
   mission.rocket.duels = resolution.duels
   mission.rocket.won = resolution.won
   mission.rocket.resolved = true

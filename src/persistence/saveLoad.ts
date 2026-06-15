@@ -181,6 +181,23 @@ function migrate(file: Partial<SaveFile>): SaveFile | null {
     version = 20
   }
 
+  // v20 → v21: níveis das Habilidades Secretas. Quem já tinha a passiva 'secret-*' ganha
+  // o nível 1 (Bronze já conquistado); demais ficam sem secretLevel.
+  if (version === 20) {
+    const roster = state.roster as Array<Record<string, unknown>> | undefined
+    if (Array.isArray(roster)) {
+      state = {
+        ...state,
+        roster: roster.map((p) => {
+          const passives = (p.passives as string[] | undefined) ?? []
+          const hasSecret = passives.some((id) => id.startsWith('secret-'))
+          return hasSecret && p.secretLevel === undefined ? { ...p, secretLevel: 1 } : p
+        }),
+      }
+    }
+    version = 21
+  }
+
   if (version !== SAVE_VERSION) return null
   return { version, savedAtMs: (file as SaveFile).savedAtMs, state } as unknown as SaveFile
 }

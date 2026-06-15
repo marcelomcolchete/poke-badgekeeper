@@ -136,6 +136,8 @@ export const DRAFT_CHOICES = 3
  * e XP de ginásio escala com o poder do desafiante (0,5/poder, teto 30).
  * v20: remove museu/Fossil; adiciona a missão Equipe Rocket (extra, 2×/run) com batalha,
  * desafiante em destaque (+15 e medalha) e nota E–S na batalha. A migração descarta missões
- * de museu antigas (templateId 'museu'), remove 'fossil' de runItems e libera Pokémon presos. */
-export const SAVE_VERSION = 20
+ * de museu antigas (templateId 'museu'), remove 'fossil' de runItems e libera Pokémon presos.
+ * v21: níveis (Bronze/Prata/Ouro) das Habilidades Secretas — pokemon.secretLevel. A migração
+ * dá nível 1 (Bronze) a quem já tinha a passiva 'secret-*' desbloqueada. */
+export const SAVE_VERSION = 21
 export const SAVE_KEY = 'poke-badgekeeper:save'

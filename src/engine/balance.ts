@@ -174,22 +174,36 @@ export const ROCKET_XP_MULTIPLIER = 3
 export const DEFENSE_BUFF_BATTLE = 15
 
 // ---- Habilidades Secretas (efeitos por linha de Pedra/Ground) ----
+//
+// Cada habilidade tem 3 níveis (Bronze/Prata/Ouro), conquistados ao virar Destaque do Dia.
+// As constantes abaixo são tuplas indexadas por (nível − 1): [Bronze, Prata, Ouro].
 
-/** Rivalidade (Nidoran): +10% em todos os atributos na missão com aliado do mesmo gênero. */
-export const RIVALRY_ATTR_MULT = 1.1
-/** Rock Head (Rhyhorn): +20% nos atributos em missões de escolta. */
-export const ROCK_HEAD_ESCORT_MULT = 1.2
-/** Shell Armor (Omanyte): +50% nos atributos em escolta, −50% em patrulha. */
-export const SHELL_ARMOR_ESCORT_MULT = 1.5
-export const SHELL_ARMOR_PATROL_MULT = 0.5
-/** Battle Armor (Cubone): +50% nos atributos na próxima missão após defender o ginásio. */
-export const BATTLE_ARMOR_MISSION_MULT = 1.5
-/** Sand Rush (Sandshrew): +25% de velocidade do time por tarefa concluída (acumula no dia). */
-export const SAND_RUSH_SPEED_PER_STACK = 0.25
-/** Weak Armor (Onix/Kabuto): dano recebido dobrado; +50% de velocidade em missões após tomar dano. */
+/** Rivalidade (Nidoran): bônus de atributo na missão POR aliado do mesmo gênero. */
+export const RIVALRY_ATTR_PER_ALLY_BY_LEVEL = [0.1, 0.1, 0.2] as const
+/** Rivalidade (nv2+): bônus de batalha contra um oponente do mesmo gênero. */
+export const RIVALRY_BATTLE_BONUS_BY_LEVEL = [0, 0.15, 0.3] as const
+/** Rock Head (Rhyhorn): multiplicador de atributos em escolta (ganho) e em ensino (perda). */
+export const ROCK_HEAD_ESCORT_MULT_BY_LEVEL = [1.5, 1.75, 2.0] as const
+export const ROCK_HEAD_STUDY_MULT_BY_LEVEL = [0.5, 0.4, 0.3] as const
+/** Battle Armor (Cubone): multiplicador de atributos na próxima missão após batalhar. */
+export const BATTLE_ARMOR_MISSION_MULT_BY_LEVEL = [1.3, 1.5, 2.0] as const
+/** Rollout (Sandshrew): bônus de batalha por Pokémon derrotado no duelo (acumula na sequência). */
+export const ROLLOUT_BATTLE_BONUS_BY_LEVEL = [0.1, 0.15, 0.25] as const
+/** Weak Armor (Onix/Kabuto): dano recebido dobrado; bônus de velocidade do time após tomar dano. */
 export const WEAK_ARMOR_DAMAGE_MULT = 2
-export const WEAK_ARMOR_SPEED_BONUS = 0.5
-/** Dig (Diglett): custo do túnel entre os dois pontos (distância-do-grafo, bem baixa = atalho). */
+export const WEAK_ARMOR_SPEED_BONUS_BY_LEVEL = [0.5, 1.0, 2.0] as const
+/** Shell Armor (Omanyte): redução de velocidade do time na próxima missão após anular dano. */
+export const SHELL_ARMOR_SLOW_BY_LEVEL = [0.5, 0.25, 0] as const
+/** Fly (Aerodactyl): bônus de velocidade ao voar (nv1 sem bônus; nv2+ acelera). */
+export const FLY_SPEED_BONUS_BY_LEVEL = [0, 0.5, 0.5] as const
+/** Fly: a partir deste nível o voo funciona com o time inteiro (não só sozinho). */
+export const FLY_TEAM_LEVEL = 3
+/** Sturdy: a partir deste nível, em vez de ficar com 1 de vida, recupera toda a vida. */
+export const STURDY_FULL_HEAL_LEVEL = 3
+/** Dig: quantidade de buracos (pontos ligados) por nível; e nível a partir do qual um é o ginásio. */
+export const DIG_HOLES_BY_LEVEL = [2, 3, 3] as const
+export const DIG_GYM_ANCHOR_LEVEL = 3
+/** Dig (Diglett): custo do túnel entre os pontos (distância-do-grafo, bem baixa = atalho). */
 export const DIG_TUNNEL_COST = 0.4
 
 /** Itens §4.6: cura/revive (HP é 1–10, então poucos pontos já contam). */

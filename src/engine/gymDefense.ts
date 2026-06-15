@@ -23,7 +23,13 @@ import {
 } from './constants.ts'
 import { DEFENSE_BUFF_BATTLE, GYM_XP_CAP_PER_WIN, GYM_XP_PER_BATTLE_POWER } from './balance.ts'
 import { applyDamage, effectiveAttr } from './attributes.ts'
-import { combatDamageMultiplier, hasSturdy } from './secretEffects.ts'
+import {
+  combatDamageMultiplier,
+  hasSturdy,
+  rivalryBattleBonus,
+  rolloutBonusPerWin,
+  sturdyHealsFull,
+} from './secretEffects.ts'
 import { attrRank, type Rank } from './ranking.ts'
 import { rollGender } from './gender.ts'
 import { clamp } from './math.ts'
@@ -167,8 +173,11 @@ export interface ResolveDefenseOpts {
 /**
  * Cadeia de duelos 1v1: a frente de cada lado se enfrenta; o perdedor perde 1 HP e
  * sai (entra o próximo). Acaba quando um lado fica sem Pokémon. Você vence se zerar
- * o adversário antes do seu (PLAN §4.4). Habilidades Secretas: Weak Armor dobra o dano
- * recebido; Sturdy (1×/dia) impede o desmaio, deixando 1 de vida.
+ * o adversário antes do seu (PLAN §4.4). Habilidades Secretas no combate:
+ *  - Weak Armor dobra o dano recebido; Shell Armor anula (×0).
+ *  - Sturdy impede o desmaio (1× no escopo do nível), deixando 1 de vida — ou TODA a vida no Ouro.
+ *  - Rollout: cada vitória SEGUIDA do mesmo lutador soma bônus de Batalha no duelo seguinte.
+ *  - Rivalidade (nv2+): bônus de Batalha contra oponente do mesmo gênero.
  */
 export function resolveDefense(
   rng: Rng,
@@ -181,16 +190,24 @@ export function resolveDefense(
   const sturdyUsed = new Set<string>()
   let yours = 0
   let theirs = 0
+  let frontWins = 0 // vitórias seguidas do lutador da frente (Rollout)
   while (yours < result.length && theirs < enemies.length) {
     const you = result[yours] as Pokemon
     const enemy = enemies[theirs] as EnemyUnit
-    const yourEff = effectiveBattle(you, enemy.types)
+    let yourEff = effectiveBattle(you, enemy.types)
+    // Rollout: bônus acumulado pelas vitórias seguidas deste mesmo lutador.
+    yourEff *= 1 + rolloutBonusPerWin(you) * frontWins
+    // Rivalidade (nv2+): vantagem contra oponente do mesmo gênero.
+    if (enemy.gender !== undefined && enemy.gender === you.gender) {
+      yourEff *= 1 + rivalryBattleBonus(you)
+    }
     const enemyEff = enemy.battle * typeAdvantageMultiplier(enemy.types, you.types)
     const pWin = duelWinProbability(yourEff, enemyEff)
     const youWon = rng.bool(pWin)
     duels.push({ yourId: you.id, youWon, pWin })
     if (youWon) {
       theirs += 1 // o inimigo perde e sai; você permanece na frente
+      frontWins += 1
     } else {
       const loss = HP_LOSS_PER_DEFENSE_LOSS * combatDamageMultiplier(you)
       const wouldFaint = you.currentHp - loss <= 0
@@ -200,12 +217,14 @@ export function resolveDefense(
         !sturdyUsed.has(you.id) &&
         (opts.sturdyAvailableIds?.has(you.id) ?? false)
       if (canSturdy) {
-        result[yours] = { ...you, currentHp: 1, status: 'idle' } // não desmaia: fica com 1
+        // Não desmaia: fica com 1 de vida (ou TODA a vida no Ouro).
+        result[yours] = { ...you, currentHp: sturdyHealsFull(you) ? you.maxHp : 1, status: 'idle' }
         sturdyUsed.add(you.id)
       } else {
         result[yours] = applyDamage(you, loss)
       }
       yours += 1
+      frontWins = 0 // novo lutador na frente: zera a sequência do Rollout
     }
   }
   return { won: theirs >= enemies.length, squad: result, duels, sturdyUsedIds: [...sturdyUsed] }

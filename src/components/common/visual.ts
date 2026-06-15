@@ -83,6 +83,16 @@ export const RARITY_COLOR: Record<Rarity, string> = {
   legend: '#e0a020',
 }
 
+/** Medalha (emoji) por nível da Habilidade Secreta: 1 Bronze, 2 Prata, 3 Ouro. */
+export const SECRET_MEDAL: Record<number, string> = { 1: '🥉', 2: '🥈', 3: '🥇' }
+
+/** Cor de acento por nível da Habilidade Secreta (Bronze/Prata/Ouro). */
+export const SECRET_MEDAL_COLOR: Record<number, string> = {
+  1: '#c97b3a',
+  2: '#c7ced8',
+  3: '#e8b923',
+}
+
 /** Cor do badge de ranking (F frio/cinza → S dourado). */
 export const RANK_COLOR: Record<Rank, string> = {
   F: '#8a8f9c',
