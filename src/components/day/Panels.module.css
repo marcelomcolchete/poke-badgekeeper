@@ -145,14 +145,17 @@
 /* ---- Defesa: carta compacta de seleção (só Batalha, sem radar) ---- */
 .battlePick {
   position: relative;
+  /* min-width: 0 deixa o card encolher abaixo do conteúdo na grade de 3 colunas
+     (sem isso a largura mínima do conteúdo estoura e gera scroll horizontal). */
+  min-width: 0;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   text-align: left;
   background: var(--c-panel);
-  border: 3px solid var(--c-panel-border);
+  border: 2px solid var(--c-panel-border);
   border-radius: var(--radius-pixel);
-  padding: 6px;
+  padding: 5px;
   cursor: pointer;
 }
 
@@ -174,8 +177,8 @@
 
 .battlePickSprite {
   flex: none;
-  width: 38px;
-  height: 38px;
+  width: 32px;
+  height: 32px;
   image-rendering: pixelated;
   background: rgba(0, 0, 0, 0.05);
   border-radius: 4px;
@@ -184,14 +187,14 @@
 .battlePickInfo {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   min-width: 0;
   flex: 1;
 }
 
 .battlePickName {
   font-family: var(--font-text);
-  font-size: 14px;
+  font-size: 13px;
   color: var(--c-ink);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -210,7 +213,7 @@
   flex-direction: column;
   align-items: center;
   gap: 1px;
-  padding: 4px 6px;
+  padding: 3px 4px;
   background: rgba(214, 60, 60, 0.12);
   border: 2px solid var(--c-panel-border);
   border-radius: var(--radius-pixel);
@@ -218,7 +221,7 @@
 
 .battlePickStatVal {
   font-family: var(--font-pixel);
-  font-size: 13px;
+  font-size: 11px;
   color: var(--c-hp-low);
   line-height: 1;
 }
@@ -292,9 +295,18 @@
 }
 
 .barTypes {
-  display: inline-flex;
+  display: flex;
   gap: 4px;
   flex-wrap: wrap;
+  align-items: center;
+  min-height: 18px;
+}
+
+.barTypesEmpty {
+  font-family: var(--font-text);
+  font-size: 13px;
+  color: var(--c-ink-muted);
+  opacity: 0.8;
 }
 
 /* Miniaturas do esquadrão na ordem dos duelos (arrastável para reordenar). */
@@ -370,11 +382,12 @@
   padding-right: 2px;
 }
 
-/* Badge da posição na batalha sobre a carta selecionada do picker. */
+/* Badge da posição na batalha sobre a carta selecionada do picker. Fica DENTRO do card
+   (canto superior esquerdo) para não ser cortado pelo recorte da grade rolável. */
 .pickPos {
   position: absolute;
-  top: -6px;
-  left: -6px;
+  top: 2px;
+  left: 2px;
   z-index: 1;
   font-family: var(--font-pixel);
   font-size: 8px;
@@ -383,7 +396,8 @@
   background: var(--c-hud-accent);
   border: 2px solid var(--c-ink);
   border-radius: 999px;
-  padding: 3px 4px;
+  padding: 2px 3px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 .confirm {
