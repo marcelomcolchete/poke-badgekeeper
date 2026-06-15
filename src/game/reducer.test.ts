@@ -4,6 +4,8 @@ import { createInitialState } from '../engine/state.ts'
 import type { EnemyUnit, Pokemon, PokemonType } from '../types/index.ts'
 import { makeAttrs, makeMon } from '../engine/testkit.ts'
 import { MAX_ROSTER_SIZE, STARTING_GOLD } from '../engine/constants.ts'
+import { MISSION_XP_POOL } from '../engine/balance.ts'
+import { gymWinXp } from '../engine/gymDefense.ts'
 import { reducer } from './reducer.ts'
 import { autoSeedRun } from './setup.ts'
 
@@ -75,6 +77,28 @@ describe('fluxo de missão (PLAN §4.2/§4.3)', () => {
     expect(s.roster.every((p) => p.level > 1 || p.xp > 0)).toBe(true) // ganhou XP
     expect(s.run.phase).toBe('SUMMARY')
     expect(s.today.missionResults).toHaveLength(1)
+  })
+
+  it('o XP da missão é um POOL dividido igualmente entre os participantes', () => {
+    let s = dayState({
+      roster: [strong('a'), strong('b'), strong('c')],
+      missions: [controlledMission()],
+    })
+    s = reducer(s, { type: 'ACCEPT_MISSION', missionId: 'm1', teamIds: ['a', 'b', 'c'] })
+    s = reducer(s, { type: 'TICK', deltaMs: 200_000 }) // resolve e volta ao ginásio
+
+    expect(s.missions[0]?.result).toBe('success')
+    const share = Math.floor(MISSION_XP_POOL / 3) // 240 / 3 = 80
+    expect(s.missions[0]?.xpAwards).toEqual({ a: share, b: share, c: share })
+    // A soma dos shares concedidos no dia = o pool inteiro (relatório).
+    expect(s.today.xpEarned).toBe(share * 3)
+  })
+
+  it('time menor recebe um share MAIOR do pool (solo = pool inteiro)', () => {
+    let s = dayState({ roster: [strong('a')], missions: [controlledMission()] })
+    s = reducer(s, { type: 'ACCEPT_MISSION', missionId: 'm1', teamIds: ['a'] })
+    s = reducer(s, { type: 'TICK', deltaMs: 200_000 })
+    expect(s.missions[0]?.xpAwards).toEqual({ a: MISSION_XP_POOL })
   })
 
   it('o time fica "returning" até voltar ao ginásio; idle só ao chegar', () => {
@@ -162,6 +186,23 @@ describe('fluxo de defesa (PLAN §4.4/§4.6)', () => {
     const xpEarnedOnce = s.today.xpEarned
     s = reducer(s, { type: 'COMPLETE_DEFENSE', defenseId: 'd1' })
     expect(s.today.xpEarned).toBe(xpEarnedOnce)
+  })
+
+  it('o XP de ginásio escala com o poder de cada desafiante derrotado (teto 30)', () => {
+    // Desafiantes normais (sem vantagem de tipo) com poderes 20 e 40; o defensor forte vence ambos.
+    const enemies: EnemyUnit[] = [
+      { battle: 20, types: ['normal'] },
+      { battle: 40, types: ['normal'] },
+    ]
+    let s = dayState({ roster: [strong('a')], defenses: [defense(enemies)] })
+    s.today.defensesTotal = 1
+    s = reducer(s, { type: 'ASSIGN_DEFENSE', defenseId: 'd1', squadIds: ['a'] })
+    expect(s.defenses[0]?.status).toBe('won')
+
+    s = reducer(s, { type: 'COMPLETE_DEFENSE', defenseId: 'd1' })
+    // 0,5×20 + 0,5×40 = 10 + 20 = 30.
+    expect(s.today.xpEarned).toBe(gymWinXp(20) + gymWinXp(40))
+    expect(s.today.xpEarned).toBe(30)
   })
 
   it('esquadrão vazio é rejeitado', () => {

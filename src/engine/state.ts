@@ -86,6 +86,12 @@ export interface MissionInstance {
    * ginásio (PLAN §4.1, ajuste) — guardar o seed mantém a evolução determinística.
    */
   xpSeed?: number
+  /**
+   * XP-base atribuído a cada participante (id → share), gravado ao resolver no sucesso:
+   * o POOL da missão dividido igualmente. Consumido na volta (freeOnReturn) e exibido na
+   * tela de finalização. Ausente em falha/missões antigas (cai no fallback 0).
+   */
+  xpAwards?: Record<string, number>
 }
 
 export type DefenseStatus =

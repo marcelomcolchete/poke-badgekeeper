@@ -9,7 +9,7 @@ import type { GameState, MissionInstance, MissionStatus } from '../engine/state.
 import { getCity } from '../data/cities.ts'
 import { getMissionTemplate } from '../data/missionTemplates.ts'
 import { MAX_DISPATCH, MIN_DISPATCH } from '../engine/constants.ts'
-import { MISSION_XP_REWARD, RETURN_SPEED_BONUS_ON_SUCCESS } from '../engine/balance.ts'
+import { MISSION_XP_POOL, RETURN_SPEED_BONUS_ON_SUCCESS } from '../engine/balance.ts'
 import {
   executionMs,
   graphTravelMs,
@@ -137,7 +137,12 @@ export function resolveMissionNow(s: GameState, mission: MissionInstance): void 
   }
   // Seed de evolução sorteado AGORA (mantém o cursor do RNG estável); usado só na volta.
   mission.xpSeed = takeRng(s).int(0, 0x7fffffff)
-  if (outcome.success) applyMissionRewards(s, template)
+  if (outcome.success) {
+    // Pool de XP da missão dividido igualmente entre os participantes (aplicado na volta).
+    const share = team.length > 0 ? Math.floor(MISSION_XP_POOL / team.length) : 0
+    mission.xpAwards = Object.fromEntries(team.map((p) => [p.id, share]))
+    applyMissionRewards(s, template)
+  }
 
   mission.status = 'returning'
   mission.result = outcome.success ? 'success' : 'failure'
@@ -165,8 +170,9 @@ export function freeOnReturn(s: GameState, mission: MissionInstance): void {
   const success = mission.result === 'success'
   const evoRng = createRng(mission.xpSeed ?? 0) // mesma sequência sorteada ao resolver
   for (const member of teamOf(s, mission.teamIds)) {
-    replaceMon(s, settleFaint(s, applyOutcome(member, success, template, evoRng)))
-    if (success) s.today.xpEarned += MISSION_XP_REWARD // XP do dia (relatório)
+    const xp = success ? (mission.xpAwards?.[member.id] ?? 0) : 0
+    replaceMon(s, settleFaint(s, applyOutcome(member, xp, success, template, evoRng)))
+    if (success) s.today.xpEarned += xp // XP do dia (relatório) — soma dos shares = pool
   }
   mission.status = 'resolved'
 }
@@ -207,16 +213,18 @@ function applyMissionRewards(s: GameState, template: MissionTemplate): void {
 }
 
 /**
- * Efeitos aplicados na VOLTA ao ginásio: XP (só em sucesso, pode subir nível/evoluir) e
- * cura se o template curar (Pokecenter). O status final é definido por settleFaint.
+ * Efeitos aplicados na VOLTA ao ginásio: XP (só em sucesso — o share do pool deste
+ * Pokémon, pode subir nível/evoluir) e cura se o template curar (Pokecenter). O status
+ * final é definido por settleFaint.
  */
 function applyOutcome(
   member: Pokemon,
+  xp: number,
   success: boolean,
   template: MissionTemplate,
   rng: Rng,
 ): Pokemon {
-  let mon = success ? addXp(member, MISSION_XP_REWARD, rng).pokemon : member
+  let mon = success ? addXp(member, xp, rng).pokemon : member
   if (success && template.healOnSuccess) mon = { ...mon, currentHp: mon.maxHp }
   return mon
 }

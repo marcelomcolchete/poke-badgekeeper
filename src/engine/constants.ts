@@ -119,6 +119,8 @@ export const DRAFT_CHOICES = 3
  * (requirement + secondaryAttr), 6 tipos + 3 especiais, despacho máx. 3. A migração limpa
  * missões antigas (templateIds incompatíveis) e libera Pokémon presos nelas.
  * v18: efeitos das Habilidades Secretas — estado diário (today.secretRuntime) e túnel do
- * Dig (today.digTunnel). */
-export const SAVE_VERSION = 18
+ * Dig (today.digTunnel).
+ * v19: XP de missão vira POOL dividido entre os participantes (mission.xpAwards, opcional)
+ * e XP de ginásio escala com o poder do desafiante (0,5/poder, teto 30). */
+export const SAVE_VERSION = 19
 export const SAVE_KEY = 'poke-badgekeeper:save'

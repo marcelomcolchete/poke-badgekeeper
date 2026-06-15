@@ -26,6 +26,8 @@ import {
   ENEMY_SQUAD_DAY1,
   ENEMY_SQUAD_DAY10,
   ENEMY_SQUAD_JITTER_FROM_DAY,
+  GYM_XP_CAP_PER_WIN,
+  GYM_XP_PER_BATTLE_POWER,
 } from './balance.ts'
 import { applyDamage, effectiveAttr } from './attributes.ts'
 import { combatDamageMultiplier, hasSturdy } from './secretEffects.ts'
@@ -64,6 +66,14 @@ export function effectiveBattle(attacker: Pokemon, defenderTypes: readonly Pokem
 export function duelWinProbability(attackerBattleEff: number, defenderBattleEff: number): number {
   if (defenderBattleEff <= 0) return 1
   return clamp(attackerBattleEff / defenderBattleEff, 0, 1)
+}
+
+/**
+ * XP por duelo vencido = 0,5 × poder de Batalha do desafiante derrotado, com teto de 30
+ * (§4.4, ajuste). Recompensa derrubar inimigos mais fortes; desafiantes fracos rendem pouco.
+ */
+export function gymWinXp(enemyBattle: number): number {
+  return Math.min(GYM_XP_CAP_PER_WIN, Math.round(GYM_XP_PER_BATTLE_POWER * enemyBattle))
 }
 
 /**
