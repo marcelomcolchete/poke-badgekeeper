@@ -17,6 +17,7 @@ import { getCity, markerPos } from '../../data/cities.ts'
 import { getMissionTemplate, missionReward } from '../../data/missionTemplates.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
 import { graphWithTunnel, pointAlongPath } from '../../engine/pathfinding.ts'
+import { teamTravelSpeedMultiplier } from '../../engine/secretEffects.ts'
 import { clamp } from '../../engine/math.ts'
 import styles from './CityMap.module.css'
 
@@ -128,16 +129,13 @@ export function CityMap({ state, onMission, onDefense, onSpot }: Props) {
   )
 }
 
-/** Túnel do Dig: dois buracos nos pontos ligados + uma linha tracejada por baixo da terra. */
+/** Túnel do Dig: só os dois buracos nos pontos ligados (a ligação fica subentendida). */
 function DigTunnel({ graph, tunnel }: { graph: CityGraph; tunnel: readonly [string, string] }) {
   const a = graph.nodes[tunnel[0]]
   const b = graph.nodes[tunnel[1]]
   if (!a || !b) return null
   return (
     <>
-      <svg className={styles.tunnelLine} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-        <line x1={a.x * 100} y1={a.y * 100} x2={b.x * 100} y2={b.y * 100} />
-      </svg>
       <div className={styles.tunnelHole} style={posStyle(a)} title="Túnel (Dig)" aria-hidden="true">
         🕳️
       </div>
@@ -170,9 +168,15 @@ function MapTravelers({ state, graph, now }: { state: GameState; graph: CityGrap
     <>
       {state.missions.map((m) => {
         const pos = missionTravelerPos(graph, m, now)
-        return pos ? (
-          <TravelerGroup key={`m-${m.id}`} pos={pos} ids={m.teamIds} roster={state.roster} />
-        ) : null
+        if (!pos) return null
+        // Buff de velocidade do time (Sand Rush/Weak Armor) → aura piscando ao redor.
+        const team = m.teamIds
+          .map((id) => state.roster.find((p) => p.id === id))
+          .filter((p): p is Pokemon => p !== undefined)
+        const speedy = teamTravelSpeedMultiplier(team, state.today.secretRuntime) > 1
+        return (
+          <TravelerGroup key={`m-${m.id}`} pos={pos} ids={m.teamIds} roster={state.roster} speedy={speedy} />
+        )
       })}
       {state.captureSearches.map((c) => {
         // Ao chegar no local, o procurador some (entra na grama); reaparece só na volta — #3.
@@ -188,15 +192,26 @@ function MapTravelers({ state, graph, now }: { state: GameState; graph: CityGrap
   )
 }
 
-/** Grupo de até 3 sprites agrupados numa posição do mapa. */
-function TravelerGroup({ pos, ids, roster }: { pos: MapPos; ids: string[]; roster: Pokemon[] }) {
+/** Grupo de até 3 sprites agrupados numa posição do mapa (aura de velocidade opcional). */
+function TravelerGroup({
+  pos,
+  ids,
+  roster,
+  speedy = false,
+}: {
+  pos: MapPos
+  ids: string[]
+  roster: Pokemon[]
+  speedy?: boolean
+}) {
   const mons = ids
     .map((id) => roster.find((p) => p.id === id))
     .filter((p): p is Pokemon => p !== undefined)
     .slice(0, 3)
   if (mons.length === 0) return null
   return (
-    <div className={styles.travelers} style={posStyle(pos)}>
+    <div className={`${styles.travelers} ${speedy ? styles.speedy : ''}`} style={posStyle(pos)}>
+      {speedy && <span className={styles.speedAura} aria-hidden="true" />}
       {mons.map((mon) => (
         <img
           key={mon.id}
