@@ -82,11 +82,12 @@ export const SPECIAL2_PRINCIPALS = 2
 export const SPECIAL2_SECONDARIES = 1
 export const SPECIAL5_PRINCIPALS = 5
 
-/** Curva de dificuldade §4.8: faixa de missões/defesas por dia (×fatorCidade). */
-export const MIN_MISSIONS = 3
-export const MAX_MISSIONS = 8
-export const MIN_DEFENSES = 1
-export const MAX_DEFENSES = 4
+/**
+ * Quantidade FIXA de missões/defesas por dia (índice = dia − 1), igual para todas as
+ * cidades — sem multiplicador de dificuldade. 10 entradas (dias 1..10).
+ */
+export const MISSIONS_PER_DAY = [3, 4, 4, 5, 6, 6, 7, 7, 8, 8] as const
+export const DEFENSES_PER_DAY = [1, 1, 2, 2, 2, 3, 3, 4, 4, 5] as const
 
 /** Janela do dia (fração) em que eventos surgem — deixa tempo para resolvê-los (§4.8). */
 export const SPAWN_WINDOW_FRACTION = 0.85
@@ -116,6 +117,7 @@ export const GYM_WIN_XP = 20
 /**
  * Pool ponderado das categorias sorteadas a cada dia (museu é especial, fora daqui).
  * Áreas verdes e casas geram os 6 tipos normais; centro/mart geram as especiais.
+ * Centro (Pokecenter) e mart (Pokemart) aparecem no MÁXIMO 1×/dia cada (ver timeline).
  */
 export const DAILY_CATEGORY_POOL: MissionCategory[] = [
   'freeArea',
@@ -126,6 +128,16 @@ export const DAILY_CATEGORY_POOL: MissionCategory[] = [
   'house',
   'center',
   'mart',
+]
+
+/** Pool só com categorias normais (sem especiais) — usado p/ realocar center/mart excedentes. */
+export const NORMAL_CATEGORY_POOL: MissionCategory[] = [
+  'freeArea',
+  'freeArea',
+  'freeArea',
+  'freeArea',
+  'house',
+  'house',
 ]
 
 /** Captura §4.5: quantas áreas verdes recebem captura por dia (1×/dia, horário sorteado). */

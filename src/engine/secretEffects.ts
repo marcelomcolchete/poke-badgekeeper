@@ -7,7 +7,7 @@ import type { AttrKey, Attrs, Pokemon } from '../types/index.ts'
 import type { MissionTemplate } from '../data/types.ts'
 import type { SecretRuntime } from './state.ts'
 import { secretAbilityFor } from '../data/secretAbilities.ts'
-import { ATTR_MAX } from './constants.ts'
+import { TEAM_ATTR_MAX } from './constants.ts'
 import {
   BATTLE_ARMOR_MISSION_MULT,
   RIVALRY_ATTR_MULT,
@@ -80,13 +80,13 @@ export function teamHasAttrBoost(ctx: MissionSecretCtx): boolean {
   return ctx.team.some((p) => missionAttrMultiplier(p, ctx) !== 1)
 }
 
-/** Soma do time num eixo COM os multiplicadores de habilidade, capada em ATTR_MAX. */
+/** Soma do time num eixo COM os multiplicadores de habilidade, capada em TEAM_ATTR_MAX (70). */
 export function teamSecretAxisSum(key: AttrKey, ctx: MissionSecretCtx): number {
   const total = ctx.team.reduce(
     (sum, p) => sum + effectiveAttr(p, key) * missionAttrMultiplier(p, ctx),
     0,
   )
-  return Math.min(total, ATTR_MAX)
+  return Math.min(total, TEAM_ATTR_MAX)
 }
 
 /** Soma do time (todos os eixos) com os multiplicadores de habilidade — base do hexágono. */

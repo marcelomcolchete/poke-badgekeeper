@@ -102,8 +102,6 @@ export interface CityData {
   /** Dimensões nativas da arte (px) — reservam a proporção e evitam layout shift. */
   mapW: number
   mapH: number
-  /** Multiplicador de dificuldade (curva de missões/defesas) — PLAN §4.8. */
-  difficultyFactor: number
   /** Grafo de deslocamento (pontos a–s + adjacência) — PLAN §3.1. */
   graph: CityGraph
   /** Mapeamento sítio → ponto do grafo (ginásio, centro, mart, museu, casas, verdes). */

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ATTR_KEYS } from '../types/index.ts'
-import { ATTR_MAX, ATTR_MIN, HP_MAX, HP_MIN, NATURE_BOOSTED_PER_POINT, NATURE_REDUCED_PER_POINT } from './constants.ts'
+import { ATTR_MAX, ATTR_MIN, HP_MAX, HP_MIN, NATURE_BOOSTED_PER_POINT, NATURE_REDUCED_PER_POINT, TEAM_ATTR_MAX } from './constants.ts'
 import {
   applyDamage,
   axisMin,
@@ -56,12 +56,12 @@ describe('effectiveAttr', () => {
 })
 
 describe('teamAxisSum / teamSum', () => {
-  it('soma por eixo, capada no teto de atributos', () => {
+  it('soma por eixo, capada no teto do time (70)', () => {
     const a = makeMon({ baseAttrs: makeAttrs({ agilidade: 50 }) })
     const b = makeMon({ baseAttrs: makeAttrs({ agilidade: 50 }) })
     const c = makeMon({ baseAttrs: makeAttrs({ agilidade: 50 }) })
-    expect(teamAxisSum([a, b], 'agilidade')).toBe(ATTR_MAX) // 100 → cap no teto
-    expect(teamAxisSum([a, b, c], 'agilidade')).toBe(ATTR_MAX) // 150 → cap no teto
+    expect(teamAxisSum([a, b], 'agilidade')).toBe(TEAM_ATTR_MAX) // 100 → cap no teto do time
+    expect(teamAxisSum([a, b, c], 'agilidade')).toBe(TEAM_ATTR_MAX) // 150 → cap no teto do time
   })
 
   it('time vazio soma 0', () => {

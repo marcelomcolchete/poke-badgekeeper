@@ -7,36 +7,36 @@ import type { CityData } from '../data/types.ts'
 import type { MissionCategory } from '../types/index.ts'
 import { nodesForCategory } from '../data/cities.ts'
 import { createRng, deriveSeed, type Rng } from './rng.ts'
-import { DAY_LENGTH_MS, TOTAL_DAYS } from './constants.ts'
+import { DAY_LENGTH_MS, DAY_SEGMENTS, TOTAL_DAYS } from './constants.ts'
 import {
   CAPTURE_SPOTS_PER_DAY,
   DAILY_CATEGORY_POOL,
   DAY1_FIRST_MISSION_DELAY_MS,
-  MAX_DEFENSES,
-  MAX_MISSIONS,
-  MIN_DEFENSES,
-  MIN_MISSIONS,
+  DEFENSES_PER_DAY,
+  MISSIONS_PER_DAY,
   MUSEUM_DAY_MAX,
   MUSEUM_DAY_MIN,
+  NORMAL_CATEGORY_POOL,
   SPAWN_WINDOW_FRACTION,
 } from './balance.ts'
-import { clamp, lerp } from './math.ts'
+import { clamp } from './math.ts'
 
 /** Salt fixo para derivar o dia do museu a partir do seed da run. */
 const MUSEUM_SEED_SALT = 0x4d757365 // 'Muse'
 
-/** Contagem por dia: round(lerp(min, max, (dia−1)/9) · fatorCidade) — PLAN §4.8. */
-export function countForDay(day: number, min: number, max: number, difficultyFactor: number): number {
-  const t = clamp((day - 1) / (TOTAL_DAYS - 1), 0, 1)
-  return Math.max(0, Math.round(lerp(min, max, t) * difficultyFactor))
+/** Índice (0..9) na tabela por dia — clamp p/ dias fora de 1..10. */
+function dayIndex(day: number): number {
+  return clamp(day, 1, TOTAL_DAYS) - 1
 }
 
-export function missionsForDay(day: number, city: CityData): number {
-  return countForDay(day, MIN_MISSIONS, MAX_MISSIONS, city.difficultyFactor)
+/** Quantidade de missões do dia — tabela fixa, igual para todas as cidades (sem museu). */
+export function missionsForDay(day: number): number {
+  return MISSIONS_PER_DAY[dayIndex(day)] ?? 0
 }
 
-export function defensesForDay(day: number, city: CityData): number {
-  return countForDay(day, MIN_DEFENSES, MAX_DEFENSES, city.difficultyFactor)
+/** Quantidade de defesas (batalhas) do dia — tabela fixa, igual para todas as cidades. */
+export function defensesForDay(day: number): number {
+  return DEFENSES_PER_DAY[dayIndex(day)] ?? 0
 }
 
 export interface MissionSlot {
@@ -72,26 +72,72 @@ export function museumDay(seed: number): number {
   return createRng(deriveSeed(seed, MUSEUM_SEED_SALT)).int(MUSEUM_DAY_MIN, MUSEUM_DAY_MAX)
 }
 
+/** Duração de cada um dos 3 momentos (minutos) do dia. */
+const SEGMENT_MS = DAY_LENGTH_MS / DAY_SEGMENTS
+
+/** Horário aleatório na janela do dia inteiro — usado pela captura (1×/dia). */
 function randomTime(rng: Rng): number {
   return Math.floor(rng.float(0, DAY_LENGTH_MS * SPAWN_WINDOW_FRACTION))
 }
 
-function scheduleMissions(rng: Rng, count: number, city: CityData): MissionSlot[] {
-  return Array.from({ length: count }, () => {
-    const category = rng.pick(DAILY_CATEGORY_POOL)
-    const siteCount = Math.max(1, nodesForCategory(city.siteNodes, category).length)
-    return {
-      atMs: randomTime(rng),
-      seed: rng.int(0, 0x7fffffff),
-      category,
-      siteIndex: rng.int(0, siteCount - 1),
-    }
-  })
+/**
+ * Reparte `count` eventos igualmente entre os DAY_SEGMENTS momentos do dia: base idêntica
+ * em cada um e a sobra em momentos aleatórios distintos (ex.: 5 → [2,2,1] embaralhado).
+ */
+function segmentCounts(rng: Rng, count: number): number[] {
+  const counts = Array.from({ length: DAY_SEGMENTS }, () => Math.floor(count / DAY_SEGMENTS))
+  let remainder = count - counts.reduce((a, b) => a + b, 0)
+  for (const seg of rng.shuffle(counts.map((_, i) => i))) {
+    if (remainder <= 0) break
+    counts[seg] = (counts[seg] ?? 0) + 1
+    remainder--
+  }
+  return counts
 }
 
-function scheduleDefenses(rng: Rng, count: number): DefenseSlot[] {
-  return Array.from({ length: count }, () => ({
-    atMs: randomTime(rng),
+/**
+ * Horário de surgimento dentro de UM momento: início do momento + posição aleatória na sua
+ * janela. No dia 1 o 1º momento só abre após o atraso de respiro (PLAN §3.1).
+ */
+function spawnTimeInSegment(rng: Rng, segment: number, day: number): number {
+  const start = segment * SEGMENT_MS
+  const lo = day === 1 && segment === 0 ? DAY1_FIRST_MISSION_DELAY_MS : 0
+  const hi = SEGMENT_MS * SPAWN_WINDOW_FRACTION
+  return Math.floor(start + rng.float(lo, hi))
+}
+
+/** Um horário por evento, já distribuídos igualmente entre os 3 momentos do dia. */
+function spawnTimesAcrossSegments(rng: Rng, count: number, day: number): number[] {
+  const times: number[] = []
+  segmentCounts(rng, count).forEach((n, segment) => {
+    for (let k = 0; k < n; k++) times.push(spawnTimeInSegment(rng, segment, day))
+  })
+  return times
+}
+
+/**
+ * Sorteia a categoria de cada missão, com Pokecenter (center) e Pokemart (mart) limitados a
+ * 1×/dia cada (podendo não sair nenhum): o excedente vira uma categoria normal.
+ */
+function rollCategories(rng: Rng, count: number): MissionCategory[] {
+  const out: MissionCategory[] = []
+  let hasCenter = false
+  let hasMart = false
+  for (let i = 0; i < count; i++) {
+    let category = rng.pick(DAILY_CATEGORY_POOL)
+    if ((category === 'center' && hasCenter) || (category === 'mart' && hasMart)) {
+      category = rng.pick(NORMAL_CATEGORY_POOL)
+    }
+    if (category === 'center') hasCenter = true
+    if (category === 'mart') hasMart = true
+    out.push(category)
+  }
+  return out
+}
+
+function scheduleDefenses(rng: Rng, count: number, day: number): DefenseSlot[] {
+  return spawnTimesAcrossSegments(rng, count, day).map((atMs) => ({
+    atMs,
     seed: rng.int(0, 0x7fffffff),
   }))
 }
@@ -101,17 +147,6 @@ function pickCaptureSpots(rng: Rng, greenCount: number): number[] {
   const n = Math.min(CAPTURE_SPOTS_PER_DAY, greenCount)
   const indices = Array.from({ length: greenCount }, (_, i) => i)
   return rng.shuffle(indices).slice(0, n)
-}
-
-/**
- * No dia 1, desloca a agenda para que a 1ª missão só surja após o atraso de respiro
- * (PLAN §3.1): mantém o espaçamento entre missões e a ordem.
- */
-function delayFirstMissionOnDay1(day: number, missions: MissionSlot[]): MissionSlot[] {
-  if (day !== 1 || missions.length === 0) return missions
-  const earliest = missions[0]?.atMs ?? 0
-  const shift = Math.max(0, DAY1_FIRST_MISSION_DELAY_MS - earliest)
-  return shift === 0 ? missions : missions.map((m) => ({ ...m, atMs: m.atMs + shift }))
 }
 
 /**
@@ -125,25 +160,38 @@ function captureSpawns(rng: Rng, day: number, count: number): number[] {
 /** Agenda completa do dia, reprodutível pelo seed da run + dia (PLAN §3.1/§4.8). */
 export function buildDaySchedule(seed: number, day: number, city: CityData): DaySchedule {
   const rng = createRng(deriveSeed(seed, day))
-  const missions = scheduleMissions(rng, missionsForDay(day, city), city)
 
-  // Missão única do museu (#5): só na cidade que tem museu e no dia semeado da run.
+  // 1) Categorias das missões normais do dia (center/mart capados em 1×/dia).
+  const specs: Omit<MissionSlot, 'atMs'>[] = rollCategories(rng, missionsForDay(day)).map(
+    (category) => ({
+      seed: rng.int(0, 0x7fffffff),
+      category,
+      siteIndex: rng.int(0, Math.max(1, nodesForCategory(city.siteNodes, category).length) - 1),
+    }),
+  )
+
+  // 2) Missão única do museu (#5): entra no rateio dos 3 momentos como as demais.
   if (city.museumMissionId && day === museumDay(seed)) {
-    missions.push({
-      atMs: randomTime(rng),
+    specs.push({
       seed: rng.int(0, 0x7fffffff),
       category: 'museum',
       siteIndex: 0,
       templateId: city.museumMissionId,
     })
   }
-  missions.sort((a, b) => a.atMs - b.atMs)
 
-  const defenses = scheduleDefenses(rng, defensesForDay(day, city))
+  // 3) Distribui as missões igualmente entre os 3 momentos e ordena por horário.
+  const missionTimes = spawnTimesAcrossSegments(rng, specs.length, day)
+  const missions = specs
+    .map((spec, i) => ({ ...spec, atMs: missionTimes[i] ?? 0 }))
+    .sort((a, b) => a.atMs - b.atMs)
+
+  // 4) Defesas: mesma distribuição em 3 momentos, independente das missões.
+  const defenses = scheduleDefenses(rng, defensesForDay(day), day)
   const captureSiteIndices = pickCaptureSpots(rng, city.siteNodes.green.length)
   return {
     day,
-    missions: delayFirstMissionOnDay1(day, missions),
+    missions,
     defenses,
     captureSiteIndices,
     captureSpawnsAtMs: captureSpawns(rng, day, captureSiteIndices.length),

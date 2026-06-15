@@ -1,47 +1,51 @@
 import { describe, expect, it } from 'vitest'
-import { DAY_LENGTH_MS, TOTAL_DAYS } from './constants.ts'
+import { DAY_LENGTH_MS, DAY_SEGMENTS, TOTAL_DAYS } from './constants.ts'
 import {
   CAPTURE_SPOTS_PER_DAY,
   DAY1_FIRST_MISSION_DELAY_MS,
+  DEFENSES_PER_DAY,
+  MISSIONS_PER_DAY,
   SPAWN_WINDOW_FRACTION,
 } from './balance.ts'
 import { getCity, nodesForCategory } from '../data/cities.ts'
-import {
-  buildDaySchedule,
-  countForDay,
-  defensesForDay,
-  missionsForDay,
-  museumDay,
-} from './timeline.ts'
+import { buildDaySchedule, defensesForDay, missionsForDay, museumDay } from './timeline.ts'
 
 const PEWTER = getCity(0)
-const VIRIDIAN = getCity(7) // maior fatorCidade
+const SEGMENT_MS = DAY_LENGTH_MS / DAY_SEGMENTS
+/** Maior horário possível de surgimento: início do último momento + janela dele. */
+const LATEST_SPAWN = (DAY_SEGMENTS - 1) * SEGMENT_MS + SEGMENT_MS * SPAWN_WINDOW_FRACTION
 
 /** Nº esperado de missões: base do dia + 1 se hoje for o dia do museu da cidade. */
 function expectedMissionCount(seed: number, day: number, city: typeof PEWTER): number {
   const extra = city.museumMissionId && museumDay(seed) === day ? 1 : 0
-  return missionsForDay(day, city) + extra
+  return missionsForDay(day) + extra
 }
 
-describe('countForDay (PLAN §4.8)', () => {
-  it('interpola min→max ao longo dos dias (não decrescente)', () => {
-    let prev = -1
-    for (let day = 1; day <= TOTAL_DAYS; day++) {
-      const n = countForDay(day, 3, 8, 1)
-      expect(n).toBeGreaterThanOrEqual(prev)
-      prev = n
-    }
-    expect(countForDay(1, 3, 8, 1)).toBe(3)
-    expect(countForDay(TOTAL_DAYS, 3, 8, 1)).toBe(8)
-  })
+/** Quantos eventos caem em cada um dos 3 momentos do dia. */
+function countsPerSegment(times: number[]): number[] {
+  const counts = Array.from({ length: DAY_SEGMENTS }, () => 0)
+  for (const at of times) {
+    const seg = Math.min(DAY_SEGMENTS - 1, Math.floor(at / SEGMENT_MS))
+    counts[seg] = (counts[seg] ?? 0) + 1
+  }
+  return counts
+}
 
-  it('fatorCidade aumenta a contagem', () => {
-    expect(missionsForDay(TOTAL_DAYS, VIRIDIAN)).toBeGreaterThan(missionsForDay(TOTAL_DAYS, PEWTER))
+describe('missionsForDay/defensesForDay (tabela fixa por dia)', () => {
+  it('lê a tabela fixa, igual para todas as cidades', () => {
+    for (let day = 1; day <= TOTAL_DAYS; day++) {
+      expect(missionsForDay(day)).toBe(MISSIONS_PER_DAY[day - 1])
+      expect(defensesForDay(day)).toBe(DEFENSES_PER_DAY[day - 1])
+    }
+    expect(missionsForDay(1)).toBe(3)
+    expect(defensesForDay(1)).toBe(1)
+    expect(missionsForDay(10)).toBe(8)
+    expect(defensesForDay(10)).toBe(5)
   })
 
   it('mais perto do dia 10 = mais missões e mais defesas', () => {
-    expect(missionsForDay(10, PEWTER)).toBeGreaterThan(missionsForDay(1, PEWTER))
-    expect(defensesForDay(10, PEWTER)).toBeGreaterThanOrEqual(defensesForDay(1, PEWTER))
+    expect(missionsForDay(10)).toBeGreaterThan(missionsForDay(1))
+    expect(defensesForDay(10)).toBeGreaterThan(defensesForDay(1))
   })
 })
 
@@ -53,17 +57,16 @@ describe('buildDaySchedule (PLAN §3.1/§4.8)', () => {
   it('quantidade casa com missionsForDay/defensesForDay', () => {
     const sched = buildDaySchedule(123, 6, PEWTER)
     expect(sched.missions).toHaveLength(expectedMissionCount(123, 6, PEWTER))
-    expect(sched.defenses).toHaveLength(defensesForDay(6, PEWTER))
+    expect(sched.defenses).toHaveLength(defensesForDay(6))
     expect(sched.day).toBe(6)
   })
 
   it('spawns ficam na janela do dia, ordenados, em sítios válidos da categoria', () => {
-    const window = DAY_LENGTH_MS * SPAWN_WINDOW_FRACTION
     const sched = buildDaySchedule(7, 9, PEWTER)
     let last = -1
     for (const slot of sched.missions) {
       expect(slot.atMs).toBeGreaterThanOrEqual(0)
-      expect(slot.atMs).toBeLessThan(window)
+      expect(slot.atMs).toBeLessThanOrEqual(LATEST_SPAWN)
       expect(slot.atMs).toBeGreaterThanOrEqual(last) // ordenado
       last = slot.atMs
       const siteCount = nodesForCategory(PEWTER.siteNodes, slot.category).length
@@ -72,7 +75,32 @@ describe('buildDaySchedule (PLAN §3.1/§4.8)', () => {
     }
     for (const slot of sched.defenses) {
       expect(slot.atMs).toBeGreaterThanOrEqual(0)
-      expect(slot.atMs).toBeLessThan(window)
+      expect(slot.atMs).toBeLessThanOrEqual(LATEST_SPAWN)
+    }
+  })
+
+  it('missões e defesas se distribuem igualmente entre os 3 momentos (diferença ≤ 1)', () => {
+    for (let seed = 1; seed <= 30; seed++) {
+      for (const day of [1, 4, 7, 10]) {
+        const sched = buildDaySchedule(seed, day, PEWTER)
+        for (const times of [
+          sched.missions.map((m) => m.atMs),
+          sched.defenses.map((d) => d.atMs),
+        ]) {
+          const counts = countsPerSegment(times)
+          expect(Math.max(...counts) - Math.min(...counts)).toBeLessThanOrEqual(1)
+        }
+      }
+    }
+  })
+
+  it('Pokecenter (center) e Pokemart (mart) aparecem no máximo 1×/dia cada', () => {
+    for (let seed = 1; seed <= 50; seed++) {
+      for (let day = 1; day <= TOTAL_DAYS; day++) {
+        const cats = buildDaySchedule(seed, day, PEWTER).missions.map((m) => m.category)
+        expect(cats.filter((c) => c === 'center').length).toBeLessThanOrEqual(1)
+        expect(cats.filter((c) => c === 'mart').length).toBeLessThanOrEqual(1)
+      }
     }
   })
 

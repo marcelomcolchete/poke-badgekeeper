@@ -115,7 +115,6 @@ interface CitySeed {
   secondaryType: CityData['secondaryType']
   /** Iniciais fixos: [Nv 3, Nv 1]. */
   starters: CityData['starters']
-  difficultyFactor: number
   graph?: CityGraph
   siteNodes?: CitySiteNodes
   museumMissionId?: string
@@ -133,7 +132,6 @@ const SEEDS: CitySeed[] = [
       { speciesId: 95, level: 3 }, // Onix
       { speciesId: 74, level: 1 }, // Geodude
     ],
-    difficultyFactor: 1.0,
     graph: PEWTER_GRAPH,
     siteNodes: PEWTER_SITE_NODES,
     museumMissionId: 'museu',
@@ -146,7 +144,6 @@ const SEEDS: CitySeed[] = [
       { speciesId: 120, level: 3 }, // Staryu
       { speciesId: 118, level: 1 }, // Goldeen
     ],
-    difficultyFactor: 1.1,
   },
   {
     name: 'Vermilion',
@@ -156,7 +153,6 @@ const SEEDS: CitySeed[] = [
       { speciesId: 25, level: 3 }, // Pikachu
       { speciesId: 81, level: 1 }, // Magnemite
     ],
-    difficultyFactor: 1.25,
   },
   {
     name: 'Celadon',
@@ -166,7 +162,6 @@ const SEEDS: CitySeed[] = [
       { speciesId: 44, level: 3 }, // Gloom
       { speciesId: 1, level: 1 }, // Bulbasaur
     ],
-    difficultyFactor: 1.4,
   },
   {
     name: 'Fuchsia',
@@ -176,7 +171,6 @@ const SEEDS: CitySeed[] = [
       { speciesId: 109, level: 3 }, // Koffing
       { speciesId: 41, level: 1 }, // Zubat
     ],
-    difficultyFactor: 1.5,
   },
   {
     name: 'Saffron',
@@ -186,7 +180,6 @@ const SEEDS: CitySeed[] = [
       { speciesId: 63, level: 3 }, // Abra
       { speciesId: 92, level: 1 }, // Gastly
     ],
-    difficultyFactor: 1.65,
   },
   {
     name: 'Cinnabar',
@@ -196,7 +189,6 @@ const SEEDS: CitySeed[] = [
       { speciesId: 58, level: 3 }, // Growlithe
       { speciesId: 147, level: 1 }, // Dratini
     ],
-    difficultyFactor: 1.8,
   },
   {
     name: 'Viridian',
@@ -206,7 +198,6 @@ const SEEDS: CitySeed[] = [
       { speciesId: 33, level: 3 }, // Nidorino
       { speciesId: 52, level: 1 }, // Meowth
     ],
-    difficultyFactor: 2.0,
   },
 ]
 
@@ -224,7 +215,6 @@ export const CITIES: CityData[] = SEEDS.map((s, index) => ({
   coverImage: `/maps/kanto/${index + 1}_capa.png`,
   mapW: MAP_W,
   mapH: MAP_H,
-  difficultyFactor: s.difficultyFactor,
   // Cidades não calibradas herdam o layout de Pewter (placeholder).
   graph: s.graph ?? PEWTER_GRAPH,
   siteNodes: s.siteNodes ?? PEWTER_SITE_NODES,

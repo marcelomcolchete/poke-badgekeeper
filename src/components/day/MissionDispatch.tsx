@@ -7,7 +7,7 @@ import type { AttrKey, Pokemon } from '../../types/index.ts'
 import type { GameState, MissionInstance } from '../../engine/state.ts'
 import type { GameAction } from '../../game/actions.ts'
 import type { MissionTemplate } from '../../data/types.ts'
-import { MAX_DISPATCH, MIN_DISPATCH } from '../../engine/constants.ts'
+import { MAX_DISPATCH, MIN_DISPATCH, TEAM_ATTR_MAX } from '../../engine/constants.ts'
 import { getCity } from '../../data/cities.ts'
 import { getMissionTemplate, missionReward } from '../../data/missionTemplates.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
@@ -100,7 +100,7 @@ export function MissionDispatch({ state, dispatch, missionId, onClose }: Props) 
               <span aria-hidden="true">{reward.icon}</span> {reward.label}
             </p>
           )}
-          <HexRadar requirement={mission.requirement} teamSum={teamSecretSum(ctx)} />
+          <HexRadar requirement={mission.requirement} teamSum={teamSecretSum(ctx)} axisMax={TEAM_ATTR_MAX} />
           {boosted && (
             <p className={styles.missionReward}>
               <span aria-hidden="true">✦</span> Habilidade Secreta ativa nesta missão
