@@ -8,7 +8,8 @@ import type { GameState } from '../../engine/state.ts'
 import type { GameAction } from '../../game/actions.ts'
 import { TOTAL_DAYS, STARS_MAX } from '../../engine/constants.ts'
 import { buildDaySummary } from '../../engine/daySummary.ts'
-import { dailyGoalMet, isHired } from '../../engine/approval.ts'
+import type { DailyProgress } from '../../engine/approval.ts'
+import { dailyGoalMet, dailyPerfect, isHired } from '../../engine/approval.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
 import { secretAbilityFor } from '../../data/secretAbilities.ts'
 import type { Pokemon } from '../../types/index.ts'
@@ -25,10 +26,11 @@ interface Props {
 
 type VerdictKind = 'perfect' | 'good' | 'bad'
 
-/** Selo do dia: todas as missões → PERFEITO; meta batida → Bom trabalho; abaixo → Melhore. */
-function dayVerdict(completed: number, total: number): { label: string; kind: VerdictKind } {
-  if (total > 0 && completed >= total) return { label: 'PERFEITO!', kind: 'perfect' }
-  if (dailyGoalMet(completed, total)) return { label: 'Bom trabalho', kind: 'good' }
+/** Selo do dia: 100% nas duas frentes → PERFEITO; ambas as metas → Bom trabalho; abaixo → Melhore. */
+function dayVerdict(progress: DailyProgress): { label: string; kind: VerdictKind } {
+  const hasWork = progress.missionsTotal > 0 || progress.battlesTotal > 0
+  if (hasWork && dailyPerfect(progress)) return { label: 'PERFEITO!', kind: 'perfect' }
+  if (hasWork && dailyGoalMet(progress)) return { label: 'Bom trabalho', kind: 'good' }
   return { label: 'Melhore', kind: 'bad' }
 }
 
@@ -53,7 +55,12 @@ export function SummaryScreen({ state, dispatch, onRestart }: Props) {
         .map((k) => getSpecies(k.speciesId as number))
     : []
   const lastDay = state.run.day >= TOTAL_DAYS
-  const verdict = dayVerdict(summary.missionsCompleted, summary.missionsTotal)
+  const verdict = dayVerdict({
+    missionsCompleted: summary.missionsCompleted,
+    missionsTotal: summary.missionsTotal,
+    battlesWon: summary.defensesWon,
+    battlesTotal: summary.defensesTotal,
+  })
   // Reveal da Habilidade Secreta desbloqueada hoje pelo Destaque (PLAN §3, ajuste).
   const unlock = state.today.secretUnlock
   const unlockMon = unlock ? state.roster.find((p) => p.id === unlock.pokemonId) : undefined

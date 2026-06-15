@@ -143,7 +143,6 @@ export function TeamSidebar({ state, onSelect }: Props) {
             fainted ? styles.faintedMember : '',
             busy ? styles.busyMember : '',
             willLevelUp ? styles.willLevelUp : '',
-            secretActive ? styles.secretActive : '',
           ]
             .filter(Boolean)
             .join(' ')
@@ -172,7 +171,7 @@ export function TeamSidebar({ state, onSelect }: Props) {
                         title={`Habilidade Secreta ATIVA: ${secret.name}`}
                         aria-label={`Habilidade Secreta ativa: ${secret.name}`}
                       >
-                        ✦
+                        🏅
                       </span>
                     )}
                     {willLevelUp && (
@@ -230,24 +229,28 @@ export function TeamSidebar({ state, onSelect }: Props) {
                 </div>
 
                 {/* Atributos: 6 eixos numa linha (abreviados). Dourado = maximizado;
-                    azul/vermelho = favorecido/penalizado pela natureza. */}
+                    verde "+" = favorecido / vermelho "−" = penalizado pela natureza. */}
                 <dl className={styles.attrs}>
                   {ATTR_KEYS.map((k) => {
                     const val = effectiveAttr(mon, k)
                     const gain = perPointGain(mon, k)
-                    // Prioridade: maximizado (dourado) > natureza (azul favorecido / vermelho penalizado).
+                    const boosted = gain > ATTR_PER_POINT
+                    const reduced = gain < ATTR_PER_POINT
+                    // Prioridade: maximizado (dourado) > natureza (verde favorecido / vermelho penalizado).
                     const color =
                       val >= ATTR_MAX
                         ? '#e0a020'
-                        : gain > ATTR_PER_POINT
-                          ? '#6db4ff'
-                          : gain < ATTR_PER_POINT
+                        : boosted
+                          ? '#6fd47a'
+                          : reduced
                             ? '#ff8a8a'
                             : undefined
+                    const sign = val >= ATTR_MAX ? '' : boosted ? '+' : reduced ? '−' : ''
                     return (
                       <div key={k} className={styles.attr}>
                         <dt className={styles.attrName} style={color ? { color } : undefined}>
                           {ATTR_SHORT_PT[k]}
+                          {sign}
                         </dt>
                         <dd
                           className={styles.attrVal}

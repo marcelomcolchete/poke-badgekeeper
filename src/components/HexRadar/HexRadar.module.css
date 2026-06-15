@@ -47,9 +47,9 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Spokes e labels com cor de natureza */
+/* Spokes e labels com cor de natureza: favorecido VERDE "+", penalizado VERMELHO "−". */
 .spokeBoosted {
-  stroke: #4a90d9;
+  stroke: #2f8f3f;
   stroke-width: 1.5;
 }
 
@@ -59,7 +59,7 @@
 }
 
 .labelBoosted {
-  fill: #4a90d9;
+  fill: #2f8f3f;
   font-family: var(--font-pixel);
   font-size: 8px;
   font-weight: bold;

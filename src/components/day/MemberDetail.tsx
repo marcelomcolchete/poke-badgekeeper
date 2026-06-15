@@ -7,6 +7,8 @@ import type { GameState } from '../../engine/state.ts'
 import type { GameAction } from '../../game/actions.ts'
 import { getNatureEntry, NATURE_LABEL_PT } from '../../data/natures.ts'
 import { secretAbilityFor } from '../../data/secretAbilities.ts'
+import { ATTR_MAX } from '../../engine/constants.ts'
+import { effectiveAttr, perPointGain } from '../../engine/attributes.ts'
 import { pendingPoints } from '../../engine/leveling.ts'
 import { PokemonCard } from '../PokemonCard/PokemonCard.tsx'
 import { Overlay } from '../common/Overlay.tsx'
@@ -47,10 +49,10 @@ export function MemberDetail({ state, dispatch, pokemonId, onClose }: Props) {
           <div className={styles.natureLine}>
             <span className={styles.natureName}>{NATURE_LABEL_PT[mon.nature]}</span>
             {natureEntry?.boosted && (
-              <span className={styles.natureBoosted}>↑ {ATTR_SHORT_PT[natureEntry.boosted]}</span>
+              <span className={styles.natureBoosted}>+ {ATTR_SHORT_PT[natureEntry.boosted]}</span>
             )}
             {natureEntry?.reduced && (
-              <span className={styles.natureReduced}>↓ {ATTR_SHORT_PT[natureEntry.reduced]}</span>
+              <span className={styles.natureReduced}>− {ATTR_SHORT_PT[natureEntry.reduced]}</span>
             )}
             {!natureEntry?.boosted && !natureEntry?.reduced && (
               <span className={styles.natureNeutral}>(neutra)</span>
@@ -75,16 +77,37 @@ export function MemberDetail({ state, dispatch, pokemonId, onClose }: Props) {
           <div className={styles.alloc}>
             <span className={styles.allocLabel}>Distribuir +{pending}:</span>
             <div className={styles.allocBtns}>
-              {ATTR_KEYS.map((attr) => (
-                <button
-                  key={attr}
-                  type="button"
-                  className={styles.allocBtn}
-                  onClick={() => dispatch({ type: 'ALLOCATE_POINT', pokemonId: mon.id, attr })}
-                >
-                  {ATTR_SHORT_PT[attr]}
-                </button>
-              ))}
+              {ATTR_KEYS.map((attr) => {
+                const current = effectiveAttr(mon, attr)
+                // Ganho REAL ao alocar: o ponto rende +5/+10/+15 pela natureza, mas o teto 60
+                // pode aparar o saldo (ex.: 59 → só +1). Mostramos o número exato.
+                const gain = Math.min(ATTR_MAX, current + perPointGain(mon, attr)) - current
+                const maxed = gain <= 0
+                const capped = !maxed && gain < perPointGain(mon, attr)
+                const btnClass = [
+                  styles.allocBtn,
+                  capped ? styles.allocBtnCapped : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')
+                return (
+                  <button
+                    key={attr}
+                    type="button"
+                    className={btnClass}
+                    disabled={maxed}
+                    title={
+                      maxed
+                        ? `${ATTR_SHORT_PT[attr]} já está no máximo (${ATTR_MAX})`
+                        : `${ATTR_SHORT_PT[attr]}: ${current} → ${current + gain}`
+                    }
+                    onClick={() => dispatch({ type: 'ALLOCATE_POINT', pokemonId: mon.id, attr })}
+                  >
+                    <span className={styles.allocName}>{ATTR_SHORT_PT[attr]}</span>
+                    <span className={styles.allocGain}>{maxed ? 'máx' : `+${gain}`}</span>
+                  </button>
+                )
+              })}
             </div>
           </div>
         )}

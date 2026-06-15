@@ -45,11 +45,15 @@ export function finalizeDay(s: GameState): void {
 
   const starsBefore = s.approval.stars
   s.today.starsBefore = starsBefore
-  const completed = s.today.missionResults.filter((r) => r.success).length
-  const total = s.today.missionResults.length
+  const progress = {
+    missionsCompleted: s.today.missionResults.filter((r) => r.success).length,
+    missionsTotal: s.today.missionResults.length,
+    battlesWon: s.today.defensesWon,
+    battlesTotal: s.today.defensesTotal,
+  }
 
-  // Sem estrelas e meta não batida: perder ½ estrela zeraria a reputação → game over.
-  if (starsBefore + approvalDelta(completed, total) < STARS_MIN) {
+  // Sem estrelas e metas não batidas: perder ½ estrela zeraria a reputação → game over.
+  if (starsBefore + approvalDelta(progress) < STARS_MIN) {
     s.approval.stars = STARS_MIN
     s.run.phase = 'GAMEOVER'
     s.run.gameOverReason = 'stars'
@@ -57,8 +61,8 @@ export function finalizeDay(s: GameState): void {
     return
   }
 
-  s.approval.stars = applyApproval(starsBefore, completed, total)
-  s.approval.dailyGoalMet = dailyGoalMet(completed, total)
+  s.approval.stars = applyApproval(starsBefore, progress)
+  s.approval.dailyGoalMet = dailyGoalMet(progress)
 
   const summary = buildDaySummary({
     day: s.run.day,
