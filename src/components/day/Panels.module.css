@@ -765,11 +765,12 @@
   pointer-events: none;
 }
 
-/* Nota (E–S) no card de seleção do esquadrão (canto superior direito — pickPos fica à esquerda). */
+/* Nota (E–S) no card de seleção do esquadrão (DENTRO do card, canto superior direito —
+   pickPos fica à esquerda). Posições positivas evitam que a badge seja cortada na borda. */
 .pickRank {
   position: absolute;
-  top: -6px;
-  right: -6px;
+  top: 4px;
+  right: 4px;
   display: grid;
   place-items: center;
   min-width: 16px;
