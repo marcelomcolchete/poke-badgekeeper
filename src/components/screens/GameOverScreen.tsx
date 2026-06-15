@@ -14,6 +14,8 @@ const MESSAGE: Record<NonNullable<RunInfo['gameOverReason']>, string> = {
   gym: 'O ginásio ficou indefeso! Você não enfrentou o ataque a tempo e foi demitido na hora — não importa o dia nem as estrelas.',
   stars:
     'Sua reputação chegou a zero. Sem estrelas e sem bater a meta do dia, a liga encerrou seu período de testes.',
+  rocket:
+    'A Equipe Rocket invadiu e você não despachou ninguém para detê-los! Ignorar o ataque encerrou seu período de testes na hora.',
 }
 
 export function GameOverScreen({ reason, onRestart }: Props) {

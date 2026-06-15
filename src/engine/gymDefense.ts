@@ -21,10 +21,20 @@ import {
   TYPE_ADVANTAGE_MULT,
   TYPE_DISADVANTAGE_MULT,
 } from './constants.ts'
-import { GYM_XP_CAP_PER_WIN, GYM_XP_PER_BATTLE_POWER } from './balance.ts'
+import { DEFENSE_BUFF_BATTLE, GYM_XP_CAP_PER_WIN, GYM_XP_PER_BATTLE_POWER } from './balance.ts'
 import { applyDamage, effectiveAttr } from './attributes.ts'
 import { combatDamageMultiplier, hasSturdy } from './secretEffects.ts'
+import { attrRank, type Rank } from './ranking.ts'
 import { clamp } from './math.ts'
+
+/**
+ * Nota (E–S) de um desafiante na batalha: quanto a Batalha foge da base da espécie (mesma
+ * escala dos IVs do jogador). O destaque (+15) estoura a faixa e cai naturalmente em 'S'.
+ */
+export function enemyRank(enemy: EnemyUnit): Rank {
+  if (enemy.speciesId === undefined) return attrRank(0)
+  return attrRank(enemy.battle - getSpecies(enemy.speciesId).baseAttrs.batalha)
+}
 
 /** ≥1 Pokémon disponível para abrir uma defesa (PLAN §4.4). */
 export function canDefend(squad: readonly Pokemon[]): boolean {
@@ -110,18 +120,26 @@ export function trainerSquadSpecies(rng: Rng, trainer: TrainerDef, size: number)
  * Inimigos efêmeros da defesa a partir do elenco de um treinador (PLAN §4.4). Cada invasor
  * tem o SEU poder de Batalha: a Batalha-base da espécie ±10 (E..S, como os IVs do jogador) —
  * então dois invasores da mesma espécie ainda diferem. Sem escala por dia: o dia controla
- * só QUANTOS Pokémon o treinador traz (enemySquadSizeForDay).
+ * só QUANTOS Pokémon o treinador traz (enemySquadSizeForDay). Um desafiante (sorteado) sai
+ * em DESTAQUE: ganha +15 de Batalha e exibe medalha na batalha (PLAN — destaque do desafiante).
  */
 export function generateDefenseEnemies(rng: Rng, trainer: TrainerDef, size: number): EnemyUnit[] {
-  return trainerSquadSpecies(rng, trainer, size).map((speciesId) => {
+  const enemies = trainerSquadSpecies(rng, trainer, size).map((speciesId) => {
     const species = getSpecies(speciesId)
     const battle = clamp(
       species.baseAttrs.batalha + rng.int(IV_MIN, IV_MAX),
       ATTR_EFFECTIVE_MIN,
       ATTR_MAX,
     )
-    return { battle, types: [...species.types], speciesId }
+    return { battle, types: [...species.types], speciesId } as EnemyUnit
   })
+  // Destaque: um desafiante recebe +15 de Batalha e a medalha (sobe acima do teto normal).
+  if (enemies.length > 0) {
+    const buffed = enemies[rng.int(0, enemies.length - 1)] as EnemyUnit
+    buffed.battle += DEFENSE_BUFF_BATTLE
+    buffed.buffed = true
+  }
+  return enemies
 }
 
 export interface DuelLog {

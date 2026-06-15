@@ -17,12 +17,14 @@ import { MemberDetail } from './MemberDetail.tsx'
 import { MissionDispatch } from './MissionDispatch.tsx'
 import { MissionRevealModal } from './MissionRevealModal.tsx'
 import { DefensePanel } from './DefensePanel.tsx'
+import { RocketBattlePanel } from './RocketBattlePanel.tsx'
 import { CapturePanel } from './CapturePanel.tsx'
 import styles from './DayScreen.module.css'
 
 type Selection =
   | { kind: 'mission'; id: string }
   | { kind: 'defense'; id: string }
+  | { kind: 'rocketBattle'; id: string }
   | { kind: 'capture'; spotIndex: number }
   | { kind: 'quit' }
   | null
@@ -115,6 +117,14 @@ export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) 
     if (revealId) revealedMissions.current.add(revealId)
     setRevealId(null)
   }
+  // Rocket cumprida: fecha a revelação e abre a batalha contra o treinador Rocket.
+  const startRocketBattle = (): void => {
+    if (!revealId) return
+    revealedMissions.current.add(revealId)
+    const id = revealId
+    setRevealId(null)
+    setOpen({ kind: 'rocketBattle', id })
+  }
   const revealMission = revealId ? state.missions.find((m) => m.id === revealId) : undefined
 
   // Fala do guia: sempre que a dica contextual muda, dispara uma nova fala efêmera.
@@ -176,6 +186,9 @@ export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) 
       {open?.kind === 'defense' && (
         <DefensePanel state={state} dispatch={dispatch} defenseId={open.id} onClose={close} />
       )}
+      {open?.kind === 'rocketBattle' && (
+        <RocketBattlePanel state={state} dispatch={dispatch} missionId={open.id} onClose={close} />
+      )}
       {open?.kind === 'capture' && (
         <CapturePanel state={state} dispatch={dispatch} spotIndex={open.spotIndex} onClose={close} />
       )}
@@ -191,7 +204,12 @@ export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) 
       )}
 
       {revealMission && (
-        <MissionRevealModal state={state} mission={revealMission} onClose={closeReveal} />
+        <MissionRevealModal
+          state={state}
+          mission={revealMission}
+          onClose={closeReveal}
+          onBattle={startRocketBattle}
+        />
       )}
     </div>
   )

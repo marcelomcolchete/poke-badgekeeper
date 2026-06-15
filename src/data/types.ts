@@ -72,7 +72,7 @@ export interface CitySiteNodes {
   center: string
   /** Poké Mart: missões 'mart' (recompensa em ouro). */
   mart: string
-  /** Museu: missão temática única da run (concede passiva). */
+  /** Antigo ponto do museu: onde a missão Rocket Team surge nesta cidade. */
   museum: string
   /** Casas: missões 'house'. */
   houses: string[]
@@ -106,8 +106,6 @@ export interface CityData {
   graph: CityGraph
   /** Mapeamento sítio → ponto do grafo (ginásio, centro, mart, museu, casas, verdes). */
   siteNodes: CitySiteNodes
-  /** Missão única do museu desta cidade (id de template 'museum'); ausente = sem museu. */
-  museumMissionId?: string
   /** Classes de treinador que podem invadir o ginásio nesta cidade (PLAN §4.4). */
   trainers: TrainerId[]
 }
@@ -127,7 +125,7 @@ export interface ItemData {
  * - 'normal': 1 atributo principal (primaryAttr) + 1 secundário sorteado (pode coincidir
  *   com o principal → "mega"); demais eixos são "resto".
  * - 'special2': 2 principais + 1 secundário + 3 restos, todos com eixos sorteados (Pokecenter/Pokemart).
- * - 'special5': 5 principais + 1 resto, eixos sorteados (Museu).
+ * - 'special5': 5 principais + 1 resto, eixos sorteados (Rocket Team).
  */
 export type MissionGen = 'normal' | 'special2' | 'special5'
 
@@ -153,8 +151,11 @@ export interface MissionTemplate {
   healOnSuccess?: boolean
   /** Recompensa: ouro concedido no sucesso (Pokemart). */
   goldOnSuccess?: number
-  /** Recompensa: passiva concedida ao concluir (Museu). */
-  grantsPassive?: string
+  /**
+   * Missão da Equipe Rocket: ao concluir a parte de atributos, o time enfrenta um treinador
+   * Rocket numa batalha (PLAN — Rocket Team). As recompensas (ouro + 3× XP) só vêm na vitória.
+   */
+  isRocket?: boolean
 }
 
 export interface PassiveData {

@@ -59,6 +59,9 @@ export const DIG_SEED_SALT = 0xd16
 /** Sub-seed do sorteio de treinadores do dia (defesa): ordena quais classes invadem hoje. */
 export const TRAINER_SEED_SALT = 0x713a
 
+/** Sub-seed que sorteia os 2 dias da missão Equipe Rocket na run (extra, fora da agenda). */
+export const ROCKET_SEED_SALT = 0x526f636b // 'Rock'
+
 /**
  * Quantidade de Pokémon do treinador invasor por dia (PLAN §4.4). Indexado pelo dia (1–10);
  * a posição 0 é só preenchimento. Cresce de 1 (dia 1) a 6 (dias 9–10).
@@ -130,6 +133,9 @@ export const DRAFT_CHOICES = 3
  * v18: efeitos das Habilidades Secretas — estado diário (today.secretRuntime) e túnel do
  * Dig (today.digTunnel).
  * v19: XP de missão vira POOL dividido entre os participantes (mission.xpAwards, opcional)
- * e XP de ginásio escala com o poder do desafiante (0,5/poder, teto 30). */
-export const SAVE_VERSION = 19
+ * e XP de ginásio escala com o poder do desafiante (0,5/poder, teto 30).
+ * v20: remove museu/Fossil; adiciona a missão Equipe Rocket (extra, 2×/run) com batalha,
+ * desafiante em destaque (+15 e medalha) e nota E–S na batalha. A migração descarta missões
+ * de museu antigas (templateId 'museu'), remove 'fossil' de runItems e libera Pokémon presos. */
+export const SAVE_VERSION = 20
 export const SAVE_KEY = 'poke-badgekeeper:save'

@@ -156,9 +156,22 @@ export const CAPTURE_SPOTS_PER_DAY = 1
 /** Atraso (ms de jogo) da 1ª missão no dia 1 — janela de respiro no início da run (§3.1). */
 export const DAY1_FIRST_MISSION_DELAY_MS = 15_000
 
-/** Museu: a missão única da run cai num dia sorteado nesta faixa (evita os extremos). */
-export const MUSEUM_DAY_MIN = 3
-export const MUSEUM_DAY_MAX = 8
+/**
+ * Equipe Rocket: a missão EXTRA aparece 2× na run, em dias DISTINTOS sorteados nesta faixa
+ * (evita os extremos do calendário). Não entra no agendamento normal — é um evento à parte.
+ */
+export const ROCKET_DAY_MIN = 3
+export const ROCKET_DAY_MAX = 8
+export const ROCKET_MISSIONS_TOTAL = 2
+
+/** Rocket §recompensa: ouro-bônus por VENCER a batalha (além do ouro de batalha padrão). */
+export const ROCKET_GOLD_BONUS = 300
+
+/** Rocket §recompensa: a missão Rocket rende 3× o pool de XP normal (só na vitória). */
+export const ROCKET_XP_MULTIPLIER = 3
+
+/** Defesa/Rocket §destaque: um desafiante do esquadrão ganha +15 de Batalha e exibe medalha. */
+export const DEFENSE_BUFF_BATTLE = 15
 
 // ---- Habilidades Secretas (efeitos por linha de Pedra/Ground) ----
 

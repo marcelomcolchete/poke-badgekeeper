@@ -121,7 +121,6 @@ interface CitySeed {
   starters: CityData['starters']
   graph?: CityGraph
   siteNodes?: CitySiteNodes
-  museumMissionId?: string
 }
 
 // Tipos do ginásio fixos (primário + secundário) e DOIS iniciais fixos por cidade
@@ -138,7 +137,6 @@ const SEEDS: CitySeed[] = [
     ],
     graph: PEWTER_GRAPH,
     siteNodes: PEWTER_SITE_NODES,
-    museumMissionId: 'museu',
   },
   {
     name: 'Cerulean',
@@ -222,7 +220,6 @@ export const CITIES: CityData[] = SEEDS.map((s, index) => ({
   // Cidades não calibradas herdam o layout de Pewter (placeholder).
   graph: s.graph ?? PEWTER_GRAPH,
   siteNodes: s.siteNodes ?? PEWTER_SITE_NODES,
-  museumMissionId: s.museumMissionId,
   trainers: PEWTER_TRAINERS,
 }))
 

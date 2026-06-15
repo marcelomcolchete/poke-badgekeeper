@@ -237,7 +237,7 @@ export interface MissionInstanceSpec {
   node: string
   spawnAtMs: number
   lifetimeMs: number
-  /** Template fixo (museu); ausente = sorteia da categoria. */
+  /** Template fixo (Equipe Rocket); ausente = sorteia da categoria. */
   templateId?: string
 }
 

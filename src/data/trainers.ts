@@ -64,6 +64,11 @@ const KABUTO = 140
 const AERODACTYL = 142
 const MACHOP = 66
 const MANKEY = 56
+// Linhas evolutivas dos treinadores da Equipe Rocket (missão Rocket Team).
+const EKANS = 23
+const KOFFING = 109
+const DROWZEE = 96
+const CUBONE = 104
 
 const TRAINER_LIST: TrainerDef[] = [
   {
@@ -150,6 +155,31 @@ const TRAINER_LIST: TrainerDef[] = [
     displayName: 'Red',
     spritePath: '/sprites/trainers/RED.png',
     pool: { kind: 'rival', lead: CHARMANDER },
+  },
+  // Equipe Rocket — NÃO entram no pool de invasores do ginásio (só na missão Rocket Team).
+  {
+    id: 'ROCKET_TEAM_FEMALE',
+    displayName: 'Equipe Rocket',
+    spritePath: '/sprites/trainers/ROCKET_TEAM_FEMALE.png',
+    pool: roster(
+      evolutionFamily(EKANS),
+      evolutionFamily(RATTATA),
+      evolutionFamily(MACHOP),
+      evolutionFamily(MEOWTH),
+      evolutionFamily(ODDISH),
+    ),
+  },
+  {
+    id: 'ROCKET_TEAM_MALE',
+    displayName: 'Equipe Rocket',
+    spritePath: '/sprites/trainers/ROCKET_TEAM_MALE.png',
+    pool: roster(
+      evolutionFamily(KOFFING),
+      evolutionFamily(SANDSHREW),
+      evolutionFamily(DROWZEE),
+      evolutionFamily(ZUBAT),
+      evolutionFamily(CUBONE),
+    ),
   },
 ]
 

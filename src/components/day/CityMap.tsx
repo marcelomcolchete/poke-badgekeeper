@@ -274,16 +274,18 @@ function missionVisual(mission: MissionInstance, now: number): MissionVisual {
         ariaLabel: won ? 'Missão cumprida, time voltando' : 'Missão falhou, time voltando',
       }
     }
-    default:
-      // Disponível: "!" com o anel esvaziando até expirar.
+    default: {
+      // Disponível: "!" (ou "R" vermelho da Equipe Rocket) com o anel esvaziando até expirar.
+      const isRocket = getMissionTemplate(mission.templateId).isRocket
       return {
         iconClass: styles.bang,
         ringColor: 'var(--c-hud-accent)',
-        content: '!',
+        content: isRocket ? 'R' : '!',
         fraction: timerFraction(mission, now),
         pulse: true,
-        ariaLabel: 'Missão disponível',
+        ariaLabel: isRocket ? 'Missão da Equipe Rocket disponível' : 'Missão disponível',
       }
+    }
   }
 }
 

@@ -155,6 +155,32 @@ function migrate(file: Partial<SaveFile>): SaveFile | null {
     version = 19
   }
 
+  // v19 → v20: remove museu/Fossil e adiciona a missão Equipe Rocket. Descarta missões de
+  // museu antigas (templateId 'museu'), libera Pokémon presos nelas e tira 'fossil' de runItems.
+  if (version === 19) {
+    const missions = state.missions as Array<{ teamIds?: string[]; templateId?: string }> | undefined
+    if (Array.isArray(missions)) {
+      const stranded = new Set(
+        missions.filter((m) => m.templateId === 'museu').flatMap((m) => m.teamIds ?? []),
+      )
+      const roster = state.roster as Array<Record<string, unknown>> | undefined
+      state = {
+        ...state,
+        missions: missions.filter((m) => m.templateId !== 'museu'),
+        roster: Array.isArray(roster)
+          ? roster.map((p) =>
+              stranded.has(p.id as string) && p.status !== 'fainted' ? { ...p, status: 'idle' } : p,
+            )
+          : roster,
+      }
+    }
+    const runItems = state.runItems as string[] | undefined
+    if (Array.isArray(runItems)) {
+      state = { ...state, runItems: runItems.filter((i) => i !== 'fossil') }
+    }
+    version = 20
+  }
+
   if (version !== SAVE_VERSION) return null
   return { version, savedAtMs: (file as SaveFile).savedAtMs, state } as unknown as SaveFile
 }
