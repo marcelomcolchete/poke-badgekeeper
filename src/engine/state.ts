@@ -24,6 +24,11 @@ export interface RunInfo {
   /** Seed-mestra da run (reprodutibilidade). */
   seed: number
   phase: GamePhase
+  /**
+   * Nível da bola possuída (0 = nenhuma; 1 = Pokébola … 4 = Masterball). Cada nível libera
+   * uma raridade a mais nos encontros da exploração. Sobe ao comprar a próxima bola no mercado.
+   */
+  ballLevel: number
   /** Motivo da derrota quando phase === 'GAMEOVER' (mensagem da tela de fim de jogo). */
   gameOverReason?: 'gym' | 'stars' | 'rocket'
 }
@@ -192,6 +197,11 @@ export interface CaptureEncounter {
   candidateSpeciesIds: number[]
   /** Seed estável por candidato: preview = Pokémon capturado (natureza, IVs/rank) — §4.5. */
   candidateSeeds: number[]
+  /**
+   * Janela de rank (índices min/max, 0=F … 6=S) liberada pela Percepção do explorador: limita
+   * os IVs/rank dos candidatos. Ausente em saves antigos → captura/preview sem limite (§4.5).
+   */
+  rankWindow?: [number, number]
 }
 
 export interface ItemStack {
@@ -329,7 +339,7 @@ export function emptyTally(): DayTally {
 /** Estado inicial de uma nova run (antes da escolha do inicial e dos tipos do ginásio). */
 export function createInitialState(seed: number): GameState {
   return {
-    run: { cityIndex: 0, day: 1, seed, phase: 'MORNING' },
+    run: { cityIndex: 0, day: 1, seed, phase: 'MORNING', ballLevel: 0 },
     clock: { dayElapsedMs: 0, dayLengthMs: DAY_LENGTH_MS, speed: 0 },
     gym: { types: [] },
     roster: [],

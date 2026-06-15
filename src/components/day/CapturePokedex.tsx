@@ -2,6 +2,7 @@
 // As já capturadas aparecem coloridas; as ainda não vistas, em silhueta preta (brightness 0).
 
 import type { PokemonType } from '../../types/index.ts'
+import { RARITIES } from '../../types/index.ts'
 import { capturePool } from '../../data/pokemon/index.ts'
 import styles from './Panels.module.css'
 
@@ -9,10 +10,13 @@ interface Props {
   types: readonly PokemonType[]
   /** Conjunto de speciesId já capturados (roster ∪ box ∪ histórico). */
   caught: ReadonlySet<number>
+  /** Índice da raridade máxima liberada pela bola atual: só mostra silhuetas até este teto. */
+  maxRarityIndex: number
 }
 
-export function CapturePokedex({ types, caught }: Props) {
-  const pool = capturePool(types)
+export function CapturePokedex({ types, caught, maxRarityIndex }: Props) {
+  // Só aparecem (em silhueta) as espécies liberadas pelo nível de bola do jogador.
+  const pool = capturePool(types).filter((s) => RARITIES.indexOf(s.rarity) <= maxRarityIndex)
   if (pool.length === 0) return null
   const have = pool.filter((s) => caught.has(s.id)).length
 

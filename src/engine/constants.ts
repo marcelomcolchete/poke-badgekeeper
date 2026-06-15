@@ -85,12 +85,13 @@ export const STARTER_LEVEL = 3
 /** Ouro inicial de uma nova run (PLAN §4.6). */
 export const STARTING_GOLD = 500
 
-/** HP inteiro de 1–10, derivado da Resistência (PLAN §4.1). */
+/** HP inteiro de 1–12, derivado da Resistência (PLAN §4.1). */
 export const HP_MIN = 1
-export const HP_MAX = 10
+export const HP_MAX = 12
 
-/** Conversão Resistência→HP: cada 10 pontos de Resistência = 1 de vida (0–10 → 1). */
+/** Conversão Resistência→HP: cada 10 pontos de Resistência = 2 de vida (0–9 → piso 1). */
 export const RESISTANCE_PER_HP = 10
+export const HP_PER_RESISTANCE_STEP = 2
 
 /** Aprovação: estrelas de 0 a 5, começa em 1, passo de 0,5; efetivado se > 3. Zerar = game over. */
 export const STARS_MIN = 0
@@ -99,13 +100,26 @@ export const STARS_START = 1
 export const STARS_STEP = 0.5
 export const STARS_HIRE_THRESHOLD = 3
 
-/** Defesa: vantagem de tipo ×1,5, desvantagem ×0,5; perdedor de cada duelo perde 1 HP (PLAN §4.4). */
+/** Defesa: vantagem de tipo ×1,5, desvantagem ×0,5; perdedor de cada duelo perde HP (PLAN §4.4). */
 export const TYPE_ADVANTAGE_MULT = 1.5
 export const TYPE_DISADVANTAGE_MULT = 0.5
 export const HP_LOSS_PER_DEFENSE_LOSS = 1
 
 /** Falha de missão: dano inteiro com mínimo de 1 (PLAN §4.2). */
 export const MIN_FAILURE_DAMAGE = 1
+
+/**
+ * Dano por golpe (batalha e falha de missão) escala com o dia da run: o HP dobrou (2 por
+ * 10 de Resistência), então o perigo cresce ao longo dos 10 dias. Indexado pelo dia (1–10);
+ * a posição 0 é só preenchimento. 1-3 → 1, 4-6 → 2, 7-9 → 3, 10 → 4.
+ */
+export const HP_LOSS_BY_DAY = [0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4] as const
+
+/** Dano de 1 golpe no dia dado (batalha/missão), pela tabela HP_LOSS_BY_DAY. */
+export function damageForDay(day: number): number {
+  const d = Math.min(Math.max(Math.round(day), 1), TOTAL_DAYS)
+  return HP_LOSS_BY_DAY[d] ?? 1
+}
 
 /** Captura: 2 candidatos por encontro; nível do selvagem = dia ± 1 (PLAN §4.5). */
 export const CAPTURE_CHOICES = 2
@@ -150,6 +164,9 @@ export const DRAFT_CHOICES = 3
  * quando vazia).
  * v24: Computador (PC) — s.box (Pokémon fora do time, trocados só de manhã) e Pokédex da área
  * (s.caughtSpecies, espécies já capturadas). Com o time cheio, a captura agora vai pro PC em vez
- * de exigir descarte. A migração inicia box vazio e caughtSpecies com as espécies do roster atual. */
-export const SAVE_VERSION = 24
+ * de exigir descarte. A migração inicia box vazio e caughtSpecies com as espécies do roster atual.
+ * v25: bola evolutiva — run.ballLevel (0=nenhuma..4=Masterball) define a raridade-teto dos
+ * encontros (Pokébola grátis libera Incomuns) e CaptureEncounter.rankWindow (Percepção→rank).
+ * A migração inicia ballLevel 0; encontros antigos sem rankWindow ficam sem limite. */
+export const SAVE_VERSION = 25
 export const SAVE_KEY = 'poke-badgekeeper:save'

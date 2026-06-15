@@ -159,7 +159,7 @@ export interface DuelLog {
 
 export interface DefenseResolution {
   won: boolean
-  /** Esquadrão com HP atualizado: quem PERDE um duelo perde 1 HP e sai (PLAN §4.4). */
+  /** Esquadrão com HP atualizado: quem PERDE um duelo perde o dano do dia e sai (PLAN §4.4). */
   squad: Pokemon[]
   duels: DuelLog[]
   /** Pokémon que usaram o Sturdy nesta batalha (não desmaiaram) — consome o 1×/dia. */
@@ -171,6 +171,8 @@ export interface ResolveDefenseOpts {
   sturdyAvailableIds?: ReadonlySet<string>
   /** Itens passivos da run (Thick Club/Lagging Tail) — entram na Batalha efetiva do seu lado. */
   runItems?: readonly string[]
+  /** HP perdido por duelo perdido — o dano do dia (1..4). Omitir = 1 (HP_LOSS_PER_DEFENSE_LOSS). */
+  damagePerLoss?: number
 }
 
 /**
@@ -190,6 +192,7 @@ export function resolveDefense(
 ): DefenseResolution {
   const result = squad.map((p) => ({ ...p }))
   const runItems = opts.runItems ?? []
+  const damagePerLoss = opts.damagePerLoss ?? HP_LOSS_PER_DEFENSE_LOSS
   const duels: DuelLog[] = []
   const sturdyUsed = new Set<string>()
   let yours = 0
@@ -215,7 +218,7 @@ export function resolveDefense(
       theirs += 1 // o inimigo perde e sai; você permanece na frente
       frontWins += 1
     } else {
-      const loss = HP_LOSS_PER_DEFENSE_LOSS * combatDamageMultiplier(you)
+      const loss = damagePerLoss * combatDamageMultiplier(you)
       const wouldFaint = you.currentHp - loss <= 0
       const canSturdy =
         wouldFaint &&

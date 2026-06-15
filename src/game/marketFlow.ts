@@ -6,6 +6,7 @@
 import type { AttrKey, Attrs, Pokemon } from '../types/index.ts'
 import type { GameState } from '../engine/state.ts'
 import { getItem } from '../data/items.ts'
+import { nextBall } from '../data/balls.ts'
 import { canAfford } from '../engine/economy.ts'
 import { LEVEL_MAX } from '../engine/constants.ts'
 import { heal, recomputeMaxHp } from '../engine/attributes.ts'
@@ -58,6 +59,21 @@ export function buyItem(s: GameState, itemId: string, quantity = 1): void {
       // Precisa de um alvo escolhido na compra → tratado por useRareCandy (ação dedicada).
       return
   }
+}
+
+/**
+ * Compra a próxima bola (Pokébola grátis → Greatball → Ultraball → Masterball): sobe
+ * run.ballLevel, debita o ouro (a Pokébola inicial é grátis) e marca o slot como vendido
+ * hoje. Já no topo (Masterball), sem ouro ou já comprada hoje → no-op.
+ */
+export function buyBall(s: GameState): void {
+  const ball = nextBall(s.run.ballLevel)
+  if (!ball) return
+  if (s.today.purchasedItems.includes(ball.id)) return
+  if (s.gold < ball.price) return
+  s.gold -= ball.price
+  s.run.ballLevel += 1
+  markSold(s, ball.id)
 }
 
 /** Adiciona `uses` cargas (usos) de um item de cura/revive ao inventário. */

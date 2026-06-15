@@ -10,6 +10,7 @@ import {
   ATTR_PER_POINT,
   HP_MAX,
   HP_MIN,
+  HP_PER_RESISTANCE_STEP,
   NATURE_BOOSTED_PER_POINT,
   NATURE_REDUCED_PER_POINT,
   RESISTANCE_PER_HP,
@@ -102,11 +103,12 @@ export function axisMin(a: Attrs, b: Attrs): Attrs {
 }
 
 /**
- * HP inteiro derivado da Resistência: 1 de vida a cada 10 pontos — clamp(floor(res/10),
- * 1, 10). A faixa 0–10 também rende 1 (o piso do clamp). Ex.: 20→2, 35→3, 60→6 (PLAN §4.1).
+ * HP inteiro derivado da Resistência: 2 de vida a cada 10 pontos — clamp(floor(res/10)·2,
+ * 1, 12). A faixa 0–9 rende 1 (o piso do clamp). Ex.: 20→4, 35→6, 60→12 (PLAN §4.1).
  */
 export function hpFromResistance(resistencia: number): number {
-  return clamp(Math.floor(resistencia / RESISTANCE_PER_HP), HP_MIN, HP_MAX)
+  const steps = Math.floor(resistencia / RESISTANCE_PER_HP)
+  return clamp(steps * HP_PER_RESISTANCE_STEP, HP_MIN, HP_MAX)
 }
 
 /** HP máximo de um Pokémon a partir da Resistência efetiva. */

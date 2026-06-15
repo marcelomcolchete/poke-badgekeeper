@@ -225,6 +225,17 @@ function migrate(file: Partial<SaveFile>): SaveFile | null {
     version = 24
   }
 
+  // v24 → v25: bola evolutiva. Saves antigos começam sem bola (run.ballLevel = 0 → só Comum
+  // na exploração até comprar a Pokébola grátis). Encontros antigos não têm rankWindow → sem
+  // limite (passthrough).
+  if (version === 24) {
+    const run = state.run as Record<string, unknown> | undefined
+    if (run && typeof run === 'object') {
+      state = { ...state, run: { ballLevel: 0, ...run } }
+    }
+    version = 25
+  }
+
   if (version !== SAVE_VERSION) return null
   return { version, savedAtMs: (file as SaveFile).savedAtMs, state } as unknown as SaveFile
 }

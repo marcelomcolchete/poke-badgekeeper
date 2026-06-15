@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { getItem } from '../data/items.ts'
-import { buyItem, canAfford, goldForDefense, totalDefenseGold } from './economy.ts'
+import { buyItem, canAfford, goldForDefense, goldForMart, totalDefenseGold } from './economy.ts'
 import { makeAttrs, makeMon } from './testkit.ts'
 
 describe('goldForDefense (PLAN §4.6)', () => {
@@ -22,6 +22,19 @@ describe('goldForDefense (PLAN §4.6)', () => {
     const b = [makeMon({ baseAttrs: makeAttrs({ carisma: 50 }) })]
     expect(totalDefenseGold([a, b])).toBe(goldForDefense(a) + goldForDefense(b))
     expect(totalDefenseGold([])).toBe(0)
+  })
+})
+
+describe('goldForMart — ouro de Pokémart escalado pelo Carisma', () => {
+  it('Carisma 0 mantém a base; Carisma 60 dobra (até 2×)', () => {
+    const none = [makeMon({ baseAttrs: makeAttrs({ carisma: 0 }) })]
+    const max = [makeMon({ baseAttrs: makeAttrs({ carisma: 60 }) })]
+    expect(goldForMart(none, 150)).toBe(150)
+    expect(goldForMart(max, 150)).toBe(300) // 150 · (1 + 60/60)
+  })
+
+  it('sem participantes devolve a base', () => {
+    expect(goldForMart([], 150)).toBe(150)
   })
 })
 

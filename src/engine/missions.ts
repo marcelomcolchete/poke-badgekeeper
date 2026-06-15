@@ -8,11 +8,13 @@ import type { MissionTemplate, CityGraph } from '../data/types.ts'
 import { getMissionTemplate, templatesForCategory } from '../data/missionTemplates.ts'
 import type { MissionInstance } from './state.ts'
 import { pathDistance, shortestPath } from './pathfinding.ts'
-import { MIN_FAILURE_DAMAGE, SPECIES_BASE_MAX, TEAM_ATTR_MAX } from './constants.ts'
+import { MIN_FAILURE_DAMAGE, TEAM_ATTR_MAX } from './constants.ts'
 import {
   AGILITY_TIME_REDUCTION_PER_POINT,
+  INT_TIME_REDUCTION_PER_POINT,
   MISSION_DAY_DIVISOR,
   MISSION_DAY_SCALE,
+  MISSION_TIME_FLOOR,
   MISSION_PRINCIPAL_MAX,
   MISSION_PRINCIPAL_MIN,
   MISSION_REST_MAX,
@@ -28,7 +30,6 @@ import {
 import {
   applyDamage,
   axisMin,
-  effectiveAttr,
   hexagonArea,
   isFainted,
   teamAxisSum,
@@ -41,7 +42,7 @@ import {
   teamSecretSum,
   type MissionSecretCtx,
 } from './secretEffects.ts'
-import { average, clamp } from './math.ts'
+import { clamp } from './math.ts'
 
 /** Termo do dia somado às faixas-base (principal/secundário): SCALE · dia / DIVISOR. */
 function dayTerm(day: number): number {
@@ -140,7 +141,7 @@ export function missionSuccessProbabilityCtx(ctx: MissionSecretCtx, requirement:
   return clamp(intersection / requiredArea, 0, 1)
 }
 
-/** Dano em falha = max(1, round((1 − P)·perigo)) — PLAN §4.2. */
+/** Dano em falha = max(1, round((1 − P)·perigo)) — PLAN §4.2 (fallback; o dia define o dano real). */
 export function missionFailureDamage(pSuccess: number, danger: number): number {
   return Math.max(MIN_FAILURE_DAMAGE, Math.round((1 - pSuccess) * danger))
 }
@@ -164,12 +165,14 @@ export function resolveMission(
   danger: number,
   /** P_sucesso já calculado (com multiplicadores de habilidade); omitir = calcula sem eles. */
   pSuccessOverride?: number,
+  /** Dano fixo por falha (dano do dia). Omitir = cai na fórmula antiga (perigo × falha). */
+  damageOverride?: number,
 ): MissionOutcome {
   const pSuccess = pSuccessOverride ?? missionSuccessProbability(team, requirement)
   if (rng.bool(pSuccess)) {
     return { success: true, pSuccess, team: [...team], faintedIds: [] }
   }
-  const damage = missionFailureDamage(pSuccess, danger)
+  const damage = damageOverride ?? missionFailureDamage(pSuccess, danger)
   // Weak Armor: dano recebido dobrado.
   const updated = team.map((p) => applyDamage(p, damage * combatDamageMultiplier(p)))
   return {
@@ -181,13 +184,13 @@ export function resolveMission(
 }
 
 /**
- * Fator de tempo de viagem pela Agilidade total do time (PLAN §4.3): −0,5%/ponto, soma
- * capada em 100 → piso de 0,5 (10 → 0,95; 100 → 0,5). Run Away reduz mais; Fly zera (tratado
- * em graphTravelMs). Devolve o multiplicador a aplicar sobre o tempo-base de deslocamento.
+ * Fator de tempo de viagem pela Agilidade total do time (PLAN §4.3): −1%/ponto, soma capada
+ * em 70 → piso de 0,3 (10 → 0,90; 70 → 0,30, redução máx. 70%). Run Away reduz mais; Fly zera
+ * (tratado em graphTravelMs). Devolve o multiplicador a aplicar sobre o tempo-base de deslocamento.
  */
 export function agilityTravelFactor(team: readonly Pokemon[]): number {
-  const agility = teamAxisSum(team, 'agilidade') // 0–100 (já capado)
-  let factor = clamp(1 - agility * AGILITY_TIME_REDUCTION_PER_POINT, 0.5, 1)
+  const agility = teamAxisSum(team, 'agilidade') // 0–70 (já capado em TEAM_ATTR_MAX)
+  let factor = clamp(1 - agility * AGILITY_TIME_REDUCTION_PER_POINT, MISSION_TIME_FLOOR, 1)
   if (team.some((p) => p.passives.includes('run-away'))) factor *= RUN_AWAY_TRAVEL_FACTOR
   return factor
 }
@@ -224,10 +227,14 @@ export function travelRoute(
   return { flying, path, distance: pathDistance(graph, path) }
 }
 
-/** Tempo de execução parado no local: baseExecução / (1 + médiaInteligência/50) — PLAN §4.3. */
+/**
+ * Tempo de execução parado no local pela Inteligência total do time (PLAN §4.3): −1%/ponto,
+ * soma capada em 70 → piso de 0,3 (70 de Inteligência reduz 70% do tempo de execução).
+ */
 export function executionMs(team: readonly Pokemon[], baseExecutionMs: number): number {
-  const avgIntelligence = average(team.map((p) => effectiveAttr(p, 'inteligencia')))
-  return baseExecutionMs / (1 + avgIntelligence / SPECIES_BASE_MAX)
+  const intelligence = teamAxisSum(team, 'inteligencia') // 0–70 (já capado em TEAM_ATTR_MAX)
+  const factor = clamp(1 - intelligence * INT_TIME_REDUCTION_PER_POINT, MISSION_TIME_FLOOR, 1)
+  return baseExecutionMs * factor
 }
 
 /** Duração total = ida + volta (deslocamento) + execução no local — PLAN §4.3. */
