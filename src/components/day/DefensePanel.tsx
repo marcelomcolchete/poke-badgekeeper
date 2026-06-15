@@ -13,6 +13,7 @@ import { effectiveAttr } from '../../engine/attributes.ts'
 import { effectiveBattle, gymWinXp, typeAdvantageMultiplier } from '../../engine/gymDefense.ts'
 import { sortRoster } from '../../engine/roster.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
+import { getTrainer } from '../../data/trainers.ts'
 import { TypeBadge } from '../common/TypeBadge.tsx'
 import { Overlay } from '../common/Overlay.tsx'
 import { displayNameOf } from '../common/naming.ts'
@@ -38,6 +39,7 @@ export function DefensePanel({ state, dispatch, defenseId, onClose }: Props) {
   }
 
   const enemyTypes = [...new Set(defense.enemies.flatMap((e) => e.types))] as PokemonType[]
+  const trainer = getTrainer(defense.trainerId)
   // Poder do desafiante = SOMA da Batalha de todo o esquadrão inimigo.
   const enemyPower = defense.enemies.reduce((sum, e) => sum + e.battle, 0)
   const valid = selected.length >= MIN_DEFENSE_SQUAD
@@ -70,10 +72,11 @@ export function DefensePanel({ state, dispatch, defenseId, onClose }: Props) {
   return (
     <Overlay title="DEFESA DO GINÁSIO" onClose={onClose} wide>
       <div className={styles.defenseLayout}>
-        {/* Barra do desafiante (ataque) — esquadrão, poder somado e tipos. */}
+        {/* Barra do desafiante (ataque) — treinador, esquadrão, poder somado e tipos. */}
         <div className={`${styles.sideBar} ${styles.attackBar}`}>
-          <span className={styles.barIcon} aria-hidden="true">
-            ⚔
+          <span className={styles.trainerTag}>
+            <img className={styles.trainerArt} src={trainer.spritePath} alt={trainer.displayName} />
+            <span className={styles.trainerName}>{trainer.displayName}</span>
           </span>
           <span className={styles.barLabel}>Desafiante</span>
           <span className={styles.barStat}>
@@ -303,6 +306,7 @@ function BattleView({
   onClose: () => void
 }) {
   const rounds = buildRounds(defense, state.roster)
+  const trainer = getTrainer(defense.trainerId)
   const [step, setStep] = useState(0)
   const done = step >= rounds.length
   const current = done ? null : (rounds[step] as Round)
@@ -373,6 +377,14 @@ function BattleView({
           <span className={styles.battleLabel}>
             Desafiantes ({enemiesDefeated}/{defense.enemies.length} derrotados)
           </span>
+          <div className={styles.battleTrainer}>
+            <img
+              className={styles.battleTrainerArt}
+              src={trainer.spritePath}
+              alt={trainer.displayName}
+            />
+            <span className={styles.battleTrainerName}>{trainer.displayName}</span>
+          </div>
           <div className={styles.battleRow}>
             {defense.enemies.map((enemy, i) => {
               const isCurrent = current?.enemyIndex === i

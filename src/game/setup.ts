@@ -6,7 +6,9 @@
 import type { CityData } from '../data/types.ts'
 import type { DefenseEvent, GameState } from '../engine/state.ts'
 import { createInitialState } from '../engine/state.ts'
+import type { TrainerId } from '../types/index.ts'
 import { getCity, nodePos, nodesForCategory } from '../data/cities.ts'
+import { getTrainer } from '../data/trainers.ts'
 import { buildDaySchedule, type DefenseSlot } from '../engine/timeline.ts'
 import { createMissionInstance } from '../engine/missions.ts'
 import { enemySquadSizeForDay, generateDefenseEnemies } from '../engine/gymDefense.ts'
@@ -14,7 +16,7 @@ import { createPokemon } from '../engine/leveling.ts'
 import { hasDig } from '../engine/secretEffects.ts'
 import { createRng, deriveSeed } from '../engine/rng.ts'
 import { DEFENSE_LIFETIME_MS, MISSION_LIFETIME_MS } from '../engine/balance.ts'
-import { DIG_SEED_SALT } from '../engine/constants.ts'
+import { DIG_SEED_SALT, TRAINER_SEED_SALT } from '../engine/constants.ts'
 import { takeId } from './runtime.ts'
 
 /** Instancia a agenda do dia (missões/defesas 'scheduled') e arma o relógio (PLAN §4.8). */
@@ -35,7 +37,13 @@ export function setupDay(s: GameState): void {
       templateId: slot.templateId,
     })
   })
-  s.defenses = schedule.defenses.map((slot) => buildDefense(s, slot, city))
+  // Treinadores do dia: sorteados SEM repetição (um treinador não invade duas vezes no
+  // mesmo dia — se já veio hoje, só pode voltar amanhã). PLAN §4.4.
+  const trainerRng = createRng(deriveSeed(s.run.seed, TRAINER_SEED_SALT, s.run.day))
+  const dayTrainers = trainerRng.shuffle(city.trainers)
+  s.defenses = schedule.defenses.map((slot, i) =>
+    buildDefense(s, slot, city, dayTrainers[i % dayTrainers.length] ?? city.trainers[0] ?? 'YOUNGSTER'),
+  )
   // Captura só nas áreas verdes (pontos) sorteadas para hoje (#3), com horário de surgimento.
   const spots = schedule.captureSiteIndices
     .map((i, k) => ({ node: city.siteNodes.green[i], at: schedule.captureSpawnsAtMs[k] ?? 0 }))
@@ -60,17 +68,23 @@ function computeDigTunnel(s: GameState, city: CityData): [string, string] | null
   return a && b ? [a, b] : null
 }
 
-function buildDefense(s: GameState, slot: DefenseSlot, city: CityData): DefenseEvent {
+function buildDefense(
+  s: GameState,
+  slot: DefenseSlot,
+  city: CityData,
+  trainerId: TrainerId,
+): DefenseEvent {
   const rng = createRng(slot.seed)
-  const size = enemySquadSizeForDay(rng, s.run.day)
+  const size = enemySquadSizeForDay(s.run.day)
   return {
     id: takeId(s, 'd'),
     pos: nodePos(city.graph, city.siteNodes.gym),
     spawnAtMs: slot.atMs,
     expiresAtMs: slot.atMs + DEFENSE_LIFETIME_MS,
     status: 'scheduled',
+    trainerId,
     squadIds: [],
-    enemies: generateDefenseEnemies(rng, s.run.day, size),
+    enemies: generateDefenseEnemies(rng, getTrainer(trainerId), size),
     duels: [],
   }
 }

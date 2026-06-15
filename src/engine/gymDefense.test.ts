@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { POKEMON_TYPES } from '../types/index.ts'
-import { ATTR_MAX } from './constants.ts'
+import { ATTR_MAX, DEFENSE_SQUAD_BY_DAY } from './constants.ts'
 import { createRng } from './rng.ts'
+import { getTrainer } from '../data/trainers.ts'
+import { getSpecies } from '../data/pokemon/index.ts'
 import type { EnemyUnit } from './gymDefense.ts'
 import {
   canDefend,
@@ -11,6 +13,7 @@ import {
   generateDefenseEnemies,
   gymWinXp,
   resolveDefense,
+  trainerSquadSpecies,
   typeAdvantageMultiplier,
 } from './gymDefense.ts'
 import { fixedRng, makeAttrs, makeMon } from './testkit.ts'
@@ -124,63 +127,73 @@ describe('resolveDefense (PLAN §4.4)', () => {
   })
 })
 
-describe('generateDefenseEnemies', () => {
-  const avgBattle = (es: EnemyUnit[]): number =>
-    es.reduce((s, e) => s + e.battle, 0) / es.length
+describe('trainerSquadSpecies (PLAN §4.4)', () => {
+  it('elenco roster só sorteia espécies da lista da classe (com repetição)', () => {
+    const youngster = getTrainer('YOUNGSTER')
+    const pool = new Set(youngster.pool.kind === 'roster' ? youngster.pool.speciesIds : [])
+    const squad = trainerSquadSpecies(createRng(1), youngster, 6)
+    expect(squad).toHaveLength(6)
+    for (const id of squad) expect(pool.has(id)).toBe(true)
+  })
 
-  it('respeita o tamanho, escala com o dia (média) e usa tipos válidos', () => {
+  it('rival põe o líder fixo na frente e no máx. 1 lendário no time', () => {
+    const red = getTrainer('RED') // líder = Charmander (4)
+    for (let seed = 0; seed < 30; seed++) {
+      const squad = trainerSquadSpecies(createRng(seed), red, 6)
+      expect(squad).toHaveLength(6)
+      expect(squad[0]).toBe(4)
+      const legendaries = squad.filter((id) => getSpecies(id).rarity === 'legend')
+      expect(legendaries.length).toBeLessThanOrEqual(1)
+    }
+  })
+})
+
+describe('generateDefenseEnemies', () => {
+  it('respeita o tamanho, usa o elenco do treinador e a Batalha-base ±10', () => {
     const typeSet = new Set<string>(POKEMON_TYPES)
-    const day1 = generateDefenseEnemies(createRng(1), 1, 8)
-    const day9 = generateDefenseEnemies(createRng(1), 9, 8)
-    expect(day1).toHaveLength(8)
-    expect(avgBattle(day9)).toBeGreaterThan(avgBattle(day1))
-    for (const e of day1) {
+    const brock = getTrainer('BROCK')
+    const enemies = generateDefenseEnemies(createRng(1), brock, 6)
+    expect(enemies).toHaveLength(6)
+    for (const e of enemies) {
       expect(e.battle).toBeLessThanOrEqual(ATTR_MAX)
       expect(e.battle).toBeGreaterThanOrEqual(0)
+      const base = getSpecies(e.speciesId as number).baseAttrs.batalha
+      expect(Math.abs(e.battle - base)).toBeLessThanOrEqual(10)
       for (const t of e.types) expect(typeSet.has(t)).toBe(true)
     }
   })
 
   it('cada desafiante tem o seu próprio poder de batalha (não são todos iguais)', () => {
-    const enemies = generateDefenseEnemies(createRng(1), 5, 6)
+    const enemies = generateDefenseEnemies(createRng(1), getTrainer('BROCK'), 6)
     expect(new Set(enemies.map((e) => e.battle)).size).toBeGreaterThan(1)
   })
 
   it('é determinística para a mesma seed', () => {
-    expect(generateDefenseEnemies(createRng(3), 5, 3)).toEqual(
-      generateDefenseEnemies(createRng(3), 5, 3),
+    expect(generateDefenseEnemies(createRng(3), getTrainer('HIKER'), 3)).toEqual(
+      generateDefenseEnemies(createRng(3), getTrainer('HIKER'), 3),
     )
   })
 
   it('atribui uma espécie a cada invasor (para exibir na batalha)', () => {
-    for (const e of generateDefenseEnemies(createRng(7), 5, 4)) {
+    for (const e of generateDefenseEnemies(createRng(7), getTrainer('LASS'), 4)) {
       expect(typeof e.speciesId).toBe('number')
     }
   })
 })
 
-describe('enemySquadSizeForDay (PLAN §4.8)', () => {
-  it('dia 1 = no máximo 1 invasor', () => {
-    for (let seed = 0; seed < 20; seed++) {
-      expect(enemySquadSizeForDay(createRng(seed), 1)).toBeLessThanOrEqual(1)
-    }
+describe('enemySquadSizeForDay (PLAN §4.4)', () => {
+  it('segue a tabela fixa por dia (1→6)', () => {
+    expect(enemySquadSizeForDay(1)).toBe(1)
+    expect(enemySquadSizeForDay(2)).toBe(2)
+    expect(enemySquadSizeForDay(5)).toBe(3)
+    expect(enemySquadSizeForDay(7)).toBe(5)
+    expect(enemySquadSizeForDay(9)).toBe(6)
+    expect(enemySquadSizeForDay(10)).toBe(6)
   })
 
-  it('dia 5 fica na faixa 3–4', () => {
-    for (let seed = 0; seed < 20; seed++) {
-      const size = enemySquadSizeForDay(createRng(seed), 5)
-      expect(size).toBeGreaterThanOrEqual(3)
-      expect(size).toBeLessThanOrEqual(4)
+  it('casa com a constante DEFENSE_SQUAD_BY_DAY', () => {
+    for (let day = 1; day <= 10; day++) {
+      expect(enemySquadSizeForDay(day)).toBe(DEFENSE_SQUAD_BY_DAY[day])
     }
-  })
-
-  it('dia 10 = no mínimo 6 invasores', () => {
-    for (let seed = 0; seed < 20; seed++) {
-      expect(enemySquadSizeForDay(createRng(seed), 10)).toBeGreaterThanOrEqual(6)
-    }
-  })
-
-  it('é determinística para a mesma seed', () => {
-    expect(enemySquadSizeForDay(createRng(9), 7)).toBe(enemySquadSizeForDay(createRng(9), 7))
   })
 })

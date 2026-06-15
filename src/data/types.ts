@@ -1,6 +1,6 @@
 // Tipos da camada de dados estáticos (PLAN §5).
 
-import type { AttrKey, Attrs, MapPos, PokemonType, Rarity } from '../types/index.ts'
+import type { AttrKey, Attrs, MapPos, PokemonType, Rarity, TrainerId } from '../types/index.ts'
 
 /** Espécie como sai do gerador (sem informação de evolução). */
 export interface SpeciesBase {
@@ -108,6 +108,8 @@ export interface CityData {
   siteNodes: CitySiteNodes
   /** Missão única do museu desta cidade (id de template 'museum'); ausente = sem museu. */
   museumMissionId?: string
+  /** Classes de treinador que podem invadir o ginásio nesta cidade (PLAN §4.4). */
+  trainers: TrainerId[]
 }
 
 export type ItemKind = 'usable' | 'passive'

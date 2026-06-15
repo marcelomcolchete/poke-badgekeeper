@@ -3,15 +3,16 @@
 // vantagem/desvantagem; o efeito é ×1,5 por vantagem e ×0,5 por desvantagem.
 
 import type { EnemyUnit, Pokemon, PokemonType } from '../types/index.ts'
-import { POKEMON_TYPES } from '../types/index.ts'
 import type { Rng } from './rng.ts'
 
 export type { EnemyUnit }
 import { singleTypeMultiplier } from '../data/typeChart.ts'
-import { speciesByType } from '../data/pokemon/index.ts'
+import { allSpecies, getSpecies } from '../data/pokemon/index.ts'
+import type { TrainerDef } from '../data/trainers.ts'
 import {
   ATTR_EFFECTIVE_MIN,
   ATTR_MAX,
+  DEFENSE_SQUAD_BY_DAY,
   HP_LOSS_PER_DEFENSE_LOSS,
   IV_MAX,
   IV_MIN,
@@ -20,18 +21,10 @@ import {
   TYPE_ADVANTAGE_MULT,
   TYPE_DISADVANTAGE_MULT,
 } from './constants.ts'
-import {
-  ENEMY_BASE_BATTLE,
-  ENEMY_BATTLE_PER_DAY,
-  ENEMY_SQUAD_DAY1,
-  ENEMY_SQUAD_DAY10,
-  ENEMY_SQUAD_JITTER_FROM_DAY,
-  GYM_XP_CAP_PER_WIN,
-  GYM_XP_PER_BATTLE_POWER,
-} from './balance.ts'
+import { GYM_XP_CAP_PER_WIN, GYM_XP_PER_BATTLE_POWER } from './balance.ts'
 import { applyDamage, effectiveAttr } from './attributes.ts'
 import { combatDamageMultiplier, hasSturdy } from './secretEffects.ts'
-import { clamp, lerp } from './math.ts'
+import { clamp } from './math.ts'
 
 /** ≥1 Pokémon disponível para abrir uma defesa (PLAN §4.4). */
 export function canDefend(squad: readonly Pokemon[]): boolean {
@@ -77,34 +70,57 @@ export function gymWinXp(enemyBattle: number): number {
 }
 
 /**
- * Tamanho do esquadrão inimigo escalando com o dia (PLAN §4.8): interpola 1→6 ao longo
- * dos 10 dias; do dia 5 em diante sorteia centro..centro+1. Dia 1 = 1; dia 10 = 6.
+ * Tamanho do esquadrão invasor por dia (PLAN §4.4): tabela fixa DEFENSE_SQUAD_BY_DAY —
+ * 1 (dia 1) crescendo até 6 (dias 9–10). A dificuldade do dia vem daqui (e da quantidade),
+ * não da força por Pokémon. Determinístico: depende só do dia.
  */
-export function enemySquadSizeForDay(rng: Rng, day: number): number {
-  const t = clamp((day - 1) / (TOTAL_DAYS - 1), 0, 1)
-  const center = clamp(Math.round(lerp(ENEMY_SQUAD_DAY1, ENEMY_SQUAD_DAY10, t)), ENEMY_SQUAD_DAY1, ENEMY_SQUAD_DAY10)
-  const hi = day >= ENEMY_SQUAD_JITTER_FROM_DAY ? Math.min(center + 1, ENEMY_SQUAD_DAY10) : center
-  return rng.int(center, hi)
+export function enemySquadSizeForDay(day: number): number {
+  const clampedDay = clamp(Math.round(day), 1, TOTAL_DAYS)
+  return DEFENSE_SQUAD_BY_DAY[clampedDay] ?? 1
+}
+
+/** Espécie lendária? (raridade 'legend' — Articuno/Zapdos/Moltres/Mewtwo/Mew.) */
+function isLegendary(speciesId: number): boolean {
+  return getSpecies(speciesId).rarity === 'legend'
 }
 
 /**
- * Inimigos efêmeros da defesa (PLAN §4.4/§4.8). Cada desafiante tem o SEU próprio poder
- * de Batalha: a Batalha-base da espécie sorteada, escalada pelo dia, com variação de ±10
- * (como os IVs do jogador) — então dois invasores da mesma espécie ainda diferem.
+ * Espécies (ids) que um treinador traz numa defesa de `size` Pokémon (PLAN §4.4):
+ *  - `roster`: sorteia COM repetição da lista fixa da classe.
+ *  - `rival`:  líder fixo na frente + o resto totalmente aleatório, com NO MÁX. 1 lendário.
  */
-export function generateDefenseEnemies(rng: Rng, day: number, size: number): EnemyUnit[] {
-  const dayBonus = ENEMY_BATTLE_PER_DAY * (day - 1)
-  return Array.from({ length: size }, () => {
-    const type = rng.pick(POKEMON_TYPES)
-    const pool = speciesByType(type)
-    const species = pool.length > 0 ? rng.pick(pool) : null
-    const base = species ? species.baseAttrs.batalha : ENEMY_BASE_BATTLE
-    const battle = clamp(base + dayBonus + rng.int(IV_MIN, IV_MAX), ATTR_EFFECTIVE_MIN, ATTR_MAX)
-    return {
-      battle,
-      types: species ? [...species.types] : [type],
-      speciesId: species?.id,
-    }
+export function trainerSquadSpecies(rng: Rng, trainer: TrainerDef, size: number): number[] {
+  if (trainer.pool.kind === 'roster') {
+    const pool = trainer.pool.speciesIds
+    return Array.from({ length: size }, () => rng.pick(pool))
+  }
+  const ids: number[] = [trainer.pool.lead]
+  let legendaryUsed = isLegendary(trainer.pool.lead)
+  const all = allSpecies()
+  while (ids.length < size) {
+    const pool = legendaryUsed ? all.filter((s) => s.rarity !== 'legend') : all
+    const species = rng.pick(pool)
+    ids.push(species.id)
+    if (species.rarity === 'legend') legendaryUsed = true
+  }
+  return ids.slice(0, size)
+}
+
+/**
+ * Inimigos efêmeros da defesa a partir do elenco de um treinador (PLAN §4.4). Cada invasor
+ * tem o SEU poder de Batalha: a Batalha-base da espécie ±10 (E..S, como os IVs do jogador) —
+ * então dois invasores da mesma espécie ainda diferem. Sem escala por dia: o dia controla
+ * só QUANTOS Pokémon o treinador traz (enemySquadSizeForDay).
+ */
+export function generateDefenseEnemies(rng: Rng, trainer: TrainerDef, size: number): EnemyUnit[] {
+  return trainerSquadSpecies(rng, trainer, size).map((speciesId) => {
+    const species = getSpecies(speciesId)
+    const battle = clamp(
+      species.baseAttrs.batalha + rng.int(IV_MIN, IV_MAX),
+      ATTR_EFFECTIVE_MIN,
+      ATTR_MAX,
+    )
+    return { battle, types: [...species.types], speciesId }
   })
 }
 

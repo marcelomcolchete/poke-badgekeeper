@@ -13,7 +13,7 @@
  *    Blastoise 190) e garante-se que a forma evoluída tem total > anterior (§4.1);
  *  - remapeia os níveis de evolução para 1–10 (16→3, 55→9) — PLAN §4.1.1;
  *  - classifica a raridade (Common/Uncommon/Rare/Epic/Legend) pelo BST — PLAN §4.5;
- *  - baixa as sprites front-default para public/sprites/.
+ *  - baixa as sprites front-default para public/sprites/pokemons/gen1/.
  *
  * Emite (auto-gerados, não editar à mão):
  *  - src/data/pokemon/species.generated.ts
@@ -211,7 +211,7 @@ function serializeAttrs(a: Attrs): string {
 }
 
 async function main(): Promise<void> {
-  const spriteDir = resolve(ROOT, 'public/sprites')
+  const spriteDir = resolve(ROOT, 'public/sprites/pokemons/gen1')
   const pokemonDir = resolve(ROOT, 'src/data/pokemon')
   mkdirSync(spriteDir, { recursive: true })
   mkdirSync(pokemonDir, { recursive: true })
@@ -239,7 +239,7 @@ async function main(): Promise<void> {
       types: gen1Types(p),
       baseAttrs: deriveAttrs(stats, friendship),
       rarity: rarityOf(id, bstOf(stats)),
-      spritePath: `/sprites/${id}.png`,
+      spritePath: `/sprites/pokemons/gen1/${id}.png`,
     }
   })
 
