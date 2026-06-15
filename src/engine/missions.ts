@@ -7,7 +7,7 @@ import type { Rng } from './rng.ts'
 import type { MissionTemplate } from '../data/types.ts'
 import { getMissionTemplate, templatesForCategory } from '../data/missionTemplates.ts'
 import type { MissionInstance } from './state.ts'
-import { ATTR_MAX, MIN_FAILURE_DAMAGE, SPECIES_BASE_MAX } from './constants.ts'
+import { MIN_FAILURE_DAMAGE, SPECIES_BASE_MAX, TEAM_ATTR_MAX } from './constants.ts'
 import {
   AGILITY_TIME_REDUCTION_PER_POINT,
   MISSION_DAY_DIVISOR,
@@ -47,27 +47,27 @@ function dayTerm(day: number): number {
   return (MISSION_DAY_SCALE * day) / MISSION_DAY_DIVISOR
 }
 
-/** Valor de um eixo principal: rand(20..30) + termo do dia, com teto ATTR_MAX. */
+/** Valor de um eixo principal: rand(20..30) + termo do dia, com teto TEAM_ATTR_MAX (70). */
 function principalValue(rng: Rng, day: number): number {
   return clamp(
     Math.round(rng.int(MISSION_PRINCIPAL_MIN, MISSION_PRINCIPAL_MAX) + dayTerm(day)),
     0,
-    ATTR_MAX,
+    TEAM_ATTR_MAX,
   )
 }
 
-/** Valor de um eixo secundário: rand(10..20) + termo do dia, com teto ATTR_MAX. */
+/** Valor de um eixo secundário: rand(10..20) + termo do dia, com teto TEAM_ATTR_MAX (70). */
 function secondaryValue(rng: Rng, day: number): number {
   return clamp(
     Math.round(rng.int(MISSION_SECONDARY_MIN, MISSION_SECONDARY_MAX) + dayTerm(day)),
     0,
-    ATTR_MAX,
+    TEAM_ATTR_MAX,
   )
 }
 
 /** Valor de um eixo "resto" (nem principal, nem secundário): rand(5..20). */
 function restValue(rng: Rng): number {
-  return clamp(rng.int(MISSION_REST_MIN, MISSION_REST_MAX), 0, ATTR_MAX)
+  return clamp(rng.int(MISSION_REST_MIN, MISSION_REST_MAX), 0, TEAM_ATTR_MAX)
 }
 
 export interface GeneratedRequirement {
@@ -94,8 +94,8 @@ export function generateRequirement(
     const primary = template.primaryAttr as AttrKey
     const secondary = rng.pick(ATTR_KEYS)
     if (secondary === primary) {
-      // "Mega": o eixo soma principal + secundário (com teto ATTR_MAX → ~60).
-      out[primary] = clamp(principalValue(rng, day) + secondaryValue(rng, day), 0, ATTR_MAX)
+      // "Mega": o eixo soma principal + secundário (com teto TEAM_ATTR_MAX → ~70).
+      out[primary] = clamp(principalValue(rng, day) + secondaryValue(rng, day), 0, TEAM_ATTR_MAX)
     } else {
       out[primary] = principalValue(rng, day)
       out[secondary] = secondaryValue(rng, day)
@@ -110,6 +110,10 @@ export function generateRequirement(
   let i = 0
   for (let k = 0; k < principals; k++, i++) out[axes[i] as AttrKey] = principalValue(rng, day)
   for (let k = 0; k < secondaries; k++, i++) out[axes[i] as AttrKey] = secondaryValue(rng, day)
+  if (template.gen === 'special5') {
+    // Museu (#5): pelo menos UM dos 5 eixos principais obrigatoriamente no máximo (70).
+    out[axes[rng.int(0, principals - 1)] as AttrKey] = TEAM_ATTR_MAX
+  }
   return { requirement: out, secondaryAttr: null }
 }
 

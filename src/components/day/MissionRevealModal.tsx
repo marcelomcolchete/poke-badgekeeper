@@ -9,14 +9,14 @@ import { ATTR_KEYS } from '../../types/index.ts'
 import type { GameState, MissionInstance } from '../../engine/state.ts'
 import { getMissionTemplate } from '../../data/missionTemplates.ts'
 import { teamSum } from '../../engine/attributes.ts'
-import { ATTR_MAX } from '../../engine/constants.ts'
+import { TEAM_ATTR_MAX } from '../../engine/constants.ts'
 import { HexRadar } from '../HexRadar/HexRadar.tsx'
 import { Overlay } from '../common/Overlay.tsx'
 import styles from './MissionRevealModal.module.css'
 
 const SIZE = 260
-// Escala do ponto = teto de atributos (mesma do HexRadar) p/ o pouso casar com o desenho.
-const AXIS_MAX = ATTR_MAX
+// Escala do ponto = teto das missões (mesma do HexRadar) p/ o pouso casar com o desenho.
+const AXIS_MAX = TEAM_ATTR_MAX
 const SETTLE_MS = 1400
 
 interface Props {
@@ -104,7 +104,7 @@ export function MissionRevealModal({ state, mission, onClose }: Props) {
     <Overlay title={`MISSÃO — ${template.name.toUpperCase()}`} onClose={onClose}>
       <div className={styles.reveal}>
         <div className={styles.radarWrap}>
-          <HexRadar requirement={requirement} teamSum={sum} size={SIZE} />
+          <HexRadar requirement={requirement} teamSum={sum} size={SIZE} axisMax={AXIS_MAX} />
           <svg className={styles.overlay} viewBox={`0 0 ${SIZE} ${SIZE}`} aria-hidden="true">
             <circle
               className={`${styles.dot} ${settled ? (success ? styles.win : styles.lose) : ''}`}

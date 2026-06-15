@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ATTR_KEYS } from '../types/index.ts'
 import type { MissionTemplate } from '../data/types.ts'
-import { ATTR_MAX } from './constants.ts'
+import { TEAM_ATTR_MAX } from './constants.ts'
 import { createRng } from './rng.ts'
 import { NORMAL_TEMPLATES, POKECENTER_TEMPLATE, MUSEUM_TEMPLATE } from '../data/missionTemplates.ts'
 import {
@@ -60,11 +60,11 @@ describe('missionSuccessProbability (PLAN §4.2)', () => {
     )
   })
 
-  it('soma do time é capada em 100 por eixo', () => {
+  it('soma do time é capada no teto do time (70) por eixo', () => {
     const big = makeMon({ baseAttrs: makeAttrs({ agilidade: 50 }), allocations: undefined })
-    const team = [big, big, big] // 3×50 = 150 → cap 100
+    const team = [big, big, big] // 3×50 = 150 → cap 70
     const req = makeAttrs({ agilidade: 100 }, 10)
-    // Com cap em 100 e exigência 100, o eixo agilidade fica saturado (min = 100).
+    // Com a soma capada em 70, o eixo agilidade cobre 70 da exigência (min = 70).
     expect(missionSuccessProbability(team, req)).toBeGreaterThan(0)
   })
 })
@@ -113,12 +113,12 @@ describe('generateRequirement (rebalanceamento)', () => {
     expect(a).toEqual(b)
   })
 
-  it('todo eixo fica em [0, 60]', () => {
+  it('todo eixo fica em [0, 70]', () => {
     for (let seed = 1; seed <= 20; seed++) {
       const { requirement } = generateRequirement(createRng(seed), 7, patrulha)
       for (const key of ATTR_KEYS) {
         expect(requirement[key]).toBeGreaterThanOrEqual(0)
-        expect(requirement[key]).toBeLessThanOrEqual(ATTR_MAX)
+        expect(requirement[key]).toBeLessThanOrEqual(TEAM_ATTR_MAX)
       }
     }
   })
@@ -140,7 +140,7 @@ describe('generateRequirement (rebalanceamento)', () => {
     expect(day9).toBeGreaterThan(day1)
   })
 
-  it('mega: secundário sorteado igual ao principal concentra tudo num eixo (~60)', () => {
+  it('mega: secundário sorteado igual ao principal concentra tudo num eixo (~70)', () => {
     // Varre seeds até cair no caso mega (secondaryAttr === principal).
     let mega: ReturnType<typeof generateRequirement> | null = null
     for (let seed = 1; seed <= 200 && !mega; seed++) {
@@ -148,16 +148,18 @@ describe('generateRequirement (rebalanceamento)', () => {
       if (g.secondaryAttr === 'batalha') mega = g
     }
     expect(mega).not.toBeNull()
-    expect(mega?.requirement.batalha).toBe(ATTR_MAX) // principal + secundário no dia 8 satura em 60
+    expect(mega?.requirement.batalha).toBe(TEAM_ATTR_MAX) // principal + secundário no dia 8 satura em 70
   })
 
-  it('special5 (museu): exatamente 5 eixos principais + 1 resto', () => {
+  it('special5 (museu): 5 eixos principais + 1 resto e ao menos um no máximo (70)', () => {
     for (let seed = 1; seed <= 20; seed++) {
       const { requirement, secondaryAttr } = generateRequirement(createRng(seed), 3, MUSEUM_TEMPLATE)
       expect(secondaryAttr).toBeNull()
       // Principal (dia≥1) sempre > 20; resto sempre ≤ 20 → contagem separa os dois grupos.
       const principals = ATTR_KEYS.filter((k) => requirement[k] > 20).length
       expect(principals).toBe(5)
+      // Regra do museu: pelo menos um dos 5 principais obrigatoriamente no teto.
+      expect(ATTR_KEYS.some((k) => requirement[k] === TEAM_ATTR_MAX)).toBe(true)
     }
   })
 
@@ -175,11 +177,11 @@ describe('tempos de viagem/execução (PLAN §4.3)', () => {
     expect(graphTravelMs(10, fast)).toBeLessThan(graphTravelMs(10, slow))
   })
 
-  it('Agilidade reduz 0,5%/ponto: 10 → 0,95; soma capada no teto → 0,7', () => {
+  it('Agilidade reduz 0,5%/ponto: 10 → 0,95; soma capada no teto (70) → 0,65', () => {
     const agi10 = [makeMon({ baseAttrs: makeAttrs({ agilidade: 10 }) })]
     expect(agilityTravelFactor(agi10)).toBeCloseTo(0.95, 5)
     const fifty = makeMon({ baseAttrs: makeAttrs({ agilidade: 50 }) })
-    expect(agilityTravelFactor([fifty, fifty])).toBeCloseTo(0.7, 5) // soma 60 (capada)
+    expect(agilityTravelFactor([fifty, fifty])).toBeCloseTo(0.65, 5) // soma 100 → cap 70
   })
 
   it('passiva Fly zera a viagem', () => {

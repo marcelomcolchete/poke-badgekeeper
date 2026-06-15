@@ -8,6 +8,12 @@ export const TOTAL_DAYS = 10
 /** Duração de um dia em tempo de jogo (PLAN §4.3). */
 export const DAY_LENGTH_MS = 180_000
 
+/**
+ * O dia é dividido em 3 momentos IGUAIS (os 3 "minutos"): missões e defesas se
+ * distribuem igualmente entre eles para não amontoarem no início/fim do dia.
+ */
+export const DAY_SEGMENTS = 3
+
 /** Proporção da arte do mapa (16:9) — corrige distâncias do grafo de deslocamento (§3.1). */
 export const MAP_ASPECT_W = 16
 export const MAP_ASPECT_H = 9
@@ -25,6 +31,14 @@ export const ATTR_MAX = 60
 export const SPECIES_BASE_MIN = 10
 export const SPECIES_BASE_MAX = 50
 export const ATTR_PER_POINT = 10
+
+/**
+ * Teto da SOMA do time por eixo e da EXIGÊNCIA das missões: 70. Como cada Pokémon vai
+ * no máx. 60 (ATTR_MAX), só com 2+ Pokémon dá pra cobrir um eixo em 70 — por isso as
+ * missões mega/de fim de dia (exigência até 70) ficam mais difíceis. O radar das missões
+ * usa esta escala; a carta de UM Pokémon continua na escala 60.
+ */
+export const TEAM_ATTR_MAX = 70
 
 /** Piso do atributo EFETIVO: 0, pois a variação de encontro (IV) pode zerar um eixo. */
 export const ATTR_EFFECTIVE_MIN = 0

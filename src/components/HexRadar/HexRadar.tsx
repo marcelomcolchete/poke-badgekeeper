@@ -11,7 +11,6 @@ import { ATTR_MAX } from '../../engine/constants.ts'
 import { ATTR_SHORT_PT } from '../common/visual.ts'
 import styles from './HexRadar.module.css'
 
-const AXIS_MAX = ATTR_MAX
 const RINGS = [0.25, 0.5, 0.75, 1]
 
 interface Props {
@@ -30,6 +29,8 @@ interface Props {
   boostedAxis?: AttrKey | null
   /** Eixo penalizado pela natureza — label e spoke em vermelho. */
   reducedAxis?: AttrKey | null
+  /** Escala do eixo (valor no anel externo). Padrão = teto individual (60); missões usam 70. */
+  axisMax?: number
 }
 
 export function HexRadar({
@@ -41,7 +42,9 @@ export function HexRadar({
   size = 260,
   boostedAxis = null,
   reducedAxis = null,
+  axisMax = ATTR_MAX,
 }: Props) {
+  const AXIS_MAX = axisMax
   const cx = size / 2
   const cy = size / 2
   const radius = size / 2 - 30

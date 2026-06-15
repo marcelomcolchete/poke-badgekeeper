@@ -13,6 +13,7 @@ import {
   NATURE_BOOSTED_PER_POINT,
   NATURE_REDUCED_PER_POINT,
   RESISTANCE_PER_HP,
+  TEAM_ATTR_MAX,
 } from './constants.ts'
 import { clamp } from './math.ts'
 
@@ -64,10 +65,13 @@ export function effectiveAttrs(p: Pokemon): Attrs {
   return mapAttrs((k) => effectiveAttr(p, k))
 }
 
-/** Soma do time num eixo, capada em 100 — o máximo da missão (PLAN §4.2). */
+/**
+ * Soma do time num eixo, capada em TEAM_ATTR_MAX (70) — o máximo da missão (PLAN §4.2).
+ * Como cada Pokémon vai no máx. 60, só com 2+ Pokémon dá pra chegar a 70 num eixo.
+ */
 export function teamAxisSum(team: readonly Pokemon[], key: AttrKey): number {
   const total = team.reduce((sum, p) => sum + effectiveAttr(p, key), 0)
-  return Math.min(total, ATTR_MAX)
+  return Math.min(total, TEAM_ATTR_MAX)
 }
 
 export function teamSum(team: readonly Pokemon[]): Attrs {
