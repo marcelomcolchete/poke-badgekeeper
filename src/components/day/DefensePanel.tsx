@@ -10,7 +10,7 @@ import type { GameState } from '../../engine/state.ts'
 import type { GameAction } from '../../game/actions.ts'
 import { MIN_DEFENSE_SQUAD } from '../../engine/constants.ts'
 import { effectiveAttr } from '../../engine/attributes.ts'
-import { enemyRank, gymWinXp } from '../../engine/gymDefense.ts'
+import { gymWinXp } from '../../engine/gymDefense.ts'
 import { pokemonRank } from '../../engine/ranking.ts'
 import { sortRoster } from '../../engine/roster.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
@@ -18,7 +18,7 @@ import { getTrainer } from '../../data/trainers.ts'
 import { RANK_COLOR } from '../common/visual.ts'
 import { TypeBadge } from '../common/TypeBadge.tsx'
 import { Overlay } from '../common/Overlay.tsx'
-import { displayNameOf } from '../common/naming.ts'
+import { displayNameOf, genderColor, genderSymbol } from '../common/naming.ts'
 import { BattleView } from './BattleView.tsx'
 import styles from './Panels.module.css'
 
@@ -91,7 +91,8 @@ export function DefensePanel({ state, dispatch, defenseId, onClose }: Props) {
   return (
     <Overlay title="DEFESA DO GINÁSIO" onClose={onClose} wide>
       <div className={styles.defenseLayout}>
-        {/* Barra do desafiante (ataque) — treinador, esquadrão, poder, tipos e cada desafiante. */}
+        {/* Barra do desafiante (ataque) — treinador, esquadrão, poder e tipos. Os Pokémon do
+            adversário só são revelados na batalha (não no preview). */}
         <div className={`${styles.sideBar} ${styles.attackBar}`}>
           <span className={styles.trainerTag}>
             <img className={styles.trainerArt} src={trainer.spritePath} alt={trainer.displayName} />
@@ -104,7 +105,6 @@ export function DefensePanel({ state, dispatch, defenseId, onClose }: Props) {
           <span className={styles.barStat}>
             Poder <b>{enemyPower}</b>
           </span>
-          <EnemyList enemies={defense.enemies} />
           <span className={styles.barTypes}>
             {enemyTypes.map((t) => (
               <TypeBadge key={t} type={t} />
@@ -159,6 +159,15 @@ export function DefensePanel({ state, dispatch, defenseId, onClose }: Props) {
                   <span className={styles.miniPos} aria-hidden="true">
                     {i + 1}
                   </span>
+                  {genderSymbol(mon.gender) && (
+                    <span
+                      className={styles.genderBadge}
+                      style={{ color: genderColor(mon.gender) }}
+                      aria-label={mon.gender === 'female' ? 'Fêmea' : 'Macho'}
+                    >
+                      {genderSymbol(mon.gender)}
+                    </span>
+                  )}
                   <img
                     className={styles.miniSprite}
                     src={getSpecies(mon.speciesId).spritePath}
@@ -196,39 +205,6 @@ export function DefensePanel({ state, dispatch, defenseId, onClose }: Props) {
         Batalhar ▶ ({selected.length})
       </button>
     </Overlay>
-  )
-}
-
-/** Lista dos desafiantes: sprite + nota E–S de cada um; o destaque (+15) exibe medalha. */
-function EnemyList({ enemies }: { enemies: readonly import('../../types/index.ts').EnemyUnit[] }) {
-  return (
-    <ol className={styles.enemyList} aria-label="Desafiantes">
-      {enemies.map((enemy, i) => {
-        const rank = enemyRank(enemy)
-        return (
-          <li key={i} className={styles.enemyChip}>
-            <img
-              className={styles.enemyChipSprite}
-              src={enemy.speciesId !== undefined ? getSpecies(enemy.speciesId).spritePath : ''}
-              alt=""
-              draggable={false}
-            />
-            <span
-              className={styles.enemyChipRank}
-              style={{ color: RANK_COLOR[rank], borderColor: RANK_COLOR[rank] }}
-              aria-label={`Nota ${rank}`}
-            >
-              {rank}
-            </span>
-            {enemy.buffed && (
-              <span className={styles.enemyChipMedal} title="Desafiante em destaque (+15)">
-                🏅
-              </span>
-            )}
-          </li>
-        )
-      })}
-    </ol>
   )
 }
 
@@ -290,6 +266,9 @@ function BattlePick({
         <span className={styles.battlePickName}>
           {fainted && <span aria-hidden="true">💀 </span>}
           {displayNameOf(mon)}
+          {genderSymbol(mon.gender) && (
+            <span style={{ color: genderColor(mon.gender) }}> {genderSymbol(mon.gender)}</span>
+          )}
         </span>
         <span className={styles.battlePickTypes}>
           {mon.types.map((t) => (
