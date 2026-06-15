@@ -132,6 +132,7 @@ export function autoSeedRun(seed: number): GameState {
     s.roster = [
       createPokemon({ id: takeId(s, 'p'), speciesId: starter.speciesId, level: starter.level, rng }),
     ]
+    s.caughtSpecies = [starter.speciesId]
   }
   return s
 }
@@ -163,6 +164,7 @@ export function startRun(s: GameState, picks: StarterPick[]): void {
       nickname: cleanNickname(pick.nickname),
     }),
   )
+  s.caughtSpecies = [...new Set(picks.map((pick) => pick.speciesId))]
   s.run.phase = 'MORNING'
   setupMorningShop(s)
 }

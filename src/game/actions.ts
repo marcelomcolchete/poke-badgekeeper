@@ -28,10 +28,14 @@ export type GameAction =
   | { type: 'COMPLETE_ROCKET_BATTLE'; missionId: string }
   /** Manda um Pokémon explorar uma área de captura — PLAN §4.5. */
   | { type: 'START_SEARCH'; searcherId: string; spotIndex: number }
-  /** No encontro: captura o candidato (por índice); com roster cheio, `releaseId` descarta um — §4.5. */
-  | { type: 'CAPTURE_PICK'; searcherId: string; candidateIndex: number; releaseId?: string }
+  /** No encontro: captura o candidato (por índice); com o time cheio, ele vai pro Computador (PC) — §4.5. */
+  | { type: 'CAPTURE_PICK'; searcherId: string; candidateIndex: number }
   /** No encontro: não pega nenhum e encerra a exploração — a área some do dia. */
   | { type: 'CAPTURE_DISMISS'; searcherId: string }
+  /** Manhã: deposita um Pokémon do time no Computador (PC) — exige manter ≥1 no time. */
+  | { type: 'DEPOSIT_POKEMON'; pokemonId: string }
+  /** Manhã: retira um Pokémon do Computador (PC) para o time — exige vaga (time < 6). */
+  | { type: 'WITHDRAW_POKEMON'; pokemonId: string }
   /** Define/limpa o apelido de um Pokémon (renomear na captura) — PLAN §4.5. */
   | { type: 'RENAME_POKEMON'; pokemonId: string; nickname: string }
   /** Compra no mercado (manhã) — PLAN §4.6. */
