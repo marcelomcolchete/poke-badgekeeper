@@ -259,6 +259,10 @@ export interface DayTally {
   secretRuntime: Record<string, SecretRuntime>
   /** Túnel do Dig hoje: 2–3 pontos do grafo ligados entre si por baixo da terra; null se não há. */
   digTunnel: string[] | null
+  /** Itens (ids) ofertados no mercado HOJE — fixos ao entrar na manhã (não re-sorteia ao comprar). */
+  shopOffer: string[]
+  /** Itens (ids) já comprados HOJE — viram "VENDIDO" no mercado (1 compra por slot/dia). */
+  purchasedItems: string[]
 }
 
 export interface DayLog {
@@ -313,6 +317,8 @@ export function emptyTally(): DayTally {
     secretUnlock: null,
     secretRuntime: {},
     digTunnel: null,
+    shopOffer: [],
+    purchasedItems: [],
   }
 }
 

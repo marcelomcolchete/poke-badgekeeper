@@ -204,6 +204,16 @@ function migrate(file: Partial<SaveFile>): SaveFile | null {
     version = 22
   }
 
+  // v22 → v23: mercado fixo no dia. Inicia today.shopOffer/purchasedItems vazios; a UI deriva
+  // a oferta quando vazia (saves carregados no meio do dia não dependem dela).
+  if (version === 22) {
+    const today = state.today as Record<string, unknown> | undefined
+    if (today && typeof today === 'object') {
+      state = { ...state, today: { shopOffer: [], purchasedItems: [], ...today } }
+    }
+    version = 23
+  }
+
   if (version !== SAVE_VERSION) return null
   return { version, savedAtMs: (file as SaveFile).savedAtMs, state } as unknown as SaveFile
 }

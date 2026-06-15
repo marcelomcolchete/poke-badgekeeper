@@ -8,6 +8,7 @@ import type { DefenseEvent, GameState } from '../engine/state.ts'
 import { createInitialState } from '../engine/state.ts'
 import type { TrainerId } from '../types/index.ts'
 import { getCity, nodePos, nodesForCategory } from '../data/cities.ts'
+import { getDailyShop } from '../data/items.ts'
 import { getTrainer } from '../data/trainers.ts'
 import { buildDaySchedule, type DefenseSlot } from '../engine/timeline.ts'
 import { createMissionInstance } from '../engine/missions.ts'
@@ -24,6 +25,15 @@ import {
 } from '../engine/balance.ts'
 import { DIG_SEED_SALT, TRAINER_SEED_SALT } from '../engine/constants.ts'
 import { takeId } from './runtime.ts'
+
+/**
+ * Define a oferta do mercado da manhã (3 itens) — fixada ao entrar na manhã para não
+ * re-sortear quando o jogador compra. Exclui os passivos já possuídos (1×/run).
+ */
+export function setupMorningShop(s: GameState): void {
+  s.today.shopOffer = getDailyShop(s.run.seed, s.run.day, s.run.cityIndex, s.runItems)
+  s.today.purchasedItems = []
+}
 
 /** Instancia a agenda do dia (missões/defesas 'scheduled') e arma o relógio (PLAN §4.8). */
 export function setupDay(s: GameState): void {
@@ -154,6 +164,7 @@ export function startRun(s: GameState, picks: StarterPick[]): void {
     }),
   )
   s.run.phase = 'MORNING'
+  setupMorningShop(s)
 }
 
 /** Apelido inicial: aparado; null quando vazio (cai no nome da espécie). */

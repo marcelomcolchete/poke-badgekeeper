@@ -20,7 +20,7 @@ import {
   resolveRocketBattle,
 } from './missionFlow.ts'
 import { expireDefense } from './defenseFlow.ts'
-import { setupDay } from './setup.ts'
+import { setupDay, setupMorningShop } from './setup.ts'
 import { findMon, replaceMon } from './runtime.ts'
 
 export function setSpeed(s: GameState, speed: GameSpeed): void {
@@ -169,6 +169,7 @@ function startNextDay(s: GameState): void {
   s.captureReturns = []
   s.encounters = []
   s.today = emptyTally()
+  setupMorningShop(s)
   s.clock.dayElapsedMs = 0
   s.clock.speed = 0
 }
