@@ -135,78 +135,24 @@
   padding-right: 2px;
 }
 
-/* ---- Defesa: lista ordenada do esquadrão (ordem dos duelos) ---- */
-.orderList {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.orderChip {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--c-bg, rgba(0, 0, 0, 0.04));
-  border: 2px solid var(--c-panel-border);
-  border-radius: var(--radius-pixel);
-  padding: 4px 6px;
-  cursor: grab;
-}
-
-.orderChip:active {
-  cursor: grabbing;
-}
-
+/* Estado de "arrastando" (reutilizado pelas miniaturas do esquadrão da defesa). */
 .dragging {
   opacity: 0.5;
   border-style: dashed;
   border-color: var(--c-hud-accent);
 }
 
-.orderNum {
-  flex: none;
-  font-family: var(--font-pixel);
-  font-size: 9px;
-  color: var(--c-ink);
-  background: var(--c-hud-accent);
-  border: 2px solid var(--c-ink);
-  border-radius: var(--radius-pixel);
-  padding: 3px 5px;
-  line-height: 1;
-  white-space: nowrap;
-}
-
-.orderName {
-  flex: 1;
-  font-family: var(--font-text);
-  font-size: 15px;
-  color: var(--c-ink);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.orderBattle {
-  flex: none;
-  font-family: var(--font-pixel);
-  font-size: 8px;
-  color: var(--c-hp-low);
-  white-space: nowrap;
-}
-
 /* ---- Defesa: carta compacta de seleção (só Batalha, sem radar) ---- */
 .battlePick {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   text-align: left;
   background: var(--c-panel);
   border: 3px solid var(--c-panel-border);
   border-radius: var(--radius-pixel);
-  padding: 6px 8px;
+  padding: 6px;
   cursor: pointer;
 }
 
@@ -228,8 +174,8 @@
 
 .battlePickSprite {
   flex: none;
-  width: 44px;
-  height: 44px;
+  width: 38px;
+  height: 38px;
   image-rendering: pixelated;
   background: rgba(0, 0, 0, 0.05);
   border-radius: 4px;
@@ -238,14 +184,14 @@
 .battlePickInfo {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
   min-width: 0;
   flex: 1;
 }
 
 .battlePickName {
   font-family: var(--font-text);
-  font-size: 16px;
+  font-size: 14px;
   color: var(--c-ink);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -284,6 +230,162 @@
   color: var(--c-ink-muted);
 }
 
+/* ---- Defesa (redesign): barras de desafiante/seu time + picker em 3 colunas ---- */
+.defenseLayout {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sideBar {
+  background: var(--c-panel);
+  border: 3px solid var(--c-panel-border);
+  border-radius: var(--radius-pixel);
+  padding: 8px 10px;
+}
+
+.barTop,
+.attackBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-family: var(--font-text);
+  font-size: 16px;
+  color: var(--c-ink);
+}
+
+.defendBar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Acento de cor: desafiante (ataque) em vermelho, seu time (defesa) em verde. */
+.attackBar {
+  border-left: 6px solid var(--c-hp-low);
+}
+
+.defendBar {
+  border-left: 6px solid var(--c-grass-dark);
+}
+
+.barIcon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.barLabel {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--c-ink-muted);
+}
+
+.barStat b {
+  color: var(--c-grass-dark);
+}
+
+.attackBar .barStat b {
+  color: var(--c-hp-low);
+}
+
+.barTypes {
+  display: inline-flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+/* Miniaturas do esquadrão na ordem dos duelos (arrastável para reordenar). */
+.miniTeam {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.miniChip {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  background: var(--c-bg, rgba(0, 0, 0, 0.04));
+  border: 2px solid var(--c-panel-border);
+  border-radius: var(--radius-pixel);
+  cursor: grab;
+}
+
+.miniChip:active {
+  cursor: grabbing;
+}
+
+.miniPos {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  z-index: 1;
+  min-width: 16px;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  text-align: center;
+  line-height: 1;
+  color: var(--c-ink);
+  background: var(--c-hud-accent);
+  border: 2px solid var(--c-ink);
+  border-radius: 999px;
+  padding: 2px 3px;
+}
+
+.miniSprite {
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+.miniRemove {
+  position: absolute;
+  bottom: -6px;
+  right: -6px;
+  width: 18px;
+  height: 18px;
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  line-height: 1;
+  color: #fff;
+  background: var(--c-hp-low);
+  border: 2px solid #fff;
+  border-radius: 999px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.pickerThree {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+/* Badge da posição na batalha sobre a carta selecionada do picker. */
+.pickPos {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  z-index: 1;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  line-height: 1;
+  color: var(--c-ink);
+  background: var(--c-hud-accent);
+  border: 2px solid var(--c-ink);
+  border-radius: 999px;
+  padding: 3px 4px;
+}
+
 .confirm {
   margin-top: 10px;
   width: 100%;
@@ -299,29 +401,6 @@
 .confirm:disabled {
   opacity: 0.45;
   cursor: not-allowed;
-}
-
-.defenseInfo {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  background: var(--c-panel);
-  border: 3px solid var(--c-panel-border);
-  border-radius: var(--radius-pixel);
-  padding: 8px 10px;
-  font-family: var(--font-text);
-  font-size: 17px;
-  color: var(--c-ink);
-}
-
-.defenseInfo b {
-  color: var(--c-hp-low);
-}
-
-.enemyTypes {
-  display: inline-flex;
-  gap: 4px;
 }
 
 .hint {

@@ -10,7 +10,6 @@ import { getSpecies } from '../../data/pokemon/index.ts'
 import { getMissionTemplate } from '../../data/missionTemplates.ts'
 import { secretAbilityFor } from '../../data/secretAbilities.ts'
 import { ATTR_MAX, ATTR_PER_POINT, LEVEL_MAX } from '../../engine/constants.ts'
-import { MISSION_XP_REWARD } from '../../engine/balance.ts'
 import { effectiveAttr, perPointGain } from '../../engine/attributes.ts'
 import { addXp, pendingPoints, xpToNext } from '../../engine/leveling.ts'
 import { pokemonRank } from '../../engine/ranking.ts'
@@ -104,7 +103,8 @@ function willLevelUpOnReturn(state: GameState, mon: Pokemon): boolean {
     (m) => m.teamIds.includes(mon.id) && m.status === 'returning' && m.result === 'success',
   )
   if (!mission) return false
-  return addXp(mon, MISSION_XP_REWARD).levelsGained > 0
+  // XP que ele vai receber ao chegar = seu share do pool da missão (dividido pelo time).
+  return addXp(mon, mission.xpAwards?.[mon.id] ?? 0).levelsGained > 0
 }
 
 interface Props {

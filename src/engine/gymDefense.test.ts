@@ -9,6 +9,7 @@ import {
   effectiveBattle,
   enemySquadSizeForDay,
   generateDefenseEnemies,
+  gymWinXp,
   resolveDefense,
   typeAdvantageMultiplier,
 } from './gymDefense.ts'
@@ -18,6 +19,22 @@ describe('canDefend', () => {
   it('exige ≥1 Pokémon', () => {
     expect(canDefend([])).toBe(false)
     expect(canDefend([makeMon()])).toBe(true)
+  })
+})
+
+describe('gymWinXp (PLAN §4.4, ajuste)', () => {
+  it('rende 0,5 de XP por ponto de poder do desafiante', () => {
+    expect(gymWinXp(20)).toBe(10)
+    expect(gymWinXp(40)).toBe(20)
+  })
+
+  it('teto de 30 (poder máximo capado em ATTR_MAX = 60 → 0,5×60 = 30)', () => {
+    expect(gymWinXp(ATTR_MAX)).toBe(30)
+    expect(gymWinXp(200)).toBe(30)
+  })
+
+  it('arredonda o valor parcial', () => {
+    expect(gymWinXp(15)).toBe(8) // 7,5 → 8
   })
 })
 

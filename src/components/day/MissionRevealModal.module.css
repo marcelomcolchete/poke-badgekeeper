@@ -57,6 +57,99 @@
   margin: 0;
 }
 
+/* Painel de resultados (após o ponto pousar): participantes, XP de cada e prêmios. */
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  background: var(--c-panel);
+  border: 3px solid var(--c-panel-border);
+  border-radius: var(--radius-pixel);
+  padding: 8px 10px;
+}
+
+.resultsTitle {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--c-ink);
+}
+
+.crewList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.crewRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--c-bg, rgba(0, 0, 0, 0.04));
+  border: 2px solid var(--c-panel-border);
+  border-radius: var(--radius-pixel);
+  padding: 4px 6px;
+}
+
+.crewSprite {
+  width: 32px;
+  height: 32px;
+  image-rendering: pixelated;
+  flex: none;
+}
+
+.crewName {
+  flex: 1;
+  font-family: var(--font-text);
+  font-size: 15px;
+  color: var(--c-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crewXp {
+  flex: none;
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--c-grass-dark);
+  white-space: nowrap;
+}
+
+.crewHp {
+  flex: none;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: var(--c-hp-low);
+  white-space: nowrap;
+}
+
+.totals {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 2px solid var(--c-panel-border);
+  padding-top: 8px;
+}
+
+.totalLine {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-text);
+  font-size: 15px;
+  color: var(--c-ink);
+}
+
+.totalLine b {
+  color: var(--c-grass-dark);
+}
+
 .continue {
   width: 100%;
   font-family: var(--font-pixel);

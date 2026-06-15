@@ -7,11 +7,13 @@ import { useEffect, useRef, useState } from 'react'
 import type { Attrs, Pokemon } from '../../types/index.ts'
 import { ATTR_KEYS } from '../../types/index.ts'
 import type { GameState, MissionInstance } from '../../engine/state.ts'
-import { getMissionTemplate } from '../../data/missionTemplates.ts'
+import { getMissionTemplate, missionReward } from '../../data/missionTemplates.ts'
+import { getSpecies } from '../../data/pokemon/index.ts'
 import { teamSum } from '../../engine/attributes.ts'
 import { TEAM_ATTR_MAX } from '../../engine/constants.ts'
 import { HexRadar } from '../HexRadar/HexRadar.tsx'
 import { Overlay } from '../common/Overlay.tsx'
+import { displayNameOf } from '../common/naming.ts'
 import styles from './MissionRevealModal.module.css'
 
 const SIZE = 260
@@ -71,6 +73,8 @@ export function MissionRevealModal({ state, mission, onClose }: Props) {
   const sum = teamSum(team)
   const success = mission.result === 'success'
   const percent = mission.pSuccess !== null ? Math.round(mission.pSuccess * 100) : null
+  const reward = missionReward(template)
+  const totalXp = Object.values(mission.xpAwards ?? {}).reduce((a, b) => a + b, 0)
 
   const landing = useRef(landingPoint(requirement, sum, success)).current
   const [dot, setDot] = useState<Pt>(CENTER)
@@ -122,6 +126,54 @@ export function MissionRevealModal({ state, mission, onClose }: Props) {
               : 'O ponto caiu fora da interseção — missão falhou.'}
         </p>
         {percent !== null && <p className={styles.chance}>Chance de sucesso: {percent}%</p>}
+
+        {settled && (
+          <div className={styles.results}>
+            <span className={styles.resultsTitle}>
+              {success ? 'Recompensas' : 'Time de volta ao ginásio'}
+            </span>
+            <ul className={styles.crewList}>
+              {team.map((mon) => {
+                const xp = mission.xpAwards?.[mon.id] ?? 0
+                const fainted = mon.currentHp <= 0
+                return (
+                  <li key={mon.id} className={styles.crewRow}>
+                    <img
+                      className={styles.crewSprite}
+                      src={getSpecies(mon.speciesId).spritePath}
+                      alt=""
+                      draggable={false}
+                    />
+                    <span className={styles.crewName}>
+                      {fainted && <span aria-hidden="true">💀 </span>}
+                      {displayNameOf(mon)}
+                    </span>
+                    {success ? (
+                      <span className={styles.crewXp}>+{xp} XP</span>
+                    ) : (
+                      <span className={styles.crewHp}>
+                        HP {mon.currentHp}/{mon.maxHp}
+                      </span>
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
+            {success && (
+              <div className={styles.totals}>
+                <span className={styles.totalLine}>
+                  XP total: <b>+{totalXp}</b>
+                </span>
+                {reward && (
+                  <span className={styles.totalLine}>
+                    <span aria-hidden="true">{reward.icon}</span> {reward.label}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         <button type="button" className={styles.continue} onClick={onClose} disabled={!settled}>
           Continuar ▶
         </button>

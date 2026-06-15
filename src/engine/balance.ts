@@ -108,11 +108,21 @@ export const ENEMY_SQUAD_DAY1 = 1
 export const ENEMY_SQUAD_DAY10 = 6
 export const ENEMY_SQUAD_JITTER_FROM_DAY = 5
 
-/** Leveling §4.1: XP concedido a cada Pokémon do time numa missão bem-sucedida. */
-export const MISSION_XP_REWARD = 120
+/**
+ * Leveling §4.1: POOL de XP de uma missão bem-sucedida, DIVIDIDO igualmente entre os
+ * participantes (não mais valor fixo por cabeça). Como o despacho vai no máx. 3
+ * (MAX_DISPATCH), divide exato: 1 → 240, 2 → 120 cada, 3 → 80 cada. Levar menos
+ * Pokémon faz cada um subir mais rápido; levar mais, mais seguro porém mais lento.
+ */
+export const MISSION_XP_POOL = 240
 
-/** Leveling §4.4: XP concedido por duelo VENCIDO numa defesa de ginásio (um pouco por batalha). */
-export const GYM_WIN_XP = 20
+/**
+ * Leveling §4.4: XP por duelo VENCIDO numa defesa de ginásio escala com o poder de
+ * Batalha do desafiante derrotado — 0,5 por ponto, com teto de 30 por vitória. Como a
+ * Batalha do inimigo é capada em ATTR_MAX (60), o teto casa: 0,5 × 60 = 30.
+ */
+export const GYM_XP_PER_BATTLE_POWER = 0.5
+export const GYM_XP_CAP_PER_WIN = 30
 
 /**
  * Pool ponderado das categorias sorteadas a cada dia (museu é especial, fora daqui).

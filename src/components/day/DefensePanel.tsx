@@ -9,9 +9,8 @@ import type { EnemyUnit, Pokemon, PokemonType } from '../../types/index.ts'
 import type { GameState, DefenseEvent } from '../../engine/state.ts'
 import type { GameAction } from '../../game/actions.ts'
 import { MIN_DEFENSE_SQUAD } from '../../engine/constants.ts'
-import { GYM_WIN_XP } from '../../engine/balance.ts'
 import { effectiveAttr } from '../../engine/attributes.ts'
-import { effectiveBattle, typeAdvantageMultiplier } from '../../engine/gymDefense.ts'
+import { effectiveBattle, gymWinXp, typeAdvantageMultiplier } from '../../engine/gymDefense.ts'
 import { sortRoster } from '../../engine/roster.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
 import { TypeBadge } from '../common/TypeBadge.tsx'
@@ -39,15 +38,17 @@ export function DefensePanel({ state, dispatch, defenseId, onClose }: Props) {
   }
 
   const enemyTypes = [...new Set(defense.enemies.flatMap((e) => e.types))] as PokemonType[]
-  const maxBattle = defense.enemies.reduce((m, e) => Math.max(m, e.battle), 0)
+  // Poder do desafiante = SOMA da Batalha de todo o esquadrão inimigo.
+  const enemyPower = defense.enemies.reduce((sum, e) => sum + e.battle, 0)
   const valid = selected.length >= MIN_DEFENSE_SQUAD
   // Esquadrão escolhido, na ORDEM dos duelos (a ordem importa: a frente luta primeiro).
   const squad = selected
     .map((id) => state.roster.find((p) => p.id === id))
     .filter((p): p is Pokemon => p !== undefined)
   const teamBattle = squad.reduce((sum, m) => sum + Math.round(effectiveAttr(m, 'batalha')), 0)
-  // 1 desafiante derrotado = GYM_WIN_XP; o teto é vencer todos os duelos.
-  const maxXp = defense.enemies.length * GYM_WIN_XP
+  const myTypes = [...new Set(squad.flatMap((m) => m.types))] as PokemonType[]
+  // Teto de XP da batalha: vencer todos os duelos, cada um rendendo gymWinXp do desafiante.
+  const maxXp = defense.enemies.reduce((sum, e) => sum + gymWinXp(e.battle), 0)
 
   const toggle = (id: string): void =>
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
@@ -68,87 +69,98 @@ export function DefensePanel({ state, dispatch, defenseId, onClose }: Props) {
 
   return (
     <Overlay title="DEFESA DO GINÁSIO" onClose={onClose} wide>
-      <div className={styles.dispatch}>
-        <div className={styles.radarSide}>
-          <div className={styles.defenseInfo}>
-            <span>
-              Desafiantes: <b>{defense.enemies.length}</b>
+      <div className={styles.defenseLayout}>
+        {/* Barra do desafiante (ataque) — esquadrão, poder somado e tipos. */}
+        <div className={`${styles.sideBar} ${styles.attackBar}`}>
+          <span className={styles.barIcon} aria-hidden="true">
+            ⚔
+          </span>
+          <span className={styles.barLabel}>Desafiante</span>
+          <span className={styles.barStat}>
+            Esquadrão <b>{defense.enemies.length}</b>
+          </span>
+          <span className={styles.barStat}>
+            Poder <b>{enemyPower}</b>
+          </span>
+          <span className={styles.barTypes}>
+            {enemyTypes.map((t) => (
+              <TypeBadge key={t} type={t} />
+            ))}
+          </span>
+        </div>
+
+        {/* Barra do seu time (defesa) — esquadrão, poder, tipos + miniaturas em ordem. */}
+        <div className={`${styles.sideBar} ${styles.defendBar}`}>
+          <div className={styles.barTop}>
+            <span className={styles.barIcon} aria-hidden="true">
+              🛡
             </span>
-            <span className={styles.enemyTypes}>
-              {enemyTypes.map((t) => (
+            <span className={styles.barLabel}>Seu time</span>
+            <span className={styles.barStat}>
+              Esquadrão <b>{selected.length}</b>
+            </span>
+            <span className={styles.barStat}>
+              Poder <b>{teamBattle}</b>
+            </span>
+            <span className={styles.barStat}>
+              EXP até <b>{maxXp}</b>
+            </span>
+            <span className={styles.barTypes}>
+              {myTypes.map((t) => (
                 <TypeBadge key={t} type={t} />
               ))}
             </span>
-            <span>
-              Batalha inimiga: <b>{maxBattle}</b>
-            </span>
           </div>
-
-          <div className={styles.stats}>
-            <span>
-              Batalha do time: <b>{teamBattle}</b>
+          {squad.length === 0 ? (
+            <span className={styles.selectedEmpty}>
+              Escolha ao menos {MIN_DEFENSE_SQUAD} abaixo. Arraste para reordenar os duelos.
             </span>
-            <span>
-              EXP na batalha: <b>até {maxXp}</b> (×{GYM_WIN_XP}/vitória)
-            </span>
-            <span>
-              Esquadrão: <b>{selected.length}</b>
-            </span>
-          </div>
-
-          <div className={styles.selectedTeam}>
-            <span className={styles.selectedTitle}>Ordem dos duelos ({selected.length})</span>
-            {squad.length === 0 ? (
-              <span className={styles.selectedEmpty}>
-                Escolha ao menos {MIN_DEFENSE_SQUAD} ao lado. Arraste para reordenar.
-              </span>
-            ) : (
-              <ol className={styles.orderList}>
-                {squad.map((mon, i) => (
-                  <li
-                    key={mon.id}
-                    className={`${styles.orderChip} ${dragIndex === i ? styles.dragging : ''}`}
-                    draggable
-                    onDragStart={() => setDragIndex(i)}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={() => {
-                      if (dragIndex !== null) reorder(dragIndex, i)
-                      setDragIndex(null)
-                    }}
-                    onDragEnd={() => setDragIndex(null)}
+          ) : (
+            <ol className={styles.miniTeam}>
+              {squad.map((mon, i) => (
+                <li
+                  key={mon.id}
+                  className={`${styles.miniChip} ${dragIndex === i ? styles.dragging : ''}`}
+                  draggable
+                  onDragStart={() => setDragIndex(i)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => {
+                    if (dragIndex !== null) reorder(dragIndex, i)
+                    setDragIndex(null)
+                  }}
+                  onDragEnd={() => setDragIndex(null)}
+                  title={`${i + 1}º — ${displayNameOf(mon)} (arraste para reordenar)`}
+                >
+                  <span className={styles.miniPos} aria-hidden="true">
+                    {i + 1}
+                  </span>
+                  <img
+                    className={styles.miniSprite}
+                    src={getSpecies(mon.speciesId).spritePath}
+                    alt={displayNameOf(mon)}
+                    draggable={false}
+                  />
+                  <button
+                    type="button"
+                    className={styles.miniRemove}
+                    onClick={() => remove(mon.id)}
+                    aria-label={`Remover ${displayNameOf(mon)} do esquadrão`}
                   >
-                    <span className={styles.orderNum} aria-hidden="true">
-                      ⠿ {i + 1}
-                    </span>
-                    <img
-                      className={styles.chipSprite}
-                      src={getSpecies(mon.speciesId).spritePath}
-                      alt=""
-                      draggable={false}
-                    />
-                    <span className={styles.orderName}>{displayNameOf(mon)}</span>
-                    <span className={styles.orderBattle}>⚔ {Math.round(effectiveAttr(mon, 'batalha'))}</span>
-                    <button
-                      type="button"
-                      className={styles.chipRemove}
-                      onClick={() => remove(mon.id)}
-                      aria-label={`Remover ${displayNameOf(mon)} do esquadrão`}
-                    >
-                      ×
-                    </button>
-                  </li>
-                ))}
-              </ol>
-            )}
-          </div>
+                    ×
+                  </button>
+                </li>
+              ))}
+            </ol>
+          )}
         </div>
 
-        <div className={styles.picker}>
+        {/* Pokémon para escolher, em 3 colunas. */}
+        <div className={styles.pickerThree}>
           {sortRoster(state.roster).map((mon) => (
             <BattlePick
               key={mon.id}
               mon={mon}
-              selected={selected.includes(mon.id)}
+              position={selected.indexOf(mon.id) + 1}
               disabled={mon.status !== 'idle'}
               onClick={mon.status === 'idle' ? () => toggle(mon.id) : undefined}
             />
@@ -163,23 +175,25 @@ export function DefensePanel({ state, dispatch, defenseId, onClose }: Props) {
 }
 
 /**
- * Carta compacta de seleção para a defesa: sprite, nome e tipos + SÓ o atributo Batalha
- * (sem o radar hexagonal). A defesa é decidida pela Batalha, então é o único número útil.
+ * Carta compacta de seleção para a defesa (3 colunas): sprite, nome e tipos + SÓ o
+ * atributo Batalha (sem o radar hexagonal). Quando selecionado, mostra a POSIÇÃO na
+ * cadeia de duelos (1º a lutar, etc.). `position` > 0 = selecionado.
  */
 function BattlePick({
   mon,
-  selected,
+  position,
   disabled,
   onClick,
 }: {
   mon: Pokemon
-  selected: boolean
+  position: number
   disabled: boolean
   onClick?: () => void
 }) {
   const species = getSpecies(mon.speciesId)
   const battle = Math.round(effectiveAttr(mon, 'batalha'))
   const fainted = mon.currentHp <= 0
+  const selected = position > 0
   const classes = [
     styles.battlePick,
     selected ? styles.battlePickOn : '',
@@ -195,6 +209,11 @@ function BattlePick({
       disabled={disabled || !onClick}
       aria-pressed={selected}
     >
+      {selected && (
+        <span className={styles.pickPos} aria-label={`Posição ${position} na batalha`}>
+          {position}º
+        </span>
+      )}
       <img
         className={styles.battlePickSprite}
         src={species.spritePath}
@@ -214,7 +233,7 @@ function BattlePick({
       </span>
       <span className={styles.battlePickStat}>
         <span className={styles.battlePickStatVal}>{battle}</span>
-        <span className={styles.battlePickStatLbl}>⚔ Batalha</span>
+        <span className={styles.battlePickStatLbl}>⚔</span>
       </span>
     </button>
   )

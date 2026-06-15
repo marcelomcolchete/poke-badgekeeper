@@ -3,12 +3,11 @@
 
 import type { Pokemon } from '../types/index.ts'
 import type { DefenseEvent, GameState } from '../engine/state.ts'
-import { canDefend, resolveDefense, type DefenseResolution } from '../engine/gymDefense.ts'
+import { canDefend, gymWinXp, resolveDefense, type DefenseResolution } from '../engine/gymDefense.ts'
 import { hasBattleArmor, hasSturdy, hasWeakArmor } from '../engine/secretEffects.ts'
 import { goldForDefense } from '../engine/economy.ts'
 import { addXp } from '../engine/leveling.ts'
 import { createRng } from '../engine/rng.ts'
-import { GYM_WIN_XP } from '../engine/balance.ts'
 import { findMon, replaceMon, settleFaint, takeRng } from './runtime.ts'
 
 /** Promove a defesa a 'active' (símbolo no ginásio) e conta no total do dia (PLAN §3.1). */
@@ -111,26 +110,32 @@ export function assignDefense(s: GameState, defenseId: string, squadIds: string[
 }
 
 /**
- * Conclui a defesa ao FIM da animação: aplica o XP de cada vitória (1 duelo vencido =
- * GYM_WIN_XP), podendo subir nível/evoluir — o level-up só "aparece" agora (PLAN §4.4,
- * ajuste). Idempotente: só aplica uma vez (xpApplied).
+ * Conclui a defesa ao FIM da animação: aplica o XP de cada vitória (0,5 × poder do
+ * desafiante derrotado, teto 30), podendo subir nível/evoluir — o level-up só "aparece"
+ * agora (PLAN §4.4, ajuste). Idempotente: só aplica uma vez (xpApplied).
  */
 export function completeDefense(s: GameState, defenseId: string): void {
   const defense = s.defenses.find((d) => d.id === defenseId)
   if (!defense || defense.xpApplied) return
   if (defense.status !== 'won' && defense.status !== 'lost') return
 
-  const winsById = new Map<string, number>()
+  // Percorre os duelos na ordem (mesmo padrão de assignDefense): cada vitória rende XP
+  // proporcional ao poder do desafiante daquele índice. Acumula o XP por Pokémon.
+  const xpById = new Map<string, number>()
+  let theirs = 0
   for (const duel of defense.duels) {
-    if (duel.youWon) winsById.set(duel.yourId, (winsById.get(duel.yourId) ?? 0) + 1)
+    if (!duel.youWon) continue
+    const enemy = defense.enemies[theirs]
+    if (enemy) xpById.set(duel.yourId, (xpById.get(duel.yourId) ?? 0) + gymWinXp(enemy.battle))
+    theirs += 1
   }
 
   const evoRng = createRng(defense.xpSeed ?? 0)
-  for (const [id, wins] of winsById) {
+  for (const [id, xp] of xpById) {
     const mon = findMon(s, id)
-    if (!mon || wins <= 0) continue
-    replaceMon(s, addXp(mon, wins * GYM_WIN_XP, evoRng).pokemon)
-    s.today.xpEarned += wins * GYM_WIN_XP
+    if (!mon || xp <= 0) continue
+    replaceMon(s, addXp(mon, xp, evoRng).pokemon)
+    s.today.xpEarned += xp
   }
   defense.xpApplied = true
 }

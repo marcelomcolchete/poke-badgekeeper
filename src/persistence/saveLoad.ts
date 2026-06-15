@@ -149,6 +149,12 @@ function migrate(file: Partial<SaveFile>): SaveFile | null {
     version = 18
   }
 
+  // v18 → v19: XP de missão por pool (mission.xpAwards) e XP de ginásio por poder. Ambos
+  // são opcionais/derivados — missões em voo sem xpAwards caem no fallback 0. Só passa.
+  if (version === 18) {
+    version = 19
+  }
+
   if (version !== SAVE_VERSION) return null
   return { version, savedAtMs: (file as SaveFile).savedAtMs, state } as unknown as SaveFile
 }
