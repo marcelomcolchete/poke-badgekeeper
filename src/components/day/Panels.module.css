@@ -785,11 +785,13 @@
   pointer-events: none;
 }
 
-/* Nota (E–S) no card de seleção do esquadrão (canto superior direito — pickPos fica à esquerda). */
+/* Nota (E–S) no card de seleção do esquadrão (canto superior direito — pickPos fica à esquerda).
+   Fica DENTRO do card (como pickPos) para não estourar a grade rolável: badges salientes
+   ativavam o scrollbar horizontal e eram cortados no recorte do overflow. */
 .pickRank {
   position: absolute;
-  top: -6px;
-  right: -6px;
+  top: 2px;
+  right: 2px;
   display: grid;
   place-items: center;
   min-width: 16px;
