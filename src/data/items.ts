@@ -180,10 +180,16 @@ export const SHOP_SIZE = 3
 
 /**
  * Mercado do dia: 3 itens DISTINTOS sorteados de forma determinística (seed+dia+cidade).
- * Garante ao menos 1 item obrigatório (potion/revive/x_*) e nunca repete o mesmo id.
+ * Garante ao menos 1 item obrigatório (potion/revive/x_*) e nunca repete o mesmo id. Os ids
+ * em `owned` (itens passivos já comprados na run) saem da pool — passivos são 1×/run.
  */
-export function getDailyShop(seed: number, day: number, cityIndex: number): string[] {
-  const pool = itemsForCity(cityIndex)
+export function getDailyShop(
+  seed: number,
+  day: number,
+  cityIndex: number,
+  owned: readonly string[] = [],
+): string[] {
+  const pool = itemsForCity(cityIndex).filter((id) => !owned.includes(id))
   const rng = createRng(deriveSeed(seed, SHOP_SEED_SALT, day, cityIndex))
   const mandatory = pool.filter((id) => MANDATORY_ITEM_IDS.includes(id))
   const picked: string[] = []

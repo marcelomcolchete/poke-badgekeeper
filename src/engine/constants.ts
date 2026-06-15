@@ -144,6 +144,9 @@ export const DRAFT_CHOICES = 3
  * dá nível 1 (Bronze) a quem já tinha a passiva 'secret-*' desbloqueada.
  * v22: sistema de itens — buffs diários por atributo (pokemon.dayBuffs, opcional) e itens
  * passivos run-wide reaproveitando s.runItems (exp-share/fast-ball/eviolite/lagging-tail/
- * thick-club). dayBuffs é opcional e some na virada do dia; migração é passthrough. */
-export const SAVE_VERSION = 22
+ * thick-club). dayBuffs é opcional e some na virada do dia; migração é passthrough.
+ * v23: mercado da manhã fixo no dia — today.shopOffer (3 itens ofertados) e
+ * today.purchasedItems (vendidos hoje). A migração inicia ambos vazios (a UI deriva a oferta
+ * quando vazia). */
+export const SAVE_VERSION = 23
 export const SAVE_KEY = 'poke-badgekeeper:save'

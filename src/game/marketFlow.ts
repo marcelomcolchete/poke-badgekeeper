@@ -12,10 +12,19 @@ import { heal, recomputeMaxHp } from '../engine/attributes.ts'
 import { allocatePoint as engineAllocate, evolveToLevel, pendingPoints } from '../engine/leveling.ts'
 import { findMon, replaceMon, takeRng } from './runtime.ts'
 
+/** Marca um item como vendido hoje (vira "VENDIDO" no mercado — 1 compra por slot/dia). */
+function markSold(s: GameState, itemId: string): void {
+  if (!s.today.purchasedItems.includes(itemId)) {
+    s.today.purchasedItems = [...s.today.purchasedItems, itemId]
+  }
+}
+
 /** Compra no mercado (sem ouro suficiente → no-op) — ramifica pelo efeito do item. */
 export function buyItem(s: GameState, itemId: string, quantity = 1): void {
   const item = getItem(itemId)
   if (quantity <= 0) return
+  // Cada slot do mercado só pode ser comprado uma vez por dia.
+  if (s.today.purchasedItems.includes(itemId)) return
   const effect = item.effect
 
   switch (effect.kind) {
@@ -25,6 +34,7 @@ export function buyItem(s: GameState, itemId: string, quantity = 1): void {
       if (!canAfford(s.gold, item, quantity)) return
       s.gold -= item.price * quantity
       addCharges(s, itemId, effect.uses * quantity)
+      markSold(s, itemId)
       return
     }
     case 'statBuff': {
@@ -32,6 +42,7 @@ export function buyItem(s: GameState, itemId: string, quantity = 1): void {
       if (!canAfford(s.gold, item, quantity)) return
       s.gold -= item.price * quantity
       applyStatBuff(s, effect.attr, effect.amount * quantity)
+      markSold(s, itemId)
       return
     }
     case 'passive': {
@@ -40,6 +51,7 @@ export function buyItem(s: GameState, itemId: string, quantity = 1): void {
       if (!canAfford(s.gold, item)) return
       s.gold -= item.price
       s.runItems = [...s.runItems, itemId]
+      markSold(s, itemId)
       return
     }
     case 'rareCandy':
@@ -71,11 +83,13 @@ function applyStatBuff(s: GameState, attr: AttrKey, amount: number): void {
 export function useRareCandy(s: GameState, pokemonId: string): void {
   const item = getItem('rare-candy')
   const mon = findMon(s, pokemonId)
+  if (s.today.purchasedItems.includes(item.id)) return // já comprado hoje
   if (!mon || mon.level >= LEVEL_MAX || !canAfford(s.gold, item)) return
   s.gold -= item.price
   const rng = takeRng(s)
   const leveled = recomputeMaxHp(evolveToLevel({ ...mon, level: mon.level + 1 }, rng))
   replaceMon(s, leveled)
+  markSold(s, item.id)
 }
 
 function consumeItem(s: GameState, itemId: string): boolean {

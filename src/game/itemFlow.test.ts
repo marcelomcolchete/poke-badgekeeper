@@ -113,6 +113,34 @@ describe('mercado — efeitos de compra (reducer)', () => {
     s = reducer(s, { type: 'USE_RARE_CANDY', pokemonId: 'a' })
     expect(s.roster[0]?.level).toBe(4)
     expect(s.gold).toBe(500)
+    expect(s.today.purchasedItems).toContain('rare-candy')
+  })
+
+  it('comprar marca o slot como vendido (sem recompra no mesmo dia)', () => {
+    let s = createInitialState(SEED)
+    s.gold = 1000
+    s = reducer(s, { type: 'BUY_ITEM', itemId: 'potion' })
+    expect(s.today.purchasedItems).toContain('potion')
+    expect(s.inventory).toEqual([{ itemId: 'potion', quantity: 1 }])
+    const goldAfter = s.gold
+    s = reducer(s, { type: 'BUY_ITEM', itemId: 'potion' }) // vendido → no-op
+    expect(s.gold).toBe(goldAfter)
+    expect(s.inventory).toEqual([{ itemId: 'potion', quantity: 1 }])
+  })
+})
+
+describe('mercado da manhã (oferta fixa do dia)', () => {
+  it('a virada do dia gera 3 itens, zera os vendidos e exclui passivos possuídos', () => {
+    let s = createInitialState(SEED)
+    s.run.phase = 'SUMMARY'
+    s.run.day = 1
+    s.runItems = ['eviolite']
+    s.today.purchasedItems = ['potion'] // sobra do dia anterior
+    s = reducer(s, { type: 'ADVANCE_PHASE' }) // SUMMARY → próxima manhã
+    expect(s.run.day).toBe(2)
+    expect(s.today.shopOffer).toHaveLength(3)
+    expect(s.today.shopOffer).not.toContain('eviolite')
+    expect(s.today.purchasedItems).toEqual([])
   })
 })
 
