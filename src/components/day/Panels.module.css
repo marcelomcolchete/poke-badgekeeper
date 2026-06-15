@@ -309,6 +309,57 @@
   opacity: 0.8;
 }
 
+/* Treinador invasor na barra de seleção: arte + nome (PLAN §4.4). */
+.trainerTag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.trainerArt {
+  width: 40px;
+  height: 40px;
+  image-rendering: pixelated;
+  object-fit: contain;
+  background: var(--c-bg, rgba(0, 0, 0, 0.04));
+  border: 2px solid var(--c-hp-low);
+  border-radius: var(--radius-pixel);
+}
+
+.trainerName {
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  color: var(--c-hp-low);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Treinador invasor no modal de batalha: retrato maior + nome. */
+.battleTrainer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0 4px;
+}
+
+.battleTrainerArt {
+  width: 48px;
+  height: 48px;
+  image-rendering: pixelated;
+  object-fit: contain;
+  background: var(--c-panel);
+  border: 3px solid var(--c-hp-low);
+  border-radius: var(--radius-pixel);
+}
+
+.battleTrainerName {
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  color: var(--c-hp-low);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 /* Miniaturas do esquadrão na ordem dos duelos (arrastável para reordenar). */
 .miniTeam {
   list-style: none;

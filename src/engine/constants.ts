@@ -56,6 +56,15 @@ export const STARTER_SLOT_SALTS = [0x57a27, 0x5ec17] as const
 /** Sub-seed do túnel do Dig (Habilidade Secreta): sorteia os dois pontos ligados por dia. */
 export const DIG_SEED_SALT = 0xd16
 
+/** Sub-seed do sorteio de treinadores do dia (defesa): ordena quais classes invadem hoje. */
+export const TRAINER_SEED_SALT = 0x713a
+
+/**
+ * Quantidade de Pokémon do treinador invasor por dia (PLAN §4.4). Indexado pelo dia (1–10);
+ * a posição 0 é só preenchimento. Cresce de 1 (dia 1) a 6 (dias 9–10).
+ */
+export const DEFENSE_SQUAD_BY_DAY = [0, 1, 2, 2, 3, 3, 4, 5, 5, 6, 6] as const
+
 /** Natureza: modificadores do valor por ponto alocado (+15 favorecido, +5 penalizado). */
 export const NATURE_BOOSTED_PER_POINT = 15
 export const NATURE_REDUCED_PER_POINT = 5

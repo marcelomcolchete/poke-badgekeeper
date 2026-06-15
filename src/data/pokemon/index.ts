@@ -28,6 +28,36 @@ function buildSpecies(): Map<number, Species> {
 
 const POKEMON: Map<number, Species> = buildSpecies()
 
+// Mapas pai→filho e filho→pai derivados das evoluções, para expandir uma linha inteira
+// a partir de qualquer um dos seus membros (data/trainers usa "linha evolutiva do X").
+const EVO_PARENT = new Map<number, number>()
+const EVO_CHILDREN = new Map<number, number[]>()
+for (const step of EVOLUTIONS) {
+  EVO_PARENT.set(step.to, step.from)
+  const kids = EVO_CHILDREN.get(step.from)
+  if (kids) kids.push(step.to)
+  else EVO_CHILDREN.set(step.from, [step.to])
+}
+
+/**
+ * Linha evolutiva inteira que contém `speciesId` (sobe até a forma-base e desce por todos
+ * os ramos — Eevee inclui todas as eeveeluções). Ids ordenados; útil para montar elencos
+ * de treinadores por família (PLAN §4.4).
+ */
+export function evolutionFamily(speciesId: number): number[] {
+  let root = speciesId
+  while (EVO_PARENT.has(root)) root = EVO_PARENT.get(root) as number
+  const out: number[] = []
+  const stack = [root]
+  while (stack.length > 0) {
+    const id = stack.pop() as number
+    if (out.includes(id)) continue
+    out.push(id)
+    for (const child of EVO_CHILDREN.get(id) ?? []) stack.push(child)
+  }
+  return out.sort((a, b) => a - b)
+}
+
 /** Espécie por id (lança se inexistente — id inválido é erro de programação). */
 export function getSpecies(id: number): Species {
   const species = POKEMON.get(id)

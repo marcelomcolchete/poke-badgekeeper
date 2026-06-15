@@ -11,6 +11,7 @@ import type {
   MapPos,
   Pokemon,
   PokemonType,
+  TrainerId,
 } from '../types/index.ts'
 import type { DuelLog } from './gymDefense.ts'
 import { DAY_LENGTH_MS, STARS_START, STARTING_GOLD } from './constants.ts'
@@ -107,6 +108,8 @@ export interface DefenseEvent {
   /** Surge sobre o ginásio com timer mais longo que missões — PLAN §3.1 / §4.4. */
   expiresAtMs: number
   status: DefenseStatus
+  /** Classe do treinador invasor (define o elenco e a arte mostrada) — PLAN §4.4. */
+  trainerId: TrainerId
   squadIds: string[]
   /** Inimigos sorteados quando a defesa surge (matchup fixo/semeado). */
   enemies: EnemyUnit[]

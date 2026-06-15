@@ -5,9 +5,13 @@
 // pelo menor caminho; o tempo de viagem sai daí. Só Pewter está calibrada; as demais
 // herdam o layout de Pewter (placeholder) até a arte ser anotada.
 
-import type { MapPos, MissionCategory, SiteKind } from '../types/index.ts'
-import { CATEGORY_SITE } from '../types/index.ts'
+import type { MapPos, MissionCategory, SiteKind, TrainerId } from '../types/index.ts'
+import { CATEGORY_SITE, TRAINER_IDS } from '../types/index.ts'
 import type { CityData, CityGraph, CitySiteNodes } from './types.ts'
+
+// Classes de treinador que invadem o ginásio (PLAN §4.4). Pewter está calibrada com as 9
+// classes; as demais cidades REPLICAM essa lista por enquanto, até terem elenco próprio.
+const PEWTER_TRAINERS: TrainerId[] = [...TRAINER_IDS]
 
 // Pewter (1.png): grafo calibrado sobre a arte anotada. 19 pontos (a–s); o ginásio é 'j'.
 // Posições normalizadas (0–1) — estimadas da arte e refináveis com o DEV picker do CityMap.
@@ -219,6 +223,7 @@ export const CITIES: CityData[] = SEEDS.map((s, index) => ({
   graph: s.graph ?? PEWTER_GRAPH,
   siteNodes: s.siteNodes ?? PEWTER_SITE_NODES,
   museumMissionId: s.museumMissionId,
+  trainers: PEWTER_TRAINERS,
 }))
 
 export function getCity(index: number): CityData {

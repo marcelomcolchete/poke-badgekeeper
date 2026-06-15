@@ -47,6 +47,24 @@ export const RARITIES = ['common', 'uncommon', 'rare', 'epic', 'legend'] as cons
 
 export type Rarity = (typeof RARITIES)[number]
 
+/**
+ * Classes de treinador que podem invadir o ginásio na defesa (PLAN §4.4). Cada cidade
+ * define quais aparecem; cada classe tem o seu próprio elenco de Pokémon (data/trainers).
+ */
+export const TRAINER_IDS = [
+  'YOUNGSTER',
+  'BIRD_KEEPER',
+  'LASS',
+  'BROCK',
+  'HIKER',
+  'BRENDAN',
+  'MAY',
+  'LEAF',
+  'RED',
+] as const
+
+export type TrainerId = (typeof TRAINER_IDS)[number]
+
 /** Estado de um Pokémon do roster durante o dia (PLAN §5). */
 export type PokemonStatus =
   | 'idle'
