@@ -443,17 +443,68 @@
   }
 }
 
-/* Retrato pequeno por mensagem (estilo chat) — placeholder até a arte do líder. */
-.msgAvatar {
+/* Crachá de símbolo por mensagem (estilo chat): a cor/forma indica o TIPO da fala.
+   A base define forma e tamanho; cada variante (.sym*) pinta fundo/borda/símbolo. */
+.msgSym {
   flex: none;
   display: grid;
   place-items: center;
   width: 28px;
   height: 28px;
   font-size: 15px;
+  line-height: 1;
   background: rgba(28, 86, 50, 0.7);
   border: 2px solid var(--c-hud-border);
   border-radius: 50%;
+}
+
+/* Padrão (avisos do dia): branco com "G" azul — ecoa o antigo líder do ginásio. */
+.symStandard {
+  background: var(--c-dialog-bg);
+  border-color: var(--c-dialog-border);
+  color: var(--c-dialog-text);
+  font-family: var(--font-pixel);
+  font-size: 11px;
+}
+
+/* Nova área de exploração: verde claro com graminha. */
+.symArea {
+  background: #eaf8e3;
+  border-color: #6fcf3f;
+}
+
+/* Centro Pokémon: vermelho claro com símbolo de cura. */
+.symCenter {
+  background: #ffe9e9;
+  border-color: #ff8a8a;
+  color: #d63a3a;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+/* Pokémart: azul claro com carrinho de mercado. */
+.symMart {
+  background: #e6f3fb;
+  border-color: #57a6dc;
+}
+
+/* Missão geral: balão padrão com "!" vermelho. */
+.symGeneral {
+  background: var(--c-dialog-bg);
+  border-color: var(--c-dialog-border);
+  color: var(--c-dialog-cursor);
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Equipe Rocket: preto com borda amarela e "R" vermelho. */
+.symRocket {
+  background: #161616;
+  border-color: var(--c-hud-accent);
+  color: #e02020;
+  font-family: var(--font-pixel);
+  font-size: 11px;
 }
 
 /* Balão de fala clássico (branco, texto azul) — ecoa a textbox antiga. */
@@ -483,4 +534,42 @@
   border-top: 5px solid transparent;
   border-bottom: 5px solid transparent;
   border-right: 7px solid var(--c-dialog-border);
+}
+
+/* Variantes do balão por tipo (fundo/borda casados com o crachá do símbolo).
+   standard e general usam o balão padrão acima, então não têm variante. */
+.bubbleArea {
+  background: #eef9e7;
+  border-color: #6fcf3f;
+  color: #2f5e1e;
+}
+.bubbleArea::before {
+  border-right-color: #6fcf3f;
+}
+
+.bubbleCenter {
+  background: #ffeded;
+  border-color: #ff8a8a;
+  color: #a83232;
+}
+.bubbleCenter::before {
+  border-right-color: #ff8a8a;
+}
+
+.bubbleMart {
+  background: #e9f4fc;
+  border-color: #57a6dc;
+  color: #1f4f7a;
+}
+.bubbleMart::before {
+  border-right-color: #57a6dc;
+}
+
+.bubbleRocket {
+  background: #161616;
+  border-color: var(--c-hud-accent);
+  color: var(--c-hud-accent);
+}
+.bubbleRocket::before {
+  border-right-color: var(--c-hud-accent);
 }
