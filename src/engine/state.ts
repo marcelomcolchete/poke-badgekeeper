@@ -157,6 +157,8 @@ export interface DefenseEvent {
   status: DefenseStatus
   /** Classe do treinador invasor (define o elenco e a arte mostrada) — PLAN §4.4. */
   trainerId: TrainerId
+  /** Arte sorteada para ESTE evento (quando o treinador tem variantes, ex.: gen3/gen3rs). */
+  trainerSprite?: string
   squadIds: string[]
   /** Inimigos sorteados quando a defesa surge (matchup fixo/semeado). */
   enemies: EnemyUnit[]

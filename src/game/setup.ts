@@ -7,9 +7,10 @@ import type { CityData } from '../data/types.ts'
 import type { DefenseEvent, GameState } from '../engine/state.ts'
 import { createInitialState } from '../engine/state.ts'
 import type { TrainerId } from '../types/index.ts'
+import { RIVAL_TRAINER_IDS } from '../types/index.ts'
 import { getCity, nodePos, nodesForCategory } from '../data/cities.ts'
 import { getDailyShop } from '../data/items.ts'
-import { getTrainer } from '../data/trainers.ts'
+import { getTrainer, trainerSprites } from '../data/trainers.ts'
 import { buildDaySchedule, type DefenseSlot } from '../engine/timeline.ts'
 import { createMissionInstance } from '../engine/missions.ts'
 import { enemySquadSizeForDay, generateDefenseEnemies } from '../engine/gymDefense.ts'
@@ -54,9 +55,11 @@ export function setupDay(s: GameState): void {
     })
   })
   // Treinadores do dia: sorteados SEM repetição (um treinador não invade duas vezes no
-  // mesmo dia — se já veio hoje, só pode voltar amanhã). PLAN §4.4.
+  // mesmo dia — se já veio hoje, só pode voltar amanhã). PLAN §4.4. Os rivais entram no
+  // pool de TODA cidade, além da lista local (dedup caso a cidade já os liste).
   const trainerRng = createRng(deriveSeed(s.run.seed, TRAINER_SEED_SALT, s.run.day))
-  const dayTrainers = trainerRng.shuffle(city.trainers)
+  const trainerPool = [...new Set<TrainerId>([...city.trainers, ...RIVAL_TRAINER_IDS])]
+  const dayTrainers = trainerRng.shuffle(trainerPool)
   s.defenses = schedule.defenses.map((slot, i) =>
     buildDefense(s, slot, city, dayTrainers[i % dayTrainers.length] ?? city.trainers[0] ?? 'YOUNGSTER'),
   )
@@ -123,6 +126,10 @@ function buildDefense(
 ): DefenseEvent {
   const rng = createRng(slot.seed)
   const size = enemySquadSizeForDay(s.run.day)
+  const trainer = getTrainer(trainerId)
+  // Inimigos primeiro (mantém os rolls existentes), depois a arte — sorteada do mesmo rng
+  // semeado, então é estável para este evento mas varia entre defesas/dias.
+  const enemies = generateDefenseEnemies(rng, trainer, size, s.run.day)
   return {
     id: takeId(s, 'd'),
     pos: nodePos(city.graph, city.siteNodes.gym),
@@ -130,8 +137,9 @@ function buildDefense(
     expiresAtMs: slot.atMs + DEFENSE_LIFETIME_MS,
     status: 'scheduled',
     trainerId,
+    trainerSprite: rng.pick(trainerSprites(trainer)),
     squadIds: [],
-    enemies: generateDefenseEnemies(rng, getTrainer(trainerId), size),
+    enemies,
     duels: [],
   }
 }

@@ -58,6 +58,25 @@ export function evolutionFamily(speciesId: number): number[] {
   return out.sort((a, b) => a - b)
 }
 
+/**
+ * Cadeia evolutiva LINEAR em ORDEM (forma-base → … → forma final) a partir de qualquer membro.
+ * Sobe até a raiz e desce sempre pela PRIMEIRA evolução de cada estágio — em ramos (Eevee)
+ * segue só o primeiro filho. Diferente de evolutionFamily (que ordena por id, sem ordem de
+ * evolução). Usado para evoluir o líder rival conforme o dia (PLAN §4.4).
+ */
+export function evolutionChain(speciesId: number): number[] {
+  let id = speciesId
+  while (EVO_PARENT.has(id)) id = EVO_PARENT.get(id) as number
+  const chain = [id]
+  for (;;) {
+    const kids = EVO_CHILDREN.get(id)
+    if (!kids || kids.length === 0) break
+    id = kids[0] as number
+    chain.push(id)
+  }
+  return chain
+}
+
 /** Espécie por id (lança se inexistente — id inválido é erro de programação). */
 export function getSpecies(id: number): Species {
   const species = POKEMON.get(id)

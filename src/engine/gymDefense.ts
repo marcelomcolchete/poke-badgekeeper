@@ -7,7 +7,7 @@ import type { Rng } from './rng.ts'
 
 export type { EnemyUnit }
 import { singleTypeMultiplier } from '../data/typeChart.ts'
-import { allSpecies, getSpecies } from '../data/pokemon/index.ts'
+import { allSpecies, evolutionChain, getSpecies } from '../data/pokemon/index.ts'
 import type { TrainerDef } from '../data/trainers.ts'
 import {
   ATTR_EFFECTIVE_MIN,
@@ -28,6 +28,7 @@ import {
   MOXIE_BATTLE_PER_WIN,
   PRESSURE_ENEMY_MULT,
   REGENERATOR_HEAL_PER_WIN,
+  RIVAL_EVOLUTION_DAYS,
   THICK_FAT_VS_ICE_MULT,
 } from './balance.ts'
 import { applyDamage, effectiveAttr } from './attributes.ts'
@@ -119,17 +120,36 @@ function isLegendary(speciesId: number): boolean {
 }
 
 /**
+ * Líder do rival conforme o DIA: o líder fixo evolui ao longo da run (PLAN §4.4). RIVAL_EVOLUTION_DAYS
+ * dá os dias em que sobe cada estágio (ex.: Charmander → dia 3 Charmeleon → dia 6 Charizard); linhas
+ * curtas (Pikachu → Raichu) ficam no último estágio disponível.
+ */
+export function rivalLeadForDay(leadId: number, day: number): number {
+  const chain = evolutionChain(leadId)
+  const stage = RIVAL_EVOLUTION_DAYS.filter((d) => day >= d).length
+  return chain[Math.min(stage, chain.length - 1)] as number
+}
+
+/**
  * Espécies (ids) que um treinador traz numa defesa de `size` Pokémon (PLAN §4.4):
  *  - `roster`: sorteia COM repetição da lista fixa da classe.
- *  - `rival`:  líder fixo na frente + o resto totalmente aleatório, com NO MÁX. 1 lendário.
+ *  - `rival`:  líder (evoluído conforme o dia) na frente + o resto aleatório, com NO MÁX. 1 lendário.
+ *
+ * `day` controla a evolução do líder rival; omitido = dia 1 (forma-base), p/ chamadas sem contexto de dia.
  */
-export function trainerSquadSpecies(rng: Rng, trainer: TrainerDef, size: number): number[] {
+export function trainerSquadSpecies(
+  rng: Rng,
+  trainer: TrainerDef,
+  size: number,
+  day = 1,
+): number[] {
   if (trainer.pool.kind === 'roster') {
     const pool = trainer.pool.speciesIds
     return Array.from({ length: size }, () => rng.pick(pool))
   }
-  const ids: number[] = [trainer.pool.lead]
-  let legendaryUsed = isLegendary(trainer.pool.lead)
+  const lead = rivalLeadForDay(trainer.pool.lead, day)
+  const ids: number[] = [lead]
+  let legendaryUsed = isLegendary(lead)
   const all = allSpecies()
   while (ids.length < size) {
     const pool = legendaryUsed ? all.filter((s) => s.rarity !== 'legend') : all
@@ -147,8 +167,13 @@ export function trainerSquadSpecies(rng: Rng, trainer: TrainerDef, size: number)
  * só QUANTOS Pokémon o treinador traz (enemySquadSizeForDay). Um desafiante (sorteado) sai
  * em DESTAQUE: ganha +15 de Batalha e exibe medalha na batalha (PLAN — destaque do desafiante).
  */
-export function generateDefenseEnemies(rng: Rng, trainer: TrainerDef, size: number): EnemyUnit[] {
-  const enemies = trainerSquadSpecies(rng, trainer, size).map((speciesId) => {
+export function generateDefenseEnemies(
+  rng: Rng,
+  trainer: TrainerDef,
+  size: number,
+  day = 1,
+): EnemyUnit[] {
+  const enemies = trainerSquadSpecies(rng, trainer, size, day).map((speciesId) => {
     const species = getSpecies(speciesId)
     const battle = clamp(
       species.baseAttrs.batalha + rng.int(IV_MIN, IV_MAX),

@@ -184,6 +184,13 @@ export const ROCKET_XP_MULTIPLIER = 3
 /** Defesa/Rocket §destaque: um desafiante do esquadrão ganha +15 de Batalha e exibe medalha. */
 export const DEFENSE_BUFF_BATTLE = 15
 
+/**
+ * Rivais §4.4: o líder do rival EVOLUI conforme o dia. Cada valor é o dia (inclusive) em que
+ * o líder sobe UM estágio na linha evolutiva — ex.: Charmander (dia 1–2) → Charmeleon (dia 3–5)
+ * → Charizard (dia 6+). Linhas mais curtas (Pikachu → Raichu) só sobem até onde a cadeia vai.
+ */
+export const RIVAL_EVOLUTION_DAYS = [3, 6] as const
+
 // ---- Habilidades Secretas (efeitos fixos por TIPO de habilidade) ----
 //
 // Cada habilidade tem efeito fixo (sem níveis). Várias linhas compartilham a mesma habilidade,
