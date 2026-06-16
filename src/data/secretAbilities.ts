@@ -32,6 +32,26 @@ export type SecretId =
   | 'sa-shell-armor'
   | 'sa-fly'
   | 'sa-fly-plus'
+  // Cerulean (Água/Gelo) — habilidades novas.
+  | 'sa-surf'
+  | 'sa-surf-plus'
+  | 'sa-torrent'
+  | 'sa-thick-fat'
+  | 'sa-moxie'
+  | 'sa-pressure'
+  | 'sa-regenerator'
+  | 'sa-natural-cure'
+  | 'sa-analytic'
+  | 'sa-clear-body'
+  | 'sa-sniper'
+  | 'sa-water-absorb'
+  | 'sa-forewarn'
+  // Cerulean — só descrição por ora (dependem de clima/status ainda não implementados).
+  | 'sa-cloud-nine'
+  | 'sa-ice-body'
+  | 'sa-dry-skin'
+  | 'sa-overcoat'
+  | 'sa-own-tempo'
 
 export interface SecretKind {
   id: SecretId
@@ -127,6 +147,96 @@ export const SECRET_KINDS: Record<SecretId, SecretKind> = {
     name: 'Fly+',
     effect: 'Upgrade do Fly: pode levar o time inteiro voando.',
   },
+  'sa-surf': {
+    id: 'sa-surf',
+    name: 'Surf',
+    effect: 'Atravessa os pontos de água e ganha +100% de velocidade na água. Só quando despachado sozinho.',
+  },
+  'sa-surf-plus': {
+    id: 'sa-surf-plus',
+    name: 'Surf+',
+    effect: 'Upgrade do Surf: pode levar o time inteiro pela água.',
+  },
+  'sa-torrent': {
+    id: 'sa-torrent',
+    name: 'Torrent',
+    effect: '+50% nos atributos quando vai a uma missão com outro Pokémon do tipo Água.',
+  },
+  'sa-thick-fat': {
+    id: 'sa-thick-fat',
+    name: 'Thick Fat',
+    effect: 'Recebe vantagem (×1,5 de Batalha) em batalhas contra Pokémon do tipo Gelo.',
+  },
+  'sa-moxie': {
+    id: 'sa-moxie',
+    name: 'Moxie',
+    effect: 'Ao derrotar um Pokémon na batalha, ganha +1 de Batalha (acumula na sequência).',
+  },
+  'sa-pressure': {
+    id: 'sa-pressure',
+    name: 'Pressure',
+    effect: 'Reduz a Batalha dos Pokémon enfrentados em 25%.',
+  },
+  'sa-regenerator': {
+    id: 'sa-regenerator',
+    name: 'Regenerator',
+    effect: 'Recupera 1 de vida a cada Pokémon derrotado em batalha.',
+  },
+  'sa-natural-cure': {
+    id: 'sa-natural-cure',
+    name: 'Natural Cure',
+    effect: 'Sempre que sai em missão, recupera 2 de vida.',
+  },
+  'sa-analytic': {
+    id: 'sa-analytic',
+    name: 'Analytic',
+    effect: '+50% nos atributos em missões de Ensino e −50% em Patrulha.',
+  },
+  'sa-clear-body': {
+    id: 'sa-clear-body',
+    name: 'Clear Body',
+    effect: 'Seu time não recebe debuff de atributo em missões.',
+  },
+  'sa-sniper': {
+    id: 'sa-sniper',
+    name: 'Sniper',
+    effect: 'Faz missões sem sair do ginásio (atua à distância). Só quando despachado sozinho.',
+  },
+  'sa-water-absorb': {
+    id: 'sa-water-absorb',
+    name: 'Water Absorb',
+    effect: 'Ganha 10 de XP sempre que a rota passa pela água.',
+  },
+  'sa-forewarn': {
+    id: 'sa-forewarn',
+    name: 'Forewarn',
+    effect: 'Antecipa uma das missões do dia para o início do dia (cada portador antecipa mais uma).',
+  },
+  'sa-cloud-nine': {
+    id: 'sa-cloud-nine',
+    name: 'Cloud Nine',
+    effect: 'Aumenta em 25% a chance de chover ao longo do dia. (sem efeito até existir clima)',
+  },
+  'sa-ice-body': {
+    id: 'sa-ice-body',
+    name: 'Ice Body',
+    effect: 'Nunca fica congelado. (sem efeito até existir o status de congelamento)',
+  },
+  'sa-dry-skin': {
+    id: 'sa-dry-skin',
+    name: 'Dry Skin',
+    effect: 'Perde 1 de vida no calor e recupera 2 quando chove ou está frio. (sem efeito até existir clima)',
+  },
+  'sa-overcoat': {
+    id: 'sa-overcoat',
+    name: 'Overcoat',
+    effect: 'Não recebe dano de nenhum efeito climático. (sem efeito até existir clima)',
+  },
+  'sa-own-tempo': {
+    id: 'sa-own-tempo',
+    name: 'Own Tempo',
+    effect: 'Previne o Pokémon de ficar confuso. (sem efeito até existir o status de confusão)',
+  },
 }
 
 // Mapa filho → pai (a partir dos passos de evolução), para achar a raiz de uma linha.
@@ -174,11 +284,55 @@ export const SECRET_LINES: Record<number, readonly [SecretId, SecretId, SecretId
   140: ['sa-battle-armor', 'sa-weak-armor', 'sa-swift-swim'],
   // Aerodactyl
   142: ['sa-fly', 'sa-rock-head', 'sa-fly-plus'],
+
+  // ---- Cerulean (Água/Gelo) ----
+  // Squirtle → Wartortle → Blastoise
+  7: ['sa-surf', 'sa-torrent', 'sa-surf-plus'],
+  // Psyduck → Golduck
+  54: ['sa-surf', 'sa-swift-swim', 'sa-cloud-nine'],
+  // Poliwag → Poliwhirl → Poliwrath
+  60: ['sa-water-absorb', 'sa-surf', 'sa-swift-swim'],
+  // Tentacool → Tentacruel
+  72: ['sa-clear-body', 'sa-surf', 'sa-surf-plus'],
+  // Slowpoke → Slowbro
+  79: ['sa-regenerator', 'sa-own-tempo', 'sa-surf'],
+  // Seel → Dewgong
+  86: ['sa-surf', 'sa-ice-body', 'sa-thick-fat'],
+  // Shellder → Cloyster
+  90: ['sa-shell-armor', 'sa-overcoat', 'sa-surf'],
+  // Krabby → Kingler
+  98: ['sa-dig', 'sa-shell-armor', 'sa-dig-plus'],
+  // Horsea → Seadra
+  116: ['sa-swift-swim', 'sa-surf', 'sa-sniper'],
+  // Goldeen → Seaking
+  118: ['sa-surf', 'sa-swift-swim', 'sa-surf-plus'],
+  // Staryu → Starmie
+  120: ['sa-analytic', 'sa-surf', 'sa-natural-cure'],
+  // Jynx
+  124: ['sa-dry-skin', 'sa-forewarn', 'sa-analytic'],
+  // Magikarp → Gyarados
+  129: ['sa-surf', 'sa-moxie', 'sa-surf-plus'],
+  // Lapras
+  131: ['sa-surf', 'sa-surf-plus', 'sa-shell-armor'],
+  // Articuno
+  144: ['sa-fly', 'sa-fly-plus', 'sa-pressure'],
+  // Omanyte (138) e Kabuto (140) já estão definidos acima (linhas de fóssil) e batem com Cerulean.
+}
+
+/**
+ * Override por ESPÉCIE (precede a busca por raiz): para linhas divergentes onde a raiz é
+ * compartilhada por evoluções de cidades diferentes. Eevee (133) vira Vaporeon/Jolteon/Flareon,
+ * então `lineRootId(134)` colapsaria em 133 e vazaria a linha de água para os outros — aqui
+ * Vaporeon recebe a sua própria linha sem afetar os demais eeveelutions.
+ */
+const SECRET_LINE_BY_SPECIES: Partial<Record<number, readonly [SecretId, SecretId, SecretId]>> = {
+  // Vaporeon
+  134: ['sa-surf', 'sa-surf-plus', 'sa-water-absorb'],
 }
 
 /** As três habilidades (ids, em ordem) da linha de uma espécie — null se a linha não tem. */
 export function secretLineFor(speciesId: number): readonly [SecretId, SecretId, SecretId] | null {
-  return SECRET_LINES[lineRootId(speciesId)] ?? null
+  return SECRET_LINE_BY_SPECIES[speciesId] ?? SECRET_LINES[lineRootId(speciesId)] ?? null
 }
 
 /** Quantas habilidades secretas este Pokémon já desbloqueou (0..3), com clamp defensivo. */

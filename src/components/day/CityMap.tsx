@@ -198,6 +198,7 @@ function MapTravelers({ state, graph, now }: { state: GameState; graph: CityGrap
             roster={state.roster}
             speedy={speedy}
             flying={m.flying}
+            surfing={m.surfing}
           />
         )
       })}
@@ -206,7 +207,7 @@ function MapTravelers({ state, graph, now }: { state: GameState; graph: CityGrap
         if (c.phase !== 'traveling') return null
         const pos = pointAlongPath(graph, c.path, elapsedFraction(now, c.departAtMs, c.arriveAtMs))
         return (
-          <TravelerGroup key={`s-${c.searcherId}`} pos={pos} ids={[c.searcherId]} roster={state.roster} flying={c.flying} />
+          <TravelerGroup key={`s-${c.searcherId}`} pos={pos} ids={[c.searcherId]} roster={state.roster} flying={c.flying} surfing={c.surfing} />
         )
       })}
       {state.captureReturns.map((r) => {
@@ -215,7 +216,7 @@ function MapTravelers({ state, graph, now }: { state: GameState; graph: CityGrap
         const back = r.path[0] === r.node ? r.path : [...r.path].reverse()
         const pos = pointAlongPath(graph, back, elapsedFraction(now, r.departAtMs, r.arriveAtMs))
         return (
-          <TravelerGroup key={`r-${r.searcherId}`} pos={pos} ids={[r.searcherId]} roster={state.roster} flying={r.flying} />
+          <TravelerGroup key={`r-${r.searcherId}`} pos={pos} ids={[r.searcherId]} roster={state.roster} flying={r.flying} surfing={r.surfing} />
         )
       })}
     </>
@@ -229,12 +230,14 @@ function TravelerGroup({
   roster,
   speedy = false,
   flying = false,
+  surfing = false,
 }: {
   pos: MapPos
   ids: string[]
   roster: Pokemon[]
   speedy?: boolean
   flying?: boolean
+  surfing?: boolean
 }) {
   const mons = ids
     .map((id) => roster.find((p) => p.id === id))
@@ -243,13 +246,18 @@ function TravelerGroup({
   if (mons.length === 0) return null
   return (
     <div
-      className={`${styles.travelers} ${speedy ? styles.speedy : ''} ${flying ? styles.flying : ''}`}
+      className={`${styles.travelers} ${speedy ? styles.speedy : ''} ${flying ? styles.flying : ''} ${surfing ? styles.surfing : ''}`}
       style={posStyle(pos)}
     >
       {speedy && <span className={styles.speedAura} aria-hidden="true" />}
       {flying && (
         <span className={styles.flyBadge} title="Voando (Fly)" aria-hidden="true">
           🪽
+        </span>
+      )}
+      {surfing && (
+        <span className={styles.surfBadge} title="Surfando (Surf)" aria-hidden="true">
+          🌊
         </span>
       )}
       {mons.map((mon) => (

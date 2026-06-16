@@ -5,7 +5,7 @@
 import type { MapPos } from '../types/index.ts'
 import type { CityGraph } from '../data/types.ts'
 import { MAP_ASPECT_H, MAP_ASPECT_W } from './constants.ts'
-import { DIG_TUNNEL_COST } from './balance.ts'
+import { DIG_TUNNEL_COST, SURF_WATER_TIME_MULT } from './balance.ts'
 import { clamp } from './math.ts'
 
 /**
@@ -68,6 +68,49 @@ export function graphWithTunnels(
 ): CityGraph {
   if (!tunnels || tunnels.length === 0) return graph
   return tunnels.reduce((g, tunnel) => graphWithTunnel(g, tunnel), graph)
+}
+
+/**
+ * Grafo SEM os pontos de água (Surf): remove os `surfNodes` da adjacência (tira as arestas de
+ * entrada e de saída), deixando-os inalcançáveis. Usado para quem NÃO consegue surfar — o menor
+ * caminho jamais cruza a água, e destinos só acessíveis por água ficam inalcançáveis ([]).
+ * Sem `surfNodes`, devolve o grafo intacto.
+ */
+export function graphWithoutSurf(graph: CityGraph): CityGraph {
+  const surf = graph.surfNodes
+  if (!surf || surf.length === 0) return graph
+  const blocked = new Set(surf)
+  const adj: Record<string, string[]> = {}
+  for (const [id, neighbors] of Object.entries(graph.adj)) {
+    adj[id] = blocked.has(id) ? [] : neighbors.filter((n) => !blocked.has(n))
+  }
+  return { ...graph, adj }
+}
+
+/** O caminho passa por algum ponto de água (Surf)? */
+export function pathUsesSurf(graph: CityGraph, path: readonly string[]): boolean {
+  const surf = graph.surfNodes
+  if (!surf || surf.length === 0) return false
+  const water = new Set(surf)
+  return path.some((id) => water.has(id))
+}
+
+/**
+ * Comprimento de viagem de um caminho COM o bônus de Surf: igual ao `pathDistance`, mas as
+ * arestas incidentes a um ponto de água custam metade (SURF_WATER_TIME_MULT) — +100% de
+ * velocidade na água. O caminho (geometria/animação) não muda; só o tempo de viagem cai.
+ */
+export function surfTravelDistance(graph: CityGraph, path: readonly string[]): number {
+  const water = new Set(graph.surfNodes ?? [])
+  let total = 0
+  for (let i = 1; i < path.length; i++) {
+    const a = path[i - 1] as string
+    const b = path[i] as string
+    if (!graph.nodes[a] || !graph.nodes[b]) continue
+    const cost = edgeCost(graph, a, b)
+    total += water.has(a) || water.has(b) ? cost * SURF_WATER_TIME_MULT : cost
+  }
+  return total
 }
 
 /**

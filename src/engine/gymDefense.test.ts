@@ -206,6 +206,44 @@ describe('resolveDefense — Habilidades Secretas', () => {
   })
 })
 
+describe('resolveDefense — Habilidades de Cerulean', () => {
+  it('Thick Fat: vantagem de Batalha (×1,5) contra oponente do tipo Gelo', () => {
+    // Seel (86) secretCount 3 = [Surf, Ice Body, Thick Fat]. Tipo neutro p/ isolar o efeito.
+    const seel = makeMon({ id: 's', speciesId: 86, secretCount: 3, types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
+    const plain = makeMon({ id: 'p', types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
+    const ice: EnemyUnit[] = [{ battle: 40, types: ['ice'] }]
+    expect(resolveDefense(fixedRng(1), [seel], ice).duels[0]?.pWin).toBeCloseTo(0.75) // 30/40
+    expect(resolveDefense(fixedRng(1), [plain], ice).duels[0]?.pWin).toBeCloseTo(0.5) // 20/40
+  })
+
+  it('Pressure: reduz a Batalha do oponente enfrentado em 25%', () => {
+    // Articuno (144) secretCount 3 = [Fly, Fly+, Pressure]. Tipo neutro p/ isolar.
+    const arti = makeMon({ id: 'a', speciesId: 144, secretCount: 3, types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
+    const plain = makeMon({ id: 'p', types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
+    const foe: EnemyUnit[] = [{ battle: 40, types: ['normal'] }]
+    expect(resolveDefense(fixedRng(1), [arti], foe).duels[0]?.pWin).toBeCloseTo(20 / 30) // inimigo 40→30
+    expect(resolveDefense(fixedRng(1), [plain], foe).duels[0]?.pWin).toBeCloseTo(0.5) // 20/40
+  })
+
+  it('Moxie: +1 de Batalha por inimigo derrotado na sequência', () => {
+    // Magikarp (129) secretCount 2 = [Surf, Moxie]. Vence os dois (fixedRng 0).
+    const gyara = makeMon({ id: 'g', speciesId: 129, secretCount: 2, types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
+    const foes: EnemyUnit[] = [{ battle: 30, types: ['normal'] }, { battle: 30, types: ['normal'] }]
+    const out = resolveDefense(fixedRng(0), [gyara], foes)
+    expect(out.duels[0]?.pWin).toBeCloseTo(20 / 30) // 1ª luta: sem bônus
+    expect(out.duels[1]?.pWin).toBeCloseTo(21 / 30) // 2ª luta: +1 do 1º abate
+  })
+
+  it('Regenerator: recupera 1 de vida por inimigo derrotado', () => {
+    // Slowpoke (79) secretCount 1 = [Regenerator]. Vence os dois sem tomar dano.
+    const slow = makeMon({ id: 's', speciesId: 79, secretCount: 1, types: ['normal'], baseAttrs: makeAttrs({ batalha: 50, resistencia: 100 }), currentHp: 5 })
+    const foes: EnemyUnit[] = [{ battle: 10, types: ['normal'] }, { battle: 10, types: ['normal'] }]
+    const out = resolveDefense(fixedRng(0), [slow], foes)
+    expect(out.won).toBe(true)
+    expect(out.squad[0]?.currentHp).toBe(7) // 5 + 1 por abate (2 abates)
+  })
+})
+
 describe('trainerSquadSpecies (PLAN §4.4)', () => {
   it('elenco roster só sorteia espécies da lista da classe (com repetição)', () => {
     const youngster = getTrainer('YOUNGSTER')

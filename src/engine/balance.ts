@@ -216,6 +216,28 @@ export const FLY_SPEED_BONUS = 0.5
 export const DIG_HOLES_PER_TUNNEL = 2
 /** Dig: custo do túnel entre os pontos (distância-do-grafo, bem baixa = atalho). */
 export const DIG_TUNNEL_COST = 0.4
+/**
+ * Surf: nas arestas incidentes a um nó de água o custo (tempo) cai pela metade — +100% de
+ * velocidade na água. Aplica-se só quando o time consegue surfar (ver engine/secretEffects).
+ */
+export const SURF_WATER_TIME_MULT = 0.5
+/** Torrent: multiplicador de atributos na missão quando há outro aliado do tipo Água. */
+export const TORRENT_MISSION_MULT = 1.5
+/** Thick Fat: multiplicador de Batalha contra oponentes do tipo Gelo. */
+export const THICK_FAT_VS_ICE_MULT = 1.5
+/** Moxie: bônus de Batalha (aditivo) por Pokémon derrotado na sequência da batalha. */
+export const MOXIE_BATTLE_PER_WIN = 1
+/** Pressure: multiplicador da Batalha do oponente enfrentado (−25%). */
+export const PRESSURE_ENEMY_MULT = 0.75
+/** Regenerator: vida recuperada por Pokémon derrotado em batalha. */
+export const REGENERATOR_HEAL_PER_WIN = 1
+/** Natural Cure: vida recuperada ao sair em missão. */
+export const NATURAL_CURE_MISSION_HEAL = 2
+/** Analytic: multiplicador de atributos em Ensino (ganho) e em Patrulha (perda). */
+export const ANALYTIC_STUDY_MULT = 1.5
+export const ANALYTIC_PATROL_MULT = 0.5
+/** Water Absorb: XP ganho quando a rota da missão passa pela água. */
+export const WATER_ABSORB_XP = 10
 
 // ---- Sistema de Itens (PLAN — Itens) ----
 

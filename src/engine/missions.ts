@@ -7,7 +7,13 @@ import type { Rng } from './rng.ts'
 import type { MissionTemplate, CityGraph } from '../data/types.ts'
 import { getMissionTemplate, templatesForCategory } from '../data/missionTemplates.ts'
 import type { MissionInstance } from './state.ts'
-import { pathDistance, shortestPath } from './pathfinding.ts'
+import {
+  graphWithoutSurf,
+  pathDistance,
+  pathUsesSurf,
+  shortestPath,
+  surfTravelDistance,
+} from './pathfinding.ts'
 import { MIN_FAILURE_DAMAGE, TEAM_ATTR_MAX } from './constants.ts'
 import {
   AGILITY_TIME_REDUCTION_PER_POINT,
@@ -40,6 +46,8 @@ import {
   damageTaken,
   teamFlies,
   teamSecretSum,
+  teamSnipes,
+  teamSurfs,
   type MissionSecretCtx,
 } from './secretEffects.ts'
 import { clamp } from './math.ts'
@@ -209,22 +217,34 @@ export function graphTravelMs(
 }
 
 /**
- * Rota de deslocamento do time do ginásio até um ponto (PLAN §4.3 — Fly):
- * - Voando (Fly + sozinho): liga ginásio→ponto em LINHA RETA (path `[gym, node]`). A
- *   distância vira a reta 16:9-corrigida — bem menor que o caminho andado → tempo bem menor,
- *   mas não-zero (velocidade normal).
- * - Senão: menor caminho no grafo (Dijkstra).
- * Devolve a flag de voo (símbolo no mapa), o caminho (animação) e a distância (tempo).
+ * Rota de deslocamento do time do ginásio até um ponto (PLAN §4.3 — Fly/Surf/Sniper):
+ * - Voando (Fly + sozinho / Fly+): liga ginásio→ponto em LINHA RETA (path `[gym, node]`).
+ * - Sniper (sozinho): atua do ginásio — distância 0 (instantâneo), ignora o bloqueio de água.
+ * - Surfando (Surf + sozinho / Surf+): menor caminho no grafo COMPLETO (água liberada); a
+ *   distância usa o bônus de água (arestas de água custam metade → +100% de velocidade).
+ * - Senão: menor caminho num grafo SEM os pontos de água (intransponíveis). Destinos só
+ *   acessíveis por água ficam inalcançáveis (path `[]`).
+ * Devolve as flags (voo/surf — símbolos no mapa), o caminho (animação) e a distância (tempo).
  */
 export function travelRoute(
   graph: CityGraph,
   gym: string,
   node: string,
   team: readonly Pokemon[],
-): { flying: boolean; path: string[]; distance: number } {
-  const flying = teamFlies(team)
-  const path = flying ? [gym, node] : shortestPath(graph, gym, node)
-  return { flying, path, distance: pathDistance(graph, path) }
+): { flying: boolean; surfing: boolean; path: string[]; distance: number } {
+  if (teamFlies(team)) {
+    const path = [gym, node]
+    return { flying: true, surfing: false, path, distance: pathDistance(graph, path) }
+  }
+  if (teamSnipes(team)) {
+    return { flying: false, surfing: false, path: [gym, node], distance: 0 }
+  }
+  const surfs = teamSurfs(team)
+  const nav = surfs ? graph : graphWithoutSurf(graph)
+  const path = shortestPath(nav, gym, node)
+  const surfing = surfs && pathUsesSurf(graph, path)
+  const distance = surfing ? surfTravelDistance(graph, path) : pathDistance(nav, path)
+  return { flying: false, surfing, path, distance }
 }
 
 /**

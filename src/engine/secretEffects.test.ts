@@ -14,6 +14,7 @@ import {
   hasReckless,
   hasShellArmor,
   hasSturdy,
+  hasSurf,
   hasWeakArmor,
   hustleBattleBonus,
   missionAttrMultiplier,
@@ -22,7 +23,10 @@ import {
   sturdyAvailable,
   teamFlies,
   teamHasFly,
+  teamHasSurf,
   teamSecretAxisSum,
+  teamSnipes,
+  teamSurfs,
   teamTravelSpeedMultiplier,
   type MissionSecretCtx,
 } from './secretEffects.ts'
@@ -31,6 +35,10 @@ const ESCOLTA = getMissionTemplate('escolta')
 const ENSINO = getMissionTemplate('ensino')
 const PATRULHA = getMissionTemplate('patrulha')
 const PALESTRA = getMissionTemplate('palestra')
+
+// Linhas de Cerulean (a habilidade vem da posição na linha):
+// Goldeen(118) Surf#1; Blastoise(9) Surf+#3; Horsea(116) Sniper#3; Squirtle(7) Torrent#2;
+// Staryu(120) Analytic#1; Tentacool(72) Clear Body#1; Nidoran♀(29) Hustle#2.
 
 function ctxOf(
   team: ReturnType<typeof makeMon>[],
@@ -104,6 +112,59 @@ describe('missionAttrMultiplier', () => {
   it('teamSecretAxisSum aplica o multiplicador (e cai no teto)', () => {
     const rhy = makeMon({ speciesId: 111, secretCount: 2 }) // efetivo 20/eixo, Rock Head
     expect(teamSecretAxisSum('batalha', ctxOf([rhy], ESCOLTA))).toBeCloseTo(30) // 20 × 1.5
+  })
+})
+
+describe('Surf / Sniper: predicados de time', () => {
+  const goldeen = makeMon({ id: 'g', speciesId: 118, secretCount: 1 }) // Surf
+  const blastoise = makeMon({ id: 'bl', speciesId: 9, secretCount: 3 }) // Surf+
+  const horsea = makeMon({ id: 'h', speciesId: 116, secretCount: 3 }) // Sniper
+  const other = makeMon({ id: 'o' })
+
+  it('hasSurf: Surf ou Surf+', () => {
+    expect(hasSurf(goldeen)).toBe(true)
+    expect(hasSurf(blastoise)).toBe(true)
+    expect(hasSurf(other)).toBe(false)
+    expect(hasSurf(makeMon({ speciesId: 118, secretCount: 0 }))).toBe(false)
+  })
+
+  it('teamHasSurf / teamSurfs: sozinho sempre; em time só com Surf+', () => {
+    expect(teamHasSurf([goldeen])).toBe(true)
+    expect(teamSurfs([goldeen])).toBe(true)
+    expect(teamSurfs([goldeen, other])).toBe(false) // só Surf: acompanhado não surfa
+    expect(teamSurfs([blastoise, other])).toBe(true) // Surf+ leva o time
+    expect(teamSurfs([other])).toBe(false)
+  })
+
+  it('teamSnipes: só sozinho', () => {
+    expect(teamSnipes([horsea])).toBe(true)
+    expect(teamSnipes([horsea, other])).toBe(false)
+    expect(teamSnipes([other])).toBe(false)
+  })
+})
+
+describe('missionAttrMultiplier — habilidades de Cerulean', () => {
+  it('Torrent: +50% com OUTRO aliado do tipo Água', () => {
+    const sq = makeMon({ id: 'sq', speciesId: 7, secretCount: 2, types: ['water'] }) // Torrent
+    const waterAlly = makeMon({ id: 'w', types: ['water'] })
+    const fireAlly = makeMon({ id: 'f', types: ['fire'] })
+    expect(missionAttrMultiplier(sq, ctxOf([sq, waterAlly]))).toBeCloseTo(1.5)
+    expect(missionAttrMultiplier(sq, ctxOf([sq, fireAlly]))).toBe(1)
+    expect(missionAttrMultiplier(sq, ctxOf([sq]))).toBe(1) // "outro" exclui ele mesmo
+  })
+
+  it('Analytic: +50% em Ensino, −50% em Patrulha, nada em Palestra', () => {
+    const staryu = makeMon({ speciesId: 120, secretCount: 1 }) // Analytic
+    expect(missionAttrMultiplier(staryu, ctxOf([staryu], ENSINO))).toBeCloseTo(1.5)
+    expect(missionAttrMultiplier(staryu, ctxOf([staryu], PATRULHA))).toBeCloseTo(0.5)
+    expect(missionAttrMultiplier(staryu, ctxOf([staryu], PALESTRA))).toBe(1)
+  })
+
+  it('Clear Body: anula o debuff de atributo do time (Hustle)', () => {
+    const nido = makeMon({ id: 'n', speciesId: 29, secretCount: 2, gender: 'female' }) // Hustle
+    const tentacool = makeMon({ id: 't', speciesId: 72, secretCount: 1 }) // Clear Body
+    expect(missionAttrMultiplier(nido, ctxOf([nido]))).toBeCloseTo(0.9) // só Hustle
+    expect(missionAttrMultiplier(nido, ctxOf([nido, tentacool]))).toBe(1) // anulado
   })
 })
 

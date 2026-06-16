@@ -1,0 +1,74 @@
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-width: min(420px, 80vw);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.label {
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  color: var(--c-hud-accent);
+}
+
+.value {
+  color: var(--c-hud-muted);
+}
+
+/* --- Idioma --------------------------------------------------------------- */
+.langRow {
+  display: flex;
+  gap: 10px;
+}
+
+.langBtn {
+  position: relative;
+  flex: 1;
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  color: var(--c-btn-text);
+  background: var(--c-btn-bg);
+  border: 2px solid var(--c-btn-border);
+  border-radius: var(--radius-pixel);
+  padding: 12px 10px;
+  cursor: pointer;
+}
+
+.langActive {
+  color: var(--c-ink);
+  background: var(--c-hud-accent);
+  border-color: var(--c-ink);
+}
+
+.langBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.soon {
+  display: block;
+  margin-top: 6px;
+  font-family: var(--font-text);
+  font-size: 13px;
+  letter-spacing: 0.5px;
+}
+
+/* --- Volume --------------------------------------------------------------- */
+.volumeRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+}
+
+.slider {
+  flex: 1;
+  accent-color: var(--c-hud-accent);
+  cursor: pointer;
+}

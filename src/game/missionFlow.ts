@@ -12,9 +12,11 @@ import { getTrainer } from '../data/trainers.ts'
 import { damageForDay, MAX_DISPATCH, MIN_DISPATCH } from '../engine/constants.ts'
 import {
   MISSION_XP_POOL,
+  NATURAL_CURE_MISSION_HEAL,
   RETURN_SPEED_BONUS_ON_SUCCESS,
   ROCKET_GOLD_BONUS,
   ROCKET_XP_MULTIPLIER,
+  WATER_ABSORB_XP,
 } from '../engine/balance.ts'
 import {
   enemySquadSizeForDay,
@@ -30,11 +32,13 @@ import {
   travelRoute,
 } from '../engine/missions.ts'
 import {
+  hasNaturalCure,
+  hasWaterAbsorb,
   sturdyAvailable,
   teamTravelSpeedMultiplier,
   type MissionSecretCtx,
 } from '../engine/secretEffects.ts'
-import { graphWithTunnels } from '../engine/pathfinding.ts'
+import { graphWithTunnels, pathUsesSurf } from '../engine/pathfinding.ts'
 import { createRng } from '../engine/rng.ts'
 import { applyBattleSecretRuntime } from './defenseFlow.ts'
 import { applyAutoItems, applyXpGains } from './itemFlow.ts'
@@ -94,6 +98,9 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
   // Ida e VOLTA calculadas separadamente: com arestas de mão única (ex.: k→t) a volta NÃO é o
   // reverso da ida (PLAN §3.1). Em grafos simétricos as duas rotas/distâncias coincidem.
   const outbound = travelRoute(graph, city.siteNodes.gym, mission.node, team)
+  // Inalcançável (a rota cruzaria a água e o time não consegue surfar): não despacha — a UI
+  // já bloqueia, mas a guarda evita uma viagem instantânea por engano. Voo/Sniper nunca dão [].
+  if (outbound.path.length === 0) return
   const inbound = travelRoute(graph, mission.node, city.siteNodes.gym, team)
   const speedMult = teamTravelSpeedMultiplier(team, s.runItems)
   const outMs = graphTravelMs(outbound.distance, team, speedMult)
@@ -110,13 +117,27 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
   mission.path = outbound.path
   mission.returnPath = inbound.path
   mission.flying = outbound.flying
+  mission.surfing = outbound.surfing
   mission.status = 'traveling'
   mission.acceptedAtMs = now
   mission.arriveAtMs = now + outMs
   mission.resolveAtMs = now + outMs + execution
   mission.returnEndsAtMs = now + outMs + execution + inMs
   mission.pSuccess = missionSuccessProbabilityCtx(ctx, mission.requirement)
-  for (const p of team) replaceMon(s, { ...p, status: 'traveling' })
+  // Natural Cure: recupera vida ao sair em missão (cap em maxHp); demais só viajam.
+  for (const p of team) {
+    const healed = hasNaturalCure(p)
+      ? Math.min(p.maxHp, p.currentHp + NATURAL_CURE_MISSION_HEAL)
+      : p.currentHp
+    replaceMon(s, { ...p, currentHp: healed, status: 'traveling' })
+  }
+  // Water Absorb: a rota passa pela água → cada portador ganha XP na hora.
+  if (pathUsesSurf(graph, outbound.path)) {
+    const gains = new Map(
+      team.filter(hasWaterAbsorb).map((p) => [p.id, WATER_ABSORB_XP] as const),
+    )
+    if (gains.size > 0) applyXpGains(s, gains, takeRng(s))
+  }
 }
 
 /**
