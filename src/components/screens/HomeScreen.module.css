@@ -1,0 +1,138 @@
+/* Tela cheia com o background da Home; conteúdo (título + menu) centrado.
+   Fixed para ignorar a moldura de 1100px do App e ocupar a viewport inteira. */
+.screen {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  background-image: url('/background/background.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  /* A arte é uma ilustração suave — anula o pixelated global. */
+  image-rendering: auto;
+}
+
+/* Véu escuro para garantir contraste do título/botões sobre qualquer parte da arte. */
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(6, 22, 12, 0.45), rgba(6, 22, 12, 0.78));
+  pointer-events: none;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 34px;
+  padding: 40px 16px 120px;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-pixel);
+  font-size: clamp(20px, 5vw, 38px);
+  line-height: 1.4;
+  color: var(--c-hud-accent);
+  text-align: center;
+  text-shadow: 3px 3px 0 #000, 0 0 18px rgba(0, 0, 0, 0.6);
+}
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: min(320px, 86vw);
+}
+
+.btn {
+  position: relative;
+  width: 100%;
+  font-family: var(--font-pixel);
+  font-size: 13px;
+  color: var(--c-btn-text);
+  background: var(--c-btn-bg);
+  border: 3px solid var(--c-btn-border);
+  border-radius: var(--radius-pixel);
+  padding: 16px 18px;
+  cursor: pointer;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.45);
+  transition: transform 0.05s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.btn:not(:disabled):hover {
+  border-color: var(--c-hud-accent);
+  background: #34a05a;
+}
+
+.btn:not(:disabled):active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+}
+
+.disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.soon {
+  display: inline-block;
+  margin-left: 8px;
+  font-family: var(--font-text);
+  font-size: 15px;
+  color: var(--c-hud-accent);
+  letter-spacing: 0.5px;
+  vertical-align: middle;
+}
+
+.discord {
+  color: #fff;
+  background: #5865f2;
+  border-color: #8c95f7;
+}
+
+.discord:not(:disabled):hover {
+  background: #6b77f5;
+  border-color: #fff;
+}
+
+.back {
+  background: var(--c-hud-border);
+  border-color: var(--c-btn-border);
+}
+
+/* Rodapé fixo no fim da tela: versão + aviso de fan-game não-comercial. */
+.footer {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 16px 22px;
+  text-align: center;
+}
+
+.version {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  color: var(--c-hud-muted);
+}
+
+.disclaimer {
+  margin: 0;
+  max-width: 620px;
+  font-family: var(--font-text);
+  font-size: 15px;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.72);
+}

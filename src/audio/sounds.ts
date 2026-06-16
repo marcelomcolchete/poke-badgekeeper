@@ -74,6 +74,46 @@ export function subscribeMuted(listener: () => void): () => void {
   return () => listeners.delete(listener)
 }
 
+// --- Volume mestre (0–1, persistido) — multiplica o VOLUME por som ----------------------
+
+const VOLUME_KEY = 'pbk.volume'
+const volumeListeners = new Set<() => void>()
+
+function readInitialVolume(): number {
+  try {
+    const raw = localStorage.getItem(VOLUME_KEY)
+    if (raw === null) return 1
+    const v = Number(raw)
+    return Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 1
+  } catch {
+    return 1
+  }
+}
+
+let masterVolume = readInitialVolume()
+
+export function getVolume(): number {
+  return masterVolume
+}
+
+export function setVolume(value: number): void {
+  const next = Math.min(1, Math.max(0, value))
+  if (next === masterVolume) return
+  masterVolume = next
+  try {
+    localStorage.setItem(VOLUME_KEY, String(next))
+  } catch {
+    /* localStorage indisponível — segue só em memória */
+  }
+  for (const l of volumeListeners) l()
+}
+
+/** Assina mudanças de volume (para useSyncExternalStore no slider). */
+export function subscribeVolume(listener: () => void): () => void {
+  volumeListeners.add(listener)
+  return () => volumeListeners.delete(listener)
+}
+
 // --- Player -----------------------------------------------------------------------------
 
 // Um elemento "base" por som, pré-carregado. Cada disparo clona o nó para permitir
@@ -97,7 +137,7 @@ export function playSound(key: SoundKey): void {
   const base = getBase(key)
   if (!base) return
   const node = base.cloneNode() as HTMLAudioElement
-  node.volume = VOLUME[key]
+  node.volume = VOLUME[key] * masterVolume
   void node.play().catch(() => {
     /* autoplay bloqueado ou arquivo ausente — ignora */
   })

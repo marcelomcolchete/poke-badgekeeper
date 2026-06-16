@@ -7,6 +7,7 @@ import { clearSave } from './persistence/saveLoad.ts'
 import { pendingPoints } from './engine/leveling.ts'
 import { useGameState } from './game/useGameState.ts'
 import { useGameClock } from './game/useGameClock.ts'
+import { HomeScreen } from './components/screens/HomeScreen.tsx'
 import { CitySelectScreen } from './components/screens/CitySelectScreen.tsx'
 import { NewGameScreen } from './components/screens/NewGameScreen.tsx'
 import { MorningScreen } from './components/screens/MorningScreen.tsx'
@@ -47,6 +48,8 @@ export default function App() {
   const [state, dispatch] = useGameState(freshState)
   const [uiPaused, setUiPaused] = useState(false)
   const [cityChosen, setCityChosen] = useState(false)
+  // Menu principal antes de qualquer fluxo de jogo; "Modo História" entra no jogo.
+  const [started, setStarted] = useState(false)
 
   const needsSetup = state.gym.types.length === 0
   // Pokémon do jogador esperando alocação de level-up (modal imediato, PLAN §4.1).
@@ -66,8 +69,11 @@ export default function App() {
   return (
     <div className={styles.app} onClickCapture={handleClickSound}>
       <MuteButton />
-      <div className={styles.frame}>
-        {needsSetup ? (
+      {!started ? (
+        <HomeScreen onPlayStory={() => setStarted(true)} />
+      ) : (
+        <div className={styles.frame}>
+          {needsSetup ? (
           cityChosen ? (
             <NewGameScreen state={state} dispatch={dispatch} />
           ) : (
@@ -84,10 +90,11 @@ export default function App() {
           <SummaryScreen state={state} dispatch={dispatch} onRestart={restart} />
         ) : state.run.phase === 'DAY' ? (
           <DayScreen state={state} dispatch={dispatch} onRestart={restart} onPauseChange={setUiPaused} />
-        ) : (
-          <MorningScreen state={state} dispatch={dispatch} />
-        )}
-      </div>
+          ) : (
+            <MorningScreen state={state} dispatch={dispatch} />
+          )}
+        </div>
+      )}
       {levelingUp && <LevelUpModal pokemon={levelingUp} dispatch={dispatch} />}
     </div>
   )
