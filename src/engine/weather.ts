@@ -4,7 +4,7 @@
 // replaneja/espera das missões determinístico e barato (ver game/missionFlow.ts).
 //
 // Modelo da chuva (Cerulean):
-// - Cada dia tem uma % de CHANCE (somando ~200% nos dias 3–10, variada e reproduzível).
+// - Cada dia tem uma % de CHANCE (somando ~400% nos dias 3–10, variada e reproduzível).
 // - maxTimes(dia) chuvas POTENCIAIS são agendadas em janelas que não se sobrepõem; cada uma
 //   OCORRE se um sorteio vs a chance do dia passar. Dias 1 e 2 nunca têm clima.
 // - Cada chuva dura 30–50s e cria 1–3 poças em segundos aleatórios. A poça nasce nível 1 e
@@ -22,7 +22,7 @@ import { clamp } from './math.ts'
 /** Primeiro dia em que pode haver clima (dias 1 e 2 nunca têm). */
 export const WEATHER_FIRST_ELIGIBLE_DAY = 3
 /** Orçamento de chance somado entre os 8 dias elegíveis (3–10). */
-export const RAIN_CHANCE_TOTAL_PERCENT = 200
+export const RAIN_CHANCE_TOTAL_PERCENT = 400
 /** Duração de um evento de chuva (ms de jogo). */
 export const RAIN_EVENT_MIN_MS = 30_000
 export const RAIN_EVENT_MAX_MS = 50_000
