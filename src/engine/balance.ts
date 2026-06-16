@@ -135,15 +135,16 @@ export const GYM_XP_PER_BATTLE_POWER = 0.5
 export const GYM_XP_CAP_PER_WIN = 30
 
 /**
- * Pool ponderado das categorias sorteadas a cada dia (museu é especial, fora daqui).
- * Áreas verdes e casas geram os 6 tipos normais; centro/mart geram as especiais.
- * Centro (Pokecenter) e mart (Pokemart) aparecem no MÁXIMO 1×/dia cada (ver timeline).
+ * Pool ponderado das categorias sorteadas a cada dia (Rocket é especial, fora daqui).
+ * As CASAS geram os 6 tipos normais; centro/mart geram as especiais. As áreas verdes NÃO
+ * geram mais missão — são exclusivamente spots de captura (3.x). Centro (Pokecenter) e mart
+ * (Pokemart) aparecem no MÁXIMO 1×/dia cada (ver timeline).
  */
 export const DAILY_CATEGORY_POOL: MissionCategory[] = [
-  'freeArea',
-  'freeArea',
-  'freeArea',
-  'freeArea',
+  'house',
+  'house',
+  'house',
+  'house',
   'house',
   'house',
   'center',
@@ -152,10 +153,10 @@ export const DAILY_CATEGORY_POOL: MissionCategory[] = [
 
 /** Pool só com categorias normais (sem especiais) — usado p/ realocar center/mart excedentes. */
 export const NORMAL_CATEGORY_POOL: MissionCategory[] = [
-  'freeArea',
-  'freeArea',
-  'freeArea',
-  'freeArea',
+  'house',
+  'house',
+  'house',
+  'house',
   'house',
   'house',
 ]

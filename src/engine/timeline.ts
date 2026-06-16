@@ -176,13 +176,17 @@ export function buildDaySchedule(seed: number, day: number, city: CityData): Day
     }),
   )
 
-  // 2) Missão EXTRA da Equipe Rocket: 2× na run, em dias sorteados; nasce no antigo ponto do
-  //    museu e entra no rateio dos 3 momentos como as demais (PLAN — Rocket Team).
+  // 2) Missão EXTRA da Equipe Rocket: 2× na run, em dias sorteados (distintos, nunca no mesmo
+  //    dia). O ponto segue a ORDEM de aparição: a 1ª (dia mais cedo) nasce em museum[0], a 2ª
+  //    em museum[1] — em Cerulean, 5.2 e depois 5.1. Cidades com um só ponto Rocket colapsam
+  //    no índice 0. Entra no rateio dos 3 momentos como as demais (PLAN — Rocket Team).
   if (rocketDays(seed).includes(day)) {
+    const rocketSites = Math.max(1, nodesForCategory(city.siteNodes, 'rocket').length)
+    const order = rocketDays(seed).indexOf(day)
     specs.push({
       seed: rng.int(0, 0x7fffffff),
       category: 'rocket',
-      siteIndex: 0,
+      siteIndex: Math.min(order, rocketSites - 1),
       templateId: 'rocket',
     })
   }

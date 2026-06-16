@@ -129,7 +129,7 @@ export function templatesForCategory(category: MissionCategory): MissionTemplate
     case 'rocket':
       return [ROCKET_TEAM_TEMPLATE]
     default:
-      // 'freeArea' e 'house' → tipos normais.
+      // 'house' (e o legado 'freeArea') → tipos normais.
       return NORMAL_TEMPLATES
   }
 }
