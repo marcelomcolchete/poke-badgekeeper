@@ -82,6 +82,7 @@ export function readySearch(s: GameState, search: CaptureSearch): void {
     spotIndex: search.spotIndex,
     level: encounter.level,
     candidateSpeciesIds: encounter.candidates.map((c) => c.id),
+    candidateLevels: encounter.levels,
     candidateSeeds: encounter.candidates.map(() => seedRng.int(0, 0x7fffffff)),
     rankWindow,
   })
@@ -146,10 +147,12 @@ export function capturePick(s: GameState, searcherId: string, candidateIndex: nu
   // Recria o candidato a partir do seed do encontro (preview = captura); saves antigos
   // sem candidateSeeds caem no RNG da run.
   const seed = encounter.candidateSeeds?.[candidateIndex]
+  // Nível REAL do candidato escolhido (saves antigos sem candidateLevels caem no nível base).
+  const level = encounter.candidateLevels?.[candidateIndex] ?? encounter.level
   const caught = createPokemon({
     id,
     speciesId,
-    level: encounter.level,
+    level,
     rng: seed !== undefined ? createRng(seed) : takeRng(s),
     rankWindow: encounter.rankWindow,
   })
@@ -183,12 +186,23 @@ export function withdrawPokemon(s: GameState, pokemonId: string): void {
   s.roster = [...s.roster, { ...mon, status: 'idle' }]
 }
 
-/** Define o apelido de um Pokémon (vazio = volta a usar o nome da espécie) — PLAN §4.5. */
+/**
+ * Define o apelido de um Pokémon (vazio = volta a usar o nome da espécie) — PLAN §4.5.
+ * Procura no time E no Computador (PC): capturas com o time cheio vão pro `box`, e renomear
+ * só o roster fazia o apelido escolhido se perder (findMon/replaceMon olham só o roster).
+ */
 export function renamePokemon(s: GameState, pokemonId: string, nickname: string): void {
-  const mon = findMon(s, pokemonId)
-  if (!mon) return
   const trimmed = nickname.trim().slice(0, 16)
-  replaceMon(s, { ...mon, nickname: trimmed.length > 0 ? trimmed : null })
+  const next = trimmed.length > 0 ? trimmed : null
+  const inRoster = s.roster.find((p) => p.id === pokemonId)
+  if (inRoster) {
+    replaceMon(s, { ...inRoster, nickname: next })
+    return
+  }
+  const inBox = s.box.find((p) => p.id === pokemonId)
+  if (inBox) {
+    s.box = s.box.map((p) => (p.id === pokemonId ? { ...p, nickname: next } : p))
+  }
 }
 
 /** Não pega nenhum: encerra a área do dia e traz o procurador de volta — PLAN §4.5. */

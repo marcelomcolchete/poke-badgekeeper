@@ -36,34 +36,66 @@
   font-style: italic;
 }
 
+/* Bloco da Habilidade Secreta — paleta do jogo (creme/verde) com acento dourado de "raro". */
 .secret {
   display: flex;
   flex-direction: column;
   gap: 8px;
   padding: 8px;
-  border-radius: 4px;
-  border: 2px solid #f6c945;
-  background: linear-gradient(180deg, #2a2342, #1b1730);
-  box-shadow:
-    inset 0 0 0 1px rgba(246, 201, 69, 0.4),
-    0 0 12px rgba(179, 136, 255, 0.3);
+  border-radius: var(--radius-pixel);
+  border: 3px solid var(--c-hud-accent);
+  background: var(--c-panel);
+  box-shadow: inset 0 0 0 2px rgba(47, 143, 80, 0.18);
 }
 
+/* Cabeçalho: ícone + (rótulo pequeno / NOME em destaque) + progresso X/3. */
 .secretHead {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-family: var(--font-pixel);
-  font-size: 9px;
-  color: #ffd86b;
-  text-transform: uppercase;
+  gap: 8px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--c-panel-border);
 }
 
 .secretIcon {
-  font-size: 12px;
+  font-size: 16px;
+  line-height: 1;
 }
 
-/* As três medalhas (Bronze/Prata/Ouro) empilhadas — a ativa em destaque, as não atingidas esmaecidas. */
+.secretHeadText {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+
+.secretKicker {
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--c-ink-muted);
+}
+
+.secretName {
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  color: var(--c-ink);
+}
+
+.secretProgress {
+  flex: none;
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--c-ink);
+  background: var(--c-hud-accent);
+  border: 2px solid var(--c-ink);
+  border-radius: 999px;
+  padding: 3px 7px;
+}
+
+/* As três linhas de nível (Bronze/Prata/Ouro) empilhadas — a ativa em destaque, as travadas esmaecidas. */
 .secretTiers {
   display: flex;
   flex-direction: column;
@@ -75,70 +107,66 @@
 
 .secretTier {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 8px;
   padding: 6px 8px;
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(0, 0, 0, 0.25);
+  border-radius: var(--radius-pixel);
+  border: 2px solid var(--c-panel-border);
+  background: rgba(47, 143, 80, 0.06);
 }
 
-/* Nível ATIVO (atual) — moldura âmbar e leve brilho. */
+/* Nível ATIVO (atual) — moldura dourada e leve brilho. */
 .secretTierActive {
-  border-color: #ffd86b;
-  background: rgba(246, 201, 69, 0.16);
-  box-shadow: inset 0 0 0 1px rgba(246, 201, 69, 0.5);
+  border-color: var(--c-hud-accent);
+  background: rgba(255, 203, 5, 0.16);
+  box-shadow: inset 0 0 0 1px var(--c-hud-accent);
 }
 
-/* Nível já conquistado, mas abaixo do atual — fica visível porém discreto. */
+/* Nível já conquistado, mas abaixo do atual — visível porém discreto. */
 .secretTierReached {
-  opacity: 0.75;
+  opacity: 0.8;
 }
 
 /* Nível ainda não atingido — esmaecido (mas a descrição fica legível como "prévia"). */
 .secretTierLocked {
-  opacity: 0.45;
+  opacity: 0.5;
 }
 
 .secretTierMedal {
-  font-size: 18px;
+  flex: none;
+  font-size: 20px;
   line-height: 1.1;
 }
 
 .secretTierBody {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.secretTierName {
-  display: flex;
   align-items: center;
   gap: 6px;
-  font-family: var(--font-pixel);
-  font-size: 9px;
-  color: #fff3d6;
-  text-transform: uppercase;
+  flex: 1;
+  min-width: 0;
 }
 
 .secretTierFlag {
+  flex: none;
+  font-family: var(--font-pixel);
   font-size: 7px;
-  padding: 1px 4px;
-  border-radius: 3px;
-  background: #ffd86b;
-  color: #2a2342;
+  padding: 2px 5px;
+  border-radius: 999px;
+  background: var(--c-hud-accent);
+  color: var(--c-ink);
 }
 
 .secretTierDesc {
+  flex: 1;
   font-family: var(--font-text);
-  font-size: 12px;
-  color: #e7e0f6;
+  font-size: 13px;
+  color: var(--c-ink);
   line-height: 1.35;
 }
 
 .secretFoot {
   font-family: var(--font-text);
-  font-size: 11px;
+  font-size: 13px;
   color: var(--c-ink-muted);
   font-style: italic;
 }

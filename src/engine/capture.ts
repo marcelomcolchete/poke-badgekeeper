@@ -98,13 +98,33 @@ export function rollCandidates(
 }
 
 export interface Encounter {
+  /** Nível "base" do dia (referência/fallback de UI); cada candidato tem o seu em `levels`. */
   level: number
   candidates: Species[]
+  /** Nível POR candidato (paralelo a `candidates`) — sorteados independentes (PLAN §4.5, ajuste). */
+  levels: number[]
 }
 
 /**
- * Um encontro: nível (dia ± 1) e os candidatos para escolher (PLAN §4.5). `maxRarityIndex`
- * vem do nível de bola do jogador (0 = só Comum) e limita as raridades que podem surgir.
+ * Um nível por candidato: cada um sorteia dia ± 1 de forma independente, tentando dar níveis
+ * DISTINTOS quando a faixa [1, 10] permitir (os candidatos não aparecem mais sempre no mesmo nível).
+ */
+function rollCandidateLevels(rng: Rng, day: number, n: number): number[] {
+  const out: number[] = []
+  for (let i = 0; i < n; i++) {
+    let level = wildLevel(rng, day)
+    if (out.includes(level)) {
+      const alt = clamp(level + rng.pick([-1, 1]), LEVEL_MIN, LEVEL_MAX)
+      if (!out.includes(alt)) level = alt
+    }
+    out.push(level)
+  }
+  return out
+}
+
+/**
+ * Um encontro: cada candidato com seu próprio nível (dia ± 1) e uma espécie elegível para ELE
+ * (PLAN §4.5). `maxRarityIndex` vem do nível de bola do jogador (0 = só Comum) e limita as raridades.
  */
 export function rollEncounter(
   rng: Rng,
@@ -112,8 +132,21 @@ export function rollEncounter(
   day: number,
   maxRarityIndex: number,
 ): Encounter {
-  const level = wildLevel(rng, day)
-  return { level, candidates: rollCandidates(rng, gymTypes, level, maxRarityIndex) }
+  const levels = rollCandidateLevels(rng, day, CAPTURE_CHOICES)
+  const candidates: Species[] = []
+  const candidateLevels: number[] = []
+  for (const level of levels) {
+    const species = rollOne(rng, gymTypes, level, maxRarityIndex)
+    if (species) {
+      candidates.push(species)
+      candidateLevels.push(level)
+    }
+  }
+  return {
+    level: candidateLevels[0] ?? clamp(day, LEVEL_MIN, LEVEL_MAX),
+    candidates,
+    levels: candidateLevels,
+  }
 }
 
 export interface CaptureSpec {
