@@ -6,12 +6,23 @@
 // herdam o layout de Pewter (placeholder) até a arte ser anotada.
 
 import type { MapPos, MissionCategory, SiteKind, TrainerId } from '../types/index.ts'
-import { CATEGORY_SITE, TRAINER_IDS } from '../types/index.ts'
+import { CATEGORY_SITE } from '../types/index.ts'
 import type { CityData, CityGraph, CitySiteNodes } from './types.ts'
 
-// Classes de treinador que invadem o ginásio (PLAN §4.4). Pewter está calibrada com as 9
-// classes; as demais cidades REPLICAM essa lista por enquanto, até terem elenco próprio.
-const PEWTER_TRAINERS: TrainerId[] = [...TRAINER_IDS]
+// Classes de treinador que invadem o ginásio (PLAN §4.4). Os RIVAIS entram em toda cidade
+// automaticamente (engine/setup), então estas listas guardam só os treinadores PRÓPRIOS da
+// cidade. Cidades sem lista própria herdam a lista genérica (placeholder até terem elenco).
+const GENERIC_TRAINERS: TrainerId[] = ['YOUNGSTER', 'BIRD_KEEPER', 'LASS', 'BROCK', 'HIKER']
+
+// Cerulean (água/gelo): elenco temático próprio. Rivais são adicionados automaticamente.
+const CERULEAN_TRAINERS: TrainerId[] = [
+  'MISTY',
+  'YOUNGSTER',
+  'PICNICKER',
+  'PARASOL_LADY',
+  'FISHERMAN',
+  'POKEFAN',
+]
 
 // Pewter (1.png): grafo calibrado sobre a arte anotada. 17 pontos (a–q); o ginásio é 'j'.
 // Posições normalizadas (0–1) — estimadas da arte e refináveis com o DEV picker do CityMap.
@@ -237,6 +248,8 @@ interface CitySeed {
   starters: CityData['starters']
   graph?: CityGraph
   siteNodes?: CitySiteNodes
+  /** Elenco próprio de invasores (sem rivais — adicionados no setup). Omitido → genérico. */
+  trainers?: TrainerId[]
 }
 
 // Tipos do ginásio fixos (primário + secundário) e DOIS iniciais fixos por cidade
@@ -264,6 +277,7 @@ const SEEDS: CitySeed[] = [
     ],
     graph: CERULEAN_GRAPH,
     siteNodes: CERULEAN_SITE_NODES,
+    trainers: CERULEAN_TRAINERS,
   },
   {
     name: 'Vermilion',
@@ -338,7 +352,7 @@ export const CITIES: CityData[] = SEEDS.map((s, index) => ({
   // Cidades não calibradas herdam o layout de Pewter (placeholder).
   graph: s.graph ?? PEWTER_GRAPH,
   siteNodes: s.siteNodes ?? PEWTER_SITE_NODES,
-  trainers: PEWTER_TRAINERS,
+  trainers: s.trainers ?? GENERIC_TRAINERS,
 }))
 
 export function getCity(index: number): CityData {

@@ -52,16 +52,30 @@ export type Rarity = (typeof RARITIES)[number]
  * define quais aparecem; cada classe tem o seu próprio elenco de Pokémon (data/trainers).
  */
 export const TRAINER_IDS = [
+  // Genéricos.
   'YOUNGSTER',
   'BIRD_KEEPER',
   'LASS',
   'BROCK',
   'HIKER',
+  // Rivais — entram no pool de TODA cidade (ver RIVAL_TRAINER_IDS), além da lista local.
   'BRENDAN',
   'MAY',
   'LEAF',
   'RED',
+  // Cerulean (água/gelo).
+  'MISTY',
+  'PICNICKER',
+  'PARASOL_LADY',
+  'FISHERMAN',
+  'POKEFAN',
 ] as const
+
+/**
+ * Rivais: aparecem no pool de invasores de TODA cidade, independente da lista local da cidade
+ * (anexados no sorteio do dia — engine/setup). Subconjunto de TRAINER_IDS.
+ */
+export const RIVAL_TRAINER_IDS = ['BRENDAN', 'MAY', 'LEAF', 'RED'] as const
 
 /**
  * Treinadores da Equipe Rocket (missão Rocket Team). Ficam FORA do pool de invasores do

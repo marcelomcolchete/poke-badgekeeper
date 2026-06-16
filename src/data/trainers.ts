@@ -20,9 +20,19 @@ export interface TrainerDef {
   id: TrainerId
   /** Nome exibido na seleção e na batalha. */
   displayName: string
-  /** Arte em public/sprites/trainers (PNG com o id da classe). */
+  /** Arte canônica em public/sprites/trainers. */
   spritePath: string
+  /**
+   * Variantes alternativas da arte (ex.: gen3 + gen3rs). Quando presentes, a defesa sorteia
+   * uma entre `spritePath` e estas (semeado pelo dia/defesa — estável dentro do mesmo evento).
+   */
+  altSprites?: string[]
   pool: TrainerPool
+}
+
+/** Todas as artes do treinador (canônica + variantes), para o sorteio da defesa. */
+export function trainerSprites(t: TrainerDef): string[] {
+  return t.altSprites && t.altSprites.length > 0 ? [t.spritePath, ...t.altSprites] : [t.spritePath]
 }
 
 /** Junta várias linhas evolutivas + espécies avulsas numa lista de espécies sem repetição. */
@@ -69,18 +79,38 @@ const EKANS = 23
 const KOFFING = 109
 const DROWZEE = 96
 const CUBONE = 104
+// Espécies dos treinadores de Cerulean (Água/Gelo).
+const STARYU = 120
+const GOLDEEN = 118
+const MAGIKARP = 129
+const PSYDUCK = 54
+const VAPOREON = 134
+const SEEL = 86
+const KRABBY = 98
+const GLOOM = 44
+const TANGELA = 114
+const IVYSAUR = 2
+const JYNX = 124
+const DIGLETT = 50
+const EXEGGCUTE = 102
+const CLOYSTER = 91 // linha do Shellder
+const TENTACOOL = 72
+const POLIWAG = 60
+const HORSEA = 116
 
 const TRAINER_LIST: TrainerDef[] = [
   {
     id: 'YOUNGSTER',
     displayName: 'Jovem',
-    spritePath: '/sprites/trainers/YOUNGSTER.png',
+    spritePath: '/sprites/trainers/gen3/youngster-gen3.png',
+    altSprites: ['/sprites/trainers/gen3/youngster-gen3rs.png'],
     pool: roster(CHARMANDER, BULBASAUR, SQUIRTLE, PIKACHU, EEVEE, RATTATA, PIDGEY, PIDGEOTTO),
   },
   {
     id: 'BIRD_KEEPER',
     displayName: 'Criador de Aves',
-    spritePath: '/sprites/trainers/BIRD_KEEPER.png',
+    spritePath: '/sprites/trainers/gen3/birdkeeper-gen3.png',
+    altSprites: ['/sprites/trainers/gen3/birdkeeper-gen3rs.png'],
     pool: roster(
       evolutionFamily(PIDGEY),
       evolutionFamily(SPEAROW),
@@ -91,7 +121,8 @@ const TRAINER_LIST: TrainerDef[] = [
   {
     id: 'LASS',
     displayName: 'Moça',
-    spritePath: '/sprites/trainers/LASS.png',
+    spritePath: '/sprites/trainers/gen3/lass-gen3.png',
+    altSprites: ['/sprites/trainers/gen3/lass-gen3rs.png'],
     pool: roster(
       PIDGEY,
       RATTATA,
@@ -108,7 +139,7 @@ const TRAINER_LIST: TrainerDef[] = [
   {
     id: 'BROCK',
     displayName: 'Brock',
-    spritePath: '/sprites/trainers/BROCK.png',
+    spritePath: '/sprites/trainers/gen3/brock-gen3.png',
     pool: roster(
       evolutionFamily(GEODUDE),
       ONIX,
@@ -123,7 +154,8 @@ const TRAINER_LIST: TrainerDef[] = [
   {
     id: 'HIKER',
     displayName: 'Montanhista',
-    spritePath: '/sprites/trainers/HIKER.png',
+    spritePath: '/sprites/trainers/gen3/hiker-gen3.png',
+    altSprites: ['/sprites/trainers/gen3/hiker-gen3rs.png'],
     pool: roster(
       evolutionFamily(MACHOP),
       evolutionFamily(GEODUDE),
@@ -135,32 +167,112 @@ const TRAINER_LIST: TrainerDef[] = [
   {
     id: 'BRENDAN',
     displayName: 'Brendan',
-    spritePath: '/sprites/trainers/BRENDAN.png',
+    spritePath: '/sprites/trainers/gen3/brendan-gen3.png',
+    altSprites: ['/sprites/trainers/gen3/brendan-gen3rs.png'],
     pool: { kind: 'rival', lead: PIKACHU },
   },
   {
     id: 'MAY',
     displayName: 'May',
-    spritePath: '/sprites/trainers/MAY.png',
+    spritePath: '/sprites/trainers/gen3/may-gen3.png',
+    altSprites: ['/sprites/trainers/gen3/may-gen3rs.png'],
     pool: { kind: 'rival', lead: SQUIRTLE },
   },
   {
     id: 'LEAF',
     displayName: 'Leaf',
-    spritePath: '/sprites/trainers/LEAF.png',
+    spritePath: '/sprites/trainers/gen3/leaf-gen3.png',
     pool: { kind: 'rival', lead: BULBASAUR },
   },
   {
     id: 'RED',
     displayName: 'Red',
-    spritePath: '/sprites/trainers/RED.png',
+    spritePath: '/sprites/trainers/gen3/red-gen3.png',
     pool: { kind: 'rival', lead: CHARMANDER },
+  },
+  // Treinadores de Cerulean (Água/Gelo).
+  {
+    id: 'MISTY',
+    displayName: 'Misty',
+    spritePath: '/sprites/trainers/gen3/misty-gen3.png',
+    pool: roster(
+      evolutionFamily(STARYU),
+      evolutionFamily(GOLDEEN),
+      evolutionFamily(MAGIKARP),
+      evolutionFamily(PSYDUCK),
+      VAPOREON,
+      evolutionFamily(SEEL),
+      evolutionFamily(SQUIRTLE),
+      evolutionFamily(KRABBY),
+    ),
+  },
+  {
+    id: 'PICNICKER',
+    displayName: 'Campista',
+    spritePath: '/sprites/trainers/gen3/picnicker-gen3.png',
+    altSprites: ['/sprites/trainers/gen3/picnicker-gen3rs.png'],
+    pool: roster(
+      GOLDEEN,
+      CUBONE,
+      evolutionFamily(PIDGEY),
+      ODDISH,
+      GLOOM,
+      BELLSPROUT,
+      JIGGLYPUFF,
+      CLEFAIRY,
+      TANGELA,
+      evolutionFamily(GOLDEEN),
+      BULBASAUR,
+      IVYSAUR,
+    ),
+  },
+  {
+    id: 'PARASOL_LADY',
+    displayName: 'Dama do Guarda-Sol',
+    spritePath: '/sprites/trainers/gen3/parasollady-gen3.png',
+    pool: roster(
+      evolutionFamily(JIGGLYPUFF),
+      JYNX,
+      evolutionFamily(KRABBY),
+      evolutionFamily(DIGLETT),
+      evolutionFamily(EXEGGCUTE),
+      BELLSPROUT,
+      MAGIKARP,
+      GOLDEEN,
+    ),
+  },
+  {
+    id: 'FISHERMAN',
+    displayName: 'Pescador',
+    spritePath: '/sprites/trainers/gen3/fisherman-gen3.png',
+    altSprites: ['/sprites/trainers/gen3/fisherman-gen3rs.png'],
+    pool: roster(
+      evolutionFamily(CLOYSTER),
+      evolutionFamily(GOLDEEN),
+      evolutionFamily(MAGIKARP),
+      evolutionFamily(TENTACOOL),
+      evolutionFamily(POLIWAG),
+      evolutionFamily(STARYU),
+      evolutionFamily(HORSEA),
+    ),
+  },
+  {
+    id: 'POKEFAN',
+    displayName: 'Pokefã',
+    spritePath: '/sprites/trainers/gen3/pokefan-gen3.png',
+    pool: roster(
+      evolutionFamily(PIKACHU),
+      evolutionFamily(CHARMANDER),
+      evolutionFamily(SQUIRTLE),
+      evolutionFamily(BULBASAUR),
+      evolutionFamily(EEVEE),
+    ),
   },
   // Equipe Rocket — NÃO entram no pool de invasores do ginásio (só na missão Rocket Team).
   {
     id: 'ROCKET_TEAM_FEMALE',
     displayName: 'Equipe Rocket',
-    spritePath: '/sprites/trainers/ROCKET_TEAM_FEMALE.png',
+    spritePath: '/sprites/trainers/gen3/teamrocketgruntf-gen3.png',
     pool: roster(
       evolutionFamily(EKANS),
       evolutionFamily(RATTATA),
@@ -172,7 +284,7 @@ const TRAINER_LIST: TrainerDef[] = [
   {
     id: 'ROCKET_TEAM_MALE',
     displayName: 'Equipe Rocket',
-    spritePath: '/sprites/trainers/ROCKET_TEAM_MALE.png',
+    spritePath: '/sprites/trainers/gen3/teamrocketgruntm-gen3.png',
     pool: roster(
       evolutionFamily(KOFFING),
       evolutionFamily(SANDSHREW),

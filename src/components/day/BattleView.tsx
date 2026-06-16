@@ -77,6 +77,8 @@ function clamp01(n: number): number {
 export interface BattleViewProps {
   state: GameState
   trainer: TrainerDef
+  /** Arte sorteada para o evento (sobrepõe trainer.spritePath quando há variantes). */
+  trainerSprite?: string
   /** Esquadrão do jogador, na ordem dos duelos. */
   squadIds: string[]
   enemies: EnemyUnit[]
@@ -94,6 +96,7 @@ export interface BattleViewProps {
 export function BattleView({
   state,
   trainer,
+  trainerSprite,
   squadIds,
   enemies,
   duels,
@@ -167,7 +170,7 @@ export function BattleView({
             Desafiantes ({enemiesDefeated}/{enemies.length} derrotados)
           </span>
           <div className={styles.battleTrainer}>
-            <img className={styles.battleTrainerArt} src={trainer.spritePath} alt={trainer.displayName} />
+            <img className={styles.battleTrainerArt} src={trainerSprite ?? trainer.spritePath} alt={trainer.displayName} />
             <span className={styles.battleTrainerName}>{trainer.displayName}</span>
           </div>
           <div className={styles.battleRow}>

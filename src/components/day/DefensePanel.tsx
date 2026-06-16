@@ -42,6 +42,7 @@ export function DefensePanel({ state, dispatch, defenseId, onClose }: Props) {
       <BattleView
         state={state}
         trainer={getTrainer(defense.trainerId)}
+        trainerSprite={defense.trainerSprite}
         squadIds={defense.squadIds}
         enemies={defense.enemies}
         duels={defense.duels}
@@ -95,7 +96,7 @@ export function DefensePanel({ state, dispatch, defenseId, onClose }: Props) {
             adversário só são revelados na batalha (não no preview). */}
         <div className={`${styles.sideBar} ${styles.attackBar}`}>
           <span className={styles.trainerTag}>
-            <img className={styles.trainerArt} src={trainer.spritePath} alt={trainer.displayName} />
+            <img className={styles.trainerArt} src={defense.trainerSprite ?? trainer.spritePath} alt={trainer.displayName} />
             <span className={styles.trainerName}>{trainer.displayName}</span>
           </span>
           <span className={styles.barLabel}>Desafiante</span>
