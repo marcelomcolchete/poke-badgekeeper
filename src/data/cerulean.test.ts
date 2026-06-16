@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { TOTAL_DAYS } from '../engine/constants.ts'
 import { buildDaySchedule, rocketDays } from '../engine/timeline.ts'
-import { shortestPath } from '../engine/pathfinding.ts'
+import { pathDistance, shortestPath } from '../engine/pathfinding.ts'
 import { getCity, nodesForCategory } from './cities.ts'
 
 const CERULEAN = getCity(1)
@@ -73,6 +73,18 @@ describe('Cerulean (cidade 2)', () => {
       expect(shortestPath(graph, siteNodes.gym, node).length, `u→${node}`).toBeGreaterThan(0)
       expect(shortestPath(graph, node, siteNodes.gym).length, `${node}→u`).toBeGreaterThan(0)
     }
+  })
+
+  it('a volta NÃO é o reverso da ida quando há mão única (k→t→u é mais curto)', () => {
+    // Ida ao spot 3.2 (g32, acesso por 'k'): o longo trajeto que evita t→k (inexistente).
+    const out = shortestPath(graph, siteNodes.gym, 'g32')
+    const back = shortestPath(graph, 'g32', siteNodes.gym)
+    expect(out[out.length - 1]).toBe('g32')
+    expect(back[back.length - 1]).toBe('u')
+    // A volta usa a aresta de mão única k→t→u — não é só a ida invertida, e é mais curta.
+    expect(back).not.toEqual([...out].reverse())
+    expect(back).toEqual(['g32', 'k', 't', 'u'])
+    expect(pathDistance(graph, back)).toBeLessThan(pathDistance(graph, out))
   })
 
   it('a missão Rocket nasce em 5.2 (x) primeiro e em 5.1 (m) depois', () => {

@@ -169,7 +169,8 @@ function missionTravelerPos(graph: CityGraph, m: MissionInstance, now: number): 
     return pointAlongPath(graph, m.path, elapsedFraction(now, m.acceptedAtMs, m.arriveAtMs))
   }
   if (m.status === 'returning' && m.resolveAtMs !== null && m.returnEndsAtMs !== null) {
-    const back = [...m.path].reverse()
+    // Volta pela rota própria (respeita mão única); saves antigos caem no reverso da ida.
+    const back = m.returnPath ?? [...m.path].reverse()
     return pointAlongPath(graph, back, elapsedFraction(now, m.resolveAtMs, m.returnEndsAtMs))
   }
   return null
@@ -207,7 +208,10 @@ function MapTravelers({ state, graph, now }: { state: GameState; graph: CityGrap
         )
       })}
       {state.captureReturns.map((r) => {
-        const pos = pointAlongPath(graph, [...r.path].reverse(), elapsedFraction(now, r.departAtMs, r.arriveAtMs))
+        // r.path agora é ponto→ginásio (volta real). Saves antigos guardavam ginásio→ponto:
+        // detecta a orientação pelo 1º id (== r.node → já é a volta; senão inverte).
+        const back = r.path[0] === r.node ? r.path : [...r.path].reverse()
+        const pos = pointAlongPath(graph, back, elapsedFraction(now, r.departAtMs, r.arriveAtMs))
         return (
           <TravelerGroup key={`r-${r.searcherId}`} pos={pos} ids={[r.searcherId]} roster={state.roster} flying={r.flying} />
         )

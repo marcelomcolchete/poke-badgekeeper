@@ -77,8 +77,14 @@ export interface MissionInstance {
   secondaryAttr?: AttrKey | null
   /** Ponto do grafo onde a missão surge — define o trajeto desde o ginásio (PLAN §3.1). */
   node: string
-  /** Caminho ginásio→ponto (ids), calculado ao aceitar; a volta é o reverso. Voo = reta. */
+  /** Caminho ginásio→ponto (ids da ida), calculado ao aceitar. Voo = reta. */
   path: string[]
+  /**
+   * Caminho ponto→ginásio (ids da VOLTA), calculado ao aceitar. NÃO é só o reverso da ida:
+   * respeita arestas de mão única (ex.: voltar de 'k' por k→t→u, mais curto). Ausente em
+   * saves antigos → cai no reverso de `path`. Voo = reta.
+   */
+  returnPath?: string[]
   /** Time voando (Fly + sozinho): rota em linha reta e símbolo de voo no mapa — PLAN §4.3. */
   flying?: boolean
   /** Momento (ms de jogo) em que aparece no mapa. */
@@ -167,7 +173,7 @@ export interface CaptureSearch {
   spotIndex: number
   /** Ponto da grama (do grafo) — define o trajeto desde o ginásio. */
   node: string
-  /** Caminho ginásio→ponto (ida); a volta é o reverso. Voo (Fly + sozinho) = linha reta. */
+  /** Caminho ginásio→ponto (ida). A volta é uma rota própria (CaptureReturn). Voo = linha reta. */
   path: string[]
   /** Procurador voando (Fly): rota em linha reta e símbolo de voo no mapa — PLAN §4.3. */
   flying?: boolean
@@ -189,6 +195,7 @@ export interface CaptureReturn {
   /** Capturou alguém nesta exploração? Define o ícone ✓/✗ do marcador na volta (#6). */
   captured: boolean
   node: string
+  /** Caminho ponto→ginásio (volta REAL; respeita arestas de mão única, ex.: k→t→u). Voo = reta. */
   path: string[]
   /** Procurador voando (Fly): rota em linha reta e símbolo de voo no mapa — PLAN §4.3. */
   flying?: boolean

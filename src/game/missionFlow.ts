@@ -97,9 +97,13 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
   const template = getMissionTemplate(mission.templateId)
   const now = s.clock.dayElapsedMs
   const graph = graphWithTunnel(city.graph, s.today.digTunnel)
-  const { flying, path, distance } = travelRoute(graph, city.siteNodes.gym, mission.node, team)
+  // Ida e VOLTA calculadas separadamente: com arestas de mão única (ex.: k→t) a volta NÃO é o
+  // reverso da ida (PLAN §3.1). Em grafos simétricos as duas rotas/distâncias coincidem.
+  const outbound = travelRoute(graph, city.siteNodes.gym, mission.node, team)
+  const inbound = travelRoute(graph, mission.node, city.siteNodes.gym, team)
   const speedMult = teamTravelSpeedMultiplier(team, s.today.secretRuntime, s.runItems)
-  const oneWay = graphTravelMs(distance, team, speedMult)
+  const outMs = graphTravelMs(outbound.distance, team, speedMult)
+  const inMs = graphTravelMs(inbound.distance, team, speedMult)
   const execution = executionMs(team, template.baseExecutionMs)
   const ctx: MissionSecretCtx = {
     team,
@@ -109,13 +113,14 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
   }
 
   mission.teamIds = team.map((p) => p.id)
-  mission.path = path
-  mission.flying = flying
+  mission.path = outbound.path
+  mission.returnPath = inbound.path
+  mission.flying = outbound.flying
   mission.status = 'traveling'
   mission.acceptedAtMs = now
-  mission.arriveAtMs = now + oneWay
-  mission.resolveAtMs = now + oneWay + execution
-  mission.returnEndsAtMs = now + oneWay + execution + oneWay
+  mission.arriveAtMs = now + outMs
+  mission.resolveAtMs = now + outMs + execution
+  mission.returnEndsAtMs = now + outMs + execution + inMs
   mission.pSuccess = missionSuccessProbabilityCtx(ctx, mission.requirement)
   for (const p of team) replaceMon(s, { ...p, status: 'traveling' })
 }
