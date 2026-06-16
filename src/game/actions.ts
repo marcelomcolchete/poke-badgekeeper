@@ -5,6 +5,8 @@ import type { AttrKey, GameSpeed } from '../types/index.ts'
 import type { StarterPick } from './setup.ts'
 
 export type GameAction =
+  /** Escolhe a cidade de Kanto (grava o índice na run antes do novo jogo) — PLAN §3. */
+  | { type: 'SELECT_CITY'; cityIndex: number }
   /**
    * Inicia a run: os tipos do ginásio são fixos da cidade; o roster vem das versões
    * escolhidas dos iniciais fixos (espécie + nível + seed do roll) — PLAN §3.
