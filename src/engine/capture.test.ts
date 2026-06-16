@@ -79,13 +79,15 @@ describe('rollCandidates / rollEncounter (PLAN §4.5)', () => {
     }
   })
 
-  it('rollEncounter casa nível e candidatos elegíveis', () => {
+  it('rollEncounter dá um nível por candidato e cada espécie é elegível para o SEU nível', () => {
     const enc = rollEncounter(createRng(11), GYM_TYPES, 7, ALL_RARITIES)
-    expect(enc.level).toBeGreaterThanOrEqual(LEVEL_MIN)
-    expect(enc.level).toBeLessThanOrEqual(LEVEL_MAX)
-    for (const s of enc.candidates) {
-      expect(enc.level).toBeGreaterThanOrEqual(s.minWildLevel)
-    }
+    expect(enc.levels).toHaveLength(enc.candidates.length)
+    enc.candidates.forEach((s, i) => {
+      const level = enc.levels[i]!
+      expect(level).toBeGreaterThanOrEqual(LEVEL_MIN)
+      expect(level).toBeLessThanOrEqual(LEVEL_MAX)
+      expect(level).toBeGreaterThanOrEqual(s.minWildLevel) // elegível para o próprio nível
+    })
   })
 })
 

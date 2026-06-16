@@ -68,10 +68,18 @@ export function MemberDetail({ state, dispatch, pokemonId, onClose }: Props) {
 
         {secret && (
           <div className={styles.secret}>
-            <span className={styles.secretHead}>
+            {/* Cabeçalho: o NOME da habilidade em destaque (sem citar Bronze/Prata/Ouro —
+                a medalha de cada linha já indica o nível). */}
+            <div className={styles.secretHead}>
               <span className={styles.secretIcon}>{secretLevel > 0 ? '✦' : '🔒'}</span>
-              Habilidade Secreta — {secretLevel > 0 ? secret.name : '? ? ?'}
-            </span>
+              <span className={styles.secretHeadText}>
+                <span className={styles.secretKicker}>Habilidade Secreta</span>
+                <span className={styles.secretName}>{secretLevel > 0 ? secret.name : '???'}</span>
+              </span>
+              <span className={styles.secretProgress}>
+                {secretLevel}/{SECRET_MAX_LEVEL}
+              </span>
+            </div>
             <ul className={styles.secretTiers}>
               {secretTiers.map((tier) => {
                 const reached = secretLevel >= tier
@@ -86,13 +94,17 @@ export function MemberDetail({ state, dispatch, pokemonId, onClose }: Props) {
                   .join(' ')
                 return (
                   <li key={tier} className={tierClass}>
-                    <span className={styles.secretTierMedal}>{SECRET_MEDAL[tier]}</span>
+                    {/* A medalha carrega o nível (Bronze/Prata/Ouro) só como rótulo acessível. */}
+                    <span
+                      className={styles.secretTierMedal}
+                      title={SECRET_TIER_LABEL[tier]}
+                      aria-label={SECRET_TIER_LABEL[tier]}
+                    >
+                      {SECRET_MEDAL[tier]}
+                    </span>
                     <span className={styles.secretTierBody}>
-                      <span className={styles.secretTierName}>
-                        {SECRET_TIER_LABEL[tier]}
-                        {active && <span className={styles.secretTierFlag}>ATIVA</span>}
-                      </span>
                       <span className={styles.secretTierDesc}>{secret.levels[tier - 1]}</span>
+                      {active && <span className={styles.secretTierFlag}>ATIVA</span>}
                     </span>
                   </li>
                 )

@@ -207,8 +207,11 @@ export interface CaptureReturn {
 export interface CaptureEncounter {
   searcherId: string
   spotIndex: number
+  /** Nível "base" do dia (fallback de UI/saves antigos); o nível real é por candidato. */
   level: number
   candidateSpeciesIds: number[]
+  /** Nível POR candidato (paralelo a `candidateSpeciesIds`). Ausente em saves antigos → usa `level`. */
+  candidateLevels?: number[]
   /** Seed estável por candidato: preview = Pokémon capturado (natureza, IVs/rank) — §4.5. */
   candidateSeeds: number[]
   /**

@@ -374,6 +374,53 @@
   text-align: center;
 }
 
+/* Nível do candidato (canto superior direito, simétrico ao rank). */
+.encLevel {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  line-height: 1;
+  color: var(--c-ink);
+  background: var(--c-hud-accent);
+  border: 2px solid var(--c-ink);
+  border-radius: 5px;
+  padding: 3px 5px;
+}
+
+/* Natureza: nome + atributo favorecido (verde +) e penalizado (vermelho −). */
+.encNature {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 5px;
+  font-family: var(--font-text);
+  font-size: 13px;
+}
+
+.encNatureName {
+  color: var(--c-ink-muted);
+}
+
+.encNatureUp {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: #2f8f3f;
+}
+
+.encNatureDown {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: #e05050;
+}
+
+.encNatureNeutral {
+  color: var(--c-ink-muted);
+  font-style: italic;
+}
+
 .encTypes {
   display: flex;
   gap: 4px;

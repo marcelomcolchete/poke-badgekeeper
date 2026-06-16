@@ -63,13 +63,18 @@ export function RenameModal({ pokemon, dispatch, onDone, note }: Props) {
           />
         </label>
 
+        {/* Um botão só: vazio = "Manter nome" (ghost); ao digitar vira "Confirmar apelido"
+            (destaque), e apagar o texto volta ao estado anterior. */}
         <div className={styles.actions}>
-          <button type="button" className={styles.ghost} data-sound="deselect" onClick={onDone}>
-            Manter nome
-          </button>
-          <button type="button" className={styles.primary} onClick={confirm} disabled={!name.trim()}>
-            Confirmar apelido
-          </button>
+          {name.trim() ? (
+            <button type="button" className={styles.primary} data-sound="select" onClick={confirm}>
+              Confirmar apelido
+            </button>
+          ) : (
+            <button type="button" className={styles.ghost} data-sound="deselect" onClick={onDone}>
+              Manter nome
+            </button>
+          )}
         </div>
       </div>
     </Overlay>
