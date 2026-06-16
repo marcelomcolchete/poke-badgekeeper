@@ -12,6 +12,7 @@ import {
   rainChanceForDay,
   type PuddleSpec,
   type WeatherSchedule,
+  RAIN_CHANCE_TOTAL_PERCENT,
   RAIN_EVENT_MAX_MS,
   RAIN_EVENT_MIN_MS,
   RAIN_GAP_MS,
@@ -53,7 +54,7 @@ describe('determinismo', () => {
 })
 
 describe('rainChanceForDay', () => {
-  it('cada dia elegível (3–10) fica em [0,100] e a soma fica perto de 200', () => {
+  it('cada dia elegível (3–10) fica em [0,100] e a soma fica perto do orçamento', () => {
     for (const seed of SEEDS) {
       let sum = 0
       for (let day = 3; day <= 10; day++) {
@@ -62,13 +63,13 @@ describe('rainChanceForDay', () => {
         expect(c).toBeLessThanOrEqual(100)
         sum += c
       }
-      // Arredondamento + clamp podem desviar um pouco do orçamento de 200%.
-      expect(sum).toBeGreaterThan(180)
-      expect(sum).toBeLessThan(220)
+      // Arredondamento + clamp (cada dia ≤ 100%) podem desviar um pouco do orçamento total.
+      expect(sum).toBeGreaterThan(RAIN_CHANCE_TOTAL_PERCENT - 80)
+      expect(sum).toBeLessThanOrEqual(RAIN_CHANCE_TOTAL_PERCENT + 8)
     }
   })
 
-  it('há variedade entre os dias (não é tudo igual a 25%)', () => {
+  it('há variedade entre os dias (não é tudo igual à média)', () => {
     const values = Array.from({ length: 8 }, (_, i) => rainChanceForDay(424242, i + 3))
     expect(new Set(values).size).toBeGreaterThan(1)
   })
