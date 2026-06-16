@@ -105,7 +105,9 @@ function startReturn(s: GameState, searcherId: string, spotIndex: number, captur
   const city = getCity(s.run.cityIndex)
   const node = s.captureSpots[spotIndex] ?? city.siteNodes.gym
   const graph = graphWithTunnel(city.graph, s.today.digTunnel)
-  const { flying, path, distance } = travelRoute(graph, city.siteNodes.gym, node, [searcher])
+  // Volta = rota REAL do ponto até o ginásio (não o reverso da ida): com arestas de mão única
+  // (ex.: voltar de 'k' por k→t→u) o caminho/tempo da volta diferem da ida (PLAN §3.1).
+  const { flying, path, distance } = travelRoute(graph, node, city.siteNodes.gym, [searcher])
   const speedMult = teamTravelSpeedMultiplier([searcher], s.today.secretRuntime, s.runItems)
   const oneWay = graphTravelMs(distance, [searcher], speedMult)
   const now = s.clock.dayElapsedMs
