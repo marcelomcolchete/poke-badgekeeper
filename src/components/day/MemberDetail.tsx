@@ -17,7 +17,13 @@ import { effectiveAttr, perPointGain } from '../../engine/attributes.ts'
 import { pendingPoints } from '../../engine/leveling.ts'
 import { PokemonCard } from '../PokemonCard/PokemonCard.tsx'
 import { Overlay } from '../common/Overlay.tsx'
-import { ATTR_SHORT_PT, SECRET_MEDAL } from '../common/visual.ts'
+import {
+  ATTR_SHORT_PT,
+  SECRET_MEDAL,
+  SECRET_MEDAL_COLOR,
+  SECRET_MEDAL_INK,
+  SECRET_TIER_LABEL,
+} from '../common/visual.ts'
 import { displayNameOf } from '../common/naming.ts'
 import styles from './MemberDetail.module.css'
 
@@ -75,6 +81,7 @@ export function MemberDetail({ state, dispatch, pokemonId, onClose }: Props) {
               {secretLine.map((id, i) => {
                 const kind = SECRET_KINDS[id]
                 const unlocked = i < secretCount
+                const tier = i + 1 // 1 = Bronze, 2 = Prata, 3 = Ouro
                 const tierClass = [
                   styles.secretTier,
                   unlocked ? styles.secretTierReached : styles.secretTierLocked,
@@ -82,13 +89,28 @@ export function MemberDetail({ state, dispatch, pokemonId, onClose }: Props) {
                   .filter(Boolean)
                   .join(' ')
                 return (
-                  <li key={`${id}-${i}`} className={tierClass}>
-                    <span className={styles.secretTierMedal}>{SECRET_MEDAL[i + 1]}</span>
+                  <li
+                    key={`${id}-${i}`}
+                    className={tierClass}
+                    // Borda da linha na cor da medalha (bronze/prata/ouro) quando desbloqueada.
+                    style={unlocked ? { borderColor: SECRET_MEDAL_COLOR[tier] } : undefined}
+                  >
+                    <span
+                      className={styles.secretTierMedal}
+                      title={SECRET_TIER_LABEL[tier]}
+                      aria-label={SECRET_TIER_LABEL[tier]}
+                    >
+                      {SECRET_MEDAL[tier]}
+                    </span>
                     <span className={styles.secretTierBody}>
-                      <span className={styles.secretTierName}>
+                      {/* Nome na cor da medalha; "ATIVA" abaixo do nome. */}
+                      <span
+                        className={styles.secretTierName}
+                        style={unlocked ? { color: SECRET_MEDAL_INK[tier] } : undefined}
+                      >
                         {unlocked ? kind.name : '? ? ?'}
-                        {unlocked && <span className={styles.secretTierFlag}>ATIVA</span>}
                       </span>
+                      {unlocked && <span className={styles.secretTierFlag}>ATIVA</span>}
                       <span className={styles.secretTierDesc}>
                         {unlocked ? kind.effect : 'Desbloqueie sendo o Destaque do Dia.'}
                       </span>

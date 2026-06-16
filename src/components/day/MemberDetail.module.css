@@ -36,25 +36,30 @@
   font-style: italic;
 }
 
-/* Bloco da Habilidade Secreta — paleta do jogo (creme/verde) com acento dourado de "raro". */
+/* Bloco das Habilidades Secretas — paleta do jogo (creme/verde); cada linha leva a cor da
+   sua medalha (bronze/prata/ouro). */
 .secret {
   display: flex;
   flex-direction: column;
   gap: 8px;
   padding: 8px;
   border-radius: var(--radius-pixel);
-  border: 3px solid var(--c-hud-accent);
+  border: 3px solid var(--c-panel-border);
   background: var(--c-panel);
   box-shadow: inset 0 0 0 2px rgba(47, 143, 80, 0.18);
 }
 
-/* Cabeçalho: ícone + (rótulo pequeno / NOME em destaque) + progresso X/3. */
+/* Cabeçalho: ícone + "Habilidades Secretas — X/3" (texto na cor do nome do Pokémon). */
 .secretHead {
   display: flex;
   align-items: center;
   gap: 8px;
   padding-bottom: 6px;
   border-bottom: 2px solid var(--c-panel-border);
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--c-ink);
+  text-transform: uppercase;
 }
 
 .secretIcon {
@@ -62,40 +67,7 @@
   line-height: 1;
 }
 
-.secretHeadText {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  flex: 1;
-  min-width: 0;
-}
-
-.secretKicker {
-  font-family: var(--font-pixel);
-  font-size: 7px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--c-ink-muted);
-}
-
-.secretName {
-  font-family: var(--font-pixel);
-  font-size: 12px;
-  color: var(--c-ink);
-}
-
-.secretProgress {
-  flex: none;
-  font-family: var(--font-pixel);
-  font-size: 9px;
-  color: var(--c-ink);
-  background: var(--c-hud-accent);
-  border: 2px solid var(--c-ink);
-  border-radius: 999px;
-  padding: 3px 7px;
-}
-
-/* As três linhas de nível (Bronze/Prata/Ouro) empilhadas — a ativa em destaque, as travadas esmaecidas. */
+/* As três habilidades (Bronze/Prata/Ouro) empilhadas — as travadas ficam esmaecidas. */
 .secretTiers {
   display: flex;
   flex-direction: column;
@@ -107,7 +79,7 @@
 
 .secretTier {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   padding: 6px 8px;
   border-radius: var(--radius-pixel);
@@ -115,19 +87,12 @@
   background: rgba(47, 143, 80, 0.06);
 }
 
-/* Nível ATIVO (atual) — moldura dourada e leve brilho. */
-.secretTierActive {
-  border-color: var(--c-hud-accent);
-  background: rgba(255, 203, 5, 0.16);
-  box-shadow: inset 0 0 0 1px var(--c-hud-accent);
-}
-
-/* Nível já conquistado, mas abaixo do atual — visível porém discreto. */
+/* Habilidade já desbloqueada — visível (a borda recebe a cor da medalha via estilo inline). */
 .secretTierReached {
-  opacity: 0.8;
+  opacity: 1;
 }
 
-/* Nível ainda não atingido — esmaecido (mas a descrição fica legível como "prévia"). */
+/* Habilidade ainda não desbloqueada — esmaecida (descrição legível como "prévia"). */
 .secretTierLocked {
   opacity: 0.5;
 }
@@ -138,26 +103,36 @@
   line-height: 1.1;
 }
 
+/* Corpo da linha: nome, "ATIVA" e descrição empilhados. */
 .secretTierBody {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
   flex: 1;
   min-width: 0;
 }
 
+/* Nome da habilidade — cor da medalha vem do estilo inline (var(--c-ink) quando travada). */
+.secretTierName {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--c-ink);
+  text-transform: uppercase;
+}
+
+/* "ATIVA" abaixo do nome (não estica na linha). */
 .secretTierFlag {
-  flex: none;
+  align-self: flex-start;
   font-family: var(--font-pixel);
   font-size: 7px;
-  padding: 2px 5px;
+  padding: 2px 6px;
   border-radius: 999px;
   background: var(--c-hud-accent);
   color: var(--c-ink);
 }
 
 .secretTierDesc {
-  flex: 1;
   font-family: var(--font-text);
   font-size: 13px;
   color: var(--c-ink);
