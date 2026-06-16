@@ -8,7 +8,7 @@ import type { GameState } from '../../engine/state.ts'
 import type { Pokemon } from '../../types/index.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
 import { getMissionTemplate } from '../../data/missionTemplates.ts'
-import { secretAbilityFor, secretLevelOf, SECRET_TIER_LABEL } from '../../data/secretAbilities.ts'
+import { secretCountOf, SECRET_KINDS, unlockedSecretIds } from '../../data/secretAbilities.ts'
 import { ATTR_MAX, ATTR_PER_POINT, LEVEL_MAX } from '../../engine/constants.ts'
 import { effectiveAttr, perPointGain } from '../../engine/attributes.ts'
 import { addXp, pendingPoints, xpToNext } from '../../engine/leveling.ts'
@@ -128,14 +128,12 @@ export function TeamSidebar({ state, onSelect }: Props) {
           const fainted = mon.currentHp <= 0
           const rank = pokemonRank(mon)
           const willLevelUp = willLevelUpOnReturn(state, mon)
-          // Habilidade Secreta desbloqueada no indivíduo → medalha do nível + tooltip.
-          const secret = secretAbilityFor(mon.speciesId)
-          const secretLevel = secretLevelOf(mon)
-          const secretActive = secretLevel > 0
-          const secretTip =
-            secretActive && secret
-              ? `Habilidade Secreta ATIVA: ${secret.name} (${SECRET_TIER_LABEL[secretLevel]})`
-              : undefined
+          // Habilidades Secretas desbloqueadas no indivíduo → medalha (quantas) + tooltip.
+          const secretCount = secretCountOf(mon)
+          const secretActive = secretCount > 0
+          const secretTip = secretActive
+            ? `Habilidades Secretas: ${unlockedSecretIds(mon).map((id) => SECRET_KINDS[id].name).join(', ')}`
+            : undefined
           const atMax = mon.level >= LEVEL_MAX
           const xpNeeded = xpToNext(mon.level)
           const xpPct = atMax ? 100 : Math.min(100, (mon.xp / xpNeeded) * 100)
@@ -171,9 +169,9 @@ export function TeamSidebar({ state, onSelect }: Props) {
                       {rank}
                     </span>
                     {pending > 0 && <span className={styles.badge}>+{pending}</span>}
-                    {secretActive && secret && (
+                    {secretActive && (
                       <span className={styles.secretBadge} title={secretTip} aria-label={secretTip}>
-                        {SECRET_MEDAL[secretLevel]}
+                        {SECRET_MEDAL[secretCount]}
                       </span>
                     )}
                     {willLevelUp && (

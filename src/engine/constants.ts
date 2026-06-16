@@ -167,6 +167,10 @@ export const DRAFT_CHOICES = 3
  * de exigir descarte. A migração inicia box vazio e caughtSpecies com as espécies do roster atual.
  * v25: bola evolutiva — run.ballLevel (0=nenhuma..4=Masterball) define a raridade-teto dos
  * encontros (Pokébola grátis libera Incomuns) e CaptureEncounter.rankWindow (Percepção→rank).
- * A migração inicia ballLevel 0; encontros antigos sem rankWindow ficam sem limite. */
-export const SAVE_VERSION = 25
+ * A migração inicia ballLevel 0; encontros antigos sem rankWindow ficam sem limite.
+ * v26: Habilidades Secretas viram TRÊS por linha (todas ativas ao mesmo tempo). pokemon.secretLevel
+ * (1 ability/3 níveis) vira pokemon.secretCount (quantas das três desbloqueou); passivas 'secret-*'
+ * e 'sturdy-spent' são removidas; today.digTunnel (1 túnel) vira today.digTunnels (vários). A
+ * migração converte o nível em contagem (mesma quantidade desbloqueada) e limpa o reveal do dia. */
+export const SAVE_VERSION = 26
 export const SAVE_KEY = 'poke-badgekeeper:save'

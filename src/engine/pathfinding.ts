@@ -59,6 +59,18 @@ export function graphWithTunnel(
 }
 
 /**
+ * Grafo do dia com VÁRIOS túneis do Dig (um por Pokémon com a habilidade): aplica cada túnel em
+ * sequência. Túneis podem se sobrepor (sem problema). Lista vazia → devolve o grafo intacto.
+ */
+export function graphWithTunnels(
+  graph: CityGraph,
+  tunnels: readonly (readonly string[])[] | null | undefined,
+): CityGraph {
+  if (!tunnels || tunnels.length === 0) return graph
+  return tunnels.reduce((g, tunnel) => graphWithTunnel(g, tunnel), graph)
+}
+
+/**
  * Menor caminho de `from` até `to` (lista de ids, inclusive as pontas), por Dijkstra com
  * peso = distância euclidiana entre pontos. Desempate alfabético → resultado determinístico.
  * Devolve [] se algum ponto não existe ou se não há caminho.

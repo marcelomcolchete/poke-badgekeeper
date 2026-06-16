@@ -37,7 +37,7 @@ import {
   zeroAttrs,
 } from './attributes.ts'
 import {
-  combatDamageMultiplier,
+  damageTaken,
   teamFlies,
   teamSecretSum,
   type MissionSecretCtx,
@@ -173,8 +173,8 @@ export function resolveMission(
     return { success: true, pSuccess, team: [...team], faintedIds: [] }
   }
   const damage = damageOverride ?? missionFailureDamage(pSuccess, danger)
-  // Weak Armor: dano recebido dobrado.
-  const updated = team.map((p) => applyDamage(p, damage * combatDamageMultiplier(p)))
+  // Weak Armor dobra o dano recebido; Shell Armor reduz para 1.
+  const updated = team.map((p) => applyDamage(p, damageTaken(p, damage)))
   return {
     success: false,
     pSuccess,

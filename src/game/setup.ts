@@ -14,13 +14,11 @@ import { buildDaySchedule, type DefenseSlot } from '../engine/timeline.ts'
 import { createMissionInstance } from '../engine/missions.ts'
 import { enemySquadSizeForDay, generateDefenseEnemies } from '../engine/gymDefense.ts'
 import { createPokemon } from '../engine/leveling.ts'
-import { hasDig } from '../engine/secretEffects.ts'
-import { secretLevelOf } from '../data/secretAbilities.ts'
+import { hasDig, hasDigPlus } from '../engine/secretEffects.ts'
 import { createRng, deriveSeed } from '../engine/rng.ts'
 import {
   DEFENSE_LIFETIME_MS,
-  DIG_GYM_ANCHOR_LEVEL,
-  DIG_HOLES_BY_LEVEL,
+  DIG_HOLES_PER_TUNNEL,
   MISSION_LIFETIME_MS,
 } from '../engine/balance.ts'
 import { DIG_SEED_SALT, TRAINER_SEED_SALT } from '../engine/constants.ts'
@@ -68,32 +66,37 @@ export function setupDay(s: GameState): void {
     .filter((p): p is { node: string; at: number } => p.node !== undefined)
   s.captureSpots = spots.map((p) => p.node)
   s.captureSpotSpawnsAtMs = spots.map((p) => p.at)
-  s.today.digTunnel = computeDigTunnel(s, city)
+  s.today.digTunnels = computeDigTunnels(s, city)
   s.clock.dayElapsedMs = 0
   s.clock.speed = 1
 }
 
 /**
- * Túnel do Dig (Habilidade Secreta do Diglett): se algum Pokémon do roster tem a habilidade,
- * liga N pontos distintos do grafo por baixo da terra hoje. N escala com o MAIOR nível de Dig
- * do roster (2 no Bronze, 3 na Prata/Ouro); no Ouro, um dos pontos é sempre o ginásio.
+ * Túneis do Dig: cada Pokémon do roster com Dig (ou Dig+) abre UM túnel ligando dois pontos do
+ * grafo por baixo da terra hoje. Vários portadores → vários túneis (podem se sobrepor, sem
+ * problema). Dig+ ancora um dos buracos sempre no ginásio. Determinístico (seed do dia + índice).
  */
-function computeDigTunnel(s: GameState, city: CityData): string[] | null {
-  const digLevel = s.roster.reduce((max, p) => (hasDig(p) ? Math.max(max, secretLevelOf(p)) : max), 0)
-  if (digLevel <= 0) return null
+function computeDigTunnels(s: GameState, city: CityData): string[][] {
   const ids = Object.keys(city.graph.nodes)
-  if (ids.length < 2) return null
-  const holes = Math.min(DIG_HOLES_BY_LEVEL[digLevel - 1] ?? 2, ids.length)
-  const rng = createRng(deriveSeed(s.run.seed, DIG_SEED_SALT, s.run.day))
+  if (ids.length < DIG_HOLES_PER_TUNNEL) return []
   const gym = city.siteNodes.gym
-  const anchorGym = digLevel >= DIG_GYM_ANCHOR_LEVEL && ids.includes(gym)
-  // No Ouro o ginásio entra fixo; preenche o resto sorteando pontos distintos.
-  const picked: string[] = anchorGym ? [gym] : []
-  for (const id of rng.shuffle(ids)) {
-    if (picked.length >= holes) break
-    if (!picked.includes(id)) picked.push(id)
+  const tunnels: string[][] = []
+  let diggerIndex = 0
+  for (const p of s.roster) {
+    const dig = hasDig(p)
+    const digPlus = hasDigPlus(p)
+    if (!dig && !digPlus) continue
+    const rng = createRng(deriveSeed(s.run.seed, DIG_SEED_SALT, s.run.day * 100 + diggerIndex))
+    diggerIndex += 1
+    // Dig+ fixa o ginásio como uma das pontas; preenche o resto com pontos distintos sorteados.
+    const picked: string[] = digPlus && ids.includes(gym) ? [gym] : []
+    for (const id of rng.shuffle(ids)) {
+      if (picked.length >= DIG_HOLES_PER_TUNNEL) break
+      if (!picked.includes(id)) picked.push(id)
+    }
+    if (picked.length >= DIG_HOLES_PER_TUNNEL) tunnels.push(picked)
   }
-  return picked.length >= 2 ? picked : null
+  return tunnels
 }
 
 function buildDefense(

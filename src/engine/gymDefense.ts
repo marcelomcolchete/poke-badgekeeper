@@ -24,11 +24,15 @@ import {
 import { DEFENSE_BUFF_BATTLE, GYM_XP_CAP_PER_WIN, GYM_XP_PER_BATTLE_POWER } from './balance.ts'
 import { applyDamage, effectiveAttr } from './attributes.ts'
 import {
-  combatDamageMultiplier,
+  damageTaken,
+  explosionSelfDamage,
+  hasExplosion,
+  hasLightningRod,
+  hasReckless,
   hasSturdy,
+  hustleBattleBonus,
   rivalryBattleBonus,
   rolloutBonusPerWin,
-  sturdyHealsFull,
 } from './secretEffects.ts'
 import { itemBattleMultiplier } from './itemEffects.ts'
 import { attrRank, type Rank } from './ranking.ts'
@@ -176,13 +180,16 @@ export interface ResolveDefenseOpts {
 }
 
 /**
- * Cadeia de duelos 1v1: a frente de cada lado se enfrenta; o perdedor perde 1 HP e
+ * Cadeia de duelos 1v1: a frente de cada lado se enfrenta; o perdedor perde HP e
  * sai (entra o próximo). Acaba quando um lado fica sem Pokémon. Você vence se zerar
  * o adversário antes do seu (PLAN §4.4). Habilidades Secretas no combate:
- *  - Weak Armor dobra o dano recebido; Shell Armor anula (×0).
- *  - Sturdy impede o desmaio (1× no escopo do nível), deixando 1 de vida — ou TODA a vida no Ouro.
+ *  - Weak Armor dobra o dano recebido; Shell Armor reduz o dano recebido a 1.
+ *  - Sturdy impede o desmaio (1×/dia), deixando 1 de vida.
  *  - Rollout: cada vitória SEGUIDA do mesmo lutador soma bônus de Batalha no duelo seguinte.
- *  - Rivalidade (nv2+): bônus de Batalha contra oponente do mesmo gênero.
+ *  - Rivalidade: bônus de Batalha contra oponente do mesmo gênero; Hustle: bônus fixo de Batalha.
+ *  - Lightning Rod: contra um inimigo Elétrico, o portador assume o duelo (vai para a frente).
+ *  - Reckless: ao perder, toma dano e tenta de novo sem passar a vez (até vencer ou desmaiar).
+ *  - Explosion: ao perder, derrota o inimigo e perde metade da vida máxima (pode desmaiar).
  */
 export function resolveDefense(
   rng: Rng,
@@ -198,15 +205,35 @@ export function resolveDefense(
   let yours = 0
   let theirs = 0
   let frontWins = 0 // vitórias seguidas do lutador da frente (Rollout)
+  // Guarda contra laço infinito do Reckless (cada retentativa custa HP, mas é defensivo).
+  let guard = 0
+  const maxIterations = (result.length + enemies.length) * 1000 + 1000
+  const canSturdy = (you: Pokemon): boolean =>
+    hasSturdy(you) && !sturdyUsed.has(you.id) && (opts.sturdyAvailableIds?.has(you.id) ?? false)
+
   while (yours < result.length && theirs < enemies.length) {
-    const you = result[yours] as Pokemon
+    if (++guard > maxIterations) break
     const enemy = enemies[theirs] as EnemyUnit
+    // Lightning Rod: se o inimigo é Elétrico e há um portador no esquadrão à frente da fila,
+    // ele troca de lugar para a frente e assume o duelo (atrai o ataque).
+    if (enemy.types.includes('electric')) {
+      const rod = result.findIndex((p, i) => i >= yours && hasLightningRod(p))
+      if (rod > yours) {
+        const tmp = result[yours] as Pokemon
+        result[yours] = result[rod] as Pokemon
+        result[rod] = tmp
+        frontWins = 0 // novo lutador na frente: zera a sequência do Rollout
+      }
+    }
+    const you = result[yours] as Pokemon
     let yourEff = effectiveBattle(you, enemy.types)
     // Itens passivos (Thick Club p/ Ground, Lagging Tail p/ todos) na Batalha do seu lado.
     yourEff *= itemBattleMultiplier(you, runItems)
     // Rollout: bônus acumulado pelas vitórias seguidas deste mesmo lutador.
     yourEff *= 1 + rolloutBonusPerWin(you) * frontWins
-    // Rivalidade (nv2+): vantagem contra oponente do mesmo gênero.
+    // Hustle: bônus fixo de Batalha em batalhas.
+    yourEff *= 1 + hustleBattleBonus(you)
+    // Rivalidade: vantagem contra oponente do mesmo gênero.
     if (enemy.gender !== undefined && enemy.gender === you.gender) {
       yourEff *= 1 + rivalryBattleBonus(you)
     }
@@ -217,24 +244,38 @@ export function resolveDefense(
     if (youWon) {
       theirs += 1 // o inimigo perde e sai; você permanece na frente
       frontWins += 1
-    } else {
-      const loss = damagePerLoss * combatDamageMultiplier(you)
-      const wouldFaint = you.currentHp - loss <= 0
-      const canSturdy =
-        wouldFaint &&
-        hasSturdy(you) &&
-        !sturdyUsed.has(you.id) &&
-        (opts.sturdyAvailableIds?.has(you.id) ?? false)
-      if (canSturdy) {
-        // Não desmaia: fica com 1 de vida (ou TODA a vida no Ouro).
-        result[yours] = { ...you, currentHp: sturdyHealsFull(you) ? you.maxHp : 1, status: 'idle' }
-        sturdyUsed.add(you.id)
-      } else {
-        result[yours] = applyDamage(you, loss)
-      }
-      yours += 1
-      frontWins = 0 // novo lutador na frente: zera a sequência do Rollout
+      continue
     }
+    // Derrota no duelo. Explosion derrota o inimigo junto e custa metade da vida máxima.
+    if (hasExplosion(you)) {
+      const loss = explosionSelfDamage(you)
+      result[yours] =
+        you.currentHp - loss <= 0 && canSturdy(you)
+          ? (sturdyUsed.add(you.id), { ...you, currentHp: 1, status: 'idle' })
+          : applyDamage(you, loss)
+      theirs += 1 // a explosão leva o inimigo junto
+      yours += 1 // perdeu o duelo: passa a vez mesmo vivo
+      frontWins = 0
+      continue
+    }
+    const loss = damageTaken(you, damagePerLoss)
+    if (you.currentHp - loss <= 0 && canSturdy(you)) {
+      // Não desmaia: fica com 1 de vida, mas perdeu o duelo → passa a vez.
+      result[yours] = { ...you, currentHp: 1, status: 'idle' }
+      sturdyUsed.add(you.id)
+      yours += 1
+      frontWins = 0
+      continue
+    }
+    const damaged = applyDamage(you, loss)
+    result[yours] = damaged
+    // Reckless: se sobreviveu, tenta de novo sem passar a vez (mesmo inimigo).
+    if (hasReckless(you) && damaged.currentHp > 0) {
+      frontWins = 0
+      continue
+    }
+    yours += 1
+    frontWins = 0 // novo lutador na frente: zera a sequência do Rollout
   }
   return { won: theirs >= enemies.length, squad: result, duels, sturdyUsedIds: [...sturdyUsed] }
 }
