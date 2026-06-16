@@ -236,6 +236,42 @@ function migrate(file: Partial<SaveFile>): SaveFile | null {
     version = 25
   }
 
+  // v25 → v26: Habilidades Secretas viram TRÊS por linha. secretLevel → secretCount (mesma
+  // quantidade já desbloqueada), remove passivas 'secret-*'/'sturdy-spent', digTunnel → digTunnels,
+  // e limpa o reveal do dia (formato incompatível).
+  if (version === 25) {
+    const migrateMon = (p: Record<string, unknown>): Record<string, unknown> => {
+      const passives = (p.passives as string[] | undefined) ?? []
+      const hadSecret = passives.some((id) => id.startsWith('secret-'))
+      const level = typeof p.secretLevel === 'number' ? p.secretLevel : hadSecret ? 1 : 0
+      const rest = { ...p }
+      delete rest.secretLevel
+      return {
+        ...rest,
+        passives: passives.filter((id) => !id.startsWith('secret-') && id !== 'sturdy-spent'),
+        secretCount: Math.min(3, Math.max(0, Math.round(level))),
+      }
+    }
+    const mapRoster = (arr: unknown): unknown =>
+      Array.isArray(arr) ? arr.map((p) => migrateMon(p as Record<string, unknown>)) : arr
+    const today = state.today as Record<string, unknown> | undefined
+    const oldTunnel = today?.digTunnel
+    state = {
+      ...state,
+      roster: mapRoster(state.roster),
+      box: mapRoster(state.box),
+      today:
+        today && typeof today === 'object'
+          ? {
+              ...today,
+              digTunnels: Array.isArray(oldTunnel) && oldTunnel.length >= 2 ? [oldTunnel] : [],
+              secretUnlock: null,
+            }
+          : today,
+    } as typeof state
+    version = 26
+  }
+
   if (version !== SAVE_VERSION) return null
   return { version, savedAtMs: (file as SaveFile).savedAtMs, state } as unknown as SaveFile
 }

@@ -1,102 +1,104 @@
-// Efeitos das Habilidades Secretas (linhas de Pedra/Ground) — ponto único da engine.
-// Cada efeito é amarrado pelo id da passiva e só vale se ela estiver DESBLOQUEADA
-// (gravada em pokemon.passives). A INTENSIDADE escala com o nível (1=Bronze, 2=Prata,
-// 3=Ouro), lido de pokemon.secretLevel via secretLevelOf. Funções puras; o estado diário
-// (flags) vem do `SecretRuntime` por Pokémon (s.today.secretRuntime), atualizado pelos fluxos.
+// Efeitos das Habilidades Secretas — ponto único da engine. Cada efeito é amarrado pelo id da
+// habilidade e só vale se ela estiver DESBLOQUEADA no indivíduo (data/secretAbilities.ts →
+// hasSecret, derivado de pokemon.secretCount + a linha). Um Pokémon pode ter até três ativas ao
+// mesmo tempo, e os efeitos se acumulam. Funções puras; o estado diário (flags) vem do
+// `SecretRuntime` por Pokémon (s.today.secretRuntime), atualizado pelos fluxos.
 
-import type { AttrKey, Attrs, Pokemon } from '../types/index.ts'
+import type { Attrs, AttrKey, Pokemon } from '../types/index.ts'
 import type { MissionTemplate } from '../data/types.ts'
 import type { SecretRuntime } from './state.ts'
-import { secretAbilityFor, secretLevelOf } from '../data/secretAbilities.ts'
+import { hasSecret } from '../data/secretAbilities.ts'
 import { TEAM_ATTR_MAX } from './constants.ts'
 import {
-  BATTLE_ARMOR_MISSION_MULT_BY_LEVEL,
-  FLY_SPEED_BONUS_BY_LEVEL,
-  FLY_TEAM_LEVEL,
-  RIVALRY_ATTR_PER_ALLY_BY_LEVEL,
-  RIVALRY_BATTLE_BONUS_BY_LEVEL,
-  ROCK_HEAD_ESCORT_MULT_BY_LEVEL,
-  ROCK_HEAD_STUDY_MULT_BY_LEVEL,
-  ROLLOUT_BATTLE_BONUS_BY_LEVEL,
-  SHELL_ARMOR_SLOW_BY_LEVEL,
-  STURDY_FULL_HEAL_LEVEL,
+  BATTLE_ARMOR_MISSION_MULT,
+  EXPLOSION_SELF_DAMAGE_FRACTION,
+  FLY_SPEED_BONUS,
+  HUSTLE_BATTLE_BONUS,
+  HUSTLE_MISSION_MULT,
+  RIVALRY_ATTR_PER_ALLY,
+  RIVALRY_BATTLE_BONUS,
+  ROCK_HEAD_ESCORT_MULT,
+  ROCK_HEAD_STUDY_MULT,
+  ROLLOUT_BATTLE_BONUS,
+  SHELL_ARMOR_DAMAGE,
   WEAK_ARMOR_DAMAGE_MULT,
-  WEAK_ARMOR_SPEED_BONUS_BY_LEVEL,
+  WEAK_ARMOR_SPEED_PER_MISSING_HP,
 } from './balance.ts'
 import { effectiveAttr, mapAttrs } from './attributes.ts'
 import { itemMissionMultiplier, itemTravelSpeedMultiplier } from './itemEffects.ts'
 
 export type SecretRuntimeMap = Record<string, SecretRuntime>
 
-/** Ids das habilidades por efeito (uma linha = um id; Weak Armor e Rivalidade são de duas linhas). */
-const WEAK_ARMOR_IDS = new Set(['secret-onix', 'secret-kabuto'])
-const RIVALRY_IDS = new Set(['secret-nidoran-f', 'secret-nidoran-m'])
-
-/** Lê uma tupla [Bronze, Prata, Ouro] no nível dado (1..3), com clamp defensivo. */
-function byLevel<T>(tuple: readonly T[], level: number): T {
-  const i = Math.min(tuple.length, Math.max(1, level)) - 1
-  return tuple[i] as T
-}
-
-/** Id da Habilidade Secreta ATIVA (desbloqueada) deste Pokémon, ou null. */
-export function activeSecretId(p: Pokemon): string | null {
-  const ability = secretAbilityFor(p.speciesId)
-  return ability && p.passives.includes(ability.id) ? ability.id : null
-}
+// ---- Predicados por habilidade (cada um independente; o Pokémon pode ter várias) ----
 
 export function hasWeakArmor(p: Pokemon): boolean {
-  return WEAK_ARMOR_IDS.has(activeSecretId(p) ?? '')
+  return hasSecret(p, 'sa-weak-armor')
 }
 export function hasSturdy(p: Pokemon): boolean {
-  return activeSecretId(p) === 'secret-geodude'
+  return hasSecret(p, 'sa-sturdy')
 }
 export function hasBattleArmor(p: Pokemon): boolean {
-  return activeSecretId(p) === 'secret-cubone'
+  return hasSecret(p, 'sa-battle-armor')
 }
 export function hasDig(p: Pokemon): boolean {
-  return activeSecretId(p) === 'secret-diglett'
+  return hasSecret(p, 'sa-dig')
+}
+export function hasDigPlus(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-dig-plus')
 }
 export function hasShellArmor(p: Pokemon): boolean {
-  return activeSecretId(p) === 'secret-omanyte'
+  return hasSecret(p, 'sa-shell-armor')
 }
 export function hasRollout(p: Pokemon): boolean {
-  return activeSecretId(p) === 'secret-sandshrew'
+  return hasSecret(p, 'sa-rollout')
 }
 export function hasRivalry(p: Pokemon): boolean {
-  return RIVALRY_IDS.has(activeSecretId(p) ?? '')
+  return hasSecret(p, 'sa-rivalry')
+}
+export function hasHustle(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-hustle')
+}
+export function hasExplosion(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-explosion')
+}
+export function hasLightningRod(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-lightning-rod')
+}
+export function hasReckless(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-reckless')
+}
+export function hasSandRush(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-sand-rush')
+}
+export function hasSwiftSwim(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-swift-swim')
 }
 
-/** Sturdy de nível Ouro recupera TODA a vida (em vez de ficar com 1) ao salvar do desmaio. */
-export function sturdyHealsFull(p: Pokemon): boolean {
-  return hasSturdy(p) && secretLevelOf(p) >= STURDY_FULL_HEAL_LEVEL
-}
-
-/** Flag persistente (em passives) que marca o Sturdy de nível Bronze já gasto na RUN. */
-export const STURDY_SPENT_PASSIVE = 'sturdy-spent'
-
-/** Sturdy nível Bronze tem escopo 1× por JOGO (persistente); níveis 2–3 são 1× por DIA. */
-export function sturdyPerGame(p: Pokemon): boolean {
-  return hasSturdy(p) && secretLevelOf(p) === 1
-}
-
-/** O Sturdy deste Pokémon ainda pode ser usado? (respeita o escopo por jogo/por dia). */
+/** O Sturdy deste Pokémon ainda pode ser usado hoje? (1×/dia). */
 export function sturdyAvailable(p: Pokemon, runtime: SecretRuntimeMap): boolean {
-  if (!hasSturdy(p)) return false
-  return sturdyPerGame(p)
-    ? !p.passives.includes(STURDY_SPENT_PASSIVE)
-    : !runtime[p.id]?.sturdyUsed
+  return hasSturdy(p) && !runtime[p.id]?.sturdyUsed
 }
 
 // ---- Combate: bônus de Batalha por habilidade ----
 
 /** Rollout: bônus de Batalha GANHO por cada Pokémon derrotado no duelo (0 sem a habilidade). */
 export function rolloutBonusPerWin(p: Pokemon): number {
-  return hasRollout(p) ? byLevel(ROLLOUT_BATTLE_BONUS_BY_LEVEL, secretLevelOf(p)) : 0
+  return hasRollout(p) ? ROLLOUT_BATTLE_BONUS : 0
 }
 
-/** Rivalidade (nv2+): bônus de Batalha contra um oponente do mesmo gênero (0 caso contrário). */
+/** Rivalidade: bônus de Batalha contra um oponente do mesmo gênero (0 caso contrário). */
 export function rivalryBattleBonus(p: Pokemon): number {
-  return hasRivalry(p) ? byLevel(RIVALRY_BATTLE_BONUS_BY_LEVEL, secretLevelOf(p)) : 0
+  return hasRivalry(p) ? RIVALRY_BATTLE_BONUS : 0
+}
+
+/** Hustle: bônus de Batalha em batalhas Pokémon (0 sem a habilidade). */
+export function hustleBattleBonus(p: Pokemon): number {
+  return hasHustle(p) ? HUSTLE_BATTLE_BONUS : 0
+}
+
+/** Explosion: dano que o portador inflige a SI ao explodir = metade da vida máxima (arred. p/ cima). */
+export function explosionSelfDamage(p: Pokemon): number {
+  return Math.ceil(p.maxHp * EXPLOSION_SELF_DAMAGE_FRACTION)
 }
 
 // ---- Missões: multiplicador de atributos por Pokémon (vantagem da passiva) ----
@@ -111,29 +113,23 @@ export interface MissionSecretCtx {
 }
 
 /**
- * Multiplicador de TODOS os atributos deste Pokémon na missão (1 = sem efeito):
- * Rivalidade (+X% por aliado do mesmo gênero), Rock Head (+ escolta / − ensino) e Battle
- * Armor (próxima missão após batalhar). Multiplicativos entre si (na prática uma linha tem
- * só uma habilidade). Tudo escala com o nível.
+ * Multiplicador de TODOS os atributos deste Pokémon na missão (1 = sem efeito). Combina, de forma
+ * MULTIPLICATIVA, todas as habilidades ativas do Pokémon: Rivalidade (+10% por aliado do mesmo
+ * gênero), Rock Head (+ escolta / − ensino), Battle Armor (próxima missão após batalhar) e Hustle
+ * (−10% em missões). Itens passivos (Eviolite/Lagging Tail) entram na base.
  */
 export function missionAttrMultiplier(p: Pokemon, ctx: MissionSecretCtx): number {
-  // Itens passivos (Eviolite/Lagging Tail) valem para QUALQUER Pokémon (com ou sem habilidade),
-  // então entram aqui na base — assim o radar e o teamHasAttrBoost já os refletem.
   let mult = itemMissionMultiplier(p, ctx.runItems)
-  const id = activeSecretId(p)
-  if (!id) return mult
-  const level = secretLevelOf(p)
-  if (RIVALRY_IDS.has(id)) {
+  if (hasRivalry(p)) {
     const allies = ctx.team.filter((o) => o.id !== p.id && o.gender === p.gender).length
-    mult *= 1 + byLevel(RIVALRY_ATTR_PER_ALLY_BY_LEVEL, level) * allies
+    mult *= 1 + RIVALRY_ATTR_PER_ALLY * allies
   }
-  if (id === 'secret-rhyhorn') {
-    if (ctx.template.id === 'escolta') mult *= byLevel(ROCK_HEAD_ESCORT_MULT_BY_LEVEL, level)
-    else if (ctx.template.id === 'ensino') mult *= byLevel(ROCK_HEAD_STUDY_MULT_BY_LEVEL, level)
+  if (hasSecret(p, 'sa-rock-head')) {
+    if (ctx.template.id === 'escolta') mult *= ROCK_HEAD_ESCORT_MULT
+    else if (ctx.template.id === 'ensino') mult *= ROCK_HEAD_STUDY_MULT
   }
-  if (id === 'secret-cubone' && ctx.runtime[p.id]?.battleArmorPending) {
-    mult *= byLevel(BATTLE_ARMOR_MISSION_MULT_BY_LEVEL, level)
-  }
+  if (hasBattleArmor(p) && ctx.runtime[p.id]?.battleArmorPending) mult *= BATTLE_ARMOR_MISSION_MULT
+  if (hasHustle(p)) mult *= HUSTLE_MISSION_MULT
   return mult
 }
 
@@ -158,9 +154,9 @@ export function teamSecretSum(ctx: MissionSecretCtx): Attrs {
 
 // ---- Viagem: velocidade do time e voo ----
 
-/** Este Pokémon é um voador? (passiva Fly do museu OU Aerodactyl desbloqueado). */
+/** Este Pokémon é um voador? (passiva Fly do museu OU Aerodactyl com Fly/Fly+ desbloqueado). */
 function isFlyer(p: Pokemon): boolean {
-  return p.passives.includes('fly') || activeSecretId(p) === 'secret-aerodactyl'
+  return p.passives.includes('fly') || hasSecret(p, 'sa-fly') || hasSecret(p, 'sa-fly-plus')
 }
 
 /** O time tem um voador? */
@@ -168,47 +164,32 @@ export function teamHasFly(team: readonly Pokemon[]): boolean {
   return team.some(isFlyer)
 }
 
-/** Maior nível de Fly entre os voadores do time (passiva 'fly' do museu conta como nível 1). */
-function teamFlyLevel(team: readonly Pokemon[]): number {
-  let level = 0
-  for (const p of team) {
-    if (activeSecretId(p) === 'secret-aerodactyl') level = Math.max(level, secretLevelOf(p))
-    else if (p.passives.includes('fly')) level = Math.max(level, 1)
-  }
-  return level
-}
-
 /**
- * O time VOA nesta tarefa? Voa em linha reta do ginásio até o ponto (caminho bem menor).
- * Por padrão o voador precisa estar SOZINHO; a partir do nível Ouro (FLY_TEAM_LEVEL) do
- * Aerodactyl o voo funciona com o time inteiro.
+ * O time VOA nesta tarefa? Voa em linha reta do ginásio até o ponto (caminho bem menor). Por
+ * padrão o voador precisa estar SOZINHO; com Fly+ (sa-fly-plus) o voo funciona com o time inteiro.
  */
 export function teamFlies(team: readonly Pokemon[]): boolean {
   if (!teamHasFly(team)) return false
-  return team.length === 1 || teamFlyLevel(team) >= FLY_TEAM_LEVEL
+  return team.length === 1 || team.some((p) => hasSecret(p, 'sa-fly-plus'))
 }
 
 /**
  * Multiplicador de VELOCIDADE do time na viagem (≥1 = mais rápido, <1 = mais lento):
- * Weak Armor (+ bônus por nível se já tomou dano), Fly (+ bônus por nível ao voar) e o
- * debuff do Shell Armor (− por nível na missão seguinte a anular dano). O tempo de viagem
- * é dividido por este valor.
+ * Weak Armor (+20% por ponto de HP faltante de quem tem a habilidade), Fly (+ bônus ao voar) e o
+ * item Lagging Tail (mais lento). O tempo de viagem é dividido por este valor.
  */
 export function teamTravelSpeedMultiplier(
   team: readonly Pokemon[],
-  runtime: SecretRuntimeMap,
   runItems: readonly string[] = [],
 ): number {
   let speed = 1
   for (const p of team) {
-    if (hasWeakArmor(p) && runtime[p.id]?.weakArmorActive) {
-      speed += byLevel(WEAK_ARMOR_SPEED_BONUS_BY_LEVEL, secretLevelOf(p))
-    }
-    if (hasShellArmor(p) && runtime[p.id]?.shellArmorSlow) {
-      speed -= byLevel(SHELL_ARMOR_SLOW_BY_LEVEL, secretLevelOf(p))
+    if (hasWeakArmor(p)) {
+      const missing = Math.max(0, p.maxHp - p.currentHp)
+      speed += WEAK_ARMOR_SPEED_PER_MISSING_HP * missing
     }
   }
-  if (teamFlies(team)) speed += byLevel(FLY_SPEED_BONUS_BY_LEVEL, teamFlyLevel(team))
+  if (teamFlies(team)) speed += FLY_SPEED_BONUS
   // Lagging Tail: time mais lento nas viagens de missão (multiplicativo sobre a velocidade).
   speed *= itemTravelSpeedMultiplier(runItems)
   return Math.max(speed, 0.0001)
@@ -217,11 +198,13 @@ export function teamTravelSpeedMultiplier(
 // ---- Combate: dano recebido ----
 
 /**
- * Multiplicador de dano RECEBIDO por este Pokémon: Shell Armor anula (×0), Weak Armor dobra
- * (×2). Vale tanto em batalhas quanto no dano de missões fracassadas.
+ * Dano que este Pokémon REALMENTE recebe a partir de um dano bruto: Shell Armor reduz para 1
+ * (qualquer dano vira 1), Weak Armor dobra. Shell Armor tem precedência se o Pokémon tiver ambos.
+ * Vale tanto em batalhas quanto no dano de missões fracassadas.
  */
-export function combatDamageMultiplier(p: Pokemon): number {
-  if (hasShellArmor(p)) return 0
-  if (hasWeakArmor(p)) return WEAK_ARMOR_DAMAGE_MULT
-  return 1
+export function damageTaken(p: Pokemon, raw: number): number {
+  if (raw <= 0) return 0
+  if (hasShellArmor(p)) return SHELL_ARMOR_DAMAGE
+  if (hasWeakArmor(p)) return raw * WEAK_ARMOR_DAMAGE_MULT
+  return raw
 }

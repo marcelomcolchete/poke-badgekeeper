@@ -19,7 +19,7 @@ import {
   type MissionSecretCtx,
 } from '../../engine/secretEffects.ts'
 import { sortRoster } from '../../engine/roster.ts'
-import { graphWithTunnel } from '../../engine/pathfinding.ts'
+import { graphWithTunnels } from '../../engine/pathfinding.ts'
 import { ATTR_LABEL_PT } from '../common/visual.ts'
 import { HexRadar } from '../HexRadar/HexRadar.tsx'
 import { PokemonCard } from '../PokemonCard/PokemonCard.tsx'
@@ -70,9 +70,9 @@ export function MissionDispatch({ state, dispatch, missionId, onClose }: Props) 
     runItems: state.runItems,
   }
   const probability = Math.round(missionSuccessProbabilityCtx(ctx, mission.requirement) * 100)
-  const graph = graphWithTunnel(city.graph, state.today.digTunnel)
+  const graph = graphWithTunnels(city.graph, state.today.digTunnels)
   const { flying, distance } = travelRoute(graph, city.siteNodes.gym, mission.node, team)
-  const speedMult = teamTravelSpeedMultiplier(team, state.today.secretRuntime, state.runItems)
+  const speedMult = teamTravelSpeedMultiplier(team, state.runItems)
   const durationS = Math.round(missionDurationMs(team, distance, template, speedMult) / 1000)
   const boosted = teamHasAttrBoost(ctx)
   const valid = selected.length >= MIN_DISPATCH && selected.length <= MAX_DISPATCH

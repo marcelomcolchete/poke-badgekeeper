@@ -4,14 +4,7 @@
 import type { Pokemon } from '../types/index.ts'
 import type { DefenseEvent, GameState } from '../engine/state.ts'
 import { canDefend, gymWinXp, resolveDefense, type DefenseResolution } from '../engine/gymDefense.ts'
-import {
-  hasBattleArmor,
-  hasShellArmor,
-  hasWeakArmor,
-  STURDY_SPENT_PASSIVE,
-  sturdyAvailable,
-  sturdyPerGame,
-} from '../engine/secretEffects.ts'
+import { hasBattleArmor, sturdyAvailable } from '../engine/secretEffects.ts'
 import { goldForDefense } from '../engine/economy.ts'
 import { damageForDay } from '../engine/constants.ts'
 import { createRng } from '../engine/rng.ts'
@@ -43,41 +36,22 @@ export function loseRunByUndefendedGym(s: GameState): void {
 
 /**
  * Atualiza o estado diário das Habilidades Secretas após uma BATALHA (defesa de ginásio ou
- * Equipe Rocket). Chamado DEPOIS de gravar o esquadrão (a marca persistente do Sturdy precisa
- * do indivíduo já atualizado em estado):
+ * Equipe Rocket):
  *  - Battle Armor: bônus na próxima missão, só para quem REALMENTE lutou um duelo (venceu ou perdeu).
- *  - Weak Armor: ativa o bônus de velocidade de quem tomou dano.
- *  - Shell Armor: quem perdeu ≥1 duelo anulou dano → debuff de velocidade na próxima missão.
- *  - Sturdy usado: per-dia no runtime; per-jogo (Bronze) grava a passiva no indivíduo.
+ *  - Sturdy usado: marca o gasto do dia (1×/dia) no runtime.
+ * (Weak Armor deriva a velocidade do HP faltante e Shell Armor não tem mais debuff — sem flag.)
  */
 export function applyBattleSecretRuntime(
   s: GameState,
   before: readonly Pokemon[],
   resolution: DefenseResolution,
 ): void {
-  const post = new Map(resolution.squad.map((p) => [p.id, p]))
   const fought = new Set(resolution.duels.map((d) => d.yourId))
-  const lostDuel = new Set(resolution.duels.filter((d) => !d.youWon).map((d) => d.yourId))
   for (const p of before) {
-    const rt = (s.today.secretRuntime[p.id] ??= {})
-    if (hasBattleArmor(p) && fought.has(p.id)) rt.battleArmorPending = true
-    if (hasWeakArmor(p)) {
-      const after = post.get(p.id)
-      if (after && after.currentHp < p.currentHp) rt.weakArmorActive = true
-    }
-    if (hasShellArmor(p) && lostDuel.has(p.id)) rt.shellArmorSlow = true
+    if (hasBattleArmor(p) && fought.has(p.id)) (s.today.secretRuntime[p.id] ??= {}).battleArmorPending = true
   }
-  // Consome o Sturdy gasto no escopo certo (per-jogo na passiva, per-dia no runtime).
   for (const id of resolution.sturdyUsedIds) {
-    const mon = before.find((p) => p.id === id)
-    if (mon && sturdyPerGame(mon)) {
-      const cur = findMon(s, id)
-      if (cur && !cur.passives.includes(STURDY_SPENT_PASSIVE)) {
-        replaceMon(s, { ...cur, passives: [...cur.passives, STURDY_SPENT_PASSIVE] })
-      }
-    } else {
-      ;(s.today.secretRuntime[id] ??= {}).sturdyUsed = true
-    }
+    ;(s.today.secretRuntime[id] ??= {}).sturdyUsed = true
   }
 }
 

@@ -12,7 +12,7 @@ import { effectiveAttr } from '../engine/attributes.ts'
 import { perceptionRankWindow } from '../engine/ranking.ts'
 import { createPokemon } from '../engine/leveling.ts'
 import { graphTravelMs, travelRoute } from '../engine/missions.ts'
-import { graphWithTunnel } from '../engine/pathfinding.ts'
+import { graphWithTunnels } from '../engine/pathfinding.ts'
 import { teamTravelSpeedMultiplier } from '../engine/secretEffects.ts'
 import { createRng } from '../engine/rng.ts'
 import { findMon, replaceMon, takeId, takeRng } from './runtime.ts'
@@ -31,9 +31,9 @@ export function startSearch(s: GameState, searcherId: string, spotIndex: number)
   if (s.clock.dayElapsedMs < (s.captureSpotSpawnsAtMs[spotIndex] ?? 0)) return
 
   const city = getCity(s.run.cityIndex)
-  const graph = graphWithTunnel(city.graph, s.today.digTunnel)
+  const graph = graphWithTunnels(city.graph, s.today.digTunnels)
   const { flying, path, distance } = travelRoute(graph, city.siteNodes.gym, node, [searcher])
-  const speedMult = teamTravelSpeedMultiplier([searcher], s.today.secretRuntime, s.runItems)
+  const speedMult = teamTravelSpeedMultiplier([searcher], s.runItems)
   const oneWay = graphTravelMs(distance, [searcher], speedMult)
   const now = s.clock.dayElapsedMs
   const arriveAtMs = now + oneWay
@@ -105,11 +105,11 @@ function startReturn(s: GameState, searcherId: string, spotIndex: number, captur
   if (!searcher) return
   const city = getCity(s.run.cityIndex)
   const node = s.captureSpots[spotIndex] ?? city.siteNodes.gym
-  const graph = graphWithTunnel(city.graph, s.today.digTunnel)
+  const graph = graphWithTunnels(city.graph, s.today.digTunnels)
   // Volta = rota REAL do ponto até o ginásio (não o reverso da ida): com arestas de mão única
   // (ex.: voltar de 'k' por k→t→u) o caminho/tempo da volta diferem da ida (PLAN §3.1).
   const { flying, path, distance } = travelRoute(graph, node, city.siteNodes.gym, [searcher])
-  const speedMult = teamTravelSpeedMultiplier([searcher], s.today.secretRuntime, s.runItems)
+  const speedMult = teamTravelSpeedMultiplier([searcher], s.runItems)
   const oneWay = graphTravelMs(distance, [searcher], speedMult)
   const now = s.clock.dayElapsedMs
   replaceMon(s, { ...searcher, status: 'returning' })

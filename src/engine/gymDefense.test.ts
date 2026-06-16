@@ -128,6 +128,84 @@ describe('resolveDefense (PLAN §4.4)', () => {
   })
 })
 
+describe('resolveDefense — Habilidades Secretas', () => {
+  const oneStrong: EnemyUnit[] = [{ battle: 100, types: ['normal'] }]
+
+  it('Explosion: ao perder, derrota o inimigo e a batalha é vencida mesmo perdendo o duelo', () => {
+    // Geodude (74) com secretCount 2 = [Sturdy, Explosion]; Sturdy não está disponível (sem opts).
+    const geo = makeMon({
+      id: 'g', speciesId: 74, secretCount: 2, types: ['rock'],
+      baseAttrs: makeAttrs({ batalha: 10, resistencia: 100 }),
+    })
+    const out = resolveDefense(fixedRng(0.999), [geo], oneStrong)
+    expect(out.duels).toHaveLength(1)
+    expect(out.duels[0]?.youWon).toBe(false)
+    expect(out.won).toBe(true) // a explosão levou o inimigo junto
+    expect(out.squad[0]?.currentHp).toBeLessThan(geo.currentHp) // perdeu metade da vida
+    expect(out.squad[0]?.currentHp).toBeGreaterThan(0) // sobreviveu (vida alta)
+  })
+
+  it('Explosion como último Pokémon que desmaia ainda vence (KO mútuo)', () => {
+    const geo = makeMon({
+      id: 'g', speciesId: 74, secretCount: 2, types: ['rock'],
+      baseAttrs: makeAttrs({ batalha: 10, resistencia: 100 }), currentHp: 2,
+    })
+    const out = resolveDefense(fixedRng(0.999), [geo], oneStrong)
+    expect(out.won).toBe(true)
+    expect(out.squad[0]?.status).toBe('fainted')
+  })
+
+  it('Lightning Rod: contra inimigo Elétrico, o portador assume a frente', () => {
+    const front = makeMon({ id: 'a', types: ['normal'], baseAttrs: makeAttrs({ batalha: 50 }) })
+    const rod = makeMon({ id: 'b', speciesId: 111, secretCount: 1, types: ['ground'], baseAttrs: makeAttrs({ batalha: 50 }) })
+    const electric: EnemyUnit[] = [{ battle: 10, types: ['electric'] }]
+    const out = resolveDefense(fixedRng(0), [front, rod], electric)
+    expect(out.duels[0]?.yourId).toBe('b') // o portador atraiu o duelo
+  })
+
+  it('Lightning Rod não troca a frente contra inimigo não-Elétrico', () => {
+    const front = makeMon({ id: 'a', types: ['normal'], baseAttrs: makeAttrs({ batalha: 50 }) })
+    const rod = makeMon({ id: 'b', speciesId: 111, secretCount: 1, types: ['ground'], baseAttrs: makeAttrs({ batalha: 50 }) })
+    const out = resolveDefense(fixedRng(0), [front, rod], oneStrong)
+    expect(out.duels[0]?.yourId).toBe('a')
+  })
+
+  it('Reckless: ao perder, tenta de novo sem passar a vez (até desmaiar)', () => {
+    // Rhyhorn (111) secretCount 3 = [Lightning Rod, Rock Head, Reckless].
+    const rhy = makeMon({
+      id: 'r', speciesId: 111, secretCount: 3, types: ['ground'],
+      baseAttrs: makeAttrs({ batalha: 10, resistencia: 100 }),
+    })
+    const out = resolveDefense(fixedRng(0.999), [rhy], oneStrong)
+    expect(out.duels.length).toBeGreaterThan(1) // várias retentativas
+    expect(out.duels.every((d) => d.yourId === 'r')).toBe(true) // sempre o mesmo lutador
+    expect(out.squad[0]?.status).toBe('fainted')
+    expect(out.won).toBe(false)
+  })
+
+  it('Shell Armor reduz o dano de cada derrota a 1', () => {
+    // Omanyte (138) secretCount 2 = [Swift Swim, Shell Armor].
+    const oma = makeMon({
+      id: 'o', speciesId: 138, secretCount: 2, types: ['rock'],
+      baseAttrs: makeAttrs({ batalha: 10, resistencia: 100 }),
+    })
+    const out = resolveDefense(fixedRng(0.999), [oma], oneStrong, { damagePerLoss: 4 })
+    expect(out.squad[0]?.currentHp).toBe(oma.maxHp - 1) // dano 4 vira 1
+  })
+
+  it('Sturdy salva do desmaio (1 HP) quando disponível', () => {
+    const geo = makeMon({
+      id: 'g', speciesId: 74, secretCount: 1, types: ['rock'],
+      baseAttrs: makeAttrs({ batalha: 10, resistencia: 10 }), currentHp: 1,
+    })
+    const out = resolveDefense(fixedRng(0.999), [geo], oneStrong, {
+      sturdyAvailableIds: new Set(['g']),
+    })
+    expect(out.squad[0]?.currentHp).toBe(1) // não desmaiou
+    expect(out.sturdyUsedIds).toContain('g')
+  })
+})
+
 describe('trainerSquadSpecies (PLAN §4.4)', () => {
   it('elenco roster só sorteia espécies da lista da classe (com repetição)', () => {
     const youngster = getTrainer('YOUNGSTER')

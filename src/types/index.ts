@@ -103,11 +103,11 @@ export interface Pokemon {
   status: PokemonStatus
   passives: string[]
   /**
-   * Nível da Habilidade Secreta da LINHA, gravado no indivíduo: 1 = Bronze, 2 = Prata,
-   * 3 = Ouro (máximo). Sobe +1 a cada vez que o Pokémon é o Destaque do Dia. Ausente =
-   * habilidade ainda não desbloqueada (ou save antigo, migrado para 1 se já tinha a passiva).
+   * Quantas das TRÊS Habilidades Secretas da LINHA este indivíduo já desbloqueou (0..3),
+   * gravado no Pokémon e preservado na evolução. Sobe +1 a cada vez que é o Destaque do Dia
+   * (1ª vez → habilidade 1, 2ª → 2, 3ª → 3). Ausente/0 = nenhuma desbloqueada.
    */
-  secretLevel?: number
+  secretCount?: number
   /**
    * Buffs temporários por eixo aplicados por itens x_* (somados ao atributo efetivo, afetando
    * inclusive o HP). Valem só no dia da compra e são limpos na virada do dia. Ausente = sem buff.

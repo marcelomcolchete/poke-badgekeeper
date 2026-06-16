@@ -1,24 +1,132 @@
-// Habilidade Secreta (PLAN §3, ajuste): cada LINHA evolutiva tem uma passiva própria.
-// Quando um Pokémon é o Destaque do Dia, ele desbloqueia a habilidade da sua linha — a
-// passiva fica gravada no INDIVÍDUO (em pokemon.passives) e sobrevive à evolução. Outros
-// Pokémon da mesma linha NÃO ganham automaticamente; cada um precisa virar destaque.
+// Habilidades Secretas (ajuste): cada LINHA evolutiva tem TRÊS habilidades secretas distintas,
+// que podem ficar ativas ao mesmo tempo. Ser o Destaque do Dia desbloqueia a próxima da lista —
+// a 1ª vez a habilidade 1, a 2ª a habilidade 2, a 3ª a habilidade 3. O progresso fica gravado no
+// INDIVÍDUO (pokemon.secretCount = quantas já desbloqueou) e sobrevive à evolução. Outros Pokémon
+// da mesma linha NÃO ganham nada; cada um precisa virar Destaque.
 //
-// O CONTEÚDO (nome + efeito) é definido por linha. Linhas de Pedra/Ground (Pewter).
-// Os textos abaixo são os exibidos ao jogador; a LÓGICA de cada efeito vive na engine
-// (ver engine/secretEffects.ts) e é amarrada por id da passiva.
+// O CONTEÚDO (nome + efeito) é por TIPO de habilidade (uma mesma habilidade aparece em várias
+// linhas). A LÓGICA de cada efeito vive na engine (ver engine/secretEffects.ts), amarrada pelo id.
 
 import type { Pokemon } from '../types/index.ts'
 import { EVOLUTIONS } from './pokemon/evolutions.generated.ts'
 
-/** Níveis da Habilidade Secreta: 1 = Bronze, 2 = Prata, 3 = Ouro (máximo). */
-export const SECRET_MAX_LEVEL = 3
+/** Quantas habilidades secretas uma linha tem (máximo desbloqueável por Pokémon). */
+export const SECRET_MAX = 3
 
-export interface SecretAbility {
-  /** Id estável da passiva (gravado em pokemon.passives ao desbloquear). NÃO mudar. */
-  id: string
+/** Ids estáveis de cada TIPO de habilidade secreta (gravados na linha; NÃO mudar). */
+export type SecretId =
+  | 'sa-rollout'
+  | 'sa-dig'
+  | 'sa-sand-rush'
+  | 'sa-rivalry'
+  | 'sa-hustle'
+  | 'sa-dig-plus'
+  | 'sa-sturdy'
+  | 'sa-explosion'
+  | 'sa-weak-armor'
+  | 'sa-rock-head'
+  | 'sa-battle-armor'
+  | 'sa-lightning-rod'
+  | 'sa-reckless'
+  | 'sa-swift-swim'
+  | 'sa-shell-armor'
+  | 'sa-fly'
+  | 'sa-fly-plus'
+
+export interface SecretKind {
+  id: SecretId
   name: string
-  /** Descrição por nível: índice 0 = Bronze (1), 1 = Prata (2), 2 = Ouro (3). */
-  levels: [string, string, string]
+  /** Texto do efeito exibido ao jogador (a regra mora na engine). */
+  effect: string
+}
+
+/** Catálogo de TODAS as habilidades secretas (nome + efeito), por id. */
+export const SECRET_KINDS: Record<SecretId, SecretKind> = {
+  'sa-rollout': {
+    id: 'sa-rollout',
+    name: 'Rollout',
+    effect: 'Ao derrotar um Pokémon, +10% de bônus de batalha no próximo duelo (acumula na sequência).',
+  },
+  'sa-dig': {
+    id: 'sa-dig',
+    name: 'Dig',
+    effect: 'Abre 2 buracos ligando dois pontos; o time atravessa por baixo da terra.',
+  },
+  'sa-sand-rush': {
+    id: 'sa-sand-rush',
+    name: 'Sand Rush',
+    effect: '+200% de velocidade do time durante tempestade de areia. (sem efeito até existir clima)',
+  },
+  'sa-rivalry': {
+    id: 'sa-rivalry',
+    name: 'Rivalidade',
+    effect: '+10% nos atributos por aliado do mesmo gênero na missão e +10% de batalha contra oponente do mesmo gênero.',
+  },
+  'sa-hustle': {
+    id: 'sa-hustle',
+    name: 'Hustle',
+    effect: '+10% de Batalha em batalhas, mas −10% nos atributos em missões.',
+  },
+  'sa-dig-plus': {
+    id: 'sa-dig-plus',
+    name: 'Dig+',
+    effect: 'Upgrade do Dig: um dos buracos aparece sempre no ponto do ginásio.',
+  },
+  'sa-sturdy': {
+    id: 'sa-sturdy',
+    name: 'Sturdy',
+    effect: 'Quando desmaiaria em batalha, fica com 1 de vida. (1× por dia)',
+  },
+  'sa-explosion': {
+    id: 'sa-explosion',
+    name: 'Explosion',
+    effect: 'Ao ser derrotado em batalha, explode: perde metade da vida máxima (pode morrer) e derrota o Pokémon que o derrotou.',
+  },
+  'sa-weak-armor': {
+    id: 'sa-weak-armor',
+    name: 'Weak Armor',
+    effect: 'Ao receber dano perde o dobro de vida, mas dá +20% de velocidade ao time por ponto de vida faltante.',
+  },
+  'sa-rock-head': {
+    id: 'sa-rock-head',
+    name: 'Rock Head',
+    effect: '+50% nos atributos em missões de escolta e −50% em ensino.',
+  },
+  'sa-battle-armor': {
+    id: 'sa-battle-armor',
+    name: 'Battle Armor',
+    effect: 'Após uma batalha (ginásio/Rocket), +30% em todos os atributos na próxima missão.',
+  },
+  'sa-lightning-rod': {
+    id: 'sa-lightning-rod',
+    name: 'Lightning Rod',
+    effect: 'Quando o oponente é do tipo Elétrico, assume o duelo no lugar de quem está na frente.',
+  },
+  'sa-reckless': {
+    id: 'sa-reckless',
+    name: 'Reckless',
+    effect: 'Ao perder um combate, perde vida e tenta de novo sem passar a vez para o próximo Pokémon.',
+  },
+  'sa-swift-swim': {
+    id: 'sa-swift-swim',
+    name: 'Swift Swim',
+    effect: '+200% de velocidade do time durante chuva. (sem efeito até existir clima)',
+  },
+  'sa-shell-armor': {
+    id: 'sa-shell-armor',
+    name: 'Shell Armor',
+    effect: 'Todo dano recebido na vida vira 1.',
+  },
+  'sa-fly': {
+    id: 'sa-fly',
+    name: 'Fly',
+    effect: 'Voa em linha reta do ginásio até a tarefa — bem mais rápido. Só quando despachado sozinho.',
+  },
+  'sa-fly-plus': {
+    id: 'sa-fly-plus',
+    name: 'Fly+',
+    effect: 'Upgrade do Fly: pode levar o time inteiro voando.',
+  },
 }
 
 // Mapa filho → pai (a partir dos passos de evolução), para achar a raiz de uma linha.
@@ -40,148 +148,53 @@ export function lineRootId(speciesId: number): number {
 }
 
 /**
- * Habilidade Secreta por LINHA, chaveada pelo id da forma-base (raiz).
- * Linhas de Pedra/Ground (Pewter). PLACEHOLDERS — preencher name/description.
+ * As TRÊS habilidades secretas de cada linha, na ORDEM de desbloqueio (1ª, 2ª, 3ª vez Destaque),
+ * chaveadas pelo id da forma-base (raiz). Linhas de Pedra/Ground/Fóssil (Pewter).
  */
-export const SECRET_ABILITIES: Record<number, SecretAbility> = {
-  // Onix — Weak Armor
-  95: {
-    id: 'secret-onix',
-    name: 'Weak Armor',
-    levels: [
-      'Ao receber dano perde o dobro de vida, mas dá +50% de velocidade ao time pelo resto do dia em missões.',
-      'Ao receber dano perde o dobro de vida, mas dá +100% de velocidade ao time pelo resto do dia em missões.',
-      'Ao receber dano perde o dobro de vida, mas dá +200% de velocidade ao time pelo resto do dia em missões.',
-    ],
-  },
-  // Geodude → Graveler → Golem — Sturdy
-  74: {
-    id: 'secret-geodude',
-    name: 'Sturdy',
-    levels: [
-      'Quando morreria em missão ou batalha, não desmaia: fica com 1 de vida. (1× por jogo)',
-      'Quando morreria em missão ou batalha, não desmaia: fica com 1 de vida. (1× por dia)',
-      'Quando morreria em missão ou batalha, não desmaia: recupera toda a vida. (1× por dia)',
-    ],
-  },
-  // Sandshrew → Sandslash — Rollout
-  27: {
-    id: 'secret-sandshrew',
-    name: 'Rollout',
-    levels: [
-      'Ao derrotar um Pokémon ganha +10% de bônus de batalha no duelo com o próximo (acumula na sequência).',
-      'Ao derrotar um Pokémon ganha +15% de bônus de batalha no duelo com o próximo (acumula na sequência).',
-      'Ao derrotar um Pokémon ganha +25% de bônus de batalha no duelo com o próximo (acumula na sequência).',
-    ],
-  },
-  // Diglett → Dugtrio — Dig
-  50: {
-    id: 'secret-diglett',
-    name: 'Dig',
-    levels: [
-      'Abre dois buracos no mapa ligando os dois pontos; o time atravessa por baixo da terra.',
-      'Abre três buracos no mapa ligando os três pontos; o time atravessa por baixo da terra.',
-      'Abre três buracos no mapa ligando os três pontos, um sempre no ginásio; o time atravessa por baixo da terra.',
-    ],
-  },
-  // Cubone → Marowak — Battle Armor
-  104: {
-    id: 'secret-cubone',
-    name: 'Battle Armor',
-    levels: [
-      'Ao participar de uma batalha (ginásio ou Rocket) ganha +30% em todos os atributos na próxima missão.',
-      'Ao participar de uma batalha (ginásio ou Rocket) ganha +50% em todos os atributos na próxima missão.',
-      'Ao participar de uma batalha (ginásio ou Rocket) ganha +100% em todos os atributos na próxima missão.',
-    ],
-  },
-  // Rhyhorn → Rhydon — Rock Head
-  111: {
-    id: 'secret-rhyhorn',
-    name: 'Rock Head',
-    levels: [
-      '+50% em todos os atributos em missões de escolta e −50% em missões de ensino.',
-      '+75% em todos os atributos em missões de escolta e −60% em missões de ensino.',
-      '+100% em todos os atributos em missões de escolta e −70% em missões de ensino.',
-    ],
-  },
-  // Nidoran♀ → Nidorina → Nidoqueen — Rivalidade
-  29: {
-    id: 'secret-nidoran-f',
-    name: 'Rivalidade',
-    levels: [
-      '+10% em todos os atributos na missão para cada Pokémon do mesmo gênero no time.',
-      '+10% por aliado do mesmo gênero e +15% de bônus em batalha contra Pokémon do mesmo gênero.',
-      '+20% por aliado do mesmo gênero e +30% de bônus em batalha contra Pokémon do mesmo gênero.',
-    ],
-  },
-  // Nidoran♂ → Nidorino → Nidoking — Rivalidade
-  32: {
-    id: 'secret-nidoran-m',
-    name: 'Rivalidade',
-    levels: [
-      '+10% em todos os atributos na missão para cada Pokémon do mesmo gênero no time.',
-      '+10% por aliado do mesmo gênero e +15% de bônus em batalha contra Pokémon do mesmo gênero.',
-      '+20% por aliado do mesmo gênero e +30% de bônus em batalha contra Pokémon do mesmo gênero.',
-    ],
-  },
-  // Omanyte → Omastar — Shell Armor
-  138: {
-    id: 'secret-omanyte',
-    name: 'Shell Armor',
-    levels: [
-      'Quando receberia dano de vida, o dano vira 0 e recebe −50% de velocidade na próxima missão.',
-      'Quando receberia dano de vida, o dano vira 0 e recebe −25% de velocidade na próxima missão.',
-      'Quando receberia dano de vida, o dano vira 0.',
-    ],
-  },
-  // Kabuto → Kabutops — Weak Armor
-  140: {
-    id: 'secret-kabuto',
-    name: 'Weak Armor',
-    levels: [
-      'Ao receber dano perde o dobro de vida, mas dá +50% de velocidade ao time pelo resto do dia em missões.',
-      'Ao receber dano perde o dobro de vida, mas dá +100% de velocidade ao time pelo resto do dia em missões.',
-      'Ao receber dano perde o dobro de vida, mas dá +200% de velocidade ao time pelo resto do dia em missões.',
-    ],
-  },
-  // Aerodactyl — Fly
-  142: {
-    id: 'secret-aerodactyl',
-    name: 'Fly',
-    levels: [
-      'Voa em linha reta do ginásio até a tarefa — bem mais rápido. Só quando despachado sozinho.',
-      'Voa em linha reta do ginásio até a tarefa, +50% de velocidade. Só quando despachado sozinho.',
-      'Voa em linha reta do ginásio até a tarefa, +50% de velocidade. Funciona também em time.',
-    ],
-  },
+export const SECRET_LINES: Record<number, readonly [SecretId, SecretId, SecretId]> = {
+  // Sandshrew → Sandslash
+  27: ['sa-rollout', 'sa-dig', 'sa-sand-rush'],
+  // Nidoran♀ → Nidorina → Nidoqueen
+  29: ['sa-rivalry', 'sa-hustle', 'sa-dig'],
+  // Nidoran♂ → Nidorino → Nidoking
+  32: ['sa-rivalry', 'sa-hustle', 'sa-dig'],
+  // Diglett → Dugtrio
+  50: ['sa-dig', 'sa-sand-rush', 'sa-dig-plus'],
+  // Geodude → Graveler → Golem
+  74: ['sa-sturdy', 'sa-explosion', 'sa-rollout'],
+  // Onix
+  95: ['sa-weak-armor', 'sa-sturdy', 'sa-rock-head'],
+  // Cubone → Marowak
+  104: ['sa-rock-head', 'sa-battle-armor', 'sa-lightning-rod'],
+  // Rhyhorn → Rhydon
+  111: ['sa-lightning-rod', 'sa-rock-head', 'sa-reckless'],
+  // Omanyte → Omastar
+  138: ['sa-swift-swim', 'sa-shell-armor', 'sa-weak-armor'],
+  // Kabuto → Kabutops
+  140: ['sa-battle-armor', 'sa-weak-armor', 'sa-swift-swim'],
+  // Aerodactyl
+  142: ['sa-fly', 'sa-rock-head', 'sa-fly-plus'],
 }
 
-/** Habilidade Secreta da linha de uma espécie (null se a linha não tem uma definida). */
-export function secretAbilityFor(speciesId: number): SecretAbility | null {
-  return SECRET_ABILITIES[lineRootId(speciesId)] ?? null
+/** As três habilidades (ids, em ordem) da linha de uma espécie — null se a linha não tem. */
+export function secretLineFor(speciesId: number): readonly [SecretId, SecretId, SecretId] | null {
+  return SECRET_LINES[lineRootId(speciesId)] ?? null
 }
 
-/** Um Pokémon já desbloqueou a Habilidade Secreta da sua linha? (passiva no indivíduo). */
-export function hasSecretAbility(passives: readonly string[], speciesId: number): boolean {
-  const ability = secretAbilityFor(speciesId)
-  return ability ? passives.includes(ability.id) : false
+/** Quantas habilidades secretas este Pokémon já desbloqueou (0..3), com clamp defensivo. */
+export function secretCountOf(p: Pokemon): number {
+  if (!secretLineFor(p.speciesId)) return 0
+  return Math.min(SECRET_MAX, Math.max(0, p.secretCount ?? 0))
 }
 
-/**
- * Nível da Habilidade Secreta desbloqueada deste Pokémon (0 = não desbloqueada). Saves
- * antigos têm a passiva sem secretLevel → tratados como nível 1 (Bronze já conquistado).
- */
-export function secretLevelOf(p: Pokemon): number {
-  const ability = secretAbilityFor(p.speciesId)
-  if (!ability || !p.passives.includes(ability.id)) return 0
-  return Math.min(SECRET_MAX_LEVEL, Math.max(1, p.secretLevel ?? 1))
+/** Ids das habilidades secretas ATIVAS (já desbloqueadas) deste Pokémon, na ordem da linha. */
+export function unlockedSecretIds(p: Pokemon): SecretId[] {
+  const line = secretLineFor(p.speciesId)
+  if (!line) return []
+  return line.slice(0, secretCountOf(p)) as SecretId[]
 }
 
-/** Descrição da Habilidade Secreta no nível dado (1..3), com clamp defensivo. */
-export function secretDescriptionAt(ability: SecretAbility, level: number): string {
-  const i = Math.min(SECRET_MAX_LEVEL, Math.max(1, level)) - 1
-  return ability.levels[i] ?? ability.levels[0]
+/** Este Pokémon tem a habilidade secreta `id` desbloqueada? */
+export function hasSecret(p: Pokemon, id: SecretId): boolean {
+  return unlockedSecretIds(p).includes(id)
 }
-
-/** Rótulo do nível: Bronze / Prata / Ouro. */
-export const SECRET_TIER_LABEL: Record<number, string> = { 1: 'Bronze', 2: 'Prata', 3: 'Ouro' }

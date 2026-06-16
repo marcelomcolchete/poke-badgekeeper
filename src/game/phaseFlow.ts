@@ -10,7 +10,7 @@ import { STARS_MIN, TOTAL_DAYS } from '../engine/constants.ts'
 import { ALL_DEFENSES_WON_BONUS } from '../engine/balance.ts'
 import { applyApproval, approvalDelta, dailyGoalMet } from '../engine/approval.ts'
 import { buildDaySummary, toDayLog } from '../engine/daySummary.ts'
-import { secretAbilityFor, SECRET_MAX_LEVEL, secretLevelOf } from '../data/secretAbilities.ts'
+import { secretCountOf, secretLineFor, SECRET_MAX } from '../data/secretAbilities.ts'
 import { recomputeMaxHp } from '../engine/attributes.ts'
 import {
   completeRocketBattle,
@@ -90,30 +90,25 @@ export function finalizeDay(s: GameState): void {
 }
 
 /**
- * Destaque do Dia PROMOVE a Habilidade Secreta da sua LINHA, gravada no INDIVÍDUO (sobrevive
- * à evolução): a 1ª vez desbloqueia em Bronze (nível 1) e cada Destaque seguinte sobe um nível
- * até o Ouro (3). Já no Ouro, nada muda. Registra em today.secretUnlock (id + nível) para o reveal.
+ * Destaque do Dia DESBLOQUEIA a PRÓXIMA Habilidade Secreta da sua LINHA, gravada no INDIVÍDUO
+ * (sobrevive à evolução): a 1ª vez a habilidade 1, a 2ª a habilidade 2, a 3ª a habilidade 3 —
+ * todas podem ficar ativas ao mesmo tempo. Com as três já desbloqueadas, nada muda. Registra em
+ * today.secretUnlock (id da habilidade + posição) para o reveal no resumo.
  */
 function unlockSecretAbility(s: GameState, mvpId: string | null): void {
   s.today.secretUnlock = null
   if (!mvpId) return
   const mon = s.roster.find((p) => p.id === mvpId)
   if (!mon) return
-  const ability = secretAbilityFor(mon.speciesId)
-  if (!ability) return
-  const current = secretLevelOf(mon) // 0 = ainda não desbloqueada
-  if (current >= SECRET_MAX_LEVEL) return // já no Ouro: nada a promover
-  const nextLevel = current + 1
-  s.roster = s.roster.map((p) =>
-    p.id === mon.id
-      ? {
-          ...p,
-          passives: p.passives.includes(ability.id) ? p.passives : [...p.passives, ability.id],
-          secretLevel: nextLevel,
-        }
-      : p,
-  )
-  s.today.secretUnlock = { pokemonId: mon.id, abilityId: ability.id, level: nextLevel }
+  const line = secretLineFor(mon.speciesId)
+  if (!line) return
+  const current = secretCountOf(mon) // 0 = nenhuma desbloqueada
+  if (current >= SECRET_MAX) return // já tem as três
+  const nextIndex = current + 1
+  const secretId = line[current] // a próxima habilidade da lista (0-based)
+  if (!secretId) return
+  s.roster = s.roster.map((p) => (p.id === mon.id ? { ...p, secretCount: nextIndex } : p))
+  s.today.secretUnlock = { pokemonId: mon.id, secretId, index: nextIndex }
 }
 
 /** Bônus de +30% sobre o ouro de defesas se TODAS as defesas do dia foram vencidas (PLAN §4.6). */

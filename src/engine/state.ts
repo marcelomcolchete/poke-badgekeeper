@@ -241,14 +241,10 @@ export interface MissionResultLog {
 
 /** Estado por-Pokémon das Habilidades Secretas no dia (zera a cada manhã). */
 export interface SecretRuntime {
-  /** Weak Armor: já tomou dano hoje → bônus de velocidade em missões pelo resto do dia. */
-  weakArmorActive?: boolean
   /** Battle Armor: participou de uma batalha → bônus nos atributos da próxima missão (consome ao resolver). */
   battleArmorPending?: boolean
-  /** Sturdy: já usou o "não desmaia" hoje (escopo 1×/dia, níveis 2–3). */
+  /** Sturdy: já usou o "não desmaia" hoje (1×/dia). */
   sturdyUsed?: boolean
-  /** Shell Armor: anulou dano → redução de velocidade na próxima missão (consome ao resolver). */
-  shellArmorSlow?: boolean
 }
 
 /** Um inimigo derrotado numa defesa do dia: quem derrotou + espécie (sprite no relatório). */
@@ -278,14 +274,17 @@ export interface DayTally {
   /** Inimigos derrotados em defesas hoje (MVP por derrotas + miniaturas no relatório). */
   defenseKills: DefenseKill[]
   /**
-   * Habilidade Secreta promovida HOJE pelo Destaque do Dia (reveal no resumo); null se
-   * nenhuma. `level` é o nível ALCANÇADO (1 = Bronze, 2 = Prata, 3 = Ouro).
+   * Habilidade Secreta desbloqueada HOJE pelo Destaque do Dia (reveal no resumo); null se
+   * nenhuma. `secretId` é o id do tipo de habilidade e `index` é a posição na linha (1, 2 ou 3).
    */
-  secretUnlock: { pokemonId: string; abilityId: string; level: number } | null
+  secretUnlock: { pokemonId: string; secretId: string; index: number } | null
   /** Estado por-Pokémon das Habilidades Secretas hoje (stacks/flags), por id de Pokémon. */
   secretRuntime: Record<string, SecretRuntime>
-  /** Túnel do Dig hoje: 2–3 pontos do grafo ligados entre si por baixo da terra; null se não há. */
-  digTunnel: string[] | null
+  /**
+   * Túneis do Dig hoje: cada Pokémon do roster com Dig/Dig+ abre UM túnel de 2 pontos do grafo
+   * ligados por baixo da terra (podem se sobrepor). Vazio se ninguém tem a habilidade.
+   */
+  digTunnels: string[][]
   /** Itens (ids) ofertados no mercado HOJE — fixos ao entrar na manhã (não re-sorteia ao comprar). */
   shopOffer: string[]
   /** Itens (ids) já comprados HOJE — viram "VENDIDO" no mercado (1 compra por slot/dia). */
@@ -347,7 +346,7 @@ export function emptyTally(): DayTally {
     defenseKills: [],
     secretUnlock: null,
     secretRuntime: {},
-    digTunnel: null,
+    digTunnels: [],
     shopOffer: [],
     purchasedItems: [],
   }
