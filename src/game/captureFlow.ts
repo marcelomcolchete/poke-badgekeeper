@@ -33,6 +33,10 @@ export function startSearch(s: GameState, searcherId: string, spotIndex: number)
   const city = getCity(s.run.cityIndex)
   const graph = graphWithTunnels(city.graph, s.today.digTunnels)
   const { flying, surfing, path, distance } = travelRoute(graph, city.siteNodes.gym, node, [searcher])
+  // Inalcançável: a área só é acessível cruzando a água e o explorador não surfa (ex.: 3.6 em 'm',
+  // que só liga por 'a'/'n'). Sem rota, não despacha — a UI já bloqueia, mas a guarda evita uma
+  // "viagem instantânea" de caminho vazio (espelha acceptMission). Voo/Sniper nunca dão [].
+  if (path.length === 0) return
   const speedMult = teamTravelSpeedMultiplier([searcher], s.runItems)
   const oneWay = graphTravelMs(distance, [searcher], speedMult)
   const now = s.clock.dayElapsedMs

@@ -7,6 +7,9 @@ import type { Dispatch } from 'react'
 import type { GameState } from '../../engine/state.ts'
 import type { GameAction } from '../../game/actions.ts'
 import { rosterIsFull } from '../../engine/capture.ts'
+import { getCity } from '../../data/cities.ts'
+import { travelRoute } from '../../engine/missions.ts'
+import { graphWithoutSurf, graphWithTunnels, shortestPath } from '../../engine/pathfinding.ts'
 import { maxRarityIndexForBall } from '../../data/balls.ts'
 import { Overlay } from '../common/Overlay.tsx'
 import { RenameModal } from './RenameModal.tsx'
@@ -58,6 +61,20 @@ export function CapturePanel({ state, dispatch, spotIndex, onClose }: Props) {
     ...state.box.map((p) => p.speciesId),
   ])
 
+  // Alcance até a área: para quem não surfa, spots cercados de água (ex.: 3.6 em 'm') ficam
+  // inacessíveis. Espelha a MissionDispatch — o explorador sem rota é bloqueado e a área avisa
+  // que exige Surf, em vez de "teleportar" o Pokémon (caminho vazio).
+  const city = getCity(state.run.cityIndex)
+  const spotNode = state.captureSpots[spotIndex]
+  const graph = graphWithTunnels(city.graph, state.today.digTunnels)
+  const canReach = (mon: GameState['roster'][number]): boolean =>
+    spotNode !== undefined && travelRoute(graph, city.siteNodes.gym, spotNode, [mon]).path.length > 0
+  // Área só acessível por água (a pé não há rota até ela)?
+  const spotNeedsSurf =
+    spotNode !== undefined &&
+    shortestPath(graphWithoutSurf(graph), city.siteNodes.gym, spotNode).length === 0 &&
+    shortestPath(graph, city.siteNodes.gym, spotNode).length > 0
+
   return (
     <Overlay title="ÁREA DE CAPTURA" onClose={onClose} wide>
       {encounter ? (
@@ -80,23 +97,34 @@ export function CapturePanel({ state, dispatch, spotIndex, onClose }: Props) {
           <p className={styles.hint}>
             Quem vai explorar? Maior <b>Inteligência</b> encontra mais rápido; maior{' '}
             <b>Percepção</b> atrai Pokémon de rank melhor.
+            {spotNeedsSurf && (
+              <>
+                {' '}
+                <b>🌊 Esta área só é acessível pela água</b> — leve um Pokémon com Surf/Surf+.
+              </>
+            )}
           </p>
           <div className={styles.explorerGrid}>
-            {state.roster.map((mon) => (
-              <ExplorerPick
-                key={mon.id}
-                pokemon={mon}
-                disabled={mon.status !== 'idle'}
-                onClick={
-                  mon.status === 'idle'
-                    ? () => {
-                        dispatch({ type: 'START_SEARCH', searcherId: mon.id, spotIndex })
-                        onClose()
-                      }
-                    : undefined
-                }
-              />
-            ))}
+            {state.roster.map((mon) => {
+              const idle = mon.status === 'idle'
+              const reachable = canReach(mon)
+              return (
+                <ExplorerPick
+                  key={mon.id}
+                  pokemon={mon}
+                  disabled={!idle || !reachable}
+                  note={idle && !reachable ? '🌊 Surf' : undefined}
+                  onClick={
+                    idle && reachable
+                      ? () => {
+                          dispatch({ type: 'START_SEARCH', searcherId: mon.id, spotIndex })
+                          onClose()
+                        }
+                      : undefined
+                  }
+                />
+              )
+            })}
           </div>
           <CapturePokedex
             types={state.gym.types}

@@ -18,10 +18,12 @@ const EXPLORE_STATS: { key: AttrKey; label: string }[] = [
 interface Props {
   pokemon: Pokemon
   disabled?: boolean
+  /** Rótulo mostrado no lugar do status quando desabilitado por um motivo (ex.: '🌊 Surf'). */
+  note?: string
   onClick?: () => void
 }
 
-export function ExplorerPick({ pokemon, disabled = false, onClick }: Props) {
+export function ExplorerPick({ pokemon, disabled = false, note, onClick }: Props) {
   const species = getSpecies(pokemon.speciesId)
   const symbol = genderSymbol(pokemon.gender)
 
@@ -52,7 +54,9 @@ export function ExplorerPick({ pokemon, disabled = false, onClick }: Props) {
           ))}
         </span>
       </span>
-      {disabled && <span className={styles.explorerStatus}>{STATUS_LABEL_PT[pokemon.status]}</span>}
+      {disabled && (
+        <span className={styles.explorerStatus}>{note ?? STATUS_LABEL_PT[pokemon.status]}</span>
+      )}
     </button>
   )
 }
