@@ -23,11 +23,21 @@ const SPEED_OPTIONS: { value: GameSpeed; label: string }[] = [
   { value: 0, label: 'II' },
 ]
 
-function formatClock(remainingMs: number): string {
-  const total = Math.max(0, Math.ceil(remainingMs / 1000))
-  const mm = Math.floor(total / 60)
-  const ss = total % 60
-  return `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`
+// O dia simula um expediente das 08:00 às 18:00 (10 h). O tempo real do dia
+// (DAY_LENGTH_MS) é projetado nesse intervalo e exibido como um relógio HH:MM
+// que avança de 10 em 10 minutos: 08:00 → 08:10 → … → 18:00, onde trava.
+const DAY_START_HOUR = 8
+const DAY_END_HOUR = 18
+const GAME_MINUTES = (DAY_END_HOUR - DAY_START_HOUR) * 60 // 600
+const STEP_MINUTES = 10
+
+function formatClock(elapsedMs: number, dayLengthMs: number): string {
+  const progress = dayLengthMs > 0 ? Math.min(1, Math.max(0, elapsedMs / dayLengthMs)) : 1
+  // Trava em 18:00 (GAME_MINUTES) e arredonda para baixo ao passo de 10 min.
+  const stepped = Math.min(GAME_MINUTES, Math.floor((progress * GAME_MINUTES) / STEP_MINUTES) * STEP_MINUTES)
+  const hour = DAY_START_HOUR + Math.floor(stepped / 60)
+  const minute = stepped % 60
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
 }
 
 export function Hud({
@@ -41,7 +51,8 @@ export function Hud({
   onSpeedChange,
   onQuit,
 }: HudProps) {
-  const remaining = formatClock(dayLengthMs - elapsedMs)
+  const remaining = formatClock(elapsedMs, dayLengthMs)
+  // Ao chegar nas 18:00 o relógio trava e fica vermelho, sinalizando o fim do dia.
   const overtime = elapsedMs >= dayLengthMs
   const starsPct = `${(stars / STARS_MAX) * 100}%`
 
