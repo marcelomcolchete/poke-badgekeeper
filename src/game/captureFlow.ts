@@ -32,7 +32,7 @@ export function startSearch(s: GameState, searcherId: string, spotIndex: number)
 
   const city = getCity(s.run.cityIndex)
   const graph = graphWithTunnels(city.graph, s.today.digTunnels)
-  const { flying, path, distance } = travelRoute(graph, city.siteNodes.gym, node, [searcher])
+  const { flying, surfing, path, distance } = travelRoute(graph, city.siteNodes.gym, node, [searcher])
   const speedMult = teamTravelSpeedMultiplier([searcher], s.runItems)
   const oneWay = graphTravelMs(distance, [searcher], speedMult)
   const now = s.clock.dayElapsedMs
@@ -47,6 +47,7 @@ export function startSearch(s: GameState, searcherId: string, spotIndex: number)
     node,
     path,
     flying,
+    surfing,
     phase: 'traveling',
     departAtMs: now,
     arriveAtMs,
@@ -108,7 +109,7 @@ function startReturn(s: GameState, searcherId: string, spotIndex: number, captur
   const graph = graphWithTunnels(city.graph, s.today.digTunnels)
   // Volta = rota REAL do ponto até o ginásio (não o reverso da ida): com arestas de mão única
   // (ex.: voltar de 'k' por k→t→u) o caminho/tempo da volta diferem da ida (PLAN §3.1).
-  const { flying, path, distance } = travelRoute(graph, node, city.siteNodes.gym, [searcher])
+  const { flying, surfing, path, distance } = travelRoute(graph, node, city.siteNodes.gym, [searcher])
   const speedMult = teamTravelSpeedMultiplier([searcher], s.runItems)
   const oneWay = graphTravelMs(distance, [searcher], speedMult)
   const now = s.clock.dayElapsedMs
@@ -120,6 +121,7 @@ function startReturn(s: GameState, searcherId: string, spotIndex: number, captur
     node,
     path,
     flying,
+    surfing,
     departAtMs: now,
     arriveAtMs: now + oneWay,
   })

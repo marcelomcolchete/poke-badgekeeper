@@ -76,6 +76,21 @@
   z-index: 1;
 }
 
+/* Time surfando (Surf): "balança" na água com um leve embalo, e o emblema de onda marca o estado. */
+.surfing .traveler {
+  animation: bob 0.7s ease-in-out infinite;
+  filter: drop-shadow(0 4px 3px rgba(40, 120, 200, 0.55));
+}
+
+.surfBadge {
+  position: absolute;
+  top: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 16px;
+  z-index: 1;
+}
+
 @keyframes float {
   0%,
   100% {

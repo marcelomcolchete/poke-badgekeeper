@@ -15,6 +15,7 @@ import { missionDurationMs, missionSuccessProbabilityCtx, travelRoute } from '..
 import {
   teamHasAttrBoost,
   teamSecretSum,
+  teamSnipes,
   teamTravelSpeedMultiplier,
   type MissionSecretCtx,
 } from '../../engine/secretEffects.ts'
@@ -71,11 +72,15 @@ export function MissionDispatch({ state, dispatch, missionId, onClose }: Props) 
   }
   const probability = Math.round(missionSuccessProbabilityCtx(ctx, mission.requirement) * 100)
   const graph = graphWithTunnels(city.graph, state.today.digTunnels)
-  const { flying, distance } = travelRoute(graph, city.siteNodes.gym, mission.node, team)
+  const { flying, surfing, path, distance } = travelRoute(graph, city.siteNodes.gym, mission.node, team)
   const speedMult = teamTravelSpeedMultiplier(team, state.runItems)
   const durationS = Math.round(missionDurationMs(team, distance, template, speedMult) / 1000)
   const boosted = teamHasAttrBoost(ctx)
-  const valid = selected.length >= MIN_DISPATCH && selected.length <= MAX_DISPATCH
+  const sniping = teamSnipes(team)
+  // Inalcançável: a rota só chega cruzando a água e o time não consegue surfar (ex.: Rocket 5.1).
+  const reachable = flying || sniping || path.length > 0
+  const blocked = team.length > 0 && !reachable
+  const valid = selected.length >= MIN_DISPATCH && selected.length <= MAX_DISPATCH && reachable
   const subtitle = missionSubtitle(template, mission.secondaryAttr)
   const reward = missionReward(template)
   const remove = (id: string): void => setSelected((prev) => prev.filter((x) => x !== id))
@@ -114,6 +119,21 @@ export function MissionDispatch({ state, dispatch, missionId, onClose }: Props) 
           {flying && (
             <p className={styles.missionReward}>
               <span aria-hidden="true">🪽</span> Voando em linha reta (Fly, só sozinho)
+            </p>
+          )}
+          {surfing && (
+            <p className={styles.missionReward}>
+              <span aria-hidden="true">🌊</span> Surfando na água (+100% de velocidade)
+            </p>
+          )}
+          {sniping && (
+            <p className={styles.missionReward}>
+              <span aria-hidden="true">🎯</span> Atuando do ginásio (Sniper, só sozinho)
+            </p>
+          )}
+          {blocked && (
+            <p className={styles.missionReward}>
+              <span aria-hidden="true">🌊</span> Esta missão exige Surf para atravessar a água
             </p>
           )}
           <div className={styles.stats}>

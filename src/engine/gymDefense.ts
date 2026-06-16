@@ -21,15 +21,27 @@ import {
   TYPE_ADVANTAGE_MULT,
   TYPE_DISADVANTAGE_MULT,
 } from './constants.ts'
-import { DEFENSE_BUFF_BATTLE, GYM_XP_CAP_PER_WIN, GYM_XP_PER_BATTLE_POWER } from './balance.ts'
+import {
+  DEFENSE_BUFF_BATTLE,
+  GYM_XP_CAP_PER_WIN,
+  GYM_XP_PER_BATTLE_POWER,
+  MOXIE_BATTLE_PER_WIN,
+  PRESSURE_ENEMY_MULT,
+  REGENERATOR_HEAL_PER_WIN,
+  THICK_FAT_VS_ICE_MULT,
+} from './balance.ts'
 import { applyDamage, effectiveAttr } from './attributes.ts'
 import {
   damageTaken,
   explosionSelfDamage,
   hasExplosion,
   hasLightningRod,
+  hasMoxie,
+  hasPressure,
   hasReckless,
+  hasRegenerator,
   hasSturdy,
+  hasThickFat,
   hustleBattleBonus,
   rivalryBattleBonus,
   rolloutBonusPerWin,
@@ -237,11 +249,24 @@ export function resolveDefense(
     if (enemy.gender !== undefined && enemy.gender === you.gender) {
       yourEff *= 1 + rivalryBattleBonus(you)
     }
-    const enemyEff = enemy.battle * typeAdvantageMultiplier(enemy.types, you.types)
+    // Thick Fat: vantagem contra oponentes do tipo Gelo.
+    if (hasThickFat(you) && enemy.types.includes('ice')) yourEff *= THICK_FAT_VS_ICE_MULT
+    // Moxie: +1 de Batalha por inimigo já derrotado nesta sequência (frontWins).
+    if (hasMoxie(you)) yourEff += MOXIE_BATTLE_PER_WIN * frontWins
+    // Pressure: reduz a Batalha do oponente enfrentado.
+    let enemyEff = enemy.battle * typeAdvantageMultiplier(enemy.types, you.types)
+    if (hasPressure(you)) enemyEff *= PRESSURE_ENEMY_MULT
     const pWin = duelWinProbability(yourEff, enemyEff)
     const youWon = rng.bool(pWin)
     duels.push({ yourId: you.id, youWon, pWin })
     if (youWon) {
+      // Regenerator: recupera vida a cada inimigo derrotado.
+      if (hasRegenerator(you)) {
+        result[yours] = {
+          ...you,
+          currentHp: Math.min(you.maxHp, you.currentHp + REGENERATOR_HEAL_PER_WIN),
+        }
+      }
       theirs += 1 // o inimigo perde e sai; você permanece na frente
       frontWins += 1
       continue

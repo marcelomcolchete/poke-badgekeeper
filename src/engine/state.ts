@@ -87,6 +87,8 @@ export interface MissionInstance {
   returnPath?: string[]
   /** Time voando (Fly + sozinho): rota em linha reta e símbolo de voo no mapa — PLAN §4.3. */
   flying?: boolean
+  /** Time surfando (Surf): a rota cruza a água, com símbolo de surf no mapa — PLAN §3.1. */
+  surfing?: boolean
   /** Momento (ms de jogo) em que aparece no mapa. */
   spawnAtMs: number
   /** Momento em que some se não for aceita — PLAN §3.1. */
@@ -177,6 +179,8 @@ export interface CaptureSearch {
   path: string[]
   /** Procurador voando (Fly): rota em linha reta e símbolo de voo no mapa — PLAN §4.3. */
   flying?: boolean
+  /** Procurador surfando (Surf): a rota cruza a água, com símbolo de surf no mapa — PLAN §3.1. */
+  surfing?: boolean
   /** Fase: 'traveling' (a caminho) ou 'searching' (procurando no local). */
   phase: 'traveling' | 'searching'
   /** Saída do ginásio (início da ida) — base da animação. */
@@ -199,6 +203,8 @@ export interface CaptureReturn {
   path: string[]
   /** Procurador voando (Fly): rota em linha reta e símbolo de voo no mapa — PLAN §4.3. */
   flying?: boolean
+  /** Procurador surfando (Surf): a rota cruza a água, com símbolo de surf no mapa — PLAN §3.1. */
+  surfing?: boolean
   departAtMs: number
   arriveAtMs: number
 }

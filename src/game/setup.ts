@@ -14,7 +14,7 @@ import { buildDaySchedule, type DefenseSlot } from '../engine/timeline.ts'
 import { createMissionInstance } from '../engine/missions.ts'
 import { enemySquadSizeForDay, generateDefenseEnemies } from '../engine/gymDefense.ts'
 import { createPokemon } from '../engine/leveling.ts'
-import { hasDig, hasDigPlus } from '../engine/secretEffects.ts'
+import { hasDig, hasDigPlus, hasForewarn } from '../engine/secretEffects.ts'
 import { createRng, deriveSeed } from '../engine/rng.ts'
 import {
   DEFENSE_LIFETIME_MS,
@@ -67,8 +67,24 @@ export function setupDay(s: GameState): void {
   s.captureSpots = spots.map((p) => p.node)
   s.captureSpotSpawnsAtMs = spots.map((p) => p.at)
   s.today.digTunnels = computeDigTunnels(s, city)
+  applyForewarn(s)
   s.clock.dayElapsedMs = 0
   s.clock.speed = 1
+}
+
+/**
+ * Forewarn: cada Pokémon do roster com a habilidade antecipa UMA missão não-Rocket do dia para o
+ * início do dia (spawnAtMs = 0, preservando a duração). N portadores antecipam N missões.
+ */
+function applyForewarn(s: GameState): void {
+  const count = s.roster.filter(hasForewarn).length
+  if (count === 0) return
+  const movable = s.missions.filter((m) => m.templateId !== 'rocket' && m.spawnAtMs > 0)
+  for (const mission of movable.slice(0, count)) {
+    const lifetime = mission.expiresAtMs - mission.spawnAtMs
+    mission.spawnAtMs = 0
+    mission.expiresAtMs = lifetime
+  }
 }
 
 /**

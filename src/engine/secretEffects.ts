@@ -10,6 +10,8 @@ import type { SecretRuntime } from './state.ts'
 import { hasSecret } from '../data/secretAbilities.ts'
 import { TEAM_ATTR_MAX } from './constants.ts'
 import {
+  ANALYTIC_PATROL_MULT,
+  ANALYTIC_STUDY_MULT,
   BATTLE_ARMOR_MISSION_MULT,
   EXPLOSION_SELF_DAMAGE_FRACTION,
   FLY_SPEED_BONUS,
@@ -21,6 +23,7 @@ import {
   ROCK_HEAD_STUDY_MULT,
   ROLLOUT_BATTLE_BONUS,
   SHELL_ARMOR_DAMAGE,
+  TORRENT_MISSION_MULT,
   WEAK_ARMOR_DAMAGE_MULT,
   WEAK_ARMOR_SPEED_PER_MISSING_HP,
 } from './balance.ts'
@@ -72,6 +75,43 @@ export function hasSandRush(p: Pokemon): boolean {
 }
 export function hasSwiftSwim(p: Pokemon): boolean {
   return hasSecret(p, 'sa-swift-swim')
+}
+export function hasTorrent(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-torrent')
+}
+export function hasAnalytic(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-analytic')
+}
+export function hasClearBody(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-clear-body')
+}
+export function hasThickFat(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-thick-fat')
+}
+export function hasPressure(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-pressure')
+}
+export function hasMoxie(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-moxie')
+}
+export function hasRegenerator(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-regenerator')
+}
+export function hasNaturalCure(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-natural-cure')
+}
+export function hasWaterAbsorb(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-water-absorb')
+}
+export function hasForewarn(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-forewarn')
+}
+export function hasSniper(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-sniper')
+}
+/** Surf (ou Surf+, que é upgrade): consegue se mover pela água. */
+export function hasSurf(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-surf') || hasSecret(p, 'sa-surf-plus')
 }
 
 /** O Sturdy deste Pokémon ainda pode ser usado hoje? (1×/dia). */
@@ -128,8 +168,19 @@ export function missionAttrMultiplier(p: Pokemon, ctx: MissionSecretCtx): number
     if (ctx.template.id === 'escolta') mult *= ROCK_HEAD_ESCORT_MULT
     else if (ctx.template.id === 'ensino') mult *= ROCK_HEAD_STUDY_MULT
   }
+  // Analytic: ganha em Ensino e perde em Patrulha (espelha o Rock Head em outros tipos).
+  if (hasAnalytic(p)) {
+    if (ctx.template.id === 'ensino') mult *= ANALYTIC_STUDY_MULT
+    else if (ctx.template.id === 'patrulha') mult *= ANALYTIC_PATROL_MULT
+  }
+  // Torrent: +50% se há OUTRO aliado do tipo Água na missão.
+  if (hasTorrent(p) && ctx.team.some((o) => o.id !== p.id && o.types.includes('water'))) {
+    mult *= TORRENT_MISSION_MULT
+  }
   if (hasBattleArmor(p) && ctx.runtime[p.id]?.battleArmorPending) mult *= BATTLE_ARMOR_MISSION_MULT
   if (hasHustle(p)) mult *= HUSTLE_MISSION_MULT
+  // Clear Body (nível de time): nenhum membro recebe debuff de atributo (multiplicador < 1).
+  if (mult < 1 && ctx.team.some(hasClearBody)) return 1
   return mult
 }
 
@@ -171,6 +222,25 @@ export function teamHasFly(team: readonly Pokemon[]): boolean {
 export function teamFlies(team: readonly Pokemon[]): boolean {
   if (!teamHasFly(team)) return false
   return team.length === 1 || team.some((p) => hasSecret(p, 'sa-fly-plus'))
+}
+
+/** O time tem um surfista? */
+export function teamHasSurf(team: readonly Pokemon[]): boolean {
+  return team.some(hasSurf)
+}
+
+/**
+ * O time consegue SURFAR nesta tarefa (atravessar a água)? Por padrão o surfista precisa estar
+ * SOZINHO; com Surf+ (sa-surf-plus) leva o time inteiro. Espelha a lógica de `teamFlies`/Fly+.
+ */
+export function teamSurfs(team: readonly Pokemon[]): boolean {
+  if (!teamHasSurf(team)) return false
+  return team.length === 1 || team.some((p) => hasSecret(p, 'sa-surf-plus'))
+}
+
+/** O time atua do ginásio (Sniper, só sozinho)? Faz a missão sem viajar. */
+export function teamSnipes(team: readonly Pokemon[]): boolean {
+  return team.length === 1 && hasSniper(team[0] as Pokemon)
 }
 
 /**
