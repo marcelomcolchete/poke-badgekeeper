@@ -126,7 +126,11 @@ export const SITE_KINDS = ['gym', 'center', 'mart', 'museum', 'house', 'green'] 
 
 export type SiteKind = (typeof SITE_KINDS)[number]
 
-/** Categoria temática de uma missão; cada uma só nasce no seu tipo de sítio. */
+/**
+ * Categoria temática de uma missão; cada uma só nasce no seu tipo de sítio. 'freeArea' é
+ * LEGADO (áreas verdes hoje são só captura) — mantida para compatibilidade de saves antigos,
+ * mas não é mais sorteada no agendamento do dia (ver DAILY_CATEGORY_POOL).
+ */
 export const MISSION_CATEGORIES = ['center', 'mart', 'house', 'freeArea', 'rocket'] as const
 
 export type MissionCategory = (typeof MISSION_CATEGORIES)[number]

@@ -58,17 +58,26 @@ const PEWTER_EDGES: [string, string][] = [
   ['p', 'q'],
 ]
 
-/** Monta a adjacência simétrica a partir da lista de arestas (vizinhos ordenados). */
+/**
+ * Monta a adjacência a partir das arestas (vizinhos ordenados). `edges` são NÃO-direcionadas
+ * (ligam os dois sentidos); `directed` são de MÃO ÚNICA (só `a→b`), usadas em Cerulean
+ * (ex.: 'k→t', 'q→v') onde o Pokémon passa num sentido mas não volta por ali.
+ */
 function buildAdjacency(
   nodes: Record<string, MapPos>,
   edges: [string, string][],
+  directed: [string, string][] = [],
 ): Record<string, string[]> {
   const adj: Record<string, string[]> = {}
   for (const id of Object.keys(nodes)) adj[id] = []
-  for (const [a, b] of edges) {
+  const link = (a: string, b: string): void => {
     if (!adj[a]?.includes(b)) adj[a]?.push(b)
-    if (!adj[b]?.includes(a)) adj[b]?.push(a)
   }
+  for (const [a, b] of edges) {
+    link(a, b)
+    link(b, a)
+  }
+  for (const [a, b] of directed) link(a, b)
   for (const id of Object.keys(adj)) adj[id]?.sort()
   return adj
 }
@@ -104,9 +113,120 @@ const PEWTER_SITE_NODES: CitySiteNodes = {
   gym: 'j', // 1 (ginásio)
   center: 'p', // 2 (centro)
   mart: 'l', // 4 (mart)
-  museum: 'd', // 5 (museu / Rocket Team)
+  museum: ['d'], // 5 (museu / Rocket Team) — ponto único
   houses: ['a', 'g'], // 6.1, 6.2
   green: ['c', 'b', 'g', 'm', 'n'], // 3.1, 3.2, 3.3, 3.4, 3.5
+}
+
+// ============================ Cerulean (2.png) ============================
+// Grafo calibrado sobre a arte anotada (CSV de Cerulean). 23 pontos de PARADA a–x (sem 'w')
+// + 5 nós dedicados de exploração g31..g35 (as áreas 3.1–3.5, sobre os números). O ginásio é
+// 'u'. Posições normalizadas (0–1) estimadas da arte — refináveis com o DEV picker do CityMap.
+// Novidades vs. Pewter: pontos de Surf ('a','n'), arestas de mão única (k→t, q→v) e DOIS
+// pontos de missão Rocket (5.2 e 5.1).
+const CERULEAN_NODES: Record<string, MapPos> = {
+  a: { x: 0.109, y: 0.054 }, // (surf)
+  b: { x: 0.487, y: 0.054 },
+  c: { x: 0.635, y: 0.144 },
+  d: { x: 0.758, y: 0.144 },
+  e: { x: 0.197, y: 0.178 },
+  f: { x: 0.745, y: 0.375 },
+  g: { x: 0.831, y: 0.375 },
+  h: { x: 0.197, y: 0.424 },
+  i: { x: 0.367, y: 0.424 },
+  j: { x: 0.492, y: 0.424 },
+  k: { x: 0.547, y: 0.424 },
+  l: { x: 0.635, y: 0.424 },
+  m: { x: 0.03, y: 0.448 },
+  n: { x: 0.11, y: 0.448 }, // (surf)
+  o: { x: 0.197, y: 0.622 },
+  p: { x: 0.388, y: 0.622 },
+  q: { x: 0.746, y: 0.602 },
+  r: { x: 0.831, y: 0.602 },
+  s: { x: 0.385, y: 0.769 },
+  t: { x: 0.547, y: 0.769 },
+  u: { x: 0.661, y: 0.769 },
+  v: { x: 0.746, y: 0.769 },
+  x: { x: 0.385, y: 0.935 },
+  // Áreas de exploração (3.1–3.5): nós dedicados sobre os números, ligados ao ponto de acesso.
+  g31: { x: 0.365, y: 0.178 }, // 3.1 (acesso 'e')
+  g32: { x: 0.544, y: 0.276 }, // 3.2 (acesso 'k')
+  g33: { x: 0.885, y: 0.6 }, // 3.3 (acesso 'r')
+  g34: { x: 0.11, y: 0.69 }, // 3.4 (acesso 'o')
+  g35: { x: 0.836, y: 0.769 }, // 3.5 (acesso 'r')
+}
+
+// Arestas NÃO-direcionadas (ligam os dois sentidos), conforme a coluna "adjacentes" do CSV,
+// mais as ligações dos nós de exploração aos seus pontos de acesso.
+const CERULEAN_EDGES: [string, string][] = [
+  ['a', 'b'],
+  ['a', 'n'],
+  ['b', 'j'],
+  ['c', 'd'],
+  ['c', 'l'],
+  ['d', 'f'],
+  ['e', 'h'],
+  ['f', 'g'],
+  ['f', 'q'],
+  ['g', 'r'],
+  ['h', 'i'],
+  ['h', 'o'],
+  ['i', 'j'],
+  ['j', 'k'],
+  ['k', 'l'],
+  ['m', 'n'],
+  ['o', 'p'],
+  ['p', 's'],
+  ['q', 'r'],
+  ['s', 't'],
+  ['s', 'x'],
+  ['t', 'u'],
+  ['u', 'v'],
+  ['e', 'g31'],
+  ['k', 'g32'],
+  ['r', 'g33'],
+  ['o', 'g34'],
+  ['r', 'g35'],
+]
+
+// Arestas de MÃO ÚNICA: vai mas não volta (CSV — 'k' lista 't' mas 't' não lista 'k'; idem 'q→v').
+const CERULEAN_DIRECTED_EDGES: [string, string][] = [
+  ['k', 't'],
+  ['q', 'v'],
+]
+
+// Âncoras de EXIBIÇÃO: onde o popup aparece SOBRE o número da arte (distinto da letra de parada).
+// Pontos que hospedam mais de um número desempatam por TIPO (chave composta "ponto:tipo").
+const CERULEAN_MARKERS: Record<string, MapPos> = {
+  'u:gym': { x: 0.659, y: 0.611 }, // 1 — ginásio (sobre o prédio)
+  'p:center': { x: 0.471, y: 0.544 }, // 2 — centro (sobre o P.C)
+  't:mart': { x: 0.601, y: 0.892 }, // 4 — mart (sobre o prédio)
+  x: { x: 0.285, y: 0.852 }, // 5.2 — 1ª Rocket (sobre o ponto laranja inferior)
+  m: { x: 0.03, y: 0.294 }, // 5.1 — 2ª Rocket (sobre o ponto laranja superior)
+  h: { x: 0.219, y: 0.276 }, // 6.1 — casa
+  i: { x: 0.37, y: 0.276 }, // 6.2 — casa
+  c: { x: 0.641, y: 0.276 }, // 6.3 — casa
+  g: { x: 0.846, y: 0.243 }, // 6.4 — casa
+  'p:house': { x: 0.323, y: 0.498 }, // 6.5 — casa (quando a missão é de casa em 'p')
+  't:house': { x: 0.492, y: 0.91 }, // 6.6 — casa (quando a missão é de casa em 't')
+  'u:house': { x: 0.688, y: 0.91 }, // 6.7 — casa (quando a missão é de casa em 'u')
+}
+
+const CERULEAN_GRAPH: CityGraph = {
+  nodes: CERULEAN_NODES,
+  adj: buildAdjacency(CERULEAN_NODES, CERULEAN_EDGES, CERULEAN_DIRECTED_EDGES),
+  markers: CERULEAN_MARKERS,
+  surfNodes: ['a', 'n'],
+}
+
+// Sítio → ponto do grafo (números da imagem anotada de Cerulean).
+const CERULEAN_SITE_NODES: CitySiteNodes = {
+  gym: 'u', // 1 (ginásio)
+  center: 'p', // 2 (centro) — acessível de 'p' e 't'; paramos em 'p'
+  mart: 't', // 4 (mart) — acessível de 't' e 'u'; paramos em 't'
+  museum: ['x', 'm'], // 5.2 (1ª Rocket) e 5.1 (2ª Rocket), nesta ordem
+  houses: ['h', 'i', 'c', 'g', 'p', 't', 'u'], // 6.1..6.7
+  green: ['g31', 'g32', 'g33', 'g34', 'g35'], // 3.1..3.5 (áreas de exploração/captura)
 }
 
 interface CitySeed {
@@ -142,6 +262,8 @@ const SEEDS: CitySeed[] = [
       { speciesId: 120, level: 3 }, // Staryu
       { speciesId: 118, level: 1 }, // Goldeen
     ],
+    graph: CERULEAN_GRAPH,
+    siteNodes: CERULEAN_SITE_NODES,
   },
   {
     name: 'Vermilion',
@@ -262,7 +384,7 @@ export function nodesByKind(siteNodes: CitySiteNodes, kind: SiteKind): string[] 
     case 'mart':
       return [siteNodes.mart]
     case 'museum':
-      return [siteNodes.museum]
+      return siteNodes.museum
     case 'house':
       return siteNodes.houses
     case 'green':

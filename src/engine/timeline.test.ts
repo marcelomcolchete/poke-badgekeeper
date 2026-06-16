@@ -94,6 +94,15 @@ describe('buildDaySchedule (PLAN §3.1/§4.8)', () => {
     }
   })
 
+  it('áreas verdes são só captura: nenhuma missão do dia nasce no sítio verde (freeArea)', () => {
+    for (let seed = 1; seed <= 50; seed++) {
+      for (let day = 1; day <= TOTAL_DAYS; day++) {
+        const cats = buildDaySchedule(seed, day, PEWTER).missions.map((m) => m.category)
+        expect(cats).not.toContain('freeArea')
+      }
+    }
+  })
+
   it('Pokecenter (center) e Pokemart (mart) aparecem no máximo 1×/dia cada', () => {
     for (let seed = 1; seed <= 50; seed++) {
       for (let day = 1; day <= TOTAL_DAYS; day++) {

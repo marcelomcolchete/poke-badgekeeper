@@ -6,8 +6,8 @@ import { TypeBadge } from '../common/TypeBadge.tsx'
 import { Textbox } from '../Textbox/Textbox.tsx'
 import styles from './CitySelectScreen.module.css'
 
-/** Cidades com conteúdo pronto (Fase 5: somente Pewter). */
-const PLAYABLE_CITIES = new Set<number>([0])
+/** Cidades com conteúdo pronto (Pewter e Cerulean). */
+const PLAYABLE_CITIES = new Set<number>([0, 1])
 
 export function CitySelectScreen({ onChoose }: { onChoose: (cityIndex: number) => void }) {
   return (
@@ -48,7 +48,7 @@ export function CitySelectScreen({ onChoose }: { onChoose: (cityIndex: number) =
         })}
       </div>
 
-      <Textbox>Pewter está pronta. As demais cidades de Kanto chegam em breve.</Textbox>
+      <Textbox>Pewter e Cerulean estão prontas. As demais cidades de Kanto chegam em breve.</Textbox>
     </div>
   )
 }

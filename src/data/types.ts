@@ -58,6 +58,13 @@ export interface CityGraph {
    * ausente nas arestas normais — PLAN §3.1 (Habilidade Secreta).
    */
   edgeCosts?: Record<string, number>
+  /**
+   * Pontos que só Pokémon com a Habilidade Secreta "Surf" desbloqueada conseguem atravessar
+   * (corredores de água — ex.: 'a'/'n' em Cerulean). Hoje é apenas METADADO do mapa: o bloqueio
+   * de despacho quando o menor caminho cruza um destes pontos e ninguém do time tem Surf entra
+   * com o plano da Habilidade Surf. Ausente = nenhum ponto exige Surf.
+   */
+  surfNodes?: string[]
 }
 
 /**
@@ -72,11 +79,15 @@ export interface CitySiteNodes {
   center: string
   /** Poké Mart: missões 'mart' (recompensa em ouro). */
   mart: string
-  /** Antigo ponto do museu: onde a missão Rocket Team surge nesta cidade. */
-  museum: string
+  /**
+   * Pontos onde a missão da Equipe Rocket surge, EM ORDEM de aparição na run (a 1ª missão
+   * Rocket nasce em `museum[0]`, a 2ª em `museum[1]`…). Cidades com um único ponto Rocket
+   * (ex.: Pewter) usam lista de 1 elemento; Cerulean usa `['x', 'm']` (5.2 e depois 5.1).
+   */
+  museum: string[]
   /** Casas: missões 'house'. */
   houses: string[]
-  /** Áreas verdes: missões 'freeArea' e os spots de captura do dia. */
+  /** Áreas verdes (exploração 3.x): APENAS os spots de captura do dia — não hospedam missões. */
   green: string[]
 }
 
