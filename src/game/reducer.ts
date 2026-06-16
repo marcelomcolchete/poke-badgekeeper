@@ -23,6 +23,9 @@ import { allocatePoint, applyItem, buyBall, buyItem, useRareCandy } from './mark
 export function reducer(state: GameState, action: GameAction): GameState {
   const s = draft(state)
   switch (action.type) {
+    case 'SELECT_CITY':
+      s.run.cityIndex = action.cityIndex
+      break
     case 'START_RUN':
       startRun(s, action.picks)
       break

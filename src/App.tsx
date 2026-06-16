@@ -71,7 +71,12 @@ export default function App() {
           cityChosen ? (
             <NewGameScreen state={state} dispatch={dispatch} />
           ) : (
-            <CitySelectScreen onChoose={() => setCityChosen(true)} />
+            <CitySelectScreen
+              onChoose={(cityIndex) => {
+                dispatch({ type: 'SELECT_CITY', cityIndex })
+                setCityChosen(true)
+              }}
+            />
           )
         ) : state.run.phase === 'GAMEOVER' ? (
           <GameOverScreen reason={state.run.gameOverReason} onRestart={restart} />

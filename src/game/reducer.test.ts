@@ -56,6 +56,11 @@ describe('reducer — pureza e determinismo', () => {
     expect(s.clock.speed).toBe(3)
   })
 
+  it('SELECT_CITY grava o índice da cidade escolhida na run', () => {
+    const s = reducer(createInitialState(SEED), { type: 'SELECT_CITY', cityIndex: 1 })
+    expect(s.run.cityIndex).toBe(1) // Cerulean — o novo jogo usa este índice p/ tipos/iniciais/mapa
+  })
+
   it('TICK não avança fora da fase DAY', () => {
     const morning = createInitialState(SEED) // phase MORNING
     const s = reducer(morning, { type: 'TICK', deltaMs: 5_000 })
