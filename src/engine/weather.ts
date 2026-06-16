@@ -7,8 +7,8 @@
 // - Cada dia tem uma % de CHANCE (somando ~200% nos dias 3–10, variada e reproduzível).
 // - maxTimes(dia) chuvas POTENCIAIS são agendadas em janelas que não se sobrepõem; cada uma
 //   OCORRE se um sorteio vs a chance do dia passar. Dias 1 e 2 nunca têm clima.
-// - Cada chuva dura 10–30s e cria 1–3 poças em segundos aleatórios. A poça nasce nível 1 e
-//   cresce +1 a cada 5s de chuva (cap 3). Ao acabar a chuva ela seca (1s/3s/5s por nível) e some.
+// - Cada chuva dura 30–50s e cria 1–3 poças em segundos aleatórios. A poça nasce nível 1 e
+//   cresce +1 a cada 10s de chuva (cap 3). Ao acabar a chuva ela seca (1s/3s/5s por nível) e some.
 //   Enquanto seca, ainda BLOQUEIA (funciona como ponto de água até desaparecer).
 
 import type { CityData } from '../data/types.ts'
@@ -24,8 +24,8 @@ export const WEATHER_FIRST_ELIGIBLE_DAY = 3
 /** Orçamento de chance somado entre os 8 dias elegíveis (3–10). */
 export const RAIN_CHANCE_TOTAL_PERCENT = 200
 /** Duração de um evento de chuva (ms de jogo). */
-export const RAIN_EVENT_MIN_MS = 10_000
-export const RAIN_EVENT_MAX_MS = 30_000
+export const RAIN_EVENT_MIN_MS = 30_000
+export const RAIN_EVENT_MAX_MS = 50_000
 /** Folga mínima entre o fim de uma chuva e o início da próxima (nunca chove duas vezes ao mesmo tempo). */
 export const RAIN_GAP_MS = 4_000
 /** Quantidade de poças por evento de chuva. */
@@ -34,8 +34,8 @@ export const PUDDLES_PER_EVENT_MAX = 3
 /** Níveis da poça (pequeno/médio/grande). */
 export const PUDDLE_LEVEL_MIN = 1
 export const PUDDLE_LEVEL_MAX = 3
-/** A cada 5s de chuva a poça sobe um nível. */
-export const PUDDLE_GROW_INTERVAL_MS = 5_000
+/** A cada 10s de chuva a poça sobe um nível. */
+export const PUDDLE_GROW_INTERVAL_MS = 10_000
 /** Tempo de secagem após a chuva acabar, por nível [_, pequeno, médio, grande] (ms). */
 export const PUDDLE_DRY_MS_BY_LEVEL = [0, 1_000, 3_000, 5_000] as const
 
