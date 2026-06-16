@@ -87,9 +87,9 @@ describe('Cerulean (cidade 2)', () => {
     expect(pathDistance(graph, back)).toBeLessThan(pathDistance(graph, out))
   })
 
-  it('a missão Rocket nasce em 5.2 (x) primeiro e em 5.1 (m) depois', () => {
+  it('a Rocket tem um ÚNICO ponto (x); as 2 missões da run colapsam nele', () => {
     const rocketNodes = nodesForCategory(siteNodes, 'rocket')
-    expect(rocketNodes).toEqual(['x', 'm']) // [0] = 5.2 (1ª), [1] = 5.1 (2ª)
+    expect(rocketNodes).toEqual(['x']) // ponto único (5.2)
 
     for (let seed = 1; seed <= 40; seed++) {
       const days = rocketDays(seed)
@@ -102,9 +102,14 @@ describe('Cerulean (cidade 2)', () => {
       const second = buildDaySchedule(seed, days[1] as number, CERULEAN).missions.find(
         (m) => m.category === 'rocket',
       )
-      expect(rocketNodes[first?.siteIndex ?? -1]).toBe('x') // 1ª → 5.2
-      expect(rocketNodes[second?.siteIndex ?? -1]).toBe('m') // 2ª → 5.1
+      expect(rocketNodes[first?.siteIndex ?? -1]).toBe('x') // 1ª → x
+      expect(rocketNodes[second?.siteIndex ?? -1]).toBe('x') // 2ª → x (colapsa no ponto único)
     }
+  })
+
+  it("'m' (antiga 2ª Rocket) virou área de exploração/captura", () => {
+    expect(nodesForCategory(siteNodes, 'rocket')).not.toContain('m')
+    expect(siteNodes.green).toContain('m')
   })
 
   it('em dias sem Rocket não há missão Rocket', () => {

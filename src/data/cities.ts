@@ -133,8 +133,8 @@ const PEWTER_SITE_NODES: CitySiteNodes = {
 // Grafo calibrado sobre a arte anotada (CSV de Cerulean). 23 pontos de PARADA a–x (sem 'w')
 // + 5 nós dedicados de exploração g31..g35 (as áreas 3.1–3.5, sobre os números). O ginásio é
 // 'u'. Posições normalizadas (0–1) estimadas da arte — refináveis com o DEV picker do CityMap.
-// Novidades vs. Pewter: pontos de Surf ('a','n'), arestas de mão única (k→t, q→v) e DOIS
-// pontos de missão Rocket (5.2 e 5.1).
+// Novidades vs. Pewter: pontos de Surf ('a','n') e arestas de mão única (k→t, q→v). A Rocket tem
+// um ÚNICO ponto (5.2 = 'x'); o antigo 5.1 ('m') virou área de exploração (3.6).
 const CERULEAN_NODES: Record<string, MapPos> = {
   a: { x: 0.109, y: 0.054 }, // (surf)
   b: { x: 0.487, y: 0.054 },
@@ -212,8 +212,8 @@ const CERULEAN_MARKERS: Record<string, MapPos> = {
   'u:gym': { x: 0.659, y: 0.611 }, // 1 — ginásio (sobre o prédio)
   'p:center': { x: 0.471, y: 0.544 }, // 2 — centro (sobre o P.C)
   't:mart': { x: 0.601, y: 0.892 }, // 4 — mart (sobre o prédio)
-  x: { x: 0.285, y: 0.852 }, // 5.2 — 1ª Rocket (sobre o ponto laranja inferior)
-  m: { x: 0.03, y: 0.294 }, // 5.1 — 2ª Rocket (sobre o ponto laranja superior)
+  x: { x: 0.285, y: 0.852 }, // 5.2 — Rocket (ponto único; sobre o ponto laranja inferior)
+  m: { x: 0.03, y: 0.294 }, // 3.6 — exploração (era a 2ª Rocket; sobre o ponto laranja superior)
   h: { x: 0.219, y: 0.276 }, // 6.1 — casa
   i: { x: 0.37, y: 0.276 }, // 6.2 — casa
   c: { x: 0.641, y: 0.276 }, // 6.3 — casa
@@ -235,9 +235,9 @@ const CERULEAN_SITE_NODES: CitySiteNodes = {
   gym: 'u', // 1 (ginásio)
   center: 'p', // 2 (centro) — acessível de 'p' e 't'; paramos em 'p'
   mart: 't', // 4 (mart) — acessível de 't' e 'u'; paramos em 't'
-  museum: ['x', 'm'], // 5.2 (1ª Rocket) e 5.1 (2ª Rocket), nesta ordem
+  museum: ['x'], // 5.2 — ponto Rocket ÚNICO (as 2 missões da run colapsam aqui, como Pewter)
   houses: ['h', 'i', 'c', 'g', 'p', 't', 'u'], // 6.1..6.7
-  green: ['g31', 'g32', 'g33', 'g34', 'g35'], // 3.1..3.5 (áreas de exploração/captura)
+  green: ['g31', 'g32', 'g33', 'g34', 'g35', 'm'], // 3.1..3.6 (áreas de exploração/captura; 'm' era a 2ª Rocket)
 }
 
 interface CitySeed {
