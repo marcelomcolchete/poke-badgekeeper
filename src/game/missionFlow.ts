@@ -28,19 +28,13 @@ import {
   missionSuccessProbabilityCtx,
   resolveMission,
   travelRoute,
-  type MissionOutcome,
 } from '../engine/missions.ts'
 import {
-  hasShellArmor,
-  hasWeakArmor,
-  STURDY_SPENT_PASSIVE,
   sturdyAvailable,
-  sturdyHealsFull,
-  sturdyPerGame,
   teamTravelSpeedMultiplier,
   type MissionSecretCtx,
 } from '../engine/secretEffects.ts'
-import { graphWithTunnel } from '../engine/pathfinding.ts'
+import { graphWithTunnels } from '../engine/pathfinding.ts'
 import { createRng } from '../engine/rng.ts'
 import { applyBattleSecretRuntime } from './defenseFlow.ts'
 import { applyAutoItems, applyXpGains } from './itemFlow.ts'
@@ -96,12 +90,12 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
   const city = getCity(s.run.cityIndex)
   const template = getMissionTemplate(mission.templateId)
   const now = s.clock.dayElapsedMs
-  const graph = graphWithTunnel(city.graph, s.today.digTunnel)
+  const graph = graphWithTunnels(city.graph, s.today.digTunnels)
   // Ida e VOLTA calculadas separadamente: com arestas de mão única (ex.: k→t) a volta NÃO é o
   // reverso da ida (PLAN §3.1). Em grafos simétricos as duas rotas/distâncias coincidem.
   const outbound = travelRoute(graph, city.siteNodes.gym, mission.node, team)
   const inbound = travelRoute(graph, mission.node, city.siteNodes.gym, team)
-  const speedMult = teamTravelSpeedMultiplier(team, s.today.secretRuntime, s.runItems)
+  const speedMult = teamTravelSpeedMultiplier(team, s.runItems)
   const outMs = graphTravelMs(outbound.distance, team, speedMult)
   const inMs = graphTravelMs(inbound.distance, team, speedMult)
   const execution = executionMs(team, template.baseExecutionMs)
@@ -170,8 +164,8 @@ export function resolveMissionNow(s: GameState, mission: MissionInstance): void 
     pSuccess,
     damageForDay(s.run.day),
   )
-  // Habilidades Secretas: atualiza stacks (Sand Rush), ativa Weak Armor e consome Battle Armor.
-  applyMissionSecretRuntime(s, team, outcome)
+  // Habilidades Secretas: consome o Battle Armor pendente (valeu para esta missão).
+  applyMissionSecretRuntime(s, team)
 
   // Equipe Rocket: cumprir a parte de atributos NÃO dá recompensa — o time fica no local
   // para BATALHAR (status 'battle'). Recompensas só na vitória (PLAN — Rocket Team). Falhar
@@ -182,16 +176,15 @@ export function resolveMissionNow(s: GameState, mission: MissionInstance): void 
   }
 
   // Aplica só o dano (HP) agora; XP/cura/evolução são adiados para freeOnReturn.
-  // Sturdy: salva do desmaio em missão (1× no escopo do nível) — fica com 1 de vida (ou cheia no Ouro).
+  // Sturdy: salva do desmaio em missão (1×/dia) — fica com 1 de vida.
   const sturdyIds = new Set(
     team.filter((p) => sturdyAvailable(p, s.today.secretRuntime)).map((p) => p.id),
   )
   for (const member of outcome.team) {
     let mon = member
     if (mon.currentHp <= 0 && sturdyIds.has(mon.id)) {
-      mon = { ...mon, currentHp: sturdyHealsFull(mon) ? mon.maxHp : 1 }
-      if (sturdyPerGame(mon)) mon = { ...mon, passives: [...mon.passives, STURDY_SPENT_PASSIVE] }
-      else (s.today.secretRuntime[mon.id] ??= {}).sturdyUsed = true
+      mon = { ...mon, currentHp: 1 }
+      ;(s.today.secretRuntime[mon.id] ??= {}).sturdyUsed = true
     }
     replaceMon(s, { ...mon, status: 'returning' })
   }
@@ -248,27 +241,14 @@ export function freeOnReturn(s: GameState, mission: MissionInstance): void {
 }
 
 /**
- * Atualiza o estado diário das Habilidades Secretas após resolver a missão:
- *  - Weak Armor ativa o bônus de velocidade de quem tomou dano.
- *  - Shell Armor: numa missão fracassada o dano viria e foi anulado → debuff na PRÓXIMA missão.
- *  - Consome o que valeu para ESTA missão: Battle Armor (bônus de atributos) e o debuff
- *    anterior do Shell Armor (velocidade).
+ * Atualiza o estado diário das Habilidades Secretas após resolver a missão: consome o Battle
+ * Armor pendente (o bônus de atributos valeu para ESTA missão). Weak Armor deriva a velocidade do
+ * HP faltante e Shell Armor não tem debuff de velocidade — nada a re-armar aqui.
  */
-function applyMissionSecretRuntime(
-  s: GameState,
-  before: readonly Pokemon[],
-  outcome: MissionOutcome,
-): void {
-  const post = new Map(outcome.team.map((p) => [p.id, p]))
+function applyMissionSecretRuntime(s: GameState, before: readonly Pokemon[]): void {
   for (const p of before) {
-    const rt = (s.today.secretRuntime[p.id] ??= {})
-    if (hasWeakArmor(p)) {
-      const after = post.get(p.id)
-      if (after && after.currentHp < p.currentHp) rt.weakArmorActive = true
-    }
-    if (rt.battleArmorPending) rt.battleArmorPending = false
-    // O debuff de velocidade valeu para a viagem desta missão; re-arma se ela fracassou.
-    rt.shellArmorSlow = hasShellArmor(p) && !outcome.success
+    const rt = s.today.secretRuntime[p.id]
+    if (rt?.battleArmorPending) rt.battleArmorPending = false
   }
 }
 

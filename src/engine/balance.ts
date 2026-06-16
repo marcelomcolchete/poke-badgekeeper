@@ -184,37 +184,37 @@ export const ROCKET_XP_MULTIPLIER = 3
 /** Defesa/Rocket §destaque: um desafiante do esquadrão ganha +15 de Batalha e exibe medalha. */
 export const DEFENSE_BUFF_BATTLE = 15
 
-// ---- Habilidades Secretas (efeitos por linha de Pedra/Ground) ----
+// ---- Habilidades Secretas (efeitos fixos por TIPO de habilidade) ----
 //
-// Cada habilidade tem 3 níveis (Bronze/Prata/Ouro), conquistados ao virar Destaque do Dia.
-// As constantes abaixo são tuplas indexadas por (nível − 1): [Bronze, Prata, Ouro].
+// Cada habilidade tem efeito fixo (sem níveis). Várias linhas compartilham a mesma habilidade,
+// e um Pokémon pode ter até três ativas ao mesmo tempo (ver data/secretAbilities.ts).
 
-/** Rivalidade (Nidoran): bônus de atributo na missão POR aliado do mesmo gênero. */
-export const RIVALRY_ATTR_PER_ALLY_BY_LEVEL = [0.1, 0.1, 0.2] as const
-/** Rivalidade (nv2+): bônus de batalha contra um oponente do mesmo gênero. */
-export const RIVALRY_BATTLE_BONUS_BY_LEVEL = [0, 0.15, 0.3] as const
-/** Rock Head (Rhyhorn): multiplicador de atributos em escolta (ganho) e em ensino (perda). */
-export const ROCK_HEAD_ESCORT_MULT_BY_LEVEL = [1.5, 1.75, 2.0] as const
-export const ROCK_HEAD_STUDY_MULT_BY_LEVEL = [0.5, 0.4, 0.3] as const
-/** Battle Armor (Cubone): multiplicador de atributos na próxima missão após batalhar. */
-export const BATTLE_ARMOR_MISSION_MULT_BY_LEVEL = [1.3, 1.5, 2.0] as const
-/** Rollout (Sandshrew): bônus de batalha por Pokémon derrotado no duelo (acumula na sequência). */
-export const ROLLOUT_BATTLE_BONUS_BY_LEVEL = [0.1, 0.15, 0.25] as const
-/** Weak Armor (Onix/Kabuto): dano recebido dobrado; bônus de velocidade do time após tomar dano. */
+/** Rivalidade: bônus de atributo na missão POR aliado do mesmo gênero. */
+export const RIVALRY_ATTR_PER_ALLY = 0.1
+/** Rivalidade: bônus de batalha contra um oponente do mesmo gênero. */
+export const RIVALRY_BATTLE_BONUS = 0.1
+/** Rock Head: multiplicador de atributos em escolta (ganho) e em ensino (perda). */
+export const ROCK_HEAD_ESCORT_MULT = 1.5
+export const ROCK_HEAD_STUDY_MULT = 0.5
+/** Battle Armor: multiplicador de atributos na próxima missão após batalhar. */
+export const BATTLE_ARMOR_MISSION_MULT = 1.3
+/** Rollout: bônus de batalha por Pokémon derrotado no duelo (acumula na sequência). */
+export const ROLLOUT_BATTLE_BONUS = 0.1
+/** Hustle: bônus de Batalha em batalhas; penalidade de atributos em missões. */
+export const HUSTLE_BATTLE_BONUS = 0.1
+export const HUSTLE_MISSION_MULT = 0.9
+/** Weak Armor: dano recebido dobrado; bônus de velocidade do time POR ponto de HP faltante. */
 export const WEAK_ARMOR_DAMAGE_MULT = 2
-export const WEAK_ARMOR_SPEED_BONUS_BY_LEVEL = [0.5, 1.0, 2.0] as const
-/** Shell Armor (Omanyte): redução de velocidade do time na próxima missão após anular dano. */
-export const SHELL_ARMOR_SLOW_BY_LEVEL = [0.5, 0.25, 0] as const
-/** Fly (Aerodactyl): bônus de velocidade ao voar (nv1 sem bônus; nv2+ acelera). */
-export const FLY_SPEED_BONUS_BY_LEVEL = [0, 0.5, 0.5] as const
-/** Fly: a partir deste nível o voo funciona com o time inteiro (não só sozinho). */
-export const FLY_TEAM_LEVEL = 3
-/** Sturdy: a partir deste nível, em vez de ficar com 1 de vida, recupera toda a vida. */
-export const STURDY_FULL_HEAL_LEVEL = 3
-/** Dig: quantidade de buracos (pontos ligados) por nível; e nível a partir do qual um é o ginásio. */
-export const DIG_HOLES_BY_LEVEL = [2, 3, 3] as const
-export const DIG_GYM_ANCHOR_LEVEL = 3
-/** Dig (Diglett): custo do túnel entre os pontos (distância-do-grafo, bem baixa = atalho). */
+export const WEAK_ARMOR_SPEED_PER_MISSING_HP = 0.2
+/** Shell Armor: todo dano recebido na vida vira este valor (1). */
+export const SHELL_ARMOR_DAMAGE = 1
+/** Explosion: ao ser derrotado, perde esta fração da vida máxima e leva o inimigo junto. */
+export const EXPLOSION_SELF_DAMAGE_FRACTION = 0.5
+/** Fly: bônus de velocidade do time ao voar (além do atalho em linha reta). */
+export const FLY_SPEED_BONUS = 0.5
+/** Dig: quantos buracos (pontos) cada túnel liga — sempre 2 (dois pontos). */
+export const DIG_HOLES_PER_TUNNEL = 2
+/** Dig: custo do túnel entre os pontos (distância-do-grafo, bem baixa = atalho). */
 export const DIG_TUNNEL_COST = 0.4
 
 // ---- Sistema de Itens (PLAN — Itens) ----

@@ -17,7 +17,7 @@ import type {
 import { getCity, markerPos } from '../../data/cities.ts'
 import { getMissionTemplate, missionReward } from '../../data/missionTemplates.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
-import { graphWithTunnel, pointAlongPath } from '../../engine/pathfinding.ts'
+import { graphWithTunnels, pointAlongPath } from '../../engine/pathfinding.ts'
 import { teamTravelSpeedMultiplier } from '../../engine/secretEffects.ts'
 import { clamp } from '../../engine/math.ts'
 import styles from './CityMap.module.css'
@@ -74,7 +74,7 @@ function elapsedFraction(now: number, start: number, end: number): number {
 
 export function CityMap({ state, onMission, onDefense, onSpot }: Props) {
   const city = getCity(state.run.cityIndex)
-  const graph = graphWithTunnel(city.graph, state.today.digTunnel)
+  const graph = graphWithTunnels(city.graph, state.today.digTunnels)
   const now = state.clock.dayElapsedMs
   const activeDefense = state.defenses.find((d) => d.status === 'active')
   const missions = state.missions.filter((m) => VISIBLE_MISSION_STATUSES.includes(m.status))
@@ -91,7 +91,9 @@ export function CityMap({ state, onMission, onDefense, onSpot }: Props) {
           draggable={false}
         />
 
-        {state.today.digTunnel && <DigTunnel graph={graph} tunnel={state.today.digTunnel} />}
+        {state.today.digTunnels.map((tunnel, i) => (
+          <DigTunnel key={`dig-${i}`} graph={graph} tunnel={tunnel} />
+        ))}
 
         {activeDefense && (
           <div className={styles.anchor} style={posStyle(markerPos(graph, city.siteNodes.gym, 'gym'))}>
@@ -136,7 +138,7 @@ export function CityMap({ state, onMission, onDefense, onSpot }: Props) {
   )
 }
 
-/** Túnel do Dig: um buraco em cada ponto ligado (2–3; a ligação fica subentendida). */
+/** Túnel do Dig: um buraco em cada ponto ligado (2; a ligação fica subentendida). */
 function DigTunnel({ graph, tunnel }: { graph: CityGraph; tunnel: readonly string[] }) {
   return (
     <>
@@ -183,11 +185,11 @@ function MapTravelers({ state, graph, now }: { state: GameState; graph: CityGrap
       {state.missions.map((m) => {
         const pos = missionTravelerPos(graph, m, now)
         if (!pos) return null
-        // Buff de velocidade do time (Sand Rush/Weak Armor) → aura piscando ao redor.
+        // Buff de velocidade do time (Weak Armor/Fly) → aura piscando ao redor.
         const team = m.teamIds
           .map((id) => state.roster.find((p) => p.id === id))
           .filter((p): p is Pokemon => p !== undefined)
-        const speedy = teamTravelSpeedMultiplier(team, state.today.secretRuntime, state.runItems) > 1
+        const speedy = teamTravelSpeedMultiplier(team, state.runItems) > 1
         return (
           <TravelerGroup
             key={`m-${m.id}`}
