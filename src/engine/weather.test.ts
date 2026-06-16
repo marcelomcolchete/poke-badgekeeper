@@ -140,26 +140,28 @@ describe('poças', () => {
 })
 
 describe('puddleLevelAt', () => {
-  // Poça nasce em 2s, chuva acaba em 20s. Nível trava no fim e seca conforme o tamanho.
-  const spec: PuddleSpec = { node: 'h', startMs: 2_000, eventEndMs: 20_000, endMs: 0 }
-  // nível no fim = 1 + floor((20000-2000)/5000) = 1+3 = 4 → cap 3; seca em PUDDLE_DRY[3] = 5s.
+  // Poça nasce em 0, chuva longa o bastante para atingir o nível 3 (parametrizado pelo intervalo
+  // de crescimento, então o teste vale mesmo se o intervalo mudar).
+  const grow = PUDDLE_GROW_INTERVAL_MS
+  const spec: PuddleSpec = { node: 'h', startMs: 0, eventEndMs: 3 * grow, endMs: 0 }
+  // nível no fim = 1 + floor(3*grow / grow) = 4 → cap 3; seca em PUDDLE_DRY[3] = 5s.
   spec.endMs = spec.eventEndMs + PUDDLE_DRY_MS_BY_LEVEL[3]!
 
   it('0 antes de surgir e após secar', () => {
-    expect(puddleLevelAt(spec, 1_999)).toBe(0)
+    expect(puddleLevelAt(spec, -1)).toBe(0)
     expect(puddleLevelAt(spec, spec.endMs)).toBe(0)
     expect(puddleLevelAt(spec, spec.endMs + 1)).toBe(0)
   })
 
-  it('cresce +1 a cada 5s de chuva, capado em 3', () => {
-    expect(puddleLevelAt(spec, 2_000)).toBe(1)
-    expect(puddleLevelAt(spec, 2_000 + PUDDLE_GROW_INTERVAL_MS)).toBe(2)
-    expect(puddleLevelAt(spec, 2_000 + 2 * PUDDLE_GROW_INTERVAL_MS)).toBe(3)
-    expect(puddleLevelAt(spec, 19_000)).toBe(3) // não passa de 3
+  it('cresce +1 a cada intervalo de chuva, capado em 3', () => {
+    expect(puddleLevelAt(spec, 0)).toBe(1)
+    expect(puddleLevelAt(spec, grow)).toBe(2)
+    expect(puddleLevelAt(spec, 2 * grow)).toBe(3)
+    expect(puddleLevelAt(spec, spec.eventEndMs - 1)).toBe(3) // não passa de 3
   })
 
   it('durante a secagem (após o fim da chuva) ainda bloqueia, com nível travado', () => {
-    expect(puddleLevelAt(spec, 21_000)).toBe(3) // entre eventEnd e end → nível final
+    expect(puddleLevelAt(spec, spec.eventEndMs + 1)).toBe(3) // entre eventEnd e end → nível final
     expect(puddleLevelAt(spec, spec.endMs - 1)).toBe(3)
   })
 })
