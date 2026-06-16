@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { getCity } from '../data/cities.ts'
-import { pathDistance, pointAlongPath, shortestPath } from './pathfinding.ts'
+import { graphWithoutNodes, pathDistance, pointAlongPath, shortestPath } from './pathfinding.ts'
 
 const PEWTER = getCity(0)
 const GRAPH = PEWTER.graph
@@ -80,5 +80,34 @@ describe('pointAlongPath', () => {
 
   it('caminho de 1 ponto → sempre nele', () => {
     expect(pointAlongPath(GRAPH, ['j'], 0.7)).toEqual({ ...GRAPH.nodes.j })
+  })
+})
+
+describe('graphWithoutNodes (poças)', () => {
+  it('conjunto vazio → devolve o grafo intacto', () => {
+    expect(graphWithoutNodes(GRAPH, new Set())).toBe(GRAPH)
+  })
+
+  it('o ponto bloqueado fica sem adjacência e some dos vizinhos', () => {
+    const blocked = graphWithoutNodes(GRAPH, new Set(['c']))
+    expect(blocked.adj.c).toEqual([])
+    for (const [, neighbors] of Object.entries(blocked.adj)) {
+      expect(neighbors).not.toContain('c')
+    }
+  })
+
+  it('o menor caminho contorna o ponto bloqueado quando há alternativa', () => {
+    const direct = shortestPath(GRAPH, 'j', 'q')
+    // bloqueia um ponto NO meio do caminho direto (não as pontas) e exige desvio.
+    const mid = direct[2]!
+    const detour = shortestPath(graphWithoutNodes(GRAPH, new Set([mid])), 'j', 'q')
+    if (detour.length > 0) {
+      expect(detour).not.toContain(mid)
+    }
+  })
+
+  it('destino inalcançável sem o ponto-corte → caminho vazio', () => {
+    // 'q' só é alcançado via 'k' em Pewter; bloquear 'k' isola 'q'.
+    expect(shortestPath(graphWithoutNodes(GRAPH, new Set(['k'])), 'j', 'q')).toEqual([])
   })
 })

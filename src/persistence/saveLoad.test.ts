@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { SAVE_KEY } from '../engine/constants.ts'
+import { emptyWeatherSchedule } from '../engine/weather.ts'
 import { autoSeedRun } from '../game/setup.ts'
 import { reducer } from '../game/reducer.ts'
 import { clearSave, hasSave, loadGame, saveGame } from './saveLoad.ts'
@@ -38,6 +39,15 @@ describe('saveLoad (PLAN §5)', () => {
   it('descarta save de versão incompatível', () => {
     localStorage.setItem(SAVE_KEY, JSON.stringify({ version: 999, savedAtMs: 0, state: {} }))
     expect(loadGame()).toBeNull()
+  })
+
+  it('migra v26 → v27 inicializando o clima vazio', () => {
+    const legacy: Partial<ReturnType<typeof autoSeedRun>> = autoSeedRun(7)
+    delete legacy.weather // save "antigo" não tinha o campo weather
+    localStorage.setItem(SAVE_KEY, JSON.stringify({ version: 26, savedAtMs: 0, state: legacy }))
+    const loaded = loadGame()
+    expect(loaded).not.toBeNull()
+    expect(loaded!.weather).toEqual(emptyWeatherSchedule())
   })
 
   it('clearSave remove o save', () => {

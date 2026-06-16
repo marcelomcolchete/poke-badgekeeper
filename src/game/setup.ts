@@ -13,6 +13,7 @@ import { getDailyShop } from '../data/items.ts'
 import { getTrainer, trainerSprites } from '../data/trainers.ts'
 import { buildDaySchedule, type DefenseSlot } from '../engine/timeline.ts'
 import { createMissionInstance } from '../engine/missions.ts'
+import { buildWeatherSchedule } from '../engine/weather.ts'
 import { enemySquadSizeForDay, generateDefenseEnemies } from '../engine/gymDefense.ts'
 import { createPokemon } from '../engine/leveling.ts'
 import { hasDig, hasDigPlus, hasForewarn } from '../engine/secretEffects.ts'
@@ -70,6 +71,8 @@ export function setupDay(s: GameState): void {
   s.captureSpots = spots.map((p) => p.node)
   s.captureSpotSpawnsAtMs = spots.map((p) => p.at)
   s.today.digTunnels = computeDigTunnels(s, city)
+  // Clima do dia (chuva/poças em Cerulean): pré-computado e reprodutível por (seed, dia, cidade).
+  s.weather = buildWeatherSchedule(s.run.seed, s.run.day, city)
   applyForewarn(s)
   s.clock.dayElapsedMs = 0
   s.clock.speed = 1

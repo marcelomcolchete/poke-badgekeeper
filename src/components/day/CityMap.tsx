@@ -18,6 +18,7 @@ import { getCity, markerPos } from '../../data/cities.ts'
 import { getMissionTemplate, missionReward } from '../../data/missionTemplates.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
 import { graphWithTunnels, pointAlongPath } from '../../engine/pathfinding.ts'
+import { activePuddlesAt } from '../../engine/weather.ts'
 import { teamTravelSpeedMultiplier } from '../../engine/secretEffects.ts'
 import { clamp } from '../../engine/math.ts'
 import styles from './CityMap.module.css'
@@ -95,6 +96,9 @@ export function CityMap({ state, onMission, onDefense, onSpot }: Props) {
           <DigTunnel key={`dig-${i}`} graph={graph} tunnel={tunnel} />
         ))}
 
+        <PuddleOverlay graph={graph} puddles={activePuddlesAt(state.weather, now)} />
+
+
         {activeDefense && (
           <div className={styles.anchor} style={posStyle(markerPos(graph, city.siteNodes.gym, 'gym'))}>
             <DefenseMarker defense={activeDefense} now={now} onClick={() => onDefense(activeDefense.id)} />
@@ -161,18 +165,53 @@ function DigTunnel({ graph, tunnel }: { graph: CityGraph; tunnel: readonly strin
   )
 }
 
+/** Poças de chuva no mapa (espelha DigTunnel): 💧 dimensionado pelo nível (pequeno/médio/grande). */
+function PuddleOverlay({
+  graph,
+  puddles,
+}: {
+  graph: CityGraph
+  puddles: { node: string; level: number }[]
+}) {
+  return (
+    <>
+      {puddles.map(({ node, level }) => {
+        const pos = graph.nodes[node]
+        if (!pos) return null
+        return (
+          <div
+            key={`puddle-${node}`}
+            className={`${styles.puddle} ${styles[`puddleLvl${level}`] ?? ''}`}
+            style={posStyle(pos)}
+            title={`Poça d'água (nível ${level})`}
+            aria-hidden="true"
+          >
+            💧
+          </div>
+        )
+      })}
+    </>
+  )
+}
+
 /**
  * Posição atual do time de uma missão em deslocamento (ida/volta), ou null. Ao CHEGAR
  * na missão ('inProgress') o time some do mapa; reaparece só na volta ('returning') — #3.
  */
 function missionTravelerPos(graph: CityGraph, m: MissionInstance, now: number): MapPos | null {
   if (m.path.length === 0) return null
+  // Esperando uma poça secar: fica parado no ponto anterior (clima).
+  if (m.weatherHold && now < m.weatherHold.untilMs) {
+    const held = graph.nodes[m.weatherHold.node]
+    if (held) return { ...held }
+  }
   if (m.status === 'traveling' && m.acceptedAtMs !== null && m.arriveAtMs !== null) {
-    return pointAlongPath(graph, m.path, elapsedFraction(now, m.acceptedAtMs, m.arriveAtMs))
+    const out = m.reroutePath ?? m.path
+    return pointAlongPath(graph, out, elapsedFraction(now, m.acceptedAtMs, m.arriveAtMs))
   }
   if (m.status === 'returning' && m.resolveAtMs !== null && m.returnEndsAtMs !== null) {
     // Volta pela rota própria (respeita mão única); saves antigos caem no reverso da ida.
-    const back = m.returnPath ?? [...m.path].reverse()
+    const back = m.reroutePath ?? m.returnPath ?? [...m.path].reverse()
     return pointAlongPath(graph, back, elapsedFraction(now, m.resolveAtMs, m.returnEndsAtMs))
   }
   return null

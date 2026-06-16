@@ -1,6 +1,7 @@
 // Persistência: slot único com autosave no localStorage + schema versionado (PLAN §5).
 
 import type { GameState } from '../engine/state.ts'
+import { emptyWeatherSchedule } from '../engine/weather.ts'
 import { SAVE_KEY, SAVE_VERSION } from '../engine/constants.ts'
 
 export interface SaveFile {
@@ -270,6 +271,13 @@ function migrate(file: Partial<SaveFile>): SaveFile | null {
           : today,
     } as typeof state
     version = 26
+  }
+
+  // v26 → v27: efeitos climáticos. Inicia s.weather vazio (recalculado no próximo setupDay);
+  // missões em andamento não têm campos de clima (passthrough — sem poças retroativas).
+  if (version === 26) {
+    state = { weather: emptyWeatherSchedule(), ...state }
+    version = 27
   }
 
   if (version !== SAVE_VERSION) return null

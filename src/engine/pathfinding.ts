@@ -87,6 +87,21 @@ export function graphWithoutSurf(graph: CityGraph): CityGraph {
   return { ...graph, adj }
 }
 
+/**
+ * Grafo SEM os pontos informados (espelha `graphWithoutSurf`): remove os ids de `blocked` da
+ * adjacência (entrada e saída), deixando-os inalcançáveis. Usado pelas poças de chuva — quem não
+ * surfa não cruza uma poça ativa; o menor caminho a contorna ou (se não houver) devolve []. Conjunto
+ * vazio → devolve o grafo intacto.
+ */
+export function graphWithoutNodes(graph: CityGraph, blocked: ReadonlySet<string>): CityGraph {
+  if (blocked.size === 0) return graph
+  const adj: Record<string, string[]> = {}
+  for (const [id, neighbors] of Object.entries(graph.adj)) {
+    adj[id] = blocked.has(id) ? [] : neighbors.filter((n) => !blocked.has(n))
+  }
+  return { ...graph, adj }
+}
+
 /** O caminho passa por algum ponto de água (Surf)? */
 export function pathUsesSurf(graph: CityGraph, path: readonly string[]): boolean {
   const surf = graph.surfNodes

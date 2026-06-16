@@ -15,6 +15,8 @@ import type {
   TrainerId,
 } from '../types/index.ts'
 import type { DuelLog } from './gymDefense.ts'
+import type { WeatherSchedule } from './weather.ts'
+import { emptyWeatherSchedule } from './weather.ts'
 import { DAY_LENGTH_MS, STARS_START, STARTING_GOLD } from './constants.ts'
 
 export interface RunInfo {
@@ -105,6 +107,21 @@ export interface MissionInstance {
   returnEndsAtMs: number | null
   result: MissionResult | null
   pSuccess: number | null
+  /**
+   * Clima (poças): atraso total (ms) já embutido nos marcos por ter esperado uma poça secar —
+   * mantido para reprodutibilidade no save-reload e para não reaplicar o mesmo atraso. Ausente = 0.
+   */
+  weatherDelayMs?: number
+  /**
+   * Rota REALMENTE percorrida na perna atual quando uma poça forçou um desvio (substitui
+   * `path`/`returnPath` na interpolação). Ausente = sem desvio. Limpa ao iniciar a volta.
+   */
+  reroutePath?: string[]
+  /**
+   * Time parado num ponto esperando uma poça secar (sem rota alternativa). `node` é o ponto
+   * antes da poça; `untilMs` é quando a poça some. Ausente = não está esperando.
+   */
+  weatherHold?: { node: string; untilMs: number }
   /**
    * Sub-seed do RNG de evolução, sorteado ao resolver. O XP só é APLICADO na volta ao
    * ginásio (PLAN §4.1, ajuste) — guardar o seed mantém a evolução determinística.
@@ -332,6 +349,8 @@ export interface GameState {
   /** Itens/passivas permanentes da run. */
   runItems: string[]
   today: DayTally
+  /** Agenda climática do dia (eventos de chuva + poças + previsão), pré-computada em setupDay. */
+  weather: WeatherSchedule
   history: DayLog[]
   /** Contador determinístico de ids de entidades (eventos/Pokémon). */
   nextId: number
@@ -381,6 +400,7 @@ export function createInitialState(seed: number): GameState {
     inventory: [],
     runItems: [],
     today: emptyTally(),
+    weather: emptyWeatherSchedule(),
     history: [],
     nextId: 1,
     rngCursor: 0,
