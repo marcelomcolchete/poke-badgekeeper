@@ -20,6 +20,7 @@ import { Textbox } from '../Textbox/Textbox.tsx'
 import { Overlay } from '../common/Overlay.tsx'
 import { Stars } from '../common/Stars.tsx'
 import { ItemsBar } from '../common/ItemsBar.tsx'
+import { WeatherForecastPanel } from './WeatherForecastPanel.tsx'
 import { ATTR_SHORT_PT } from '../common/visual.ts'
 import { displayNameOf } from '../common/naming.ts'
 import styles from './MorningScreen.module.css'
@@ -127,6 +128,8 @@ export function MorningScreen({ state, dispatch }: Props) {
           <Stars value={state.approval.stars} />
         </span>
       </header>
+
+      <WeatherForecastPanel state={state} />
 
       <section className={styles.market}>
         <span className={styles.sectionTitle}>MERCADO — 5 ITENS DO DIA</span>

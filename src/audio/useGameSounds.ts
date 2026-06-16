@@ -7,7 +7,9 @@ import type { GameState } from '../engine/state.ts'
 import type { MissionResult } from '../engine/state.ts'
 import { getMissionTemplate } from '../data/missionTemplates.ts'
 import { pendingPoints } from '../engine/leveling.ts'
+import { isRaining } from '../engine/weather.ts'
 import { playSound } from './sounds.ts'
+import { startRain, stopRain } from './rainPlayer.ts'
 
 /** Faltando este tempo (ms de jogo) para expirar, avisa que o tempo está acabando. */
 const WARNING_MS = 6_000
@@ -18,6 +20,7 @@ export function useGameSounds(state: GameState): void {
   const resolvedIds = useRef<Set<string>>(new Set())
   const pendingTotal = useRef(0)
   const warnedIds = useRef<Set<string>>(new Set())
+  const raining = useRef(false)
 
   useEffect(() => {
     const first = !ready.current
@@ -60,8 +63,18 @@ export function useGameSounds(state: GameState): void {
       }
     }
 
+    // 5) Som de chuva em loop: toca enquanto chove na fase Dia (fade in/out no rainPlayer).
+    //    Acompanha o relógio — pausar o jogo congela `now`, mantendo o estado de chuva.
+    const isRain = state.run.phase === 'DAY' && isRaining(state.weather, now)
+    if (isRain && !raining.current) startRain()
+    else if (!isRain && raining.current) stopRain()
+    raining.current = isRain
+
     ready.current = true
   }, [state])
+
+  // Sai da fase Dia / desmonta: garante que a chuva pare.
+  useEffect(() => () => stopRain(), [])
 }
 
 function playResult(result: MissionResult): void {

@@ -348,3 +348,55 @@
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6));
   z-index: 2;
 }
+
+/* Poça de chuva: gota "molhada" no ponto, com halo de água que cresce com o nível e um
+   pulso suave (parece d'água acumulada). z-index abaixo dos viajantes. */
+.puddle {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  line-height: 1;
+  pointer-events: none;
+  z-index: 1;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(104, 144, 240, 0.55) 0%,
+    rgba(104, 144, 240, 0.28) 60%,
+    rgba(104, 144, 240, 0) 72%
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.45));
+  animation: puddleRipple 1.8s ease-in-out infinite;
+}
+
+.puddleLvl1 {
+  width: 26px;
+  height: 26px;
+  font-size: 12px;
+}
+
+.puddleLvl2 {
+  width: 38px;
+  height: 38px;
+  font-size: 15px;
+}
+
+.puddleLvl3 {
+  width: 52px;
+  height: 52px;
+  font-size: 18px;
+}
+
+@keyframes puddleRipple {
+  0%,
+  100% {
+    opacity: 0.78;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+}

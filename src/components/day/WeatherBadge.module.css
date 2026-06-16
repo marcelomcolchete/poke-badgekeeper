@@ -1,0 +1,32 @@
+/* Selo circular do clima: disco verde do HUD com borda escura; emoji centralizado. Pulsa de
+   leve para chamar atenção sem distrair. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--c-hud-bg);
+  border: 2px solid var(--c-hud-border);
+  box-shadow: 0 2px 6px rgba(8, 26, 14, 0.45);
+  font-size: 22px;
+  line-height: 1;
+  user-select: none;
+}
+
+/* Chuva: leve halo azul-água e pulso suave. */
+.rain {
+  background: radial-gradient(circle at 50% 35%, #4f86d6 0%, var(--c-hud-bg) 75%);
+  animation: rainPulse 2.2s ease-in-out infinite;
+}
+
+@keyframes rainPulse {
+  0%,
+  100% {
+    box-shadow: 0 2px 6px rgba(8, 26, 14, 0.45);
+  }
+  50% {
+    box-shadow: 0 2px 10px rgba(79, 134, 214, 0.85);
+  }
+}

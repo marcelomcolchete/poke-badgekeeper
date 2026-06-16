@@ -11,6 +11,8 @@ import { TOTAL_DAYS } from '../../engine/constants.ts'
 import { Hud } from '../Hud/Hud.tsx'
 import { Overlay } from '../common/Overlay.tsx'
 import { CityMap } from './CityMap.tsx'
+import { WeatherBadge } from './WeatherBadge.tsx'
+import { isRaining } from '../../engine/weather.ts'
 import { TeamSidebar } from './TeamSidebar.tsx'
 import { ReportSidebar } from './ReportSidebar.tsx'
 import { MemberDetail } from './MemberDetail.tsx'
@@ -215,6 +217,12 @@ export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) 
           onDefense={(id) => setOpen({ kind: 'defense', id })}
           onSpot={(spotIndex) => setOpen({ kind: 'capture', spotIndex })}
         />
+
+        {isRaining(state.weather, state.clock.dayElapsedMs) && (
+          <div className={styles.weatherFloat}>
+            <WeatherBadge kind="rain" />
+          </div>
+        )}
 
         <div className={styles.hudBar}>
           <Hud
