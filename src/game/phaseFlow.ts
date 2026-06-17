@@ -18,6 +18,7 @@ import {
 import { applyHeartDelta, dailyHeartDelta, heartsOf } from '../engine/hearts.ts'
 import { isFainted } from '../engine/attributes.ts'
 import { buildDaySummary, toDayLog } from '../engine/daySummary.ts'
+import { foldDayIntoLifetime } from '../engine/lifetime.ts'
 import { secretCountOf, secretLineFor, SECRET_MAX } from '../data/secretAbilities.ts'
 import { recomputeMaxHp } from '../engine/attributes.ts'
 import {
@@ -194,7 +195,10 @@ function resolveLeftovers(s: GameState): void {
 
 /** Inicia o próximo dia (cura no Centro Pokémon, limpa eventos) ou encerra a run no dia 10. */
 function startNextDay(s: GameState): void {
+  // Dobra o dia que acabou de fechar no acumulador vitalício ANTES de zerar `today` (fim de jogo).
+  // No dia 10 (run terminada) NÃO dobra: a tela de fim de jogo soma o dia em curso na exibição.
   if (s.run.day >= TOTAL_DAYS) return // run terminada: resultado da cidade fica na Fase 4
+  s.lifetime = foldDayIntoLifetime(s.lifetime, s.today)
   s.run.day += 1
   s.run.phase = 'MORNING'
   s.rngCursor = 0

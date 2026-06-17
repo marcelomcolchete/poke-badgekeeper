@@ -9,6 +9,7 @@ import type {
   GamePhase,
   GameSpeed,
   MapPos,
+  MedalTier,
   MissionCategory,
   Pokemon,
   PokemonType,
@@ -287,6 +288,12 @@ export interface DefenseKill {
   defeaterId: string
   /** Espécie do desafiante derrotado — usada só para a miniatura no relatório. */
   speciesId?: number
+  /** Poder de Batalha do inimigo derrotado — base do "mais forte enfrentado" no fim de jogo. */
+  enemyBattle?: number
+  /** Medalha (Bronze/Prata/Ouro) que o inimigo derrotado carregava. */
+  enemyMedal?: MedalTier
+  /** Tipos do inimigo derrotado (selos na tela de fim de jogo). */
+  enemyTypes?: PokemonType[]
 }
 
 /** Acumulador do dia em curso (zerado a cada manhã) — base do resumo/aprovação. */
@@ -315,6 +322,8 @@ export interface DayTally {
   exploredSpots: number[]
   /** Inimigos derrotados em defesas hoje (MVP por derrotas + miniaturas no relatório). */
   defenseKills: DefenseKill[]
+  /** Quantos Pokémon do jogador desmaiaram hoje (eventos de desmaio) — base das "mortes" no fim. */
+  faints: number
   /**
    * Habilidade Secreta desbloqueada HOJE pelo Destaque do Dia (reveal no resumo); null se
    * nenhuma. `secretId` é o id do tipo de habilidade e `index` é a posição na linha (1, 2 ou 3).
@@ -343,6 +352,37 @@ export interface DayLog {
   captured: number
 }
 
+/**
+ * Acumulador VITALÍCIO da run (toda a cidade/10 dias) — base da tela de fim de jogo. Guarda só os
+ * dias JÁ FECHADOS (dobrado em startNextDay antes de zerar `today`); o dia em curso é somado na
+ * exibição via combineLifetime. Assim a soma nunca duplica, seja na vitória do dia 10 ou na derrota.
+ */
+export interface LifetimeStats {
+  /** Missões bem-sucedidas acumuladas. */
+  missionsCompleted: number
+  /** Missões que surgiram (aceitas + ignoradas/expiradas) acumuladas — o "de quantas possíveis". */
+  missionsTotal: number
+  defensesWon: number
+  defensesTotal: number
+  /** Ouro BRUTO ganho na run (não é o saldo). */
+  goldEarned: number
+  /** Eventos de desmaio do time (mortes). */
+  faints: number
+  /** Inimigos derrotados em batalhas (defesas + Rocket). */
+  defeats: number
+  /** itemId → quantidade comprada na run. */
+  purchasedItems: Record<string, number>
+  /** pokemonId → feitos acumulados (missões bem-sucedidas + derrotas) — base do Destaque do Jogo. */
+  usage: Record<string, { missions: number; defeats: number }>
+  /** Inimigo mais forte DERROTADO na run (maior poder de Batalha); null se nenhum. */
+  strongestEnemy: {
+    battle: number
+    medal?: MedalTier
+    types: PokemonType[]
+    speciesId?: number
+  } | null
+}
+
 export interface GameState {
   run: RunInfo
   clock: ClockState
@@ -369,6 +409,8 @@ export interface GameState {
   /** Itens/passivas permanentes da run. */
   runItems: string[]
   today: DayTally
+  /** Acumulador vitalício da run (dias fechados) — alimenta a tela de fim de jogo. */
+  lifetime: LifetimeStats
   /** Agenda climática do dia (eventos de chuva + poças + previsão), pré-computada em setupDay. */
   weather: WeatherSchedule
   history: DayLog[]
@@ -398,12 +440,29 @@ export function emptyTally(): DayTally {
     activeIds: [],
     exploredSpots: [],
     defenseKills: [],
+    faints: 0,
     secretUnlock: null,
     mvpHeartsGained: 0,
     secretRuntime: {},
     digTunnels: [],
     shopOffer: [],
     purchasedItems: [],
+  }
+}
+
+/** Acumulador vitalício zerado (início da run). */
+export function emptyLifetime(): LifetimeStats {
+  return {
+    missionsCompleted: 0,
+    missionsTotal: 0,
+    defensesWon: 0,
+    defensesTotal: 0,
+    goldEarned: 0,
+    faints: 0,
+    defeats: 0,
+    purchasedItems: {},
+    usage: {},
+    strongestEnemy: null,
   }
 }
 
@@ -428,6 +487,7 @@ export function createInitialState(seed: number): GameState {
     inventory: [],
     runItems: [],
     today: emptyTally(),
+    lifetime: emptyLifetime(),
     weather: emptyWeatherSchedule(),
     history: [],
     nextId: 1,

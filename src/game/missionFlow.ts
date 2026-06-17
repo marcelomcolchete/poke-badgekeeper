@@ -45,7 +45,7 @@ import { planWeatherLeg } from '../engine/weatherTravel.ts'
 import { createRng } from '../engine/rng.ts'
 import { applyBattleSecretRuntime } from './defenseFlow.ts'
 import { applyAutoItems, applyXpGains } from './itemFlow.ts'
-import { findMon, replaceMon, settleFaint, takeRng } from './runtime.ts'
+import { findMon, replaceMon, settleFaintTracked, takeRng } from './runtime.ts'
 
 /** Status que "ocupam" um ponto do mapa (já visível ou com time em trânsito/ação). */
 const OCCUPYING_STATUSES: MissionStatus[] = ['available', 'traveling', 'inProgress', 'returning']
@@ -338,7 +338,7 @@ export function freeOnReturn(s: GameState, mission: MissionInstance): void {
   for (const member of team) {
     let mon = findMon(s, member.id) ?? member
     if (success && template.healOnSuccess) mon = { ...mon, currentHp: mon.maxHp }
-    replaceMon(s, settleFaint(mon))
+    replaceMon(s, settleFaintTracked(s, mon))
   }
   mission.status = 'resolved'
 }
@@ -403,14 +403,18 @@ export function resolveRocketBattle(s: GameState, missionId: string): void {
   let theirs = 0
   for (const duel of resolution.duels) {
     if (duel.youWon) {
+      const enemy = mission.rocket.enemies[theirs]
       s.today.defenseKills.push({
         defeaterId: duel.yourId,
-        speciesId: mission.rocket.enemies[theirs]?.speciesId,
+        speciesId: enemy?.speciesId,
+        enemyBattle: enemy?.battle,
+        enemyMedal: enemy?.medal,
+        enemyTypes: enemy?.types,
       })
       theirs += 1
     }
   }
-  for (const member of resolution.squad) replaceMon(s, settleFaint(member))
+  for (const member of resolution.squad) replaceMon(s, settleFaintTracked(s, member))
   // Habilidades Secretas de batalha (Battle Armor/Weak Armor/Shell Armor/Sturdy) — a missão
   // Rocket conta como batalha para o Battle Armor.
   applyBattleSecretRuntime(s, team, resolution)

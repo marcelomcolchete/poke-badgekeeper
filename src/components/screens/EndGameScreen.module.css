@@ -1,0 +1,472 @@
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: stretch;
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+/* ---- Cabeçalho ---- */
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.title {
+  font-family: var(--font-pixel);
+  font-size: 18px;
+  line-height: 1.4;
+  letter-spacing: 1px;
+}
+
+.win {
+  color: #e0a020;
+  text-shadow: 0 0 10px rgba(224, 160, 32, 0.6);
+  animation: winGlow 1.2s ease-in-out infinite;
+}
+
+.loss {
+  color: #e84040;
+}
+
+@keyframes winGlow {
+  50% {
+    text-shadow: 0 0 18px rgba(224, 160, 32, 0.95);
+    filter: brightness(1.15);
+  }
+}
+
+.subtitle {
+  font-family: var(--font-text);
+  font-size: 15px;
+  color: var(--c-ink-muted);
+  line-height: 1.4;
+  max-width: 46ch;
+}
+
+.scores {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-family: var(--font-text);
+  font-size: 15px;
+}
+
+.score b {
+  color: var(--c-ink);
+}
+
+.avg {
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  padding: 4px 10px;
+  border: 2px solid var(--c-ink);
+  border-radius: var(--radius-pixel);
+}
+
+.avgGood {
+  background: color-mix(in srgb, var(--c-hp-high) 25%, transparent);
+  color: var(--c-hp-high);
+}
+
+.avgBad {
+  background: color-mix(in srgb, var(--c-hp-low) 22%, transparent);
+  color: var(--c-hp-low);
+}
+
+/* ---- Grade de estatísticas ---- */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: var(--c-panel);
+  border: 3px solid var(--c-panel-border);
+  border-radius: var(--radius-pixel);
+  padding: 10px 6px;
+}
+
+.tileIcon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.tileValue {
+  font-family: var(--font-pixel);
+  font-size: 13px;
+  color: var(--c-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.tileLabel {
+  font-family: var(--font-text);
+  font-size: 13px;
+  color: var(--c-ink-muted);
+  text-align: center;
+}
+
+.tileAccent {
+  border-color: #b8860b;
+}
+
+.tileAccent .tileValue {
+  color: #b8860b;
+}
+
+.tileDanger .tileValue {
+  color: var(--c-hp-low);
+}
+
+/* ---- Colunas: destaque do jogo | (mais forte + itens) ---- */
+.columns {
+  display: grid;
+  grid-template-columns: minmax(160px, 0.9fr) 1fr;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.sideCol {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (max-width: 480px) {
+  .columns {
+    grid-template-columns: 1fr;
+  }
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ---- Painel genérico ---- */
+.panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--c-panel);
+  border: 3px solid var(--c-panel-border);
+  border-radius: var(--radius-pixel);
+  padding: 14px 12px 12px;
+}
+
+.panelTitle {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  color: var(--c-hud-accent);
+  letter-spacing: 0.5px;
+}
+
+.empty {
+  font-family: var(--font-text);
+  font-size: 14px;
+  color: var(--c-ink-muted);
+}
+
+/* ---- Destaque do jogo (MVP) ---- */
+.mvp {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  background: var(--c-panel);
+  border: 3px solid var(--c-hud-accent);
+  border-radius: var(--radius-pixel);
+  padding: 20px 12px 14px;
+  text-align: center;
+}
+
+.mvpEmpty {
+  border-color: var(--c-panel-border);
+  justify-content: center;
+}
+
+.mvpBadge {
+  position: absolute;
+  top: -11px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--c-ink);
+  background: var(--c-hud-accent);
+  border: 2px solid var(--c-ink);
+  border-radius: var(--radius-pixel);
+  padding: 2px 6px;
+}
+
+.mvpTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mvpMedal {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.mvpSprite {
+  width: 84px;
+  height: 84px;
+  image-rendering: pixelated;
+  object-fit: contain;
+}
+
+.mvpName {
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  color: var(--c-ink);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mvpGender {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.mvpTypes {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.mvpDeeds {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 4px 0 0;
+  padding: 0;
+}
+
+.mvpDeed {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  font-family: var(--font-text);
+  font-size: 15px;
+  color: var(--c-ink-muted);
+}
+
+.mvpDeed b {
+  color: var(--c-ink);
+}
+
+/* ---- Inimigo mais forte ---- */
+.enemyRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.enemySprite {
+  width: 64px;
+  height: 64px;
+  image-rendering: pixelated;
+  object-fit: contain;
+  flex-shrink: 0;
+  transform: scaleX(-1);
+}
+
+.enemyInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.enemyName {
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  color: var(--c-ink);
+}
+
+.enemyTypes {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.enemyMeta {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-family: var(--font-text);
+  font-size: 14px;
+  color: var(--c-ink-muted);
+}
+
+.enemyPower {
+  color: var(--c-hp-low);
+  font-weight: bold;
+}
+
+.enemyMedal {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* ---- Itens comprados ---- */
+.itemList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+}
+
+.itemRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-text);
+  font-size: 14px;
+  color: var(--c-ink);
+}
+
+.itemSprite {
+  width: 26px;
+  height: 26px;
+  image-rendering: pixelated;
+  background: #e9e4cf;
+  border: 2px solid var(--c-panel-border);
+  border-radius: 4px;
+}
+
+.itemName {
+  flex: 1;
+}
+
+.itemCount {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  color: var(--c-hud-accent);
+}
+
+/* ---- Grade de capturados (miniaturas + rank) ---- */
+.miniGrid {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+
+.miniCell {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  background: #e9e4cf;
+  border: 2px solid var(--c-panel-border);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.miniSprite {
+  width: 42px;
+  height: 42px;
+  image-rendering: pixelated;
+  object-fit: contain;
+}
+
+/* ---- Time final ---- */
+.teamGrid {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+}
+
+.teamMember {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 84px;
+  padding-top: 4px;
+}
+
+.teamSprite {
+  width: 52px;
+  height: 52px;
+  image-rendering: pixelated;
+  object-fit: contain;
+}
+
+.teamName {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: var(--c-ink);
+}
+
+/* ---- Badge de rank ---- */
+.rankBadge {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  font-weight: bold;
+  border: 2px solid;
+  border-radius: 4px;
+  padding: 1px 5px;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.rankSmall {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  font-size: 8px;
+  padding: 0 3px;
+  background: var(--c-panel);
+  z-index: 1;
+}
+
+/* ---- Botões ---- */
+.primary {
+  align-self: center;
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  color: var(--c-ink);
+  background: var(--c-hud-accent);
+  border: 3px solid var(--c-ink);
+  border-radius: var(--radius-pixel);
+  padding: 12px 18px;
+}
+
+.back {
+  align-self: center;
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  color: var(--c-ink);
+  background: var(--c-panel);
+  border: 3px solid var(--c-panel-border);
+  border-radius: var(--radius-pixel);
+  padding: 12px 22px;
+}

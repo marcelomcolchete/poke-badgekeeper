@@ -10,7 +10,7 @@ import { goldForDefense } from '../engine/economy.ts'
 import { damageForDay } from '../engine/constants.ts'
 import { createRng } from '../engine/rng.ts'
 import { applyAutoItems, applyXpGains } from './itemFlow.ts'
-import { findMon, replaceMon, settleFaint, takeRng } from './runtime.ts'
+import { findMon, replaceMon, settleFaintTracked, takeRng } from './runtime.ts'
 
 /** Promove a defesa a 'active' (símbolo no ginásio) e conta no total do dia (PLAN §3.1). */
 export function spawnDefense(s: GameState, defense: DefenseEvent, nowMs: number): void {
@@ -88,16 +88,20 @@ export function assignDefense(s: GameState, defenseId: string, squadIds: string[
   let theirs = 0
   for (const duel of resolution.duels) {
     if (duel.youWon) {
+      const enemy = defense.enemies[theirs]
       s.today.defenseKills.push({
         defeaterId: duel.yourId,
-        speciesId: defense.enemies[theirs]?.speciesId,
+        speciesId: enemy?.speciesId,
+        enemyBattle: enemy?.battle,
+        enemyMedal: enemy?.medal,
+        enemyTypes: enemy?.types,
       })
       theirs += 1
     }
   }
 
   // HP/desmaio aplicados já (a batalha acontece agora); o XP fica para completeDefense.
-  for (const member of resolution.squad) replaceMon(s, settleFaint(member))
+  for (const member of resolution.squad) replaceMon(s, settleFaintTracked(s, member))
   applyBattleSecretRuntime(s, squad, resolution)
   // Itens automáticos: Potion cura feridos; Revive traz desmaiados de volta.
   applyAutoItems(s)

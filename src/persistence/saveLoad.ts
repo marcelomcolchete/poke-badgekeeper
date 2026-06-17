@@ -1,6 +1,7 @@
 // Persistência: slot único com autosave no localStorage + schema versionado (PLAN §5).
 
 import type { GameState } from '../engine/state.ts'
+import { emptyLifetime } from '../engine/state.ts'
 import { emptyWeatherSchedule } from '../engine/weather.ts'
 import { SAVE_KEY, SAVE_VERSION } from '../engine/constants.ts'
 
@@ -370,6 +371,19 @@ function migrate(file: Partial<SaveFile>): SaveFile | null {
           : today,
     } as typeof state
     version = 30
+  }
+
+  // v30 → v31: acumulador vitalício (tela de fim de jogo). Saves antigos começam com lifetime
+  // zerado (perdem o histórico dos dias já fechados) e today.faints = 0. Os campos de inimigo nos
+  // defenseKills são opcionais (kills antigos não entram no "mais forte enfrentado").
+  if (version === 30) {
+    const today = state.today as Record<string, unknown> | undefined
+    state = {
+      lifetime: emptyLifetime(),
+      ...state,
+      today: today && typeof today === 'object' ? { faints: 0, ...today } : today,
+    }
+    version = 31
   }
 
   if (version !== SAVE_VERSION) return null
