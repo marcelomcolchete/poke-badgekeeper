@@ -11,7 +11,7 @@ import { rollGender } from './gender.ts'
 import { HP_MIN, IV_MAX, IV_MIN, LEVEL_MAX, LEVEL_MIN } from './constants.ts'
 import { RARITY_XP_RATE, XP_TO_NEXT_BASE } from './balance.ts'
 import { mapAttrs, maxHpOf, recomputeMaxHp, zeroAttrs } from './attributes.ts'
-import { ivForRankIndex } from './ranking.ts'
+import { ivForRankCenter } from './ranking.ts'
 import { clamp } from './math.ts'
 
 /** XP para subir do nível `level` → `level+1`; Infinity no nível máximo (PLAN §4.1). */
@@ -46,14 +46,13 @@ function randomAllocations(rng: Rng, points: number): Attrs {
 }
 
 /**
- * Variação de encontro por eixo. Sem `window`: inteiro livre em [−10, +10]. Com `window`
- * (janela de rank da Percepção do explorador): cada eixo cai num rank sorteado dentro da
- * janela, mantendo o rank do Pokémon dentro da faixa liberada (PLAN §4.1 / captura).
+ * Variação de encontro por eixo. Sem `rankCenter`: inteiro livre em [−10, +10]. Com `rankCenter`
+ * (centro de rank da Percepção do explorador): cada eixo é sorteado em torno desse centro, então a
+ * Percepção empurra o rank do Pokémon de forma contínua (PLAN §4.1 / captura).
  */
-function randomIvs(rng: Rng, window?: readonly [number, number]): Attrs {
-  if (!window) return mapAttrs(() => rng.int(IV_MIN, IV_MAX))
-  const [lo, hi] = window
-  return mapAttrs(() => ivForRankIndex(rng, rng.int(lo, hi)))
+function randomIvs(rng: Rng, rankCenter?: number): Attrs {
+  if (rankCenter === undefined) return mapAttrs(() => rng.int(IV_MIN, IV_MAX))
+  return mapAttrs(() => ivForRankCenter(rng, rankCenter))
 }
 
 export interface NewPokemonSpec {
@@ -66,8 +65,8 @@ export interface NewPokemonSpec {
   nickname?: string | null
   /** Natureza predefinida; omitir para sortear via RNG. */
   nature?: Nature | null
-  /** Janela de rank (índices min/max) que limita os IVs — captura pela Percepção (PLAN §4.5). */
-  rankWindow?: readonly [number, number]
+  /** Centro de rank (0=F … 6=S) que mira os IVs — captura pela Percepção (PLAN §4.5). */
+  rankCenter?: number
 }
 
 /**
@@ -84,7 +83,7 @@ export function createPokemon(spec: NewPokemonSpec): Pokemon {
   // Se nature for explicitamente fornecida (incluindo null), usa o valor; senão sorteia.
   const nature = 'nature' in spec ? (spec.nature ?? null) : rollNature(spec.rng)
   // IVs por último: mantém estáveis as sequências de alocação/gênero/natureza já existentes.
-  const ivs = randomIvs(spec.rng, spec.rankWindow)
+  const ivs = randomIvs(spec.rng, spec.rankCenter)
   const draft: Pokemon = {
     id: spec.id,
     speciesId: species.id,

@@ -3,7 +3,7 @@ import type { PokemonType } from '../types/index.ts'
 import { RARITIES } from '../types/index.ts'
 import { createRng } from '../engine/rng.ts'
 import { rollEncounter } from '../engine/capture.ts'
-import { perceptionRankWindow } from '../engine/ranking.ts'
+import { perceptionRankCenter } from '../engine/ranking.ts'
 import { damageForDay } from '../engine/constants.ts'
 import { getSpecies } from './pokemon/index.ts'
 import { BALLS, currentBall, maxRarityIndexForBall, nextBall } from './balls.ts'
@@ -57,15 +57,24 @@ describe('exploração — encontros respeitam o teto da bola', () => {
   })
 })
 
-describe('Percepção → janela de rank do encontro', () => {
-  it('mapeia faixas de Percepção em janelas de rank (índices 0=F … 6=S)', () => {
-    expect(perceptionRankWindow(5)).toEqual([0, 1]) // F, E
-    expect(perceptionRankWindow(10)).toEqual([0, 1])
-    expect(perceptionRankWindow(20)).toEqual([1, 3]) // E, D, C
-    expect(perceptionRankWindow(30)).toEqual([2, 4]) // D, C, B
-    expect(perceptionRankWindow(40)).toEqual([3, 5]) // C, B, A
-    expect(perceptionRankWindow(50)).toEqual([4, 6]) // B, A, S
-    expect(perceptionRankWindow(60)).toEqual([5, 6]) // A, S
+describe('Percepção → centro de rank do encontro', () => {
+  it('mapeia Percepção em centro contínuo de rank (0=F … 6=S)', () => {
+    expect(perceptionRankCenter(0)).toBe(0) // F
+    expect(perceptionRankCenter(10)).toBe(1) // E
+    expect(perceptionRankCenter(30)).toBe(3) // C
+    expect(perceptionRankCenter(50)).toBe(5) // A
+    expect(perceptionRankCenter(60)).toBe(6) // S
+  })
+
+  it('cada ponto de Percepção conta (não anda só de 10 em 10)', () => {
+    expect(perceptionRankCenter(11)).toBeCloseTo(1.1)
+    expect(perceptionRankCenter(19)).toBeCloseTo(1.9)
+    expect(perceptionRankCenter(11)).not.toBe(perceptionRankCenter(19))
+  })
+
+  it('clampa nas pontas (não passa de S nem abaixo de F)', () => {
+    expect(perceptionRankCenter(-5)).toBe(0)
+    expect(perceptionRankCenter(80)).toBe(6)
   })
 })
 

@@ -200,9 +200,13 @@
   color: #9fe6a8;
 }
 
-/* Ganho aparado pelo teto 60 (ex.: 59 → +1): alerta âmbar para "pensar se vale". */
-.allocBtnCapped .allocGain {
+/* Ganho que rende pouco: amarelo (<10, aparado pelo teto) / vermelho (≤5) — "pensar se vale". */
+.allocGainWarn {
   color: #ffcf5a;
+}
+
+.allocGainDanger {
+  color: #ff8a8a;
 }
 
 .items {

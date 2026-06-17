@@ -64,9 +64,14 @@
   color: var(--c-ink);
 }
 
-/* Incremento por ponto realçado pela natureza: +15 favorecido (azul) / +5 penalizado (vermelho). */
+/* Ganho real do ponto: +>10 favorecido (azul) / <10 aparado pelo teto (amarelo) / ≤5 (vermelho). */
 .gainUp {
   color: #6db4ff;
+  font-weight: bold;
+}
+
+.gainWarn {
+  color: #ffcf5a;
   font-weight: bold;
 }
 
@@ -78,6 +83,10 @@
 /* No hover o botão fica claro: mantém o realce legível com tons mais escuros. */
 .allocBtn:hover:not(:disabled) .gainUp {
   color: #1b4f86;
+}
+
+.allocBtn:hover:not(:disabled) .gainWarn {
+  color: #8a5a00;
 }
 
 .allocBtn:hover:not(:disabled) .gainDown {

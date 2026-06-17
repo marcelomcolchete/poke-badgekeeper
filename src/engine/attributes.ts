@@ -56,6 +56,16 @@ export function perPointGain(p: Pokemon, key: AttrKey): number {
 }
 
 /**
+ * Ganho REAL ao alocar 1 ponto neste eixo: o +5/+10/+15 da natureza, mas aparado pelo teto
+ * ATTR_MAX (ex.: 59 de Carisma → só +1). 0 quando o eixo já está no máximo. A UI mostra este
+ * número (e o realça em amarelo/vermelho quando o ponto rende pouco).
+ */
+export function realPerPointGain(p: Pokemon, key: AttrKey): number {
+  const current = effectiveAttr(p, key)
+  return Math.min(ATTR_MAX, current + perPointGain(p, key)) - current
+}
+
+/**
  * Atributo efetivo = clamp(base + iv + alocação·modificador + buff de item, 0, 60) — PLAN §4.1.
  * O `dayBuffs` (itens x_*) entra aqui, então propaga sozinho para missões, batalha, HP e cards.
  */

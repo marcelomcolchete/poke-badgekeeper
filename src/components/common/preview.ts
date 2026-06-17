@@ -15,8 +15,8 @@ export interface PreviewOpts {
   nickname?: string
   /** Seed estável: quando presente, o preview = Pokémon real criado com esse seed. */
   seed?: number
-  /** Janela de rank (captura pela Percepção): limita os IVs/rank do preview ao do candidato real. */
-  rankWindow?: readonly [number, number]
+  /** Centro de rank (captura pela Percepção): enviesa os IVs/rank do preview ao do candidato real. */
+  rankCenter?: number
 }
 
 export function previewPokemon(speciesId: number, level: number, opts: PreviewOpts = {}): Pokemon {
@@ -28,7 +28,7 @@ export function previewPokemon(speciesId: number, level: number, opts: PreviewOp
       level,
       rng: createRng(opts.seed),
       nickname,
-      rankWindow: opts.rankWindow,
+      rankCenter: opts.rankCenter,
     })
   }
   const species = getSpecies(speciesId)
