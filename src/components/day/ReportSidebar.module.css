@@ -28,6 +28,20 @@
   letter-spacing: 0.04em;
 }
 
+.starTracks {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.starTrack {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+}
+
 .stars {
   position: relative;
   display: inline-block;
@@ -118,6 +132,19 @@
 
 .hintGood {
   color: var(--c-hp-high);
+}
+
+.deltaTag {
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.deltaTag[data-sign='up'] {
+  color: var(--c-hp-high);
+}
+
+.deltaTag[data-sign='down'] {
+  color: var(--c-hp-low, #e05050);
 }
 
 /* Placar do dia: missões/batalhas com sucessos (verde) e falhas (vermelho). */

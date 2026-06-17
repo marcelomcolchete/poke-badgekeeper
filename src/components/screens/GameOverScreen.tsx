@@ -16,6 +16,8 @@ const MESSAGE: Record<NonNullable<RunInfo['gameOverReason']>, string> = {
     'Sua reputação chegou a zero. Sem estrelas e sem bater a meta do dia, a liga encerrou seu período de testes.',
   rocket:
     'A Equipe Rocket invadiu e você não despachou ninguém para detê-los! Ignorar o ataque encerrou seu período de testes na hora.',
+  fainted:
+    'Todo o seu time foi derrotado! Sem nenhum Pokémon em condições de lutar, o dia acabou e seu período de testes foi encerrado.',
 }
 
 export function GameOverScreen({ reason, onRestart }: Props) {

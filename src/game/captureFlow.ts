@@ -4,6 +4,7 @@
 
 import type { GameState } from '../engine/state.ts'
 import type { CaptureReturn, CaptureSearch } from '../engine/state.ts'
+import { markActive } from '../engine/state.ts'
 import { getCity } from '../data/cities.ts'
 import { rollEncounter, rosterIsFull, searchMs } from '../engine/capture.ts'
 import { MAX_ROSTER_SIZE } from '../engine/constants.ts'
@@ -45,6 +46,7 @@ export function startSearch(s: GameState, searcherId: string, spotIndex: number)
   // Fast Ball: a busca é resolvida na hora em que o Pokémon chega na área (sem tempo de busca).
   const instant = s.runItems.includes('fast-ball')
 
+  markActive(s.today, searcherId) // participação do dia (corações)
   replaceMon(s, { ...searcher, status: 'traveling' })
   s.captureSearches.push({
     searcherId,

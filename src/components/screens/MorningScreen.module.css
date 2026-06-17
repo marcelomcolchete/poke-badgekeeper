@@ -29,6 +29,13 @@
   color: var(--c-hud-accent);
 }
 
+.starTrack {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+}
+
 .sectionTitle {
   font-family: var(--font-pixel);
   font-size: 10px;
@@ -222,6 +229,18 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
+}
+
+.rosterCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.rosterHearts {
+  display: inline-flex;
+  justify-content: center;
 }
 
 /* Aviso + começar o dia agrupados acima do time. */

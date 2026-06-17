@@ -33,7 +33,7 @@ export interface RunInfo {
    */
   ballLevel: number
   /** Motivo da derrota quando phase === 'GAMEOVER' (mensagem da tela de fim de jogo). */
-  gameOverReason?: 'gym' | 'stars' | 'rocket'
+  gameOverReason?: 'gym' | 'stars' | 'rocket' | 'fainted'
 }
 
 export interface ClockState {
@@ -260,8 +260,10 @@ export interface ItemStack {
 }
 
 export interface Approval {
-  /** 1.0–5.0 em passos de 0.5 (PLAN §4.7). */
-  stars: number
+  /** Estrelas de missões (0–5, passo 0,5). */
+  missionStars: number
+  /** Estrelas de batalhas/defesas (0–5, passo 0,5). */
+  battleStars: number
   dailyGoalMet: boolean
 }
 
@@ -300,8 +302,15 @@ export interface DayTally {
   xpEarned: number
   /** Ouro vindo só de defesas (base do bônus de +30% por dia perfeito) — PLAN §4.6. */
   defenseGold: number
-  /** Estrelas no início do dia (preenchido no fechamento) — para o resumo. */
-  starsBefore: number
+  /** Estrelas de missões no início do dia (preenchido no fechamento) — para o resumo. */
+  missionStarsBefore: number
+  /** Estrelas de batalhas no início do dia (preenchido no fechamento) — para o resumo. */
+  battleStarsBefore: number
+  /**
+   * Ids de Pokémon que PARTICIPARAM de algo hoje (missão, exploração ou batalha direta) —
+   * base da regra de corações do fim do dia (quem não fez nada perde ½ coração).
+   */
+  activeIds: string[]
   /** Áreas de captura já exploradas hoje (índices em captureSpots) — somem do mapa. */
   exploredSpots: number[]
   /** Inimigos derrotados em defesas hoje (MVP por derrotas + miniaturas no relatório). */
@@ -326,7 +335,8 @@ export interface DayTally {
 
 export interface DayLog {
   day: number
-  starsAfter: number
+  missionStarsAfter: number
+  battleStarsAfter: number
   goldEarned: number
   captured: number
 }
@@ -366,6 +376,11 @@ export interface GameState {
   rngCursor: number
 }
 
+/** Marca um Pokémon como participante do dia (idempotente) — base dos corações do fim do dia. */
+export function markActive(today: DayTally, pokemonId: string): void {
+  if (!today.activeIds.includes(pokemonId)) today.activeIds.push(pokemonId)
+}
+
 export function emptyTally(): DayTally {
   return {
     missionResults: [],
@@ -376,7 +391,9 @@ export function emptyTally(): DayTally {
     goldEarned: 0,
     xpEarned: 0,
     defenseGold: 0,
-    starsBefore: 0,
+    missionStarsBefore: 0,
+    battleStarsBefore: 0,
+    activeIds: [],
     exploredSpots: [],
     defenseKills: [],
     secretUnlock: null,
@@ -403,7 +420,7 @@ export function createInitialState(seed: number): GameState {
     encounters: [],
     captureSpots: [],
     captureSpotSpawnsAtMs: [],
-    approval: { stars: STARS_START, dailyGoalMet: false },
+    approval: { missionStars: STARS_START, battleStars: STARS_START, dailyGoalMet: false },
     gold: STARTING_GOLD,
     inventory: [],
     runItems: [],

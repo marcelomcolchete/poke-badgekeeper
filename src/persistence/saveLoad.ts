@@ -332,6 +332,46 @@ function migrate(file: Partial<SaveFile>): SaveFile | null {
     version = 29
   }
 
+  // v29 → v30: pontuação em DUAS trilhas e corações por Pokémon. A estrela antiga (approval.stars)
+  // vira missionStars E battleStars; cada Pokémon (time + PC) ganha 2 corações; today recebe
+  // activeIds vazio e missionStarsBefore/battleStarsBefore a partir do antigo starsBefore.
+  if (version === 29) {
+    const approval = state.approval as Record<string, unknown> | undefined
+    const oldStars = typeof approval?.stars === 'number' ? (approval.stars as number) : 1
+    const addHearts = (arr: unknown): unknown =>
+      Array.isArray(arr)
+        ? arr.map((p) => {
+            const mon = p as Record<string, unknown>
+            return typeof mon.hearts === 'number' ? mon : { ...mon, hearts: 2 }
+          })
+        : arr
+    const today = state.today as Record<string, unknown> | undefined
+    const oldBefore = typeof today?.starsBefore === 'number' ? (today.starsBefore as number) : 0
+    state = {
+      ...state,
+      approval:
+        approval && typeof approval === 'object'
+          ? {
+              missionStars: oldStars,
+              battleStars: oldStars,
+              dailyGoalMet: approval.dailyGoalMet === true,
+            }
+          : approval,
+      roster: addHearts(state.roster),
+      box: addHearts(state.box),
+      today:
+        today && typeof today === 'object'
+          ? {
+              ...today,
+              activeIds: Array.isArray(today.activeIds) ? today.activeIds : [],
+              missionStarsBefore: oldBefore,
+              battleStarsBefore: oldBefore,
+            }
+          : today,
+    } as typeof state
+    version = 30
+  }
+
   if (version !== SAVE_VERSION) return null
   return { version, savedAtMs: (file as SaveFile).savedAtMs, state } as unknown as SaveFile
 }

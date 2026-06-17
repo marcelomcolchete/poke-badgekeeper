@@ -17,6 +17,7 @@ import { effectiveAttr, realPerPointGain } from '../../engine/attributes.ts'
 import { pendingPoints } from '../../engine/leveling.ts'
 import { PokemonCard } from '../PokemonCard/PokemonCard.tsx'
 import { Overlay } from '../common/Overlay.tsx'
+import { Hearts } from '../common/Hearts.tsx'
 import {
   ATTR_SHORT_PT,
   gainTier,
@@ -56,6 +57,11 @@ export function MemberDetail({ state, dispatch, pokemonId, onClose }: Props) {
     <Overlay title={displayNameOf(mon).toUpperCase()} onClose={onClose}>
       <div className={styles.body}>
         <PokemonCard pokemon={mon} />
+
+        <div className={styles.heartsLine}>
+          <Hearts value={mon.hearts} />
+          <span className={styles.heartsHint}>Afinidade — cada coração dá +10% de XP (máx +50%).</span>
+        </div>
 
         {mon.nature && (
           <div className={styles.natureLine}>

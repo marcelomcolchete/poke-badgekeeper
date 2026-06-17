@@ -101,6 +101,23 @@
   color: var(--c-hud-accent);
 }
 
+.starTracks {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.starTrack {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.starTrackIcon {
+  font-size: 12px;
+  line-height: 1;
+}
+
 .stars {
   position: relative;
   display: inline-block;

@@ -8,7 +8,8 @@ import { rollNature } from '../data/natures.ts'
 import type { Rng } from './rng.ts'
 import { getSpecies } from '../data/pokemon/index.ts'
 import { rollGender } from './gender.ts'
-import { HP_MIN, IV_MAX, IV_MIN, LEVEL_MAX, LEVEL_MIN } from './constants.ts'
+import { HEARTS_START, HP_MIN, IV_MAX, IV_MIN, LEVEL_MAX, LEVEL_MIN } from './constants.ts'
+import { heartXpMultiplier } from './hearts.ts'
 import { RARITY_XP_RATE, XP_TO_NEXT_BASE } from './balance.ts'
 import { mapAttrs, maxHpOf, recomputeMaxHp, zeroAttrs } from './attributes.ts'
 import { ivForRankCenter } from './ranking.ts'
@@ -97,6 +98,7 @@ export function createPokemon(spec: NewPokemonSpec): Pokemon {
     maxHp: 0,
     status: 'idle',
     passives: spec.passives ? [...spec.passives] : [],
+    hearts: HEARTS_START,
     gender,
     nickname: spec.nickname ?? null,
     nature,
@@ -151,7 +153,8 @@ export function rarityXpRate(speciesId: number): number {
  * 10) e aplica evoluções. NÃO aloca os pontos do level-up (ficam pendentes) — PLAN §4.1.
  */
 export function addXp(p: Pokemon, amount: number, rng?: Rng): XpResult {
-  const gained = Math.max(0, Math.floor(amount * rarityXpRate(p.speciesId)))
+  // Raridade (mais raro sobe devagar) e corações (cada um +10% de XP, teto +50%) escalam o ganho.
+  const gained = Math.max(0, Math.floor(amount * rarityXpRate(p.speciesId) * heartXpMultiplier(p.hearts)))
   let xp = p.xp + gained
   let level = p.level
   while (level < LEVEL_MAX && xp >= xpToNext(level)) {
