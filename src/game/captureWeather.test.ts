@@ -47,6 +47,7 @@ describe('exploração respeita poças (clima)', () => {
     const s = ceruleanSearchTo('o')
     startSearch(s, 'p1', 0)
     const search = s.captureSearches[0]!
+    const departBefore = search.departAtMs
     const arriveBefore = search.arriveAtMs
     const readyBefore = search.readyAtMs
 
@@ -56,6 +57,8 @@ describe('exploração respeita poças (clima)', () => {
     if (alt.length === 0) {
       // Sem rota seca: parado no ponto anterior à poça, com chegada e busca adiadas.
       expect(search.weatherHold).toEqual({ node: path[0], untilMs: 25_000 })
+      // ESPERA translada a janela inteira (departAtMs incluído) → retoma do ponto congelado.
+      expect(search.departAtMs).toBe(departBefore + 25_000)
       expect(search.arriveAtMs).toBe(arriveBefore + 25_000)
       expect(search.readyAtMs).toBe(readyBefore + 25_000)
       expect(search.phase).toBe('traveling') // não chegou: continua viajando
@@ -65,6 +68,8 @@ describe('exploração respeita poças (clima)', () => {
       expect(search.reroutePath).not.toContain(blockNode)
       expect(search.weatherHold).toBeUndefined()
       expect(search.arriveAtMs).toBeGreaterThanOrEqual(arriveBefore)
+      // DESVIO só estica o fim: o início (departAtMs) NÃO se move.
+      expect(search.departAtMs).toBe(departBefore)
     }
   })
 

@@ -142,12 +142,26 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
   }
 }
 
-/** Desloca os marcos POSTERIORES da missão por `deltaMs` (atraso de poça embutido). */
-function shiftMissionTimestamps(mission: MissionInstance, fromLeg: 'out' | 'back', deltaMs: number): void {
+/**
+ * Desloca os marcos da missão por `deltaMs` (atraso de poça embutido). `shiftStart` translada a
+ * janela INTEIRA da perna (início + fim) — usado na ESPERA, em que o sprite fica parado por
+ * `deltaMs` e a fração de progresso (now − início)/(fim − início) precisa retomar de onde congelou.
+ * Sem `shiftStart`, só estica o fim — usado no DESVIO, em que o caminho fica mais longo mas o
+ * sprite segue andando (o início da perna continua válido).
+ */
+function shiftMissionTimestamps(
+  mission: MissionInstance,
+  fromLeg: 'out' | 'back',
+  deltaMs: number,
+  shiftStart = false,
+): void {
   if (deltaMs <= 0) return
   if (fromLeg === 'out') {
+    if (shiftStart && mission.acceptedAtMs !== null) mission.acceptedAtMs += deltaMs
     if (mission.arriveAtMs !== null) mission.arriveAtMs += deltaMs
     if (mission.resolveAtMs !== null) mission.resolveAtMs += deltaMs
+  } else if (shiftStart && mission.resolveAtMs !== null) {
+    mission.resolveAtMs += deltaMs
   }
   if (mission.returnEndsAtMs !== null) mission.returnEndsAtMs += deltaMs
   mission.weatherDelayMs = (mission.weatherDelayMs ?? 0) + deltaMs
@@ -196,7 +210,8 @@ export function applyWeatherHold(s: GameState, mission: MissionInstance, nowMs: 
     shiftMissionTimestamps(mission, traveling ? 'out' : 'back', plan.extraMs)
   } else if (plan.kind === 'wait') {
     mission.weatherHold = { node: plan.node, untilMs: plan.untilMs }
-    shiftMissionTimestamps(mission, traveling ? 'out' : 'back', plan.extraMs)
+    // Espera: translada a janela inteira (início + fim) para o progresso retomar do ponto congelado.
+    shiftMissionTimestamps(mission, traveling ? 'out' : 'back', plan.extraMs, true)
   }
 }
 
