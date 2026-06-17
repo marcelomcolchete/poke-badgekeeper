@@ -7,7 +7,8 @@
 // - Cada dia tem uma % de CHANCE (somando ~400% nos dias 3–10, variada e reproduzível).
 // - maxTimes(dia) chuvas POTENCIAIS são agendadas em janelas que não se sobrepõem; cada uma
 //   OCORRE se um sorteio vs a chance do dia passar. Dias 1 e 2 nunca têm clima.
-// - Cada chuva dura 30–50s e cria 1–3 poças em segundos aleatórios. A poça nasce nível 1 e
+// - Cada chuva dura 30–50s e cria N poças em segundos aleatórios — N varia conforme os pontos da
+//   cidade onde uma poça pode cair (ver puddleCountRange/puddleNodePool). A poça nasce nível 1 e
 //   cresce +1 a cada 10s de chuva (cap 3). Ao acabar a chuva ela seca (1s/3s/5s por nível) e some.
 //   Enquanto seca, ainda BLOQUEIA (funciona como ponto de água até desaparecer).
 
@@ -28,9 +29,15 @@ export const RAIN_EVENT_MIN_MS = 30_000
 export const RAIN_EVENT_MAX_MS = 50_000
 /** Folga mínima entre o fim de uma chuva e o início da próxima (nunca chove duas vezes ao mesmo tempo). */
 export const RAIN_GAP_MS = 4_000
-/** Quantidade de poças por evento de chuva. */
-export const PUDDLES_PER_EVENT_MIN = 1
-export const PUDDLES_PER_EVENT_MAX = 3
+/**
+ * Quantidade de poças por evento de chuva, em função de `n` = nº de pontos onde uma poça pode cair
+ * (puddleNodePool: andáveis, exceto ginásio, surfNodes e nós de exploração). Faixa [min, max] com
+ * max = ⌊n/4⌋ e min = max(0, ⌊n/4⌋ − 3). Ex.: Cerulean (n=20) → 2–5 poças por chuva.
+ */
+export function puddleCountRange(poolSize: number): { min: number; max: number } {
+  const max = Math.floor(poolSize / 4)
+  return { min: Math.max(0, max - 3), max }
+}
 /** Níveis da poça (pequeno/médio/grande). */
 export const PUDDLE_LEVEL_MIN = 1
 export const PUDDLE_LEVEL_MAX = 3
@@ -130,10 +137,12 @@ function levelAtRainEnd(spec: PuddleSpec): number {
   )
 }
 
-/** Cria as 1–3 poças de um evento de chuva [start, end]. */
+/** Cria as poças de um evento de chuva [start, end] — a quantidade escala com o tamanho do pool. */
 function rollPuddles(rng: Rng, pool: string[], start: number, end: number): PuddleSpec[] {
   if (pool.length === 0) return []
-  const count = rng.int(PUDDLES_PER_EVENT_MIN, PUDDLES_PER_EVENT_MAX)
+  const { min, max } = puddleCountRange(pool.length)
+  const count = rng.int(min, max)
+  if (count === 0) return []
   const puddles: PuddleSpec[] = []
   for (let k = 0; k < count; k++) {
     const node = rng.pick(pool)
