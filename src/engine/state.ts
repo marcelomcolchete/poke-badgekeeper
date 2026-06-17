@@ -240,10 +240,10 @@ export interface CaptureEncounter {
   /** Seed estável por candidato: preview = Pokémon capturado (natureza, IVs/rank) — §4.5. */
   candidateSeeds: number[]
   /**
-   * Janela de rank (índices min/max, 0=F … 6=S) liberada pela Percepção do explorador: limita
-   * os IVs/rank dos candidatos. Ausente em saves antigos → captura/preview sem limite (§4.5).
+   * Centro de rank (0=F … 6=S, contínuo) mirado pela Percepção do explorador: enviesa os
+   * IVs/rank dos candidatos. Ausente em saves antigos → captura/preview sem viés (§4.5).
    */
-  rankWindow?: [number, number]
+  rankCenter?: number
 }
 
 export interface ItemStack {

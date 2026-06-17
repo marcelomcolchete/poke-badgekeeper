@@ -13,12 +13,13 @@ import {
   SECRET_MAX,
 } from '../../data/secretAbilities.ts'
 import { ATTR_MAX } from '../../engine/constants.ts'
-import { effectiveAttr, perPointGain } from '../../engine/attributes.ts'
+import { effectiveAttr, realPerPointGain } from '../../engine/attributes.ts'
 import { pendingPoints } from '../../engine/leveling.ts'
 import { PokemonCard } from '../PokemonCard/PokemonCard.tsx'
 import { Overlay } from '../common/Overlay.tsx'
 import {
   ATTR_SHORT_PT,
+  gainTier,
   SECRET_MEDAL,
   SECRET_MEDAL_COLOR,
   SECRET_MEDAL_INK,
@@ -137,12 +138,17 @@ export function MemberDetail({ state, dispatch, pokemonId, onClose }: Props) {
                 const current = effectiveAttr(mon, attr)
                 // Ganho REAL ao alocar: o ponto rende +5/+10/+15 pela natureza, mas o teto 60
                 // pode aparar o saldo (ex.: 59 → só +1). Mostramos o número exato.
-                const gain = Math.min(ATTR_MAX, current + perPointGain(mon, attr)) - current
+                const gain = realPerPointGain(mon, attr)
                 const maxed = gain <= 0
-                const capped = !maxed && gain < perPointGain(mon, attr)
-                const btnClass = [
-                  styles.allocBtn,
-                  capped ? styles.allocBtnCapped : '',
+                // Realce: vermelho (≤5) / amarelo (<10) avisam que o ponto rende pouco.
+                const tier = gainTier(gain)
+                const gainClass = [
+                  styles.allocGain,
+                  tier === 'danger'
+                    ? styles.allocGainDanger
+                    : tier === 'warn'
+                      ? styles.allocGainWarn
+                      : '',
                 ]
                   .filter(Boolean)
                   .join(' ')
@@ -150,7 +156,7 @@ export function MemberDetail({ state, dispatch, pokemonId, onClose }: Props) {
                   <button
                     key={attr}
                     type="button"
-                    className={btnClass}
+                    className={styles.allocBtn}
                     disabled={maxed}
                     title={
                       maxed
@@ -160,7 +166,7 @@ export function MemberDetail({ state, dispatch, pokemonId, onClose }: Props) {
                     onClick={() => dispatch({ type: 'ALLOCATE_POINT', pokemonId: mon.id, attr })}
                   >
                     <span className={styles.allocName}>{ATTR_SHORT_PT[attr]}</span>
-                    <span className={styles.allocGain}>{maxed ? 'máx' : `+${gain}`}</span>
+                    <span className={gainClass}>{maxed ? 'máx' : `+${gain}`}</span>
                   </button>
                 )
               })}

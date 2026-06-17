@@ -38,7 +38,7 @@ export function EncounterChoice({ encounter, full, onPick, onDismiss }: Props) {
           const level = encounter.candidateLevels?.[i] ?? encounter.level
           const mon = previewPokemon(id, level, {
             seed: encounter.candidateSeeds?.[i],
-            rankWindow: encounter.rankWindow,
+            rankCenter: encounter.rankCenter,
           })
           const species = getSpecies(id)
           const rank = pokemonRank(mon)

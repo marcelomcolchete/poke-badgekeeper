@@ -280,6 +280,25 @@ function migrate(file: Partial<SaveFile>): SaveFile | null {
     version = 27
   }
 
+  // v27 → v28: Percepção → centro de rank contínuo (cada ponto conta) em vez de janela em
+  // degraus. Encontros pendentes convertem rankWindow [lo,hi] no centro (lo+hi)/2; sem janela
+  // ficam sem viés. O rank exibido num encontro carregado pode mudar levemente (algoritmo novo).
+  if (version === 27) {
+    const encounters = state.encounters as Array<Record<string, unknown>> | undefined
+    if (Array.isArray(encounters)) {
+      state = {
+        ...state,
+        encounters: encounters.map((e) => {
+          const win = e.rankWindow as [number, number] | undefined
+          const rest = { ...e }
+          delete rest.rankWindow
+          return Array.isArray(win) ? { ...rest, rankCenter: (win[0] + win[1]) / 2 } : rest
+        }),
+      } as typeof state
+    }
+    version = 28
+  }
+
   if (version !== SAVE_VERSION) return null
   return { version, savedAtMs: (file as SaveFile).savedAtMs, state } as unknown as SaveFile
 }

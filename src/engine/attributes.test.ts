@@ -11,12 +11,30 @@ import {
   hpFromResistance,
   isFainted,
   maxHpOf,
+  realPerPointGain,
   recomputeMaxHp,
   teamAxisSum,
   teamSum,
   zeroAttrs,
 } from './attributes.ts'
 import { makeAttrs, makeMon } from './testkit.ts'
+
+describe('realPerPointGain — ganho real aparado pelo teto', () => {
+  it('rende o +10 cheio longe do teto', () => {
+    const mon = makeMon({ baseAttrs: makeAttrs({ carisma: 30 }) })
+    expect(realPerPointGain(mon, 'carisma')).toBe(10)
+  })
+
+  it('apara o ganho perto do teto (59 → +1)', () => {
+    const mon = makeMon({ baseAttrs: makeAttrs({ carisma: 59 }) })
+    expect(realPerPointGain(mon, 'carisma')).toBe(1)
+  })
+
+  it('é 0 quando o eixo já está no máximo (60)', () => {
+    const mon = makeMon({ baseAttrs: makeAttrs({ carisma: ATTR_MAX }) })
+    expect(realPerPointGain(mon, 'carisma')).toBe(0)
+  })
+})
 
 describe('effectiveAttr', () => {
   it('= base + alocação·10, clampado em [10, 60]', () => {

@@ -3,6 +3,21 @@
 
 import type { AttrKey, PokemonStatus, PokemonType, Rarity } from '../../types/index.ts'
 import type { Rank } from '../../engine/ranking.ts'
+import { ATTR_PER_POINT } from '../../engine/constants.ts'
+
+/** Faixa de alerta do ganho REAL de 1 ponto na distribuição de atributos. */
+export type GainTier = 'danger' | 'warn' | 'boost' | 'normal'
+
+/**
+ * Realce do ganho real de 1 ponto: vermelho (≤5, rende pouco — pense se vale), amarelo (<10,
+ * aparado pelo teto), azul (>10, favorecido pela natureza), neutro (=10).
+ */
+export function gainTier(gain: number): GainTier {
+  if (gain <= 5) return 'danger'
+  if (gain < ATTR_PER_POINT) return 'warn'
+  if (gain > ATTR_PER_POINT) return 'boost'
+  return 'normal'
+}
 
 /** Rótulo em PT do que o Pokémon está fazendo agora (HUD/painel do time). */
 export const STATUS_LABEL_PT: Record<PokemonStatus, string> = {

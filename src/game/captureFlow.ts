@@ -9,7 +9,7 @@ import { rollEncounter, rosterIsFull, searchMs } from '../engine/capture.ts'
 import { MAX_ROSTER_SIZE } from '../engine/constants.ts'
 import { maxRarityIndexForBall } from '../data/balls.ts'
 import { effectiveAttr } from '../engine/attributes.ts'
-import { perceptionRankWindow } from '../engine/ranking.ts'
+import { perceptionRankCenter } from '../engine/ranking.ts'
 import { createPokemon } from '../engine/leveling.ts'
 import { graphTravelMs, travelRoute } from '../engine/missions.ts'
 import { graphWithTunnels } from '../engine/pathfinding.ts'
@@ -74,13 +74,13 @@ export function advanceSearch(s: GameState, search: CaptureSearch, nowMs: number
 /** Busca concluída → gera o encontro (candidatos dos tipos do ginásio) — PLAN §4.5. */
 export function readySearch(s: GameState, search: CaptureSearch): void {
   s.captureSearches = s.captureSearches.filter((c) => c !== search)
-  // O nível de bola limita as raridades; a Percepção do explorador define a janela de rank.
+  // O nível de bola limita as raridades; a Percepção do explorador mira o centro de rank.
   const searcher = findMon(s, search.searcherId)
   const maxRarityIndex = maxRarityIndexForBall(s.run.ballLevel)
-  const rankWindow = perceptionRankWindow(searcher ? effectiveAttr(searcher, 'percepcao') : 0)
+  const rankCenter = perceptionRankCenter(searcher ? effectiveAttr(searcher, 'percepcao') : 0)
   const encounter = rollEncounter(takeRng(s), s.gym.types, s.run.day, maxRarityIndex)
   // Um seed estável por candidato: o card do preview já mostra natureza/IVs/rank reais
-  // e a captura recria o MESMO Pokémon a partir desse seed (com a mesma janela de rank).
+  // e a captura recria o MESMO Pokémon a partir desse seed (com o mesmo centro de rank).
   const seedRng = takeRng(s)
   s.encounters.push({
     searcherId: search.searcherId,
@@ -89,7 +89,7 @@ export function readySearch(s: GameState, search: CaptureSearch): void {
     candidateSpeciesIds: encounter.candidates.map((c) => c.id),
     candidateLevels: encounter.levels,
     candidateSeeds: encounter.candidates.map(() => seedRng.int(0, 0x7fffffff)),
-    rankWindow,
+    rankCenter,
   })
 }
 
@@ -160,7 +160,7 @@ export function capturePick(s: GameState, searcherId: string, candidateIndex: nu
     speciesId,
     level,
     rng: seed !== undefined ? createRng(seed) : takeRng(s),
-    rankWindow: encounter.rankWindow,
+    rankCenter: encounter.rankCenter,
   })
   // Time cheio → vai pro PC; senão entra no time.
   if (rosterIsFull(s.roster)) s.box = [...s.box, caught]

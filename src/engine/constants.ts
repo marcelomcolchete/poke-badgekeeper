@@ -178,6 +178,9 @@ export const DRAFT_CHOICES = 3
  * v27: efeitos climáticos por cidade (Chuva em Cerulean). Adiciona s.weather (agenda pré-computada
  * no início do dia: eventos de chuva + poças + previsão) e campos opcionais na missão para o
  * replaneja/espera por poça (weatherDelayMs/reroutePath/weatherHold). A migração inicializa
- * s.weather vazio; missões em andamento mantêm seus tempos (sem poças retroativas). */
-export const SAVE_VERSION = 27
+ * s.weather vazio; missões em andamento mantêm seus tempos (sem poças retroativas).
+ * v28: Percepção vira CENTRO de rank contínuo (cada ponto conta) no lugar da janela em degraus.
+ * CaptureEncounter.rankWindow → rankCenter (número). A migração converte [lo,hi] no centro
+ * (lo+hi)/2; encontros sem janela ficam sem viés. */
+export const SAVE_VERSION = 28
 export const SAVE_KEY = 'poke-badgekeeper:save'

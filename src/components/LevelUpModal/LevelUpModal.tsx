@@ -1,16 +1,16 @@
 // Modal de level-up (PLAN §4.1): abre assim que um Pokémon do jogador sobe de nível e
-// passa a ter pontos pendentes. Cada clique aloca 1 ponto (+10 no atributo); quando
-// zera, o App passa ao próximo Pokémon com pontos ou fecha o modal. Não tem botão de
-// fechar — a distribuição é imediata e obrigatória.
+// passa a ter pontos pendentes. Cada clique aloca 1 ponto (o botão mostra o ganho REAL —
+// +5/+10/+15 pela natureza, aparado pelo teto 60); quando zera, o App passa ao próximo
+// Pokémon com pontos ou fecha o modal. Não tem botão de fechar — distribuição obrigatória.
 
 import type { Dispatch } from 'react'
 import { ATTR_KEYS, type Pokemon } from '../../types/index.ts'
 import type { GameAction } from '../../game/actions.ts'
 import { pendingPoints } from '../../engine/leveling.ts'
-import { effectiveAttr, perPointGain } from '../../engine/attributes.ts'
-import { ATTR_MAX, ATTR_PER_POINT } from '../../engine/constants.ts'
+import { effectiveAttr, realPerPointGain } from '../../engine/attributes.ts'
+import { ATTR_MAX } from '../../engine/constants.ts'
 import { PokemonCard } from '../PokemonCard/PokemonCard.tsx'
-import { ATTR_LABEL_PT } from '../common/visual.ts'
+import { ATTR_LABEL_PT, gainTier } from '../common/visual.ts'
 import { displayNameOf } from '../common/naming.ts'
 import styles from './LevelUpModal.module.css'
 
@@ -40,10 +40,17 @@ export function LevelUpModal({ pokemon, dispatch }: Props) {
         <div className={styles.allocBtns}>
           {ATTR_KEYS.map((attr, i) => {
             const locked = !allMaxed && maxed[i]
-            // Incremento real do ponto: +15 (favorecido pela natureza), +5 (penalizado), +10 (neutro).
-            const gain = perPointGain(pokemon, attr)
+            // Ganho REAL do ponto: +5/+10/+15 da natureza, mas o teto 60 pode aparar (59 → +1).
+            const gain = realPerPointGain(pokemon, attr)
+            const tier = gainTier(gain)
             const gainClass =
-              gain > ATTR_PER_POINT ? styles.gainUp : gain < ATTR_PER_POINT ? styles.gainDown : ''
+              tier === 'danger'
+                ? styles.gainDown
+                : tier === 'warn'
+                  ? styles.gainWarn
+                  : tier === 'boost'
+                    ? styles.gainUp
+                    : ''
             return (
               <button
                 key={attr}
