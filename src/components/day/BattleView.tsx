@@ -226,9 +226,20 @@ export function BattleView({
           </p>
         )}
 
-        <button type="button" className={styles.confirm} onClick={onFinish} disabled={!done}>
-          Continuar ▶
-        </button>
+        <div className={styles.battleActions}>
+          {!done && (
+            <button
+              type="button"
+              className={styles.skipBattle}
+              onClick={() => setStep(rounds.length)}
+            >
+              Pular para o resultado ⏭
+            </button>
+          )}
+          <button type="button" className={styles.confirm} onClick={onFinish} disabled={!done}>
+            Continuar ▶
+          </button>
+        </div>
       </div>
     </Overlay>
   )

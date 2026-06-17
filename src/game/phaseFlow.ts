@@ -15,7 +15,7 @@ import {
   missionStarDelta,
   type DailyProgress,
 } from '../engine/approval.ts'
-import { applyHeartDelta, dailyHeartDelta } from '../engine/hearts.ts'
+import { applyHeartDelta, dailyHeartDelta, heartsOf } from '../engine/hearts.ts'
 import { isFainted } from '../engine/attributes.ts'
 import { buildDaySummary, toDayLog } from '../engine/daySummary.ts'
 import { secretCountOf, secretLineFor, SECRET_MAX } from '../data/secretAbilities.ts'
@@ -115,13 +115,18 @@ export function finalizeDay(s: GameState): void {
  */
 function applyDailyHearts(s: GameState, mvpId: string | null): void {
   const participated = new Set(s.today.activeIds)
+  s.today.mvpHeartsGained = 0
   s.roster = s.roster.map((p) => {
     const delta = dailyHeartDelta({
       fainted: isFainted(p),
       participated: participated.has(p.id),
       mvp: p.id === mvpId,
     })
-    return { ...p, hearts: applyHeartDelta(p.hearts, delta) }
+    const before = heartsOf(p.hearts)
+    const after = applyHeartDelta(p.hearts, delta)
+    // Ganho REAL do Destaque (já capado em [0,5]) para exibir no resumo do dia.
+    if (p.id === mvpId) s.today.mvpHeartsGained = after - before
+    return { ...p, hearts: after }
   })
 }
 

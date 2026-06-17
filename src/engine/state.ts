@@ -320,6 +320,8 @@ export interface DayTally {
    * nenhuma. `secretId` é o id do tipo de habilidade e `index` é a posição na linha (1, 2 ou 3).
    */
   secretUnlock: { pokemonId: string; secretId: string; index: number } | null
+  /** Corações que o Destaque do Dia ganhou no fechamento (delta já capado em [0,5]) — resumo. */
+  mvpHeartsGained: number
   /** Estado por-Pokémon das Habilidades Secretas hoje (stacks/flags), por id de Pokémon. */
   secretRuntime: Record<string, SecretRuntime>
   /**
@@ -397,6 +399,7 @@ export function emptyTally(): DayTally {
     exploredSpots: [],
     defenseKills: [],
     secretUnlock: null,
+    mvpHeartsGained: 0,
     secretRuntime: {},
     digTunnels: [],
     shopOffer: [],
