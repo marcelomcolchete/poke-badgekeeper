@@ -6,7 +6,7 @@ import { createInitialState, type MissionInstance } from '../engine/state.ts'
 import { createPokemon } from '../engine/leveling.ts'
 import { createRng } from '../engine/rng.ts'
 import { getCity } from '../data/cities.ts'
-import { graphWithoutNodes, graphWithoutSurf, shortestPath } from '../engine/pathfinding.ts'
+import { graphWithoutNodes, graphWithoutSurf, pointAlongPath, shortestPath } from '../engine/pathfinding.ts'
 import type { WeatherSchedule } from '../engine/weather.ts'
 import { applyWeatherHold } from './missionFlow.ts'
 
@@ -70,7 +70,8 @@ describe('applyWeatherHold (replaneja/espera por poça)', () => {
 
     if (alt.length === 0) {
       expect(m.weatherHold).toEqual({ node: path[0], untilMs: 25_000 })
-      // marcos posteriores deslocados pela espera (25s) e atraso registrado.
+      // ESPERA translada a janela INTEIRA: início (acceptedAtMs) e fim deslocam pela espera (25s).
+      expect(m.acceptedAtMs).toBe(25_000)
       expect(m.arriveAtMs).toBe(45_000)
       expect(m.resolveAtMs).toBe(55_000)
       expect(m.returnEndsAtMs).toBe(65_000)
@@ -80,7 +81,30 @@ describe('applyWeatherHold (replaneja/espera por poça)', () => {
       expect(m.reroutePath).toBeDefined()
       expect(m.weatherHold).toBeUndefined()
       expect(m.reroutePath).not.toContain(blockNode)
+      // DESVIO só estica o fim: o início (acceptedAtMs) NÃO se move (sprite segue andando).
+      expect(m.acceptedAtMs).toBe(0)
     }
+  })
+
+  it('espera: ao retomar, o progresso aponta para o ponto congelado (sem teleporte)', () => {
+    const blockNode = path[1] as string
+    const alt = shortestPath(graphWithoutNodes(DRY, new Set([blockNode])), 'u', 'o')
+    if (alt.length > 0) return // o cenário de teleporte só existe quando há ESPERA
+    const s = ceruleanState()
+    s.weather = puddleOn(blockNode)
+    const m = travelingMission(path)
+    applyWeatherHold(s, m, 0)
+
+    // Posição congelada durante a espera = nó onde ficou parado.
+    const heldNode = m.weatherHold!.node
+    const frozen = CERULEAN.graph.nodes[heldNode]!
+    // Posição no 1º instante após a poça secar (mesma fórmula do renderer).
+    const untilMs = m.weatherHold!.untilMs
+    const frac = (untilMs - (m.acceptedAtMs ?? 0)) / ((m.arriveAtMs ?? 0) - (m.acceptedAtMs ?? 0))
+    const resumed = pointAlongPath(CERULEAN.graph, m.reroutePath ?? m.path, frac)
+    // Sem o fix, frac seria ~0,55 (numerador acumula a espera) → o sprite saltava à frente.
+    expect(resumed.x).toBeCloseTo(frozen.x, 5)
+    expect(resumed.y).toBeCloseTo(frozen.y, 5)
   })
 
   it('poça FORA da rota → missão intacta', () => {

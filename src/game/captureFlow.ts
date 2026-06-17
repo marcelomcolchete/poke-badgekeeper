@@ -99,6 +99,8 @@ function applySearchWeatherHold(s: GameState, search: CaptureSearch, nowMs: numb
     search.readyAtMs += plan.extraMs
   } else if (plan.kind === 'wait') {
     search.weatherHold = { node: plan.node, untilMs: plan.untilMs }
+    // Espera: translada a janela inteira (departAtMs incluído) para o progresso retomar do ponto congelado.
+    search.departAtMs += plan.extraMs
     search.arriveAtMs += plan.extraMs
     search.readyAtMs += plan.extraMs
   }
@@ -215,6 +217,8 @@ function applyReturnWeatherHold(s: GameState, ret: CaptureReturn, nowMs: number)
     ret.arriveAtMs += plan.extraMs
   } else if (plan.kind === 'wait') {
     ret.weatherHold = { node: plan.node, untilMs: plan.untilMs }
+    // Espera: translada a janela inteira (departAtMs incluído) para o progresso retomar do ponto congelado.
+    ret.departAtMs += plan.extraMs
     ret.arriveAtMs += plan.extraMs
   }
 }
