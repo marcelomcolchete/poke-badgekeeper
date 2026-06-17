@@ -244,7 +244,10 @@ function MapTravelers({ state, graph, now }: { state: GameState; graph: CityGrap
       {state.captureSearches.map((c) => {
         // Ao chegar no local, o procurador some (entra na grama); reaparece só na volta — #3.
         if (c.phase !== 'traveling') return null
-        const pos = pointAlongPath(graph, c.path, elapsedFraction(now, c.departAtMs, c.arriveAtMs))
+        const out = c.reroutePath ?? c.path
+        // Esperando uma poça secar: fica parado no ponto anterior (clima).
+        const held = c.weatherHold && now < c.weatherHold.untilMs ? graph.nodes[c.weatherHold.node] : undefined
+        const pos = held ? { ...held } : pointAlongPath(graph, out, elapsedFraction(now, c.departAtMs, c.arriveAtMs))
         return (
           <TravelerGroup key={`s-${c.searcherId}`} pos={pos} ids={[c.searcherId]} roster={state.roster} flying={c.flying} surfing={c.surfing} />
         )
@@ -252,8 +255,9 @@ function MapTravelers({ state, graph, now }: { state: GameState; graph: CityGrap
       {state.captureReturns.map((r) => {
         // r.path agora é ponto→ginásio (volta real). Saves antigos guardavam ginásio→ponto:
         // detecta a orientação pelo 1º id (== r.node → já é a volta; senão inverte).
-        const back = r.path[0] === r.node ? r.path : [...r.path].reverse()
-        const pos = pointAlongPath(graph, back, elapsedFraction(now, r.departAtMs, r.arriveAtMs))
+        const back = r.reroutePath ?? (r.path[0] === r.node ? r.path : [...r.path].reverse())
+        const held = r.weatherHold && now < r.weatherHold.untilMs ? graph.nodes[r.weatherHold.node] : undefined
+        const pos = held ? { ...held } : pointAlongPath(graph, back, elapsedFraction(now, r.departAtMs, r.arriveAtMs))
         return (
           <TravelerGroup key={`r-${r.searcherId}`} pos={pos} ids={[r.searcherId]} roster={state.roster} flying={r.flying} surfing={r.surfing} />
         )

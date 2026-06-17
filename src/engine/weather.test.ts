@@ -18,6 +18,7 @@ import {
   RAIN_GAP_MS,
   PUDDLE_DRY_MS_BY_LEVEL,
   PUDDLE_GROW_INTERVAL_MS,
+  puddleCountRange,
 } from './weather.ts'
 
 const CERULEAN = getCity(1) // cidade com chuva
@@ -118,16 +119,40 @@ describe('eventos de chuva', () => {
   })
 })
 
+describe('puddleCountRange (quantidade por chuva escala com o pool)', () => {
+  it('max = ⌊n/4⌋ e min = max(0, ⌊n/4⌋ − 3)', () => {
+    expect(puddleCountRange(20)).toEqual({ min: 2, max: 5 }) // Cerulean
+    expect(puddleCountRange(12)).toEqual({ min: 0, max: 3 }) // ⌊12/4⌋=3 → 3-3<0 → min 0
+    expect(puddleCountRange(28)).toEqual({ min: 4, max: 7 })
+  })
+
+  it('pool pequeno (ou vazio) → 0 poças possíveis', () => {
+    expect(puddleCountRange(0)).toEqual({ min: 0, max: 0 })
+    expect(puddleCountRange(3)).toEqual({ min: 0, max: 0 }) // ⌊3/4⌋=0
+    expect(puddleCountRange(7)).toEqual({ min: 0, max: 1 })
+  })
+})
+
 describe('poças', () => {
   const gym = CERULEAN.siteNodes.gym
   const surf = new Set(CERULEAN.graph.surfNodes ?? [])
+  // Pool de pontos onde uma poça pode cair (espelha puddleNodePool): andáveis, ≠ ginásio, fora da
+  // água e fora das áreas de exploração (g3x). A quantidade por chuva escala com seu tamanho.
+  const poolSize = Object.keys(CERULEAN.graph.nodes).filter(
+    (id) => id !== gym && !surf.has(id) && !/^g\d/.test(id),
+  ).length
+  const range = puddleCountRange(poolSize) // Cerulean: pool 20 → 2–5
+
+  it('quantidade por chuva escala com o pool (Cerulean: 2–5)', () => {
+    expect(range).toEqual({ min: 2, max: 5 })
+  })
 
   it('caem em ponto real, andável, ≠ ginásio, fora da água e fora das áreas de exploração (g3x)', () => {
     for (const seed of SEEDS) {
       for (let day = 3; day <= 10; day++) {
         for (const ev of buildWeatherSchedule(seed, day, CERULEAN).rain) {
-          expect(ev.puddles.length).toBeGreaterThanOrEqual(1)
-          expect(ev.puddles.length).toBeLessThanOrEqual(3)
+          expect(ev.puddles.length).toBeGreaterThanOrEqual(range.min)
+          expect(ev.puddles.length).toBeLessThanOrEqual(range.max)
           for (const p of ev.puddles) {
             expect(CERULEAN.graph.nodes[p.node]).toBeDefined()
             expect(p.node).not.toBe(gym)

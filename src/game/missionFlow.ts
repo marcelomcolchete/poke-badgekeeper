@@ -4,7 +4,7 @@
 // O desfecho é aplicado ao TERMINAR a execução; o time só fica 'idle' ao VOLTAR.
 
 import type { Pokemon, TrainerId } from '../types/index.ts'
-import type { CityGraph, MissionTemplate } from '../data/types.ts'
+import type { MissionTemplate } from '../data/types.ts'
 import type { GameState, MissionInstance, MissionStatus } from '../engine/state.ts'
 import { getCity } from '../data/cities.ts'
 import { getMissionTemplate } from '../data/missionTemplates.ts'
@@ -39,16 +39,8 @@ import {
   teamTravelSpeedMultiplier,
   type MissionSecretCtx,
 } from '../engine/secretEffects.ts'
-import {
-  graphWithoutNodes,
-  graphWithoutSurf,
-  graphWithTunnels,
-  pathDistance,
-  pathUsesSurf,
-  shortestPath,
-} from '../engine/pathfinding.ts'
-import { blockedNodesAt, puddleLevelAt } from '../engine/weather.ts'
-import { clamp } from '../engine/math.ts'
+import { graphWithTunnels, pathUsesSurf } from '../engine/pathfinding.ts'
+import { planWeatherLeg } from '../engine/weatherTravel.ts'
 import { createRng } from '../engine/rng.ts'
 import { applyBattleSecretRuntime } from './defenseFlow.ts'
 import { applyAutoItems, applyXpGains } from './itemFlow.ts'
@@ -150,21 +142,6 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
   }
 }
 
-/** Índice do último ponto já alcançado numa perna, pela fração de tempo (espelha pointAlongPath). */
-function nodeIndexAtFraction(graph: CityGraph, leg: readonly string[], frac: number): number {
-  if (leg.length <= 1 || frac <= 0) return 0
-  if (frac >= 1) return leg.length - 1
-  const total = pathDistance(graph, leg)
-  if (total <= 0) return 0
-  const target = frac * total
-  let traveled = 0
-  for (let i = 0; i < leg.length - 1; i++) {
-    traveled += pathDistance(graph, [leg[i] as string, leg[i + 1] as string])
-    if (traveled >= target) return i // entre o ponto i e o i+1 → "está em" i
-  }
-  return leg.length - 1
-}
-
 /** Desloca os marcos POSTERIORES da missão por `deltaMs` (atraso de poça embutido). */
 function shiftMissionTimestamps(mission: MissionInstance, fromLeg: 'out' | 'back', deltaMs: number): void {
   if (deltaMs <= 0) return
@@ -196,49 +173,31 @@ export function applyWeatherHold(s: GameState, mission: MissionInstance, nowMs: 
   const traveling = mission.status === 'traveling'
   const legStart = traveling ? mission.acceptedAtMs : mission.resolveAtMs
   const legEnd = traveling ? mission.arriveAtMs : mission.returnEndsAtMs
-  if (legStart === null || legEnd === null || legEnd <= legStart) return
+  if (legStart === null || legEnd === null) return
   const baseLeg = traveling
     ? mission.reroutePath ?? mission.path
     : mission.reroutePath ?? mission.returnPath ?? [...mission.path].reverse()
-  if (baseLeg.length < 2) return
 
   const city = getCity(s.run.cityIndex)
   const graph = graphWithTunnels(city.graph, s.today.digTunnels)
-  const frac = clamp((nowMs - legStart) / (legEnd - legStart), 0, 1)
-  const here = nodeIndexAtFraction(graph, baseLeg, frac)
-  const dest = baseLeg[baseLeg.length - 1] as string
-  const remaining = baseLeg.slice(here + 1)
-  if (remaining.length === 0) return
-
-  const blocked = blockedNodesAt(s.weather, nowMs)
-  if (!remaining.some((n) => blocked.has(n))) return // rota à frente limpa
-
-  // 1) Tenta replanejar: menor caminho daqui ao destino contornando as poças (e a água).
-  const dry = graphWithoutNodes(graphWithoutSurf(graph), blocked)
-  const fromNode = baseLeg[here] as string
-  const alt = shortestPath(dry, fromNode, dest)
-  if (alt.length > 0) {
-    const oldRemaining = baseLeg.slice(here) // daqui até o destino (rota antiga)
-    const extraDist = Math.max(0, pathDistance(graph, alt) - pathDistance(graph, oldRemaining))
-    const speedMult = teamTravelSpeedMultiplier(team, s.runItems)
-    const extraMs = graphTravelMs(extraDist, team, speedMult)
-    mission.reroutePath = [...baseLeg.slice(0, here + 1), ...alt.slice(1)]
-    shiftMissionTimestamps(mission, traveling ? 'out' : 'back', extraMs)
-    return
+  const speedMult = teamTravelSpeedMultiplier(team, s.runItems)
+  const plan = planWeatherLeg({
+    graph,
+    weather: s.weather,
+    baseLeg,
+    legStart,
+    legEnd,
+    nowMs,
+    team,
+    speedMult,
+  })
+  if (plan.kind === 'reroute') {
+    mission.reroutePath = plan.reroutePath
+    shiftMissionTimestamps(mission, traveling ? 'out' : 'back', plan.extraMs)
+  } else if (plan.kind === 'wait') {
+    mission.weatherHold = { node: plan.node, untilMs: plan.untilMs }
+    shiftMissionTimestamps(mission, traveling ? 'out' : 'back', plan.extraMs)
   }
-
-  // 2) Sem rota seca: só espera quando o PRÓXIMO ponto é a poça (espera um ponto antes).
-  const nextNode = baseLeg[here + 1] as string
-  if (!blocked.has(nextNode)) return // a poça está adiante; segue e reavalia ao chegar
-  let untilMs = nowMs
-  for (const ev of s.weather.rain) {
-    for (const p of ev.puddles) {
-      if (p.node === nextNode && puddleLevelAt(p, nowMs) > 0) untilMs = Math.max(untilMs, p.endMs)
-    }
-  }
-  if (untilMs <= nowMs) return
-  mission.weatherHold = { node: fromNode, untilMs }
-  shiftMissionTimestamps(mission, traveling ? 'out' : 'back', untilMs - nowMs)
 }
 
 /**
