@@ -137,6 +137,32 @@ describe('fluxo de missão (PLAN §4.2/§4.3)', () => {
     expect(s.missions[0]?.result).toBe('expired')
     expect(s.today.missionResults).toHaveLength(1)
   })
+
+  it('pop-up de missão NÃO some ao bater 18h — segue até o próprio timer', () => {
+    // Timer da missão vai além do fim do dia (180s).
+    let s = dayState({ roster: [strong('a')], missions: [controlledMission({ expiresAtMs: 250_000 })] })
+    s = reducer(s, { type: 'TICK', deltaMs: 190_000 }) // cruza o fim do dia, antes do timer
+    expect(s.missions[0]?.status).toBe('available') // ainda na tela
+    expect(s.run.phase).toBe('DAY') // o dia espera o pop-up resolver
+
+    s = reducer(s, { type: 'TICK', deltaMs: 100_000 }) // agora passa do timer (250s)
+    expect(s.missions[0]?.status).toBe('resolved')
+    expect(s.missions[0]?.result).toBe('expired')
+    expect(s.run.phase).toBe('SUMMARY') // sem pendências, o dia fecha
+  })
+
+  it('Equipe Rocket como pop-up não causa derrota instantânea ao bater 18h', () => {
+    const rocket = controlledMission({ templateId: 'rocket', expiresAtMs: 250_000 })
+    let s = dayState({ roster: [strong('a')], missions: [rocket] })
+    s = reducer(s, { type: 'TICK', deltaMs: 190_000 }) // passa do fim do dia, antes do timer
+    expect(s.run.phase).toBe('DAY') // NÃO perdeu — ainda dá para batalhar
+    expect(s.missions[0]?.status).toBe('available')
+
+    // Ignorar até o timer da Rocket esgotar mantém a punição (derrota imediata por Rocket).
+    s = reducer(s, { type: 'TICK', deltaMs: 100_000 })
+    expect(s.run.phase).toBe('GAMEOVER')
+    expect(s.run.gameOverReason).toBe('rocket')
+  })
 })
 
 describe('fluxo de defesa (PLAN §4.4/§4.6)', () => {

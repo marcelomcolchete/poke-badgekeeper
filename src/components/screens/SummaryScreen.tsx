@@ -101,6 +101,7 @@ export function SummaryScreen({ state, dispatch, onRestart }: Props) {
           mvp={mvp}
           missions={summary.mvpMissions}
           defeats={summary.mvpDefeats}
+          heartsGained={state.today.mvpHeartsGained}
           killSpecies={mvpKillSpecies}
         />
       </div>
@@ -236,11 +237,13 @@ function MvpSquare({
   mvp,
   missions,
   defeats,
+  heartsGained,
   killSpecies,
 }: {
   mvp: Pokemon | undefined
   missions: number
   defeats: number
+  heartsGained: number
   killSpecies: ReturnType<typeof getSpecies>[]
 }) {
   if (!mvp) {
@@ -294,6 +297,14 @@ function MvpSquare({
               ))}
             </span>
           )}
+        </li>
+        <li className={styles.mvpDeed}>
+          <span className={styles.mvpDeedIcon}>♥</span>
+          <b>
+            {heartsGained >= 0 ? '+' : '−'}
+            {Math.abs(heartsGained).toFixed(1).replace('.', ',')}
+          </b>{' '}
+          {Math.abs(heartsGained) === 1 ? 'coração de afinidade' : 'corações de afinidade'}
         </li>
       </ol>
     </div>
