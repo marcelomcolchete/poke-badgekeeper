@@ -231,6 +231,7 @@ export function travelRoute(
   gym: string,
   node: string,
   team: readonly Pokemon[],
+  runItems: readonly string[] = [],
 ): { flying: boolean; surfing: boolean; path: string[]; distance: number } {
   if (teamFlies(team)) {
     const path = [gym, node]
@@ -239,7 +240,7 @@ export function travelRoute(
   if (teamSnipes(team)) {
     return { flying: false, surfing: false, path: [gym, node], distance: 0 }
   }
-  const surfs = teamSurfs(team)
+  const surfs = teamSurfs(team, runItems)
   const nav = surfs ? graph : graphWithoutSurf(graph)
   const path = shortestPath(nav, gym, node)
   const surfing = surfs && pathUsesSurf(graph, path)

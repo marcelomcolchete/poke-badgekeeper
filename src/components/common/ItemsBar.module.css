@@ -61,3 +61,64 @@
   border-radius: 4px;
   padding: 1px 3px;
 }
+
+/* Itens de cura/revive clicáveis (botão sobre o mesmo "slot" de ícone). */
+.usable {
+  padding: 0;
+  border: 2px solid var(--c-hud-accent);
+  cursor: pointer;
+  transition: transform 0.08s ease;
+}
+
+.usable:hover {
+  transform: translateY(-2px);
+}
+
+.pickHint {
+  font-family: var(--font-text);
+  font-size: 14px;
+  color: var(--c-ink-muted);
+  margin: 4px 0;
+}
+
+.pickList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pickRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  background: var(--c-panel);
+  border: 2px solid var(--c-panel-border);
+  border-radius: var(--radius-pixel);
+  cursor: pointer;
+  text-align: left;
+}
+
+.pickRow:hover {
+  border-color: var(--c-hud-accent);
+}
+
+.pickImg {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.pickName {
+  flex: 1;
+  font-family: var(--font-text);
+  font-size: 15px;
+  color: var(--c-ink);
+}
+
+.pickHp {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--c-hud-muted);
+}

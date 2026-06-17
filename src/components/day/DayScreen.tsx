@@ -240,7 +240,7 @@ export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) 
         </div>
 
         <div className={styles.itemsFloat}>
-          <ItemsBar state={state} />
+          <ItemsBar state={state} dispatch={dispatch} />
         </div>
       </div>
 

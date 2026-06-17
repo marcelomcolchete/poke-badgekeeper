@@ -3,7 +3,7 @@ import type { DefenseEvent, GameState, MissionInstance } from '../engine/state.t
 import { createInitialState } from '../engine/state.ts'
 import type { EnemyUnit, Pokemon, PokemonType } from '../types/index.ts'
 import { makeAttrs, makeMon } from '../engine/testkit.ts'
-import { MAX_ROSTER_SIZE, STARTING_GOLD } from '../engine/constants.ts'
+import { HEARTS_MAX, MAX_ROSTER_SIZE, STARTING_GOLD } from '../engine/constants.ts'
 import { MISSION_XP_POOL } from '../engine/balance.ts'
 import { gymWinXp } from '../engine/gymDefense.ts'
 import { reducer } from './reducer.ts'
@@ -310,6 +310,21 @@ describe('fluxo de captura (PLAN §4.5)', () => {
     expect(after.roster.find((p) => p.id === 'a')?.status).toBe('returning')
     after = reducer(after, { type: 'TICK', deltaMs: 60_000 })
     expect(after.roster.find((p) => p.id === 'a')?.status).toBe('idle')
+  })
+
+  it('Love Ball: o Pokémon capturado já vem com o máximo de corações', () => {
+    const s = searching()
+    s.runItems = ['love-ball']
+    const after = reducer(s, { type: 'CAPTURE_PICK', searcherId: 'a', candidateIndex: 0 })
+    const caught = after.roster.find((p) => p.id !== 'a')
+    expect(caught?.hearts).toBe(HEARTS_MAX)
+  })
+
+  it('sem Love Ball, a captura vem com os corações iniciais (não máximos)', () => {
+    const s = searching()
+    const after = reducer(s, { type: 'CAPTURE_PICK', searcherId: 'a', candidateIndex: 0 })
+    const caught = after.roster.find((p) => p.id !== 'a')
+    expect(caught?.hearts).toBeLessThan(HEARTS_MAX)
   })
 
   it('não capturar encerra a área e traz o procurador de volta', () => {
