@@ -2,7 +2,7 @@
 // (PLAN §4.4). A tabela de tipos (data/typeChart) serve apenas para classificar
 // vantagem/desvantagem; o efeito é ×1,5 por vantagem e ×0,5 por desvantagem.
 
-import type { EnemyUnit, Pokemon, PokemonType } from '../types/index.ts'
+import type { EnemyUnit, MedalTier, Pokemon, PokemonType } from '../types/index.ts'
 import type { Rng } from './rng.ts'
 
 export type { EnemyUnit }
@@ -22,9 +22,11 @@ import {
   TYPE_DISADVANTAGE_MULT,
 } from './constants.ts'
 import {
-  DEFENSE_BUFF_BATTLE,
+  DEFENSE_MEDAL_BATTLE,
   GYM_XP_CAP_PER_WIN,
   GYM_XP_PER_BATTLE_POWER,
+  MEDAL_FULL_DAY,
+  MEDAL_UNLOCK_DAY,
   MOXIE_BATTLE_PER_WIN,
   PRESSURE_ENEMY_MULT,
   REGENERATOR_HEAL_PER_WIN,
@@ -54,7 +56,7 @@ import { clamp } from './math.ts'
 
 /**
  * Nota (E–S) de um desafiante na batalha: quanto a Batalha foge da base da espécie (mesma
- * escala dos IVs do jogador). O destaque (+15) estoura a faixa e cai naturalmente em 'S'.
+ * escala dos IVs do jogador). Uma medalha estoura a faixa e cai naturalmente em 'S'.
  */
 export function enemyRank(enemy: EnemyUnit): Rank {
   if (enemy.speciesId === undefined) return attrRank(0)
@@ -105,8 +107,39 @@ export function gymWinXp(enemyBattle: number): number {
 }
 
 /**
+ * Chance ACUMULADA ("pelo menos esse tier") de medalha por dia: cada tier abre no seu dia
+ * (MEDAL_UNLOCK_DAY) e rampa linearmente até 100% no dia MEDAL_FULL_DAY. (dia − (abertura − 1))
+ * no numerador garante chance > 0 já no dia de abertura. Bronze ≥ Prata ≥ Ouro sempre.
+ */
+export function medalChancesForDay(day: number): { bronze: number; silver: number; gold: number } {
+  const atLeast = (unlock: number): number => {
+    const start = unlock - 1
+    return clamp((day - start) / (MEDAL_FULL_DAY - start), 0, 1)
+  }
+  return {
+    bronze: atLeast(MEDAL_UNLOCK_DAY.bronze),
+    silver: atLeast(MEDAL_UNLOCK_DAY.silver),
+    gold: atLeast(MEDAL_UNLOCK_DAY.gold),
+  }
+}
+
+/**
+ * Sorteia a medalha de UM invasor no dia: um único draw comparado às chances acumuladas
+ * (do mais raro ao mais comum). Faixas resultantes: P(Ouro)=gold, P(Prata)=silver−gold,
+ * P(Bronze)=bronze−silver, P(nada)=1−bronze. Retorna null quando não veio medalha.
+ */
+export function rollMedalForDay(rng: Rng, day: number): MedalTier | null {
+  const { bronze, silver, gold } = medalChancesForDay(day)
+  const r = rng.next()
+  if (r < gold) return 'gold'
+  if (r < silver) return 'silver'
+  if (r < bronze) return 'bronze'
+  return null
+}
+
+/**
  * Tamanho do esquadrão invasor por dia (PLAN §4.4): tabela fixa DEFENSE_SQUAD_BY_DAY —
- * 1 (dia 1) crescendo até 6 (dias 9–10). A dificuldade do dia vem daqui (e da quantidade),
+ * 1 (dia 1) crescendo até 6 (dias 8–10). A dificuldade do dia vem daqui (e da quantidade),
  * não da força por Pokémon. Determinístico: depende só do dia.
  */
 export function enemySquadSizeForDay(day: number): number {
@@ -163,9 +196,9 @@ export function trainerSquadSpecies(
 /**
  * Inimigos efêmeros da defesa a partir do elenco de um treinador (PLAN §4.4). Cada invasor
  * tem o SEU poder de Batalha: a Batalha-base da espécie ±10 (E..S, como os IVs do jogador) —
- * então dois invasores da mesma espécie ainda diferem. Sem escala por dia: o dia controla
- * só QUANTOS Pokémon o treinador traz (enemySquadSizeForDay). Um desafiante (sorteado) sai
- * em DESTAQUE: ganha +15 de Batalha e exibe medalha na batalha (PLAN — destaque do desafiante).
+ * então dois invasores da mesma espécie ainda diferem. O dia controla QUANTOS Pokémon o
+ * treinador traz (enemySquadSizeForDay) e a chance/raridade das MEDALHAS: cada invasor sorteia
+ * Bronze (+10), Prata (+20) ou Ouro (+50) — o bônus sobe acima do teto normal de Batalha.
  */
 export function generateDefenseEnemies(
   rng: Rng,
@@ -173,23 +206,21 @@ export function generateDefenseEnemies(
   size: number,
   day = 1,
 ): EnemyUnit[] {
-  const enemies = trainerSquadSpecies(rng, trainer, size, day).map((speciesId) => {
+  return trainerSquadSpecies(rng, trainer, size, day).map((speciesId) => {
     const species = getSpecies(speciesId)
-    const battle = clamp(
+    let battle = clamp(
       species.baseAttrs.batalha + rng.int(IV_MIN, IV_MAX),
       ATTR_EFFECTIVE_MIN,
       ATTR_MAX,
     )
     const gender = rollGender(rng, speciesId)
-    return { battle, types: [...species.types], speciesId, gender } as EnemyUnit
+    // Medalha do dia (após o clamp: o bônus pode estourar o teto de Batalha).
+    const medal = rollMedalForDay(rng, day)
+    if (medal) battle += DEFENSE_MEDAL_BATTLE[medal]
+    const enemy: EnemyUnit = { battle, types: [...species.types], speciesId, gender }
+    if (medal) enemy.medal = medal
+    return enemy
   })
-  // Destaque: um desafiante recebe +15 de Batalha e a medalha (sobe acima do teto normal).
-  if (enemies.length > 0) {
-    const buffed = enemies[rng.int(0, enemies.length - 1)] as EnemyUnit
-    buffed.battle += DEFENSE_BUFF_BATTLE
-    buffed.buffed = true
-  }
-  return enemies
 }
 
 export interface DuelLog {

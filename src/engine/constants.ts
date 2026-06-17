@@ -70,9 +70,9 @@ export const WEATHER_SEED_SALT = 0x57656174 // 'Weat'
 
 /**
  * Quantidade de Pokémon do treinador invasor por dia (PLAN §4.4). Indexado pelo dia (1–10);
- * a posição 0 é só preenchimento. Cresce de 1 (dia 1) a 6 (dias 9–10).
+ * a posição 0 é só preenchimento. Cresce de 1 (dia 1) a 6 (dias 8–10).
  */
-export const DEFENSE_SQUAD_BY_DAY = [0, 1, 2, 2, 3, 3, 4, 5, 5, 6, 6] as const
+export const DEFENSE_SQUAD_BY_DAY = [0, 1, 2, 3, 4, 4, 5, 5, 6, 6, 6] as const
 
 /** Natureza: modificadores do valor por ponto alocado (+15 favorecido, +5 penalizado). */
 export const NATURE_BOOSTED_PER_POINT = 15
@@ -181,6 +181,9 @@ export const DRAFT_CHOICES = 3
  * s.weather vazio; missões em andamento mantêm seus tempos (sem poças retroativas).
  * v28: Percepção vira CENTRO de rank contínuo (cada ponto conta) no lugar da janela em degraus.
  * CaptureEncounter.rankWindow → rankCenter (número). A migração converte [lo,hi] no centro
- * (lo+hi)/2; encontros sem janela ficam sem viés. */
-export const SAVE_VERSION = 28
+ * (lo+hi)/2; encontros sem janela ficam sem viés.
+ * v29: medalhas dos invasores (Bronze +10 / Prata +20 / Ouro +50) por dia, com chance e raridade
+ * crescentes (100% Ouro no dia 30), no lugar do destaque único. EnemyUnit.buffed → EnemyUnit.medal.
+ * A migração troca buffed:true por medal:'silver' (a Batalha já tinha o +15 embutido). */
+export const SAVE_VERSION = 29
 export const SAVE_KEY = 'poke-badgekeeper:save'

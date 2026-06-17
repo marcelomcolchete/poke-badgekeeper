@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { POKEMON_TYPES } from '../types/index.ts'
 import { ATTR_MAX, DEFENSE_SQUAD_BY_DAY } from './constants.ts'
-import { DEFENSE_BUFF_BATTLE } from './balance.ts'
+import { DEFENSE_MEDAL_BATTLE } from './balance.ts'
 import { createRng } from './rng.ts'
 import { getTrainer } from '../data/trainers.ts'
 import { getSpecies } from '../data/pokemon/index.ts'
@@ -13,7 +13,9 @@ import {
   enemySquadSizeForDay,
   generateDefenseEnemies,
   gymWinXp,
+  medalChancesForDay,
   resolveDefense,
+  rollMedalForDay,
   trainerSquadSpecies,
   typeAdvantageMultiplier,
 } from './gymDefense.ts'
@@ -266,30 +268,43 @@ describe('trainerSquadSpecies (PLAN §4.4)', () => {
 })
 
 describe('generateDefenseEnemies', () => {
-  it('respeita o tamanho, usa o elenco do treinador e a Batalha-base ±10 (exceto o destaque)', () => {
+  it('respeita o tamanho, usa o elenco do treinador e a Batalha-base ±10 (+ bônus de medalha)', () => {
     const typeSet = new Set<string>(POKEMON_TYPES)
     const brock = getTrainer('BROCK')
-    const enemies = generateDefenseEnemies(createRng(1), brock, 6)
+    // Dia alto p/ exercitar os dois ramos: invasores com e sem medalha.
+    const enemies = generateDefenseEnemies(createRng(1), brock, 6, 10)
     expect(enemies).toHaveLength(6)
     for (const e of enemies) {
       expect(e.battle).toBeGreaterThanOrEqual(0)
       const base = getSpecies(e.speciesId as number).baseAttrs.batalha
-      // O destaque ganha +15 (pode passar do teto normal); os demais ficam em base ±10 e ≤ teto.
-      if (e.buffed) {
-        expect(e.battle - base).toBeLessThanOrEqual(10 + DEFENSE_BUFF_BATTLE)
-      } else {
-        expect(e.battle).toBeLessThanOrEqual(ATTR_MAX)
-        expect(Math.abs(e.battle - base)).toBeLessThanOrEqual(10)
-      }
+      // Sem medalha: base ±10 e ≤ teto. Com medalha: o bônus do tier soma sobre essa faixa.
+      const bonus = e.medal ? DEFENSE_MEDAL_BATTLE[e.medal] : 0
+      if (!e.medal) expect(e.battle).toBeLessThanOrEqual(ATTR_MAX)
+      expect(e.battle - base - bonus).toBeGreaterThanOrEqual(-10)
+      expect(e.battle - base - bonus).toBeLessThanOrEqual(10)
       for (const t of e.types) expect(typeSet.has(t)).toBe(true)
     }
   })
 
-  it('exatamente um desafiante sai em destaque (+15 de Batalha e medalha)', () => {
+  it('no dia 1 nenhum invasor sai com medalha', () => {
     for (let seed = 1; seed <= 20; seed++) {
-      const enemies = generateDefenseEnemies(createRng(seed), getTrainer('BROCK'), 4)
-      expect(enemies.filter((e) => e.buffed).length).toBe(1)
+      const enemies = generateDefenseEnemies(createRng(seed), getTrainer('BROCK'), 6, 1)
+      expect(enemies.every((e) => e.medal === undefined)).toBe(true)
     }
+  })
+
+  it('a partir do dia de abertura aparecem medalhas (bônus de Batalha por tier)', () => {
+    let withMedal = 0
+    for (let seed = 1; seed <= 40; seed++) {
+      for (const e of generateDefenseEnemies(createRng(seed), getTrainer('BROCK'), 6, 10)) {
+        if (!e.medal) continue
+        withMedal++
+        const base = getSpecies(e.speciesId as number).baseAttrs.batalha
+        // O bônus do tier está embutido na Batalha (faixa base ±10 + bônus).
+        expect(e.battle).toBeGreaterThanOrEqual(base - 10 + DEFENSE_MEDAL_BATTLE[e.medal])
+      }
+    }
+    expect(withMedal).toBeGreaterThan(0)
   })
 
   it('cada desafiante tem o seu próprio poder de batalha (não são todos iguais)', () => {
@@ -320,7 +335,7 @@ describe('enemySquadSizeForDay (PLAN §4.4)', () => {
   it('segue a tabela fixa por dia (1→6)', () => {
     expect(enemySquadSizeForDay(1)).toBe(1)
     expect(enemySquadSizeForDay(2)).toBe(2)
-    expect(enemySquadSizeForDay(5)).toBe(3)
+    expect(enemySquadSizeForDay(5)).toBe(4)
     expect(enemySquadSizeForDay(7)).toBe(5)
     expect(enemySquadSizeForDay(9)).toBe(6)
     expect(enemySquadSizeForDay(10)).toBe(6)
@@ -329,6 +344,41 @@ describe('enemySquadSizeForDay (PLAN §4.4)', () => {
   it('casa com a constante DEFENSE_SQUAD_BY_DAY', () => {
     for (let day = 1; day <= 10; day++) {
       expect(enemySquadSizeForDay(day)).toBe(DEFENSE_SQUAD_BY_DAY[day])
+    }
+  })
+})
+
+describe('medalhas dos invasores', () => {
+  it('respeita os dias de abertura (Bronze d2, Prata d6, Ouro d10) e zero no dia 1', () => {
+    const d1 = medalChancesForDay(1)
+    expect(d1.bronze).toBe(0)
+    expect(d1.silver).toBe(0)
+    expect(d1.gold).toBe(0)
+    expect(medalChancesForDay(2).bronze).toBeGreaterThan(0)
+    expect(medalChancesForDay(5).silver).toBe(0)
+    expect(medalChancesForDay(6).silver).toBeGreaterThan(0)
+    expect(medalChancesForDay(9).gold).toBe(0)
+    expect(medalChancesForDay(10).gold).toBeGreaterThan(0)
+  })
+
+  it('as chances acumuladas são ordenadas (bronze ≥ prata ≥ ouro) e batem 100% no dia 30', () => {
+    for (let day = 1; day <= 30; day++) {
+      const { bronze, silver, gold } = medalChancesForDay(day)
+      expect(bronze).toBeGreaterThanOrEqual(silver)
+      expect(silver).toBeGreaterThanOrEqual(gold)
+    }
+    const d30 = medalChancesForDay(30)
+    expect(d30.bronze).toBe(1)
+    expect(d30.silver).toBe(1)
+    expect(d30.gold).toBe(1)
+    // Modo infinito: além do dia 30 segura em 100% (todo invasor sai Ouro).
+    expect(medalChancesForDay(45).gold).toBe(1)
+  })
+
+  it('no dia 1 nunca sorteia medalha; no dia 30 sempre Ouro', () => {
+    for (let seed = 1; seed <= 50; seed++) {
+      expect(rollMedalForDay(createRng(seed), 1)).toBeNull()
+      expect(rollMedalForDay(createRng(seed), 30)).toBe('gold')
     }
   })
 })
