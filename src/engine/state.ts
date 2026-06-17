@@ -145,7 +145,7 @@ export interface MissionInstance {
 export interface RocketBattle {
   /** Treinador Rocket sorteado (define o elenco e a arte). */
   trainerId: TrainerId
-  /** Esquadrão inimigo (mesma quantidade por dia que a defesa de ginásio), um em destaque. */
+  /** Esquadrão inimigo (mesma quantidade por dia que a defesa de ginásio), com medalhas do dia. */
   enemies: EnemyUnit[]
   /** Log da cadeia de duelos, preenchido ao resolver a batalha. */
   duels?: DuelLog[]

@@ -1,18 +1,25 @@
 // Animação compartilhada da cadeia de duelos 1v1 (defesa de ginásio E batalha da Equipe
-// Rocket): mostra os dois lados, a nota E–S de cada Pokémon e a medalha do desafiante em
-// destaque (+15). A resolução já vem do estado (log de duelos); aqui é só a visualização.
+// Rocket): mostra os dois lados, a nota E–S de cada Pokémon e a medalha (Bronze/Prata/Ouro)
+// do invasor. A resolução já vem do estado (log de duelos); aqui é só a visualização.
 
 import { useEffect, useState } from 'react'
-import type { EnemyUnit, Gender, Pokemon } from '../../types/index.ts'
+import type { EnemyUnit, Gender, MedalTier, Pokemon } from '../../types/index.ts'
 import type { GameState } from '../../engine/state.ts'
 import type { DuelLog } from '../../engine/gymDefense.ts'
 import type { TrainerDef } from '../../data/trainers.ts'
+import { DEFENSE_MEDAL_BATTLE } from '../../engine/balance.ts'
 import { effectiveAttr } from '../../engine/attributes.ts'
 import { effectiveBattle, enemyRank, typeAdvantageMultiplier } from '../../engine/gymDefense.ts'
 import { itemBattleMultiplier } from '../../engine/itemEffects.ts'
 import { pokemonRank, type Rank } from '../../engine/ranking.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
-import { RANK_COLOR } from '../common/visual.ts'
+import {
+  MEDAL_TIER_RANK,
+  RANK_COLOR,
+  SECRET_MEDAL,
+  SECRET_MEDAL_COLOR,
+  SECRET_TIER_LABEL,
+} from '../common/visual.ts'
 import { displayNameOf, genderColor, genderSymbol } from '../common/naming.ts'
 import { Overlay } from '../common/Overlay.tsx'
 import styles from './Panels.module.css'
@@ -186,7 +193,7 @@ export function BattleView({
                   battle={battle}
                   rank={enemyRank(enemy)}
                   gender={enemy.gender}
-                  medal={enemy.buffed}
+                  medal={enemy.medal}
                   trend={isCurrent ? trendOf(battle, enemy.battle) : 'flat'}
                 />
               )
@@ -303,7 +310,7 @@ function DuelMeter({
 /**
  * Lutador na cadeia de duelos: sprite com a nota E–S, o HP do seu Pokémon e o selo "−1"
  * sobrepostos, e o atributo Batalha abaixo (com ▲/▼ quando o tipo dá vantagem/desvantagem).
- * Desafiante em destaque (+15) exibe a medalha 🏅.
+ * Invasor com medalha exibe o selo do tier (🥉/🥈/🥇) com o bônus de Batalha.
  */
 function Fighter({
   spritePath,
@@ -325,7 +332,7 @@ function Fighter({
   battle: number
   rank?: Rank
   gender?: Gender
-  medal?: boolean
+  medal?: MedalTier
   trend: Trend
 }) {
   const trendCls = trend === 'up' ? styles.battleUp : trend === 'down' ? styles.battleDown : ''
@@ -358,8 +365,13 @@ function Fighter({
           </span>
         )}
         {medal && (
-          <span className={styles.fighterMedal} title="Desafiante em destaque (+15)" aria-label="Desafiante em destaque">
-            🏅
+          <span
+            className={styles.fighterMedal}
+            style={{ color: SECRET_MEDAL_COLOR[MEDAL_TIER_RANK[medal]] }}
+            title={`Medalha ${SECRET_TIER_LABEL[MEDAL_TIER_RANK[medal]]} (+${DEFENSE_MEDAL_BATTLE[medal]} Batalha)`}
+            aria-label={`Medalha ${SECRET_TIER_LABEL[MEDAL_TIER_RANK[medal]]}`}
+          >
+            {SECRET_MEDAL[MEDAL_TIER_RANK[medal]]}
           </span>
         )}
         {showMinus && <span className={styles.hpMinus}>−1</span>}

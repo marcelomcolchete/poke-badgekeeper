@@ -299,6 +299,39 @@ function migrate(file: Partial<SaveFile>): SaveFile | null {
     version = 28
   }
 
+  // v28 → v29: medalhas dos invasores (Bronze/Prata/Ouro) substituem o destaque único `buffed`.
+  // A Batalha já vem com o +15 antigo embutido — só o selo muda: buffed → medal:'silver' (o tier
+  // cujo bônus +20 mais se aproxima do +15). Aplica nas defesas e na batalha Rocket em andamento.
+  if (version === 28) {
+    const fixEnemies = (arr: unknown): unknown =>
+      Array.isArray(arr)
+        ? arr.map((e) => {
+            const enemy = e as Record<string, unknown>
+            if (!enemy.buffed) return enemy
+            const rest = { ...enemy }
+            delete rest.buffed
+            return { ...rest, medal: 'silver' }
+          })
+        : arr
+    const defenses = state.defenses as Array<Record<string, unknown>> | undefined
+    const missions = state.missions as Array<Record<string, unknown>> | undefined
+    state = {
+      ...state,
+      defenses: Array.isArray(defenses)
+        ? defenses.map((d) => ({ ...d, enemies: fixEnemies(d.enemies) }))
+        : defenses,
+      missions: Array.isArray(missions)
+        ? missions.map((m) => {
+            const rocket = m.rocket as Record<string, unknown> | undefined
+            return rocket && typeof rocket === 'object'
+              ? { ...m, rocket: { ...rocket, enemies: fixEnemies(rocket.enemies) } }
+              : m
+          })
+        : missions,
+    } as typeof state
+    version = 29
+  }
+
   if (version !== SAVE_VERSION) return null
   return { version, savedAtMs: (file as SaveFile).savedAtMs, state } as unknown as SaveFile
 }
