@@ -77,3 +77,24 @@
   white-space: nowrap;
   color: var(--c-star-on);
 }
+
+.hearts {
+  position: relative;
+  display: inline-block;
+  line-height: 1;
+  font-size: 18px;
+  white-space: nowrap;
+}
+
+.heartsOff {
+  color: color-mix(in srgb, #e0566f 28%, transparent);
+}
+
+.heartsOn {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  color: #e0566f;
+}

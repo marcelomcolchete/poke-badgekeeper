@@ -3,6 +3,7 @@
 
 import type { Pokemon } from '../types/index.ts'
 import type { DefenseEvent, GameState } from '../engine/state.ts'
+import { markActive } from '../engine/state.ts'
 import { canDefend, gymWinXp, resolveDefense, type DefenseResolution } from '../engine/gymDefense.ts'
 import { hasBattleArmor, sturdyAvailable } from '../engine/secretEffects.ts'
 import { goldForDefense } from '../engine/economy.ts'
@@ -71,6 +72,7 @@ export function assignDefense(s: GameState, defenseId: string, squadIds: string[
   if (!defense || defense.status !== 'active') return
   const squad = squadOf(s, squadIds)
   if (!canDefend(squad)) return
+  for (const p of squad) markActive(s.today, p.id) // participação do dia (corações)
 
   // Sturdy disponível para quem tem a habilidade e ainda não usou (escopo por jogo/dia).
   const sturdyAvailableIds = new Set(

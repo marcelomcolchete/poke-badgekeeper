@@ -6,6 +6,7 @@
 import type { Pokemon, TrainerId } from '../types/index.ts'
 import type { MissionTemplate } from '../data/types.ts'
 import type { GameState, MissionInstance, MissionStatus } from '../engine/state.ts'
+import { markActive } from '../engine/state.ts'
 import { getCity } from '../data/cities.ts'
 import { getMissionTemplate } from '../data/missionTemplates.ts'
 import { getTrainer } from '../data/trainers.ts'
@@ -116,6 +117,7 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
   }
 
   mission.teamIds = team.map((p) => p.id)
+  for (const p of team) markActive(s.today, p.id) // participação do dia (corações)
   mission.path = outbound.path
   mission.returnPath = inbound.path
   mission.flying = outbound.flying

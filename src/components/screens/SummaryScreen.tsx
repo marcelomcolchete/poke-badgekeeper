@@ -9,8 +9,9 @@ import type { GameAction } from '../../game/actions.ts'
 import { TOTAL_DAYS, STARS_MAX } from '../../engine/constants.ts'
 import { buildDaySummary } from '../../engine/daySummary.ts'
 import type { DailyProgress } from '../../engine/approval.ts'
-import { dailyGoalMet, dailyPerfect, isHired } from '../../engine/approval.ts'
+import { averageStars, dailyGoalMet, dailyPerfect, isHired } from '../../engine/approval.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
+import { Hearts } from '../common/Hearts.tsx'
 import { SECRET_KINDS, type SecretId } from '../../data/secretAbilities.ts'
 import type { Pokemon } from '../../types/index.ts'
 import { Textbox } from '../Textbox/Textbox.tsx'
@@ -38,8 +39,10 @@ function dayVerdict(progress: DailyProgress): { label: string; kind: VerdictKind
 export function SummaryScreen({ state, dispatch, onRestart }: Props) {
   const summary = buildDaySummary({
     day: state.run.day,
-    starsBefore: state.today.starsBefore,
-    starsAfter: state.approval.stars,
+    missionStarsBefore: state.today.missionStarsBefore,
+    missionStarsAfter: state.approval.missionStars,
+    battleStarsBefore: state.today.battleStarsBefore,
+    battleStarsAfter: state.approval.battleStars,
     missionResults: state.today.missionResults,
     defensesWon: state.today.defensesWon,
     defensesTotal: state.today.defensesTotal,
@@ -72,7 +75,16 @@ export function SummaryScreen({ state, dispatch, onRestart }: Props) {
       <div className={styles.header}>
         <span className={styles.title}>RESUMO — DIA {summary.day}/{TOTAL_DAYS}</span>
         <span className={`${styles.verdict} ${styles[verdict.kind]}`}>{verdict.label}</span>
-        <DeltaStars before={summary.starsBefore} after={summary.starsAfter} />
+        <div className={styles.starTracks}>
+          <div className={styles.starTrack}>
+            <span className={styles.starTrackLabel}>🎯 Missões</span>
+            <DeltaStars before={summary.missionStarsBefore} after={summary.missionStarsAfter} />
+          </div>
+          <div className={styles.starTrack}>
+            <span className={styles.starTrackLabel}>⚔️ Batalhas</span>
+            <DeltaStars before={summary.battleStarsBefore} after={summary.battleStarsAfter} />
+          </div>
+        </div>
       </div>
 
       <div className={styles.content}>
@@ -111,7 +123,12 @@ export function SummaryScreen({ state, dispatch, onRestart }: Props) {
       )}
 
       {lastDay ? (
-        <FinalResult hired={isHired(summary.starsAfter)} stars={summary.starsAfter} onRestart={onRestart} />
+        <FinalResult
+          missionStars={summary.missionStarsAfter}
+          battleStars={summary.battleStarsAfter}
+          roster={state.roster}
+          onRestart={onRestart}
+        />
       ) : (
         <>
           <Textbox>Bom trabalho! Pronto para o próximo dia?</Textbox>
@@ -163,13 +180,50 @@ function DeltaStars({ before, after }: { before: number; after: number }) {
   )
 }
 
-function FinalResult({ hired, stars, onRestart }: { hired: boolean; stars: number; onRestart: () => void }) {
+/**
+ * Relatório final do período: a média das duas trilhas (missões + batalhas) decide a efetivação
+ * (≥ 3), com o detalhamento das trilhas e o time completo com seus corações.
+ */
+function FinalResult({
+  missionStars,
+  battleStars,
+  roster,
+  onRestart,
+}: {
+  missionStars: number
+  battleStars: number
+  roster: Pokemon[]
+  onRestart: () => void
+}) {
+  const avg = averageStars(missionStars, battleStars)
+  const hired = isHired(missionStars, battleStars)
   return (
     <>
+      <div className={styles.finalReport}>
+        <div className={styles.finalScores}>
+          <span className={styles.finalScore}>🎯 Missões <b>{missionStars.toFixed(1)}</b>/5</span>
+          <span className={styles.finalScore}>⚔️ Batalhas <b>{battleStars.toFixed(1)}</b>/5</span>
+          <span className={`${styles.finalAvg} ${hired ? styles.finalAvgGood : styles.finalAvgBad}`}>
+            Média <b>{avg.toFixed(2)}</b>/5
+          </span>
+        </div>
+        <ul className={styles.finalTeam} aria-label="Time ao fim do período">
+          {roster.map((mon) => {
+            const species = getSpecies(mon.speciesId)
+            return (
+              <li key={mon.id} className={styles.finalMember}>
+                <img className={styles.finalSprite} src={species.spritePath} alt={species.displayName} />
+                <span className={styles.finalName}>{displayNameOf(mon)}</span>
+                <Hearts value={mon.hearts} />
+              </li>
+            )
+          })}
+        </ul>
+      </div>
       <Textbox>
         {hired
-          ? `Período encerrado com ${stars.toFixed(1)} estrelas — você foi EFETIVADO! Rumo à próxima cidade.`
-          : `Período encerrado com ${stars.toFixed(1)} estrelas. Não foi dessa vez (precisa de mais de 3).`}
+          ? `Período encerrado com média ${avg.toFixed(2)} — você foi EFETIVADO! Rumo à próxima cidade.`
+          : `Período encerrado com média ${avg.toFixed(2)}. Não foi dessa vez (precisa de média ≥ 3).`}
       </Textbox>
       <button type="button" className={styles.primary} onClick={onRestart}>
         Novo jogo ▶

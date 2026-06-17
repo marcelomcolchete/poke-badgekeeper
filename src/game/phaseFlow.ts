@@ -8,7 +8,15 @@ import type { GameState } from '../engine/state.ts'
 import { emptyTally } from '../engine/state.ts'
 import { STARS_MIN, TOTAL_DAYS } from '../engine/constants.ts'
 import { ALL_DEFENSES_WON_BONUS } from '../engine/balance.ts'
-import { applyApproval, approvalDelta, dailyGoalMet } from '../engine/approval.ts'
+import {
+  applyDomainStars,
+  battleStarDelta,
+  dailyGoalMet,
+  missionStarDelta,
+  type DailyProgress,
+} from '../engine/approval.ts'
+import { applyHeartDelta, dailyHeartDelta } from '../engine/hearts.ts'
+import { isFainted } from '../engine/attributes.ts'
 import { buildDaySummary, toDayLog } from '../engine/daySummary.ts'
 import { secretCountOf, secretLineFor, SECRET_MAX } from '../data/secretAbilities.ts'
 import { recomputeMaxHp } from '../engine/attributes.ts'
@@ -50,31 +58,41 @@ export function finalizeDay(s: GameState): void {
   resolveLeftovers(s)
   applyAllDefensesBonus(s)
 
-  const starsBefore = s.approval.stars
-  s.today.starsBefore = starsBefore
-  const progress = {
+  const missionBefore = s.approval.missionStars
+  const battleBefore = s.approval.battleStars
+  s.today.missionStarsBefore = missionBefore
+  s.today.battleStarsBefore = battleBefore
+  const progress: DailyProgress = {
     missionsCompleted: s.today.missionResults.filter((r) => r.success).length,
     missionsTotal: s.today.missionResults.length,
     battlesWon: s.today.defensesWon,
     battlesTotal: s.today.defensesTotal,
   }
+  const missionDelta = missionStarDelta(progress)
+  const battleDelta = battleStarDelta(progress)
+  const missionAfter = applyDomainStars(missionBefore, missionDelta)
+  const battleAfter = applyDomainStars(battleBefore, battleDelta)
 
-  // Sem estrelas e metas não batidas: perder ½ estrela zeraria a reputação → game over.
-  if (starsBefore + approvalDelta(progress) < STARS_MIN) {
-    s.approval.stars = STARS_MIN
+  // Zerar uma trilha (a queda do dia a levaria abaixo de 0) encerra a run por reputação.
+  if (missionBefore + missionDelta < STARS_MIN || battleBefore + battleDelta < STARS_MIN) {
+    s.approval.missionStars = missionAfter
+    s.approval.battleStars = battleAfter
     s.run.phase = 'GAMEOVER'
     s.run.gameOverReason = 'stars'
     s.clock.speed = 0
     return
   }
 
-  s.approval.stars = applyApproval(starsBefore, progress)
+  s.approval.missionStars = missionAfter
+  s.approval.battleStars = battleAfter
   s.approval.dailyGoalMet = dailyGoalMet(progress)
 
   const summary = buildDaySummary({
     day: s.run.day,
-    starsBefore,
-    starsAfter: s.approval.stars,
+    missionStarsBefore: missionBefore,
+    missionStarsAfter: missionAfter,
+    battleStarsBefore: battleBefore,
+    battleStarsAfter: battleAfter,
     missionResults: s.today.missionResults,
     defensesWon: s.today.defensesWon,
     defensesTotal: s.today.defensesTotal,
@@ -84,9 +102,27 @@ export function finalizeDay(s: GameState): void {
     roster: s.roster,
   })
   unlockSecretAbility(s, summary.mvpId)
+  applyDailyHearts(s, summary.mvpId)
   s.history.push(toDayLog(summary))
   s.run.phase = 'SUMMARY'
   s.clock.speed = 0
+}
+
+/**
+ * Corações do fim do dia (só o TIME; o PC não muda): cada Pokémon ganha +0,5 se sobreviveu ou
+ * −0,5 se morreu, +0,5 se foi o Destaque do Dia e −0,5 se não fez nada (nenhuma missão/exploração/
+ * batalha direta). Capado em [0, 5]. Aplicado antes da cura da virada do dia (lê o estado real).
+ */
+function applyDailyHearts(s: GameState, mvpId: string | null): void {
+  const participated = new Set(s.today.activeIds)
+  s.roster = s.roster.map((p) => {
+    const delta = dailyHeartDelta({
+      fainted: isFainted(p),
+      participated: participated.has(p.id),
+      mvp: p.id === mvpId,
+    })
+    return { ...p, hearts: applyHeartDelta(p.hearts, delta) }
+  })
 }
 
 /**

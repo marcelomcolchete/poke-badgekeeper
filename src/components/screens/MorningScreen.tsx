@@ -19,6 +19,7 @@ import { BoxPanel } from '../BoxPanel/BoxPanel.tsx'
 import { Textbox } from '../Textbox/Textbox.tsx'
 import { Overlay } from '../common/Overlay.tsx'
 import { Stars } from '../common/Stars.tsx'
+import { Hearts } from '../common/Hearts.tsx'
 import { ItemsBar } from '../common/ItemsBar.tsx'
 import { WeatherForecastPanel } from './WeatherForecastPanel.tsx'
 import { ATTR_SHORT_PT } from '../common/visual.ts'
@@ -125,7 +126,12 @@ export function MorningScreen({ state, dispatch }: Props) {
         </span>
         <span className={styles.meta}>
           <span className={styles.gold}>$ {state.gold}</span>
-          <Stars value={state.approval.stars} />
+          <span className={styles.starTrack} title="Estrelas de missões">
+            🎯 <Stars value={state.approval.missionStars} />
+          </span>
+          <span className={styles.starTrack} title="Estrelas de batalhas">
+            ⚔️ <Stars value={state.approval.battleStars} />
+          </span>
         </span>
       </header>
 
@@ -198,7 +204,12 @@ export function MorningScreen({ state, dispatch }: Props) {
         </div>
         <div className={styles.roster}>
           {state.roster.map((mon) => (
-            <PokemonCard key={mon.id} pokemon={mon} />
+            <div key={mon.id} className={styles.rosterCard}>
+              <PokemonCard pokemon={mon} />
+              <span className={styles.rosterHearts}>
+                <Hearts value={mon.hearts} />
+              </span>
+            </div>
           ))}
         </div>
       </section>

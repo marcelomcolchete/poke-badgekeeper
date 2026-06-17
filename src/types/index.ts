@@ -123,6 +123,11 @@ export interface Pokemon {
    */
   secretCount?: number
   /**
+   * Corações de afininade (0..5, passo 0,5). Novos Pokémon começam com 2. Cada coração dá +10% de
+   * XP ganho (teto +50%). Sobem/descem no fim do dia conforme o desempenho. Ausente = trata como 2.
+   */
+  hearts?: number
+  /**
    * Buffs temporários por eixo aplicados por itens x_* (somados ao atributo efetivo, afetando
    * inclusive o HP). Valem só no dia da compra e são limpos na virada do dia. Ausente = sem buff.
    */

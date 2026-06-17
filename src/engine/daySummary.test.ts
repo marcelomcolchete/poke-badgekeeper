@@ -14,8 +14,10 @@ function baseInput() {
   const downed = makeMon({ id: 'c', baseAttrs: makeAttrs({ resistencia: 50 }), currentHp: 0, status: 'fainted' })
   return {
     day: 3,
-    starsBefore: 2,
-    starsAfter: 2.5,
+    missionStarsBefore: 2,
+    missionStarsAfter: 2.5,
+    battleStarsBefore: 1,
+    battleStarsAfter: 1.5,
     missionResults: results,
     defensesWon: 1,
     defensesTotal: 2,
@@ -74,16 +76,24 @@ describe('buildDaySummary', () => {
     expect(s.missionsCompleted).toBe(0)
   })
 
-  it('preserva as estrelas antes/depois', () => {
+  it('preserva as estrelas (missões/batalhas) antes/depois', () => {
     const s = buildDaySummary(baseInput())
-    expect(s.starsBefore).toBe(2)
-    expect(s.starsAfter).toBe(2.5)
+    expect(s.missionStarsBefore).toBe(2)
+    expect(s.missionStarsAfter).toBe(2.5)
+    expect(s.battleStarsBefore).toBe(1)
+    expect(s.battleStarsAfter).toBe(1.5)
   })
 })
 
 describe('toDayLog', () => {
   it('extrai o registro enxuto do histórico', () => {
     const log = toDayLog(buildDaySummary(baseInput()))
-    expect(log).toEqual({ day: 3, starsAfter: 2.5, goldEarned: 250, captured: 1 })
+    expect(log).toEqual({
+      day: 3,
+      missionStarsAfter: 2.5,
+      battleStarsAfter: 1.5,
+      goldEarned: 250,
+      captured: 1,
+    })
   })
 })

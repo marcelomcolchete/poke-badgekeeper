@@ -9,8 +9,10 @@ export type { MissionResultLog }
 
 export interface DaySummaryInput {
   day: number
-  starsBefore: number
-  starsAfter: number
+  missionStarsBefore: number
+  missionStarsAfter: number
+  battleStarsBefore: number
+  battleStarsAfter: number
   missionResults: readonly MissionResultLog[]
   defensesWon: number
   defensesTotal: number
@@ -22,8 +24,10 @@ export interface DaySummaryInput {
 
 export interface DaySummary {
   day: number
-  starsBefore: number
-  starsAfter: number
+  missionStarsBefore: number
+  missionStarsAfter: number
+  battleStarsBefore: number
+  battleStarsAfter: number
   missionsCompleted: number
   missionsFailed: number
   missionsTotal: number
@@ -47,8 +51,10 @@ export function buildDaySummary(input: DaySummaryInput): DaySummary {
   const fainted = input.roster.filter(isFainted).length
   return {
     day: input.day,
-    starsBefore: input.starsBefore,
-    starsAfter: input.starsAfter,
+    missionStarsBefore: input.missionStarsBefore,
+    missionStarsAfter: input.missionStarsAfter,
+    battleStarsBefore: input.battleStarsBefore,
+    battleStarsAfter: input.battleStarsAfter,
     missionsCompleted,
     missionsFailed: input.missionResults.length - missionsCompleted,
     missionsTotal: input.missionResults.length,
@@ -109,7 +115,8 @@ export function computeMvp(
 export function toDayLog(summary: DaySummary): DayLog {
   return {
     day: summary.day,
-    starsAfter: summary.starsAfter,
+    missionStarsAfter: summary.missionStarsAfter,
+    battleStarsAfter: summary.battleStarsAfter,
     goldEarned: summary.goldEarned,
     captured: summary.captured,
   }

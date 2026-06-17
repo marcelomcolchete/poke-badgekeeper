@@ -16,6 +16,23 @@
   font-size: 8px;
 }
 
+.heartsLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  background: var(--c-panel);
+  border: 2px solid var(--c-panel-border);
+  border-radius: 4px;
+}
+
+.heartsHint {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: var(--c-ink-muted);
+  line-height: 1.4;
+}
+
 .natureName {
   color: var(--c-ink-muted);
   flex: 1;

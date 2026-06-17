@@ -5,6 +5,7 @@
 
 import type { Pokemon } from '../types/index.ts'
 import type { GameState } from '../engine/state.ts'
+import { isFainted } from '../engine/attributes.ts'
 import { getMissionTemplate } from '../data/missionTemplates.ts'
 import { advanceMission, expireMission, loseRunByRocket, promoteMission } from './missionFlow.ts'
 import { expireDefense, loseRunByUndefendedGym, spawnDefense } from './defenseFlow.ts'
@@ -28,7 +29,19 @@ export function tick(s: GameState, deltaMs: number): void {
   if (s.run.phase !== 'DAY') return // derrota por ginásio indefeso encerrou a run
   processSearches(s, now)
 
+  // Time inteiro desmaiado no dia = derrota imediata (sem ninguém para lutar/agir).
+  checkTeamWipeout(s)
+  if (s.run.phase !== 'DAY') return
+
   if (overtime && dayComplete(s)) finalizeDay(s)
+}
+
+/** Todo o time desmaiado encerra a run na hora (PLAN — condição de derrota). */
+function checkTeamWipeout(s: GameState): void {
+  if (s.roster.length === 0 || !s.roster.every(isFainted)) return
+  s.run.phase = 'GAMEOVER'
+  s.run.gameOverReason = 'fainted'
+  s.clock.speed = 0
 }
 
 function processMissions(s: GameState, now: number, overtime: boolean): void {

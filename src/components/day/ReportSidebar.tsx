@@ -6,7 +6,7 @@ import type { Pokemon } from '../../types/index.ts'
 import type { GuideMessage, GuideMsgKind } from './DayScreen.tsx'
 import { STARS_MAX } from '../../engine/constants.ts'
 import type { DailyProgress } from '../../engine/approval.ts'
-import { approvalDelta, battleGoal, missionGoal } from '../../engine/approval.ts'
+import { battleGoal, battleStarDelta, missionGoal, missionStarDelta } from '../../engine/approval.ts'
 import { computeMvp } from '../../engine/daySummary.ts'
 import { clamp } from '../../engine/math.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
@@ -61,33 +61,33 @@ export function ReportSidebar({ state, messages }: Props) {
     battlesWon: t.defensesWon,
     battlesTotal,
   }
-  const starDelta = approvalDelta(progress)
-  const starsPct = `${(state.approval.stars / STARS_MAX) * 100}%`
+  const missionDelta = missionStarDelta(progress)
+  const battleDelta = battleStarDelta(progress)
 
   return (
     <aside className={styles.panel} aria-label="Relatório do dia">
       <header className={styles.head}>
         <span className={styles.title}>RELATÓRIO</span>
-        <span className={styles.stars} aria-label={`${state.approval.stars} de ${STARS_MAX} estrelas`}>
-          <span className={styles.starsOff}>{'★'.repeat(STARS_MAX)}</span>
-          <span className={styles.starsOn} style={{ width: starsPct }}>
-            {'★'.repeat(STARS_MAX)}
-          </span>
+        <span className={styles.starTracks}>
+          <StarTrack icon="🎯" value={state.approval.missionStars} />
+          <StarTrack icon="⚔️" value={state.approval.battleStars} />
         </span>
       </header>
 
-      <GoalSection label="Missões cumpridas" done={completed} total={total} goal={missionGoal(total)} />
-      <GoalSection label="Batalhas vencidas" done={t.defensesWon} total={battlesTotal} goal={battleGoal(battlesTotal)} />
-
-      {/* Previsão da estrela do dia: precisa bater AS DUAS metas para o ½, e 100% nas
-          duas para o +1. */}
-      <p className={`${styles.hint} ${starDelta > 0 ? styles.hintGood : ''}`}>
-        {starDelta >= 1
-          ? 'Dia perfeito — +1 estrela! ★'
-          : starDelta > 0
-            ? 'Metas batidas — +½ estrela! ★½'
-            : 'Bata a meta de missões E de batalhas para ganhar ½ estrela.'}
-      </p>
+      <GoalSection
+        label="Missões cumpridas"
+        done={completed}
+        total={total}
+        goal={missionGoal(total)}
+        delta={missionDelta}
+      />
+      <GoalSection
+        label="Batalhas vencidas"
+        done={t.defensesWon}
+        total={battlesTotal}
+        goal={battleGoal(battlesTotal)}
+        delta={battleDelta}
+      />
 
       {/* Placar do dia: sucessos (verde) e falhas (vermelho) de missões e batalhas. */}
       <div className={styles.score}>
@@ -164,20 +164,47 @@ export function ReportSidebar({ state, messages }: Props) {
   )
 }
 
+/** Trilha de estrelas do cabeçalho do relatório: ícone do domínio + 5 estrelas por largura. */
+function StarTrack({ icon, value }: { icon: string; value: number }) {
+  const pct = `${(value / STARS_MAX) * 100}%`
+  return (
+    <span className={styles.starTrack} title={`${value.toFixed(1)} de ${STARS_MAX}`}>
+      <span aria-hidden="true">{icon}</span>
+      <span className={styles.stars} aria-label={`${value} de ${STARS_MAX} estrelas`}>
+        <span className={styles.starsOff}>{'★'.repeat(STARS_MAX)}</span>
+        <span className={styles.starsOn} style={{ width: pct }}>
+          {'★'.repeat(STARS_MAX)}
+        </span>
+      </span>
+    </span>
+  )
+}
+
+/** Rótulo da variação de estrela prevista de um domínio (+1 / +½ / −½ / −1 / —). */
+function deltaLabel(delta: number): string {
+  if (delta >= 1) return '+1 ★'
+  if (delta > 0) return '+½ ★'
+  if (delta <= -1) return '−1 ★'
+  if (delta < 0) return '−½ ★'
+  return '—'
+}
+
 /**
  * Bloco de progresso rumo à meta de um domínio do dia (missões ou batalhas): contador,
- * barra com marcador da meta e dica de quanto falta. Idêntico para os dois.
+ * barra com marcador da meta, dica de quanto falta e a estrela prevista do dia. Idêntico para os dois.
  */
 function GoalSection({
   label,
   done,
   total,
   goal,
+  delta,
 }: {
   label: string
   done: number
   total: number
   goal: number
+  delta: number
 }) {
   const goalMet = total > 0 && done >= goal
   const remaining = Math.max(0, goal - done)
@@ -203,12 +230,18 @@ function GoalSection({
           />
         )}
       </div>
-      <p className={`${styles.hint} ${goalMet ? styles.hintGood : ''}`}>
-        {total <= 0
-          ? 'Nenhuma hoje.'
-          : goalMet
-            ? `Meta batida (${goal})! ✓`
-            : `Faltam ${remaining} para a meta (${goal}).`}
+      <p className={`${styles.hint} ${delta > 0 ? styles.hintGood : ''}`}>
+        {total <= 0 ? (
+          'Nenhuma hoje.'
+        ) : (
+          <>
+            {goalMet ? `Meta batida (${goal})! ✓` : `Faltam ${remaining} para a meta (${goal}).`}
+            <span className={styles.deltaTag} data-sign={delta >= 0 ? 'up' : 'down'}>
+              {' '}
+              {deltaLabel(delta)}
+            </span>
+          </>
+        )}
       </p>
     </section>
   )
