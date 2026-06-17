@@ -208,6 +208,10 @@ export interface CaptureSearch {
   arriveAtMs: number
   /** Fim da busca = encontro gerado. */
   readyAtMs: number
+  /** Clima (poças): rota de desvio percorrida quando uma poça bloqueou a ida (substitui `path`). */
+  reroutePath?: string[]
+  /** Clima (poças): parado no ponto antes de uma poça até ela secar (sem rota seca alternativa). */
+  weatherHold?: { node: string; untilMs: number }
 }
 
 /** Procurador voltando ao ginásio após capturar/dispensar — só fica idle ao chegar (PLAN §4.5). */
@@ -226,6 +230,10 @@ export interface CaptureReturn {
   surfing?: boolean
   departAtMs: number
   arriveAtMs: number
+  /** Clima (poças): rota de desvio percorrida quando uma poça bloqueou a volta (substitui `path`). */
+  reroutePath?: string[]
+  /** Clima (poças): parado no ponto antes de uma poça até ela secar (sem rota seca alternativa). */
+  weatherHold?: { node: string; untilMs: number }
 }
 
 /** Encontro pronto: 3 candidatos para o jogador decidir (capturar / voltar / seguir) — PLAN §4.5. */

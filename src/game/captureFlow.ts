@@ -13,7 +13,8 @@ import { perceptionRankWindow } from '../engine/ranking.ts'
 import { createPokemon } from '../engine/leveling.ts'
 import { graphTravelMs, travelRoute } from '../engine/missions.ts'
 import { graphWithTunnels } from '../engine/pathfinding.ts'
-import { teamTravelSpeedMultiplier } from '../engine/secretEffects.ts'
+import { planWeatherLeg } from '../engine/weatherTravel.ts'
+import { teamSurfs, teamTravelSpeedMultiplier } from '../engine/secretEffects.ts'
 import { createRng } from '../engine/rng.ts'
 import { findMon, replaceMon, takeId, takeRng } from './runtime.ts'
 
@@ -59,8 +60,53 @@ export function startSearch(s: GameState, searcherId: string, spotIndex: number)
   })
 }
 
+/**
+ * Clima (poças): um procurador que NÃO surfa nem voa desvia de poças ativas na ida ou, sem rota
+ * seca, espera no ponto anterior até a poça secar — espelha o `applyWeatherHold` das missões.
+ * Adia em conjunto a chegada (arriveAtMs) e o fim da busca (readyAtMs) pelo atraso embutido.
+ */
+function applySearchWeatherHold(s: GameState, search: CaptureSearch, nowMs: number): void {
+  if (s.weather.rain.length === 0) return
+  if (search.flying) return
+  const searcher = findMon(s, search.searcherId)
+  if (!searcher) return
+  const team = [searcher]
+  if (teamSurfs(team)) return
+
+  // Espera em andamento: fica parado até a poça secar; só então reavalia.
+  if (search.weatherHold) {
+    if (nowMs < search.weatherHold.untilMs) return
+    search.weatherHold = undefined
+  }
+
+  const city = getCity(s.run.cityIndex)
+  const graph = graphWithTunnels(city.graph, s.today.digTunnels)
+  const baseLeg = search.reroutePath ?? search.path
+  const speedMult = teamTravelSpeedMultiplier(team, s.runItems)
+  const plan = planWeatherLeg({
+    graph,
+    weather: s.weather,
+    baseLeg,
+    legStart: search.departAtMs,
+    legEnd: search.arriveAtMs,
+    nowMs,
+    team,
+    speedMult,
+  })
+  if (plan.kind === 'reroute') {
+    search.reroutePath = plan.reroutePath
+    search.arriveAtMs += plan.extraMs
+    search.readyAtMs += plan.extraMs
+  } else if (plan.kind === 'wait') {
+    search.weatherHold = { node: plan.node, untilMs: plan.untilMs }
+    search.arriveAtMs += plan.extraMs
+    search.readyAtMs += plan.extraMs
+  }
+}
+
 /** Transições por tempo da busca: traveling→(chegada)searching→(busca)encontro (§4.5). */
 export function advanceSearch(s: GameState, search: CaptureSearch, nowMs: number): void {
+  if (search.phase === 'traveling') applySearchWeatherHold(s, search, nowMs)
   if (search.phase === 'traveling' && nowMs >= search.arriveAtMs) {
     search.phase = 'searching'
     const searcher = findMon(s, search.searcherId)
@@ -131,8 +177,51 @@ function startReturn(s: GameState, searcherId: string, spotIndex: number, captur
   })
 }
 
+/**
+ * Clima (poças): mesma regra da ida aplicada à volta de um procurador que não surfa nem voa —
+ * desvia das poças ativas ou espera no ponto anterior, adiando a chegada (arriveAtMs).
+ */
+function applyReturnWeatherHold(s: GameState, ret: CaptureReturn, nowMs: number): void {
+  if (s.weather.rain.length === 0) return
+  if (ret.flying) return
+  const searcher = findMon(s, ret.searcherId)
+  if (!searcher) return
+  const team = [searcher]
+  if (teamSurfs(team)) return
+
+  if (ret.weatherHold) {
+    if (nowMs < ret.weatherHold.untilMs) return
+    ret.weatherHold = undefined
+  }
+
+  const city = getCity(s.run.cityIndex)
+  const graph = graphWithTunnels(city.graph, s.today.digTunnels)
+  // `path` é ponto→ginásio (volta real); saves antigos guardavam ginásio→ponto (detecta e inverte).
+  const back = ret.path[0] === ret.node ? ret.path : [...ret.path].reverse()
+  const baseLeg = ret.reroutePath ?? back
+  const speedMult = teamTravelSpeedMultiplier(team, s.runItems)
+  const plan = planWeatherLeg({
+    graph,
+    weather: s.weather,
+    baseLeg,
+    legStart: ret.departAtMs,
+    legEnd: ret.arriveAtMs,
+    nowMs,
+    team,
+    speedMult,
+  })
+  if (plan.kind === 'reroute') {
+    ret.reroutePath = plan.reroutePath
+    ret.arriveAtMs += plan.extraMs
+  } else if (plan.kind === 'wait') {
+    ret.weatherHold = { node: plan.node, untilMs: plan.untilMs }
+    ret.arriveAtMs += plan.extraMs
+  }
+}
+
 /** Procurador chegou de volta ao ginásio → idle; remove do conjunto de retornos. */
 export function advanceCaptureReturn(s: GameState, ret: CaptureReturn, nowMs: number): void {
+  applyReturnWeatherHold(s, ret, nowMs)
   if (nowMs < ret.arriveAtMs) return
   const searcher = findMon(s, ret.searcherId)
   if (searcher) replaceMon(s, { ...searcher, status: 'idle' })
