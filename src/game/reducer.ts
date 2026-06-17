@@ -3,6 +3,7 @@
 // então a função é pura e determinística (RNG semeado via runtime).
 
 import type { GameState } from '../engine/state.ts'
+import { createInitialState } from '../engine/state.ts'
 import type { GameAction } from './actions.ts'
 import { draft } from './runtime.ts'
 import { tick } from './dayClock.ts'
@@ -21,6 +22,12 @@ import {
 import { allocatePoint, applyItem, buyBall, buyItem, useRareCandy } from './marketFlow.ts'
 
 export function reducer(state: GameState, action: GameAction): GameState {
+  // Reinício total numa nova cidade: descarta o estado atual (não dobra no draft) — começo limpo.
+  if (action.type === 'RESET_TO_CITY') {
+    const fresh = createInitialState(action.seed)
+    fresh.run.cityIndex = action.cityIndex
+    return fresh
+  }
   const s = draft(state)
   switch (action.type) {
     case 'SELECT_CITY':

@@ -204,5 +204,5 @@ export const DRAFT_CHOICES = 3
  * por Pokémon (pokemon.hearts, 0–5). Adiciona today.activeIds (participação do dia) e
  * today.missionStarsBefore/battleStarsBefore. A migração duplica a estrela antiga nas duas trilhas,
  * dá 2 corações a todo Pokémon (roster + PC) e inicia activeIds vazio. */
-export const SAVE_VERSION = 30
+export const SAVE_VERSION = 31
 export const SAVE_KEY = 'poke-badgekeeper:save'
