@@ -10,6 +10,7 @@ import {
   LAGGING_TAIL_BATTLE_MULT,
   LAGGING_TAIL_MISSION_MULT,
   LAGGING_TAIL_TRAVEL_MULT,
+  MYSTIC_WATER_BATTLE_MULT,
   THICK_CLUB_BATTLE_MULT,
 } from './balance.ts'
 
@@ -38,12 +39,16 @@ export function itemMissionMultiplier(p: Pokemon, runItems: readonly string[]): 
 /**
  * Multiplicador de Batalha vindo de itens passivos (1 = sem efeito):
  *  - Thick Club: +50% para Pokémon do tipo Ground.
+ *  - Mystic Water: +50% para Pokémon do tipo Water.
  *  - Lagging Tail: +50% para todos.
  */
 export function itemBattleMultiplier(p: Pokemon, runItems: readonly string[]): number {
   let mult = 1
   if (hasRunItem(runItems, 'thick-club') && p.types.includes('ground')) {
     mult *= THICK_CLUB_BATTLE_MULT
+  }
+  if (hasRunItem(runItems, 'mystic-water') && p.types.includes('water')) {
+    mult *= MYSTIC_WATER_BATTLE_MULT
   }
   if (hasRunItem(runItems, 'lagging-tail')) mult *= LAGGING_TAIL_BATTLE_MULT
   return mult

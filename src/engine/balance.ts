@@ -270,5 +270,7 @@ export const LAGGING_TAIL_BATTLE_MULT = 1.5
 export const LAGGING_TAIL_TRAVEL_MULT = 0.5
 /** Thick Club: +50% em batalhas para Pokémon do tipo Ground. */
 export const THICK_CLUB_BATTLE_MULT = 1.5
+/** Mystic Water: +50% em batalhas para Pokémon do tipo Water. */
+export const MYSTIC_WATER_BATTLE_MULT = 1.5
 /** Exp Share: fração da XP de um Pokémon repassada ao resto do time. */
 export const EXP_SHARE_RATE = 0.05

@@ -17,9 +17,8 @@ describe('bolas — progressão e teto de raridade', () => {
     expect(nextBall(4)).toBeNull() // já no topo
   })
 
-  it('Pokébola inicial é grátis; as demais custam 500', () => {
-    expect(BALLS[0]?.price).toBe(0)
-    for (const ball of BALLS.slice(1)) expect(ball.price).toBe(500)
+  it('preço crescente por nível: 200 → 400 → 800 → 1600', () => {
+    expect(BALLS.map((b) => b.price)).toEqual([200, 400, 800, 1600])
   })
 
   it('currentBall reflete a bola possuída (null no nível 0)', () => {

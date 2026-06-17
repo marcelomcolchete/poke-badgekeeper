@@ -63,12 +63,10 @@ function BallCard({
   gold: number
   onBuy: () => void
 }) {
-  const free = ball.price === 0
-  const label = sold ? 'VENDIDO' : free ? 'GRÁTIS' : `$ ${ball.price}`
-  const disabled = sold || (!free && gold < ball.price)
+  const label = sold ? 'VENDIDO' : `$ ${ball.price}`
+  const disabled = sold || gold < ball.price
   return (
     <div className={`${styles.card} ${sold ? styles.cardSold : ''}`}>
-      {free && !sold && <span className={styles.cardBadge}>GRÁTIS</span>}
       <span className={styles.cardKind}>BOLA</span>
       <img className={styles.cardImg} src={ball.sprite} alt={ball.name} />
       <span className={styles.cardName}>{ball.name}</span>
@@ -99,7 +97,7 @@ export function MorningScreen({ state, dispatch }: Props) {
   const offerIds =
     state.today.shopOffer.length > 0
       ? state.today.shopOffer
-      : getDailyShop(state.run.seed, state.run.day, state.run.cityIndex, state.runItems)
+      : getDailyShop(state.run.seed, state.run.day, state.run.cityIndex, state.runItems, state.run.ballLevel)
 
   // Pokébola evolutiva: slot fixo à esquerda. Após comprá-la hoje, mostra-a VENDIDA (só evolui
   // no dia seguinte); senão, mostra a próxima bola comprável. Sem bola a mostrar = 5 itens normais.
@@ -174,7 +172,7 @@ export function MorningScreen({ state, dispatch }: Props) {
         </div>
       </section>
 
-      <ItemsBar state={state} />
+      <ItemsBar state={state} dispatch={dispatch} />
 
       {/* Aviso + começar o dia ACIMA do time (sem precisar rolar a tela). */}
       <div className={styles.startBlock}>

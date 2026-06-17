@@ -7,7 +7,7 @@ import type { CaptureReturn, CaptureSearch } from '../engine/state.ts'
 import { markActive } from '../engine/state.ts'
 import { getCity } from '../data/cities.ts'
 import { rollEncounter, rosterIsFull, searchMs } from '../engine/capture.ts'
-import { MAX_ROSTER_SIZE } from '../engine/constants.ts'
+import { HEARTS_MAX, MAX_ROSTER_SIZE } from '../engine/constants.ts'
 import { maxRarityIndexForBall } from '../data/balls.ts'
 import { effectiveAttr } from '../engine/attributes.ts'
 import { perceptionRankCenter } from '../engine/ranking.ts'
@@ -34,7 +34,7 @@ export function startSearch(s: GameState, searcherId: string, spotIndex: number)
 
   const city = getCity(s.run.cityIndex)
   const graph = graphWithTunnels(city.graph, s.today.digTunnels)
-  const { flying, surfing, path, distance } = travelRoute(graph, city.siteNodes.gym, node, [searcher])
+  const { flying, surfing, path, distance } = travelRoute(graph, city.siteNodes.gym, node, [searcher], s.runItems)
   // Inalcançável: a área só é acessível cruzando a água e o explorador não surfa (ex.: 3.6 em 'm',
   // que só liga por 'a'/'n'). Sem rota, não despacha — a UI já bloqueia, mas a guarda evita uma
   // "viagem instantânea" de caminho vazio (espelha acceptMission). Voo/Sniper nunca dão [].
@@ -73,7 +73,7 @@ function applySearchWeatherHold(s: GameState, search: CaptureSearch, nowMs: numb
   const searcher = findMon(s, search.searcherId)
   if (!searcher) return
   const team = [searcher]
-  if (teamSurfs(team)) return
+  if (teamSurfs(team, s.runItems)) return
 
   // Espera em andamento: fica parado até a poça secar; só então reavalia.
   if (search.weatherHold) {
@@ -163,7 +163,7 @@ function startReturn(s: GameState, searcherId: string, spotIndex: number, captur
   const graph = graphWithTunnels(city.graph, s.today.digTunnels)
   // Volta = rota REAL do ponto até o ginásio (não o reverso da ida): com arestas de mão única
   // (ex.: voltar de 'k' por k→t→u) o caminho/tempo da volta diferem da ida (PLAN §3.1).
-  const { flying, surfing, path, distance } = travelRoute(graph, node, city.siteNodes.gym, [searcher])
+  const { flying, surfing, path, distance } = travelRoute(graph, node, city.siteNodes.gym, [searcher], s.runItems)
   const speedMult = teamTravelSpeedMultiplier([searcher], s.runItems)
   const oneWay = graphTravelMs(distance, [searcher], speedMult)
   const now = s.clock.dayElapsedMs
@@ -191,7 +191,7 @@ function applyReturnWeatherHold(s: GameState, ret: CaptureReturn, nowMs: number)
   const searcher = findMon(s, ret.searcherId)
   if (!searcher) return
   const team = [searcher]
-  if (teamSurfs(team)) return
+  if (teamSurfs(team, s.runItems)) return
 
   if (ret.weatherHold) {
     if (nowMs < ret.weatherHold.untilMs) return
@@ -250,13 +250,15 @@ export function capturePick(s: GameState, searcherId: string, candidateIndex: nu
   const seed = encounter.candidateSeeds?.[candidateIndex]
   // Nível REAL do candidato escolhido (saves antigos sem candidateLevels caem no nível base).
   const level = encounter.candidateLevels?.[candidateIndex] ?? encounter.level
-  const caught = createPokemon({
+  const base = createPokemon({
     id,
     speciesId,
     level,
     rng: seed !== undefined ? createRng(seed) : takeRng(s),
     rankCenter: encounter.rankCenter,
   })
+  // Love Ball: captura já vem com o máximo de corações.
+  const caught = s.runItems.includes('love-ball') ? { ...base, hearts: HEARTS_MAX } : base
   // Time cheio → vai pro PC; senão entra no time.
   if (rosterIsFull(s.roster)) s.box = [...s.box, caught]
   else s.roster = [...s.roster, caught]

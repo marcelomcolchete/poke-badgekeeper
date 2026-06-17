@@ -9,7 +9,7 @@ import { hasBattleArmor, sturdyAvailable } from '../engine/secretEffects.ts'
 import { goldForDefense } from '../engine/economy.ts'
 import { damageForDay } from '../engine/constants.ts'
 import { createRng } from '../engine/rng.ts'
-import { applyAutoItems, applyXpGains } from './itemFlow.ts'
+import { applyXpGains } from './itemFlow.ts'
 import { findMon, replaceMon, settleFaintTracked, takeRng } from './runtime.ts'
 
 /** Promove a defesa a 'active' (símbolo no ginásio) e conta no total do dia (PLAN §3.1). */
@@ -103,8 +103,6 @@ export function assignDefense(s: GameState, defenseId: string, squadIds: string[
   // HP/desmaio aplicados já (a batalha acontece agora); o XP fica para completeDefense.
   for (const member of resolution.squad) replaceMon(s, settleFaintTracked(s, member))
   applyBattleSecretRuntime(s, squad, resolution)
-  // Itens automáticos: Potion cura feridos; Revive traz desmaiados de volta.
-  applyAutoItems(s)
 
   defense.squadIds = squad.map((p) => p.id)
   defense.duels = resolution.duels

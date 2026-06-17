@@ -127,17 +127,23 @@ export type ItemKind = 'consumable' | 'passive'
 /**
  * Efeito concreto de um item (união discriminada). Dirige tanto a compra (marketFlow) quanto
  * os efeitos na engine:
- * - autoPotion/autoRevive: vão pro inventário com `uses` cargas e disparam sozinhos.
+ * - heal/revive: vão pro inventário com `uses` cargas e são USADOS manualmente (clique na barra
+ *   de itens). `scope: 'single'` pede um Pokémon-alvo; `scope: 'team'` aplica no time inteiro.
  * - statBuff: +amount num atributo de TODO o time, só no dia (dayBuffs); não vai pro inventário.
  * - passive: adiciona o `id` do item a s.runItems (efeito permanente lido pela engine).
  * - rareCandy: na compra, escolhe um Pokémon que sobe 1 nível.
+ * - premierBall: na compra, sobe 1 nível a bola atual de graça (Pokébola→…→Masterball).
+ * - fossilStone: na compra, gera um Pokémon fóssil aleatório (nível 1, rank F–S sorteado).
  */
+export type ItemScope = 'single' | 'team'
 export type ItemEffect =
-  | { kind: 'autoPotion'; uses: number }
-  | { kind: 'autoRevive'; uses: number }
+  | { kind: 'heal'; scope: ItemScope; uses: number }
+  | { kind: 'revive'; scope: ItemScope; uses: number }
   | { kind: 'statBuff'; attr: AttrKey; amount: number }
   | { kind: 'passive' }
   | { kind: 'rareCandy' }
+  | { kind: 'premierBall' }
+  | { kind: 'fossilStone' }
 
 export interface ItemData {
   id: string

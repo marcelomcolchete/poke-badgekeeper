@@ -6,6 +6,7 @@ import type { AttrKey } from '../types/index.ts'
 import { createRng, deriveSeed } from '../engine/rng.ts'
 import { SHOP_SEED_SALT } from '../engine/constants.ts'
 import { STAT_BUFF_AMOUNT } from '../engine/balance.ts'
+import { BALL_MAX_LEVEL } from './balls.ts'
 import type { ItemData } from './types.ts'
 
 const sprite = (id: string): string => `/sprites/itens/${id}.png`
@@ -29,36 +30,36 @@ export const ITEMS: ItemData[] = [
     name: 'Potion',
     type: 'consumable',
     price: 200,
-    description: 'Cura todo o HP de um Pokémon assim que ele perde vida (1 uso automático).',
+    description: 'Use para curar todo o HP de um Pokémon à escolha (uso único).',
     sprite: sprite('potion'),
-    effect: { kind: 'autoPotion', uses: 1 },
+    effect: { kind: 'heal', scope: 'single', uses: 1 },
   },
   {
     id: 'super-potion',
     name: 'Super Potion',
     type: 'consumable',
     price: 400,
-    description: 'Cura todo o HP de um Pokémon assim que ele perde vida (3 usos automáticos).',
+    description: 'Use para curar todo o HP do time inteiro de uma vez (uso único).',
     sprite: sprite('super-potion'),
-    effect: { kind: 'autoPotion', uses: 3 },
+    effect: { kind: 'heal', scope: 'team', uses: 1 },
   },
   {
     id: 'revive',
     name: 'Revive',
     type: 'consumable',
-    price: 500,
-    description: 'Revive um Pokémon com todo o HP assim que ele desmaia (1 uso automático).',
+    price: 400,
+    description: 'Use para reviver um Pokémon desmaiado com todo o HP (uso único).',
     sprite: sprite('revive'),
-    effect: { kind: 'autoRevive', uses: 1 },
+    effect: { kind: 'revive', scope: 'single', uses: 1 },
   },
   {
     id: 'max-revive',
     name: 'Max Revive',
     type: 'consumable',
-    price: 800,
-    description: 'Revive um Pokémon com todo o HP assim que ele desmaia (3 usos automáticos).',
+    price: 600,
+    description: 'Use para reviver o time inteiro com todo o HP de uma vez (uso único).',
     sprite: sprite('max-revive'),
-    effect: { kind: 'autoRevive', uses: 3 },
+    effect: { kind: 'revive', scope: 'team', uses: 1 },
   },
   statItem('x-AGI', 'X Agilidade', 'agilidade', 'Agilidade'),
   statItem('x-BTL', 'X Batalha', 'batalha', 'Batalha'),
@@ -79,7 +80,7 @@ export const ITEMS: ItemData[] = [
     id: 'fast-ball',
     name: 'Fast Ball',
     type: 'passive',
-    price: 1000,
+    price: 600,
     description: 'A exploração de captura é resolvida na hora em que o Pokémon chega na área.',
     sprite: sprite('fast-ball'),
     effect: { kind: 'passive' },
@@ -88,7 +89,7 @@ export const ITEMS: ItemData[] = [
     id: 'eviolite',
     name: 'Eviolite',
     type: 'passive',
-    price: 1500,
+    price: 500,
     description: 'Pokémon que ainda não chegaram à última evolução ganham +10% em todas as missões.',
     sprite: sprite('eviolite'),
     effect: { kind: 'passive' },
@@ -106,7 +107,7 @@ export const ITEMS: ItemData[] = [
     id: 'lagging-tail',
     name: 'Lagging Tail',
     type: 'passive',
-    price: 2000,
+    price: 600,
     description: 'Pokémon ficam 50% mais lentos nas missões, mas ganham +50% em missões e batalhas.',
     sprite: sprite('lagging-tail'),
     effect: { kind: 'passive' },
@@ -115,10 +116,64 @@ export const ITEMS: ItemData[] = [
     id: 'thick-club',
     name: 'Thick Club',
     type: 'passive',
-    price: 2000,
+    price: 1000,
     description: 'Pokémon do tipo Ground ganham +50% em batalhas.',
     sprite: sprite('thick-club'),
     effect: { kind: 'passive' },
+  },
+  {
+    id: 'love-ball',
+    name: 'Love Ball',
+    type: 'passive',
+    price: 600,
+    description: 'Pokémon capturados já vêm com o máximo de corações.',
+    sprite: sprite('love-ball'),
+    effect: { kind: 'passive' },
+  },
+  {
+    id: 'premier-ball',
+    name: 'Premier Ball',
+    type: 'consumable',
+    price: 100,
+    description: 'Sobe de graça o nível da sua bola (Pokébola → Great → Ultra → Master).',
+    sprite: sprite('premier-ball'),
+    effect: { kind: 'premierBall' },
+  },
+  {
+    id: 'fossil-stone',
+    name: 'Fossil Stone',
+    type: 'consumable',
+    price: 800,
+    description: 'Recebe um Pokémon fóssil aleatório (nível 1, rank sorteado de F a S).',
+    sprite: sprite('fossil-stone'),
+    effect: { kind: 'fossilStone' },
+  },
+  {
+    id: 'mystic-water',
+    name: 'Mystic Water',
+    type: 'passive',
+    price: 1000,
+    description: 'Pokémon do tipo Água ganham +50% em batalhas.',
+    sprite: sprite('mystic-water'),
+    effect: { kind: 'passive' },
+  },
+  {
+    id: 'surfboard',
+    name: 'Surfboard',
+    type: 'passive',
+    price: 1200,
+    description: 'Todo o time consegue atravessar a água e as poças (como a habilidade Surf).',
+    sprite: sprite('surfboard'),
+    effect: { kind: 'passive' },
+  },
+  {
+    id: 'fresh-water',
+    name: 'Fresh Water',
+    type: 'consumable',
+    price: 300,
+    description: 'Use para curar todo o HP de um Pokémon à escolha (2 usos).',
+    sprite: sprite('fresh-water'),
+    effect: { kind: 'heal', scope: 'single', uses: 2 },
   },
 ]
 
@@ -151,11 +206,14 @@ export const GLOBAL_ITEM_IDS: string[] = [
   'fast-ball',
   'eviolite',
   'rare-candy',
+  'love-ball',
+  'premier-ball',
 ]
 
-/** Itens EXTRAS por cidade (índice de CITIES). Por ora só Pewter (0). */
+/** Itens EXTRAS por cidade (índice de CITIES): Pewter (0) e Cerulean (1). */
 export const CITY_ITEM_IDS: Record<number, string[]> = {
-  0: ['lagging-tail', 'thick-club'],
+  0: ['lagging-tail', 'thick-club', 'fossil-stone'],
+  1: ['mystic-water', 'surfboard', 'fresh-water'],
 }
 
 /** Subconjunto do qual ao menos 1 item SEMPRE aparece no mercado (potion/revive/x_*). */
@@ -189,8 +247,13 @@ export function getDailyShop(
   day: number,
   cityIndex: number,
   owned: readonly string[] = [],
+  ballLevel = 0,
 ): string[] {
-  const pool = itemsForCity(cityIndex).filter((id) => !owned.includes(id))
+  // Premier Ball some quando já se tem a Masterball (não há mais nível para subir).
+  const atMaxBall = ballLevel >= BALL_MAX_LEVEL
+  const pool = itemsForCity(cityIndex).filter(
+    (id) => !owned.includes(id) && !(atMaxBall && id === 'premier-ball'),
+  )
   const rng = createRng(deriveSeed(seed, SHOP_SEED_SALT, day, cityIndex))
   const mandatory = pool.filter((id) => MANDATORY_ITEM_IDS.includes(id))
   const picked: string[] = []

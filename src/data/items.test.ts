@@ -54,17 +54,25 @@ describe('getDailyShop', () => {
     }
   })
 
-  it('só oferece os extras de Pewter na cidade 0', () => {
+  it('extras de cidade só aparecem na própria cidade', () => {
     const pewterOnly = CITY_ITEM_IDS[0] ?? []
-    // Em qualquer outra cidade, os itens exclusivos de Pewter nunca aparecem.
+    const ceruleanOnly = CITY_ITEM_IDS[1] ?? []
+    // Cidade 2 (Vermilion) não tem extras: só itens globais aparecem.
     for (let seed = 0; seed < 80; seed++) {
-      const shop = getDailyShop(seed, 1, 1)
+      const shop = getDailyShop(seed, 1, 2)
       for (const id of shop) expect(GLOBAL_ITEM_IDS).toContain(id)
-      expect(pewterOnly.some((id) => shop.includes(id))).toBe(false)
     }
-    // Em Pewter, ao varrer seeds, pelo menos um extra acaba aparecendo.
-    const seen = new Set<string>()
-    for (let seed = 0; seed < 200; seed++) for (const id of getDailyShop(seed, 1, 0)) seen.add(id)
-    expect(pewterOnly.some((id) => seen.has(id))).toBe(true)
+    // Os extras de Cerulean nunca aparecem em Pewter, e vice-versa.
+    const pewterSeen = new Set<string>()
+    const ceruleanSeen = new Set<string>()
+    for (let seed = 0; seed < 200; seed++) {
+      for (const id of getDailyShop(seed, 1, 0)) pewterSeen.add(id)
+      for (const id of getDailyShop(seed, 1, 1)) ceruleanSeen.add(id)
+    }
+    expect(ceruleanOnly.some((id) => pewterSeen.has(id))).toBe(false)
+    expect(pewterOnly.some((id) => ceruleanSeen.has(id))).toBe(false)
+    // Em cada cidade, ao varrer seeds, pelo menos um extra próprio acaba aparecendo.
+    expect(pewterOnly.some((id) => pewterSeen.has(id))).toBe(true)
+    expect(ceruleanOnly.some((id) => ceruleanSeen.has(id))).toBe(true)
   })
 })

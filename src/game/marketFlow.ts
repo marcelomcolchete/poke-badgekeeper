@@ -1,7 +1,7 @@
 // Mercado e ajustes do jogador (PLAN — Sistema de Itens): comprar itens (cura/revive,
-// buffs diários x_*, passivos da run, Rare Candy) e alocar o ponto de um level-up.
-// Os efeitos de cura/revive disparam sozinhos (itemFlow.applyAutoItems); os passivos vivem
-// em s.runItems e são lidos pela engine; os buffs x_* entram em pokemon.dayBuffs.
+// buffs diários x_*, passivos da run, Rare Candy, Premier/Fossil) e alocar o ponto de um
+// level-up. A cura/revive é USADA manualmente (applyItem: escopo single/team); os passivos
+// vivem em s.runItems e são lidos pela engine; os buffs x_* entram em pokemon.dayBuffs.
 
 import type { AttrKey, Attrs, Pokemon } from '../types/index.ts'
 import type { GameState } from '../engine/state.ts'
@@ -10,8 +10,18 @@ import { nextBall } from '../data/balls.ts'
 import { canAfford } from '../engine/economy.ts'
 import { LEVEL_MAX } from '../engine/constants.ts'
 import { heal, recomputeMaxHp } from '../engine/attributes.ts'
-import { allocatePoint as engineAllocate, evolveToLevel, pendingPoints } from '../engine/leveling.ts'
-import { findMon, replaceMon, takeRng } from './runtime.ts'
+import { rosterIsFull } from '../engine/capture.ts'
+import { RANKS } from '../engine/ranking.ts'
+import {
+  allocatePoint as engineAllocate,
+  createPokemon,
+  evolveToLevel,
+  pendingPoints,
+} from '../engine/leveling.ts'
+import { findMon, replaceMon, takeId, takeRng } from './runtime.ts'
+
+/** Espécies fósseis sorteadas pela Fossil Stone (Omanyte/Omastar/Kabuto/Kabutops/Aerodactyl). */
+const FOSSIL_SPECIES_IDS = [138, 139, 140, 141, 142]
 
 /** Marca um item como vendido hoje (vira "VENDIDO" no mercado — 1 compra por slot/dia). */
 function markSold(s: GameState, itemId: string): void {
@@ -29,12 +39,29 @@ export function buyItem(s: GameState, itemId: string, quantity = 1): void {
   const effect = item.effect
 
   switch (effect.kind) {
-    case 'autoPotion':
-    case 'autoRevive': {
-      // Cada compra adiciona `uses` cargas ao inventário (Super Potion/Max Revive = 3).
+    case 'heal':
+    case 'revive': {
+      // Cada compra adiciona `uses` cargas ao inventário; o item é USADO manualmente depois.
       if (!canAfford(s.gold, item, quantity)) return
       s.gold -= item.price * quantity
       addCharges(s, itemId, effect.uses * quantity)
+      markSold(s, itemId)
+      return
+    }
+    case 'premierBall': {
+      // Sobe 1 nível a bola atual de graça (nível 0 → Pokébola). Cobra só o preço da Premier.
+      if (!nextBall(s.run.ballLevel)) return // já na Masterball
+      if (!canAfford(s.gold, item)) return
+      s.gold -= item.price
+      s.run.ballLevel += 1
+      markSold(s, itemId)
+      return
+    }
+    case 'fossilStone': {
+      // Gera um Pokémon fóssil aleatório (nível 1, rank F–S sorteado) no time ou no PC.
+      if (!canAfford(s.gold, item)) return
+      s.gold -= item.price
+      grantFossil(s)
       markSold(s, itemId)
       return
     }
@@ -117,26 +144,63 @@ function consumeItem(s: GameState, itemId: string): boolean {
   return true
 }
 
-/** Uso MANUAL de um item de cura/revive num Pokémon (cura/revive ao máximo) — PLAN §4.6. */
+/**
+ * Uso MANUAL de um item de cura/revive (PLAN §4.6). Escopo `single`: cura/revive o Pokémon
+ * escolhido (`targetId`); escopo `team`: aplica no time inteiro de uma vez (`targetId` ignorado).
+ * Consome 1 carga só se algo de fato mudou (não desperdiça num time já cheio de HP/sem desmaiados).
+ */
 export function applyItem(s: GameState, itemId: string, targetId: string): void {
+  const effect = getItem(itemId).effect
+  if (effect.kind !== 'heal' && effect.kind !== 'revive') return
+  if (effect.scope === 'team') {
+    if (!applyTeamItem(s, effect.kind)) return
+    consumeItem(s, itemId)
+    return
+  }
   const target = findMon(s, targetId)
   if (!target) return
-  const next = applyItemEffect(itemId, target)
-  if (!next) return // item desconhecido ou efeito inválido (ex.: Potion em desmaiado)
+  const next = singleItemEffect(effect.kind, target)
+  if (!next) return // efeito inválido (ex.: Potion em desmaiado / Revive em vivo)
   if (!consumeItem(s, itemId)) return
   replaceMon(s, next)
 }
 
-function applyItemEffect(itemId: string, target: Pokemon): Pokemon | null {
-  const effect = getItem(itemId).effect
-  switch (effect.kind) {
-    case 'autoPotion':
-      return target.currentHp > 0 ? heal(target, target.maxHp) : null
-    case 'autoRevive':
-      return target.currentHp <= 0 ? { ...target, currentHp: target.maxHp, status: 'idle' } : null
-    default:
-      return null // demais itens não são "usados" manualmente
+/** Cura (enche o HP de quem está vivo e ferido) ou revive um único Pokémon; null se nada a fazer. */
+function singleItemEffect(kind: 'heal' | 'revive', target: Pokemon): Pokemon | null {
+  if (kind === 'heal') {
+    return target.currentHp > 0 && target.currentHp < target.maxHp ? heal(target, target.maxHp) : null
   }
+  return target.currentHp <= 0 ? { ...target, currentHp: target.maxHp, status: 'idle' } : null
+}
+
+/** Aplica cura/revive no TIME inteiro; retorna se algum Pokémon foi de fato afetado. */
+function applyTeamItem(s: GameState, kind: 'heal' | 'revive'): boolean {
+  let changed = false
+  s.roster = s.roster.map((p) => {
+    if (kind === 'heal' && p.currentHp > 0 && p.currentHp < p.maxHp) {
+      changed = true
+      return heal(p, p.maxHp)
+    }
+    if (kind === 'revive' && p.currentHp <= 0) {
+      changed = true
+      return { ...p, currentHp: p.maxHp, status: 'idle' }
+    }
+    return p
+  })
+  return changed
+}
+
+/** Fossil Stone: cria um Pokémon fóssil aleatório (nível 1, rank F–S) no time (ou no PC se cheio). */
+function grantFossil(s: GameState): void {
+  const rng = takeRng(s)
+  const speciesId = rng.pick(FOSSIL_SPECIES_IDS)
+  // Rank sorteado uniformemente de F (0) a S (RANKS.length − 1) vira o centro de rank dos IVs.
+  const rankCenter = rng.int(0, RANKS.length - 1)
+  const id = takeId(s, 'p')
+  const mon = createPokemon({ id, speciesId, level: 1, rng, rankCenter })
+  if (rosterIsFull(s.roster)) s.box = [...s.box, mon]
+  else s.roster = [...s.roster, mon]
+  if (!s.caughtSpecies.includes(speciesId)) s.caughtSpecies = [...s.caughtSpecies, speciesId]
 }
 
 /** Aloca o ponto pendente de um level-up no atributo escolhido (PLAN §4.1). */
