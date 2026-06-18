@@ -49,6 +49,8 @@ export function rainTravelMs(
   const baseMult = teamTravelSpeedMultiplier(team, runItems)
   const need = graphTravelMs(distance, team, 1) // progresso total a multiplicador 1
   if (need <= 0) return 0
+  // Sem swimmer ou sem chuva → tempo linear. (Chuvas totalmente no passado também caem no
+  // laço abaixo e retornam o mesmo: speedSegments só gera a cauda seca a partir de startMs.)
   if (!teamHasSwiftSwim(team) || schedule.rain.length === 0) {
     return need / Math.max(baseMult, 0.0001)
   }
