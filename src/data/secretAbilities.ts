@@ -52,6 +52,8 @@ export type SecretId =
   | 'sa-dry-skin'
   | 'sa-overcoat'
   | 'sa-own-tempo'
+  // Vermilion (Elétrico) — habilidades novas.
+  | 'sa-static'
 
 export interface SecretKind {
   id: SecretId
@@ -237,6 +239,11 @@ export const SECRET_KINDS: Record<SecretId, SecretKind> = {
     name: 'Own Tempo',
     effect: 'Previne o Pokémon de ficar confuso. (sem efeito até existir o status de confusão)',
   },
+  'sa-static': {
+    id: 'sa-static',
+    name: 'Static',
+    effect: 'Ao perder um duelo em batalha, paralisa o inimigo que o derrotou: a Batalha dele cai pela metade até o fim daquela batalha.',
+  },
 }
 
 // Mapa filho → pai (a partir dos passos de evolução), para achar a raiz de uma linha.
@@ -262,6 +269,10 @@ export function lineRootId(speciesId: number): number {
  * chaveadas pelo id da forma-base (raiz). Linhas de Pedra/Ground/Fóssil (Pewter).
  */
 export const SECRET_LINES: Record<number, readonly [SecretId, SecretId, SecretId]> = {
+  // ---- Vermilion (Elétrico) ----
+  // Pikachu → Raichu
+  25: ['sa-static', 'sa-dig', 'sa-lightning-rod'],
+
   // Sandshrew → Sandslash
   27: ['sa-rollout', 'sa-dig', 'sa-sand-rush'],
   // Nidoran♀ → Nidorina → Nidoqueen

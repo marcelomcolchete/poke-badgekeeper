@@ -31,6 +31,7 @@ import {
   PRESSURE_ENEMY_MULT,
   REGENERATOR_HEAL_PER_WIN,
   RIVAL_EVOLUTION_DAYS,
+  STATIC_PARALYZE_MULT,
   THICK_FAT_VS_ICE_MULT,
 } from './balance.ts'
 import { applyDamage, effectiveAttr } from './attributes.ts'
@@ -43,6 +44,7 @@ import {
   hasPressure,
   hasReckless,
   hasRegenerator,
+  hasStatic,
   hasSturdy,
   hasThickFat,
   hustleBattleBonus,
@@ -258,6 +260,7 @@ export interface ResolveDefenseOpts {
  *  - Lightning Rod: contra um inimigo Elétrico, o portador assume o duelo (vai para a frente).
  *  - Reckless: ao perder, toma dano e tenta de novo sem passar a vez (até vencer ou desmaiar).
  *  - Explosion: ao perder, derrota o inimigo e perde metade da vida máxima (pode desmaiar).
+ *  - Static: ao perder um duelo, paralisa o inimigo que o derrotou (Batalha ×0,5 até o fim).
  */
 export function resolveDefense(
   rng: Rng,
@@ -273,6 +276,8 @@ export function resolveDefense(
   let yours = 0
   let theirs = 0
   let frontWins = 0 // vitórias seguidas do lutador da frente (Rollout)
+  // Static: índices de inimigos paralisados — lutam com Batalha ×0,5 até o fim da batalha.
+  const paralyzed = new Set<number>()
   // Guarda contra laço infinito do Reckless (cada retentativa custa HP, mas é defensivo).
   let guard = 0
   const maxIterations = (result.length + enemies.length) * 1000 + 1000
@@ -312,6 +317,8 @@ export function resolveDefense(
     // Pressure: reduz a Batalha do oponente enfrentado.
     let enemyEff = enemy.battle * typeAdvantageMultiplier(enemy.types, you.types)
     if (hasPressure(you)) enemyEff *= PRESSURE_ENEMY_MULT
+    // Static: inimigo paralisado luta com metade da Batalha.
+    if (paralyzed.has(theirs)) enemyEff *= STATIC_PARALYZE_MULT
     const pWin = duelWinProbability(yourEff, enemyEff)
     const youWon = rng.bool(pWin)
     duels.push({ yourId: you.id, youWon, pWin })
@@ -327,7 +334,9 @@ export function resolveDefense(
       frontWins += 1
       continue
     }
-    // Derrota no duelo. Explosion derrota o inimigo junto e custa metade da vida máxima.
+    // Derrota no duelo. Static paralisa o inimigo que derrotou o portador (Batalha ×0,5 até o fim).
+    if (hasStatic(you)) paralyzed.add(theirs)
+    // Explosion derrota o inimigo junto e custa metade da vida máxima.
     if (hasExplosion(you)) {
       const loss = explosionSelfDamage(you)
       result[yours] =

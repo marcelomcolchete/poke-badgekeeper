@@ -96,6 +96,9 @@ export function hasThickFat(p: Pokemon): boolean {
 export function hasPressure(p: Pokemon): boolean {
   return hasSecret(p, 'sa-pressure')
 }
+export function hasStatic(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-static')
+}
 export function hasMoxie(p: Pokemon): boolean {
   return hasSecret(p, 'sa-moxie')
 }
