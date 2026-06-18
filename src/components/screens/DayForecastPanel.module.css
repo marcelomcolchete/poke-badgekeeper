@@ -1,0 +1,97 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sectionTitle {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  color: var(--c-hud-muted);
+}
+
+.subTitle {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--c-hud-muted);
+}
+
+/* Bloco "Previsão do Tempo" (céu azul-água) — cresce com o nº de efeitos. */
+.weather {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: linear-gradient(160deg, #e9f2ff 0%, var(--c-panel) 70%);
+  border: 3px solid var(--c-panel-border);
+  border-radius: var(--radius-pixel);
+  padding: 12px 14px;
+}
+
+.effects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.effect {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.effectIcon {
+  font-size: 26px;
+  line-height: 1;
+}
+
+.effectName {
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  color: var(--c-ink);
+}
+
+.effectChance {
+  font-family: var(--font-text);
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--c-ink);
+}
+
+.calm {
+  font-family: var(--font-text);
+  font-size: 17px;
+  color: var(--c-ink-muted);
+}
+
+/* Contagens do dia. */
+.counts {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 0;
+}
+
+.count {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-family: var(--font-text);
+}
+
+.count dt {
+  font-size: 15px;
+  color: var(--c-ink-muted);
+}
+
+.count dd {
+  margin: 0;
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--c-ink);
+}
+
+.rocket dd {
+  color: var(--c-hp-low);
+  letter-spacing: 2px;
+}
