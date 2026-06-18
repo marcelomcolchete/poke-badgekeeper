@@ -9,6 +9,7 @@ import {
   isRaining,
   maxRainTimes,
   puddleLevelAt,
+  rainAtLeastOnceChance,
   rainChanceForDay,
   type PuddleSpec,
   type WeatherSchedule,
@@ -237,5 +238,26 @@ describe('derivações de bloqueio', () => {
     expect(active).toHaveLength(1)
     expect(active[0]!.node).toBe('h')
     expect(active[0]!.level).toBeGreaterThan(0)
+  })
+})
+
+describe('rainAtLeastOnceChance (chance de ao menos uma pancada)', () => {
+  it('combina chance por pancada com a quantidade de pancadas', () => {
+    expect(rainAtLeastOnceChance(60, 3)).toBe(94) // 1 - 0.4^3 = 0.936 -> 94
+    expect(rainAtLeastOnceChance(50, 2)).toBe(75) // 1 - 0.5^2 = 0.75 -> 75
+  })
+
+  it('chance 0 ou 0 pancadas → 0%', () => {
+    expect(rainAtLeastOnceChance(0, 3)).toBe(0)
+    expect(rainAtLeastOnceChance(80, 0)).toBe(0)
+  })
+
+  it('chance 100 com ao menos 1 pancada → 100%', () => {
+    expect(rainAtLeastOnceChance(100, 1)).toBe(100)
+    expect(rainAtLeastOnceChance(100, 4)).toBe(100)
+  })
+
+  it('uma única pancada devolve a própria chance (arredondada)', () => {
+    expect(rainAtLeastOnceChance(37, 1)).toBe(37)
   })
 })
