@@ -36,11 +36,11 @@ describe('Habilidades Secretas de Cerulean', () => {
     expect(secretLineFor(121)).toEqual(secretLineFor(120)) // Starmie = Staryu
   })
 
-  it('Vaporeon tem linha própria (override) sem vazar para os outros eeveelutions', () => {
-    expect(secretLineFor(134)).toEqual(['sa-surf', 'sa-surf-plus', 'sa-water-absorb'])
-    // Eevee (133) e os outros eeveelutions não recebem a linha de água.
+  it('eeveelutions têm linhas próprias por espécie (override) sem vazar entre si', () => {
+    expect(secretLineFor(134)).toEqual(['sa-surf', 'sa-surf-plus', 'sa-water-absorb']) // Vaporeon
+    expect(secretLineFor(135)).toEqual(['sa-quick-feet', 'sa-volt-absorb', 'sa-static']) // Jolteon
+    // Eevee (133) e os eeveelutions sem override próprio não herdam nada.
     expect(secretLineFor(133)).toBeNull()
-    expect(secretLineFor(135)).toBeNull() // Jolteon
     expect(secretLineFor(136)).toBeNull() // Flareon
   })
 

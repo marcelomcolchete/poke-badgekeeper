@@ -55,6 +55,7 @@ export type SecretId =
   // Vermilion (Elétrico) — habilidades novas.
   | 'sa-static'
   | 'sa-vital-spirit'
+  | 'sa-quick-feet'
   // Vermilion — só descrição por ora (depende da tempestade, ainda não implementada).
   | 'sa-volt-absorb'
 
@@ -252,6 +253,11 @@ export const SECRET_KINDS: Record<SecretId, SecretKind> = {
     name: 'Vital Spirit',
     effect: 'Ao falhar uma missão, o time tenta de novo uma vez (mesma chance); só falha de fato se as duas tentativas falharem.',
   },
+  'sa-quick-feet': {
+    id: 'sa-quick-feet',
+    name: 'Quick Feet',
+    effect: '+100% de velocidade de movimento quando despachado sozinho.',
+  },
   'sa-volt-absorb': {
     id: 'sa-volt-absorb',
     name: 'Volt Absorb',
@@ -358,6 +364,8 @@ export const SECRET_LINES: Record<number, readonly [SecretId, SecretId, SecretId
 const SECRET_LINE_BY_SPECIES: Partial<Record<number, readonly [SecretId, SecretId, SecretId]>> = {
   // Vaporeon
   134: ['sa-surf', 'sa-surf-plus', 'sa-water-absorb'],
+  // Jolteon (Volt Absorb fica sem efeito até existir a tempestade)
+  135: ['sa-quick-feet', 'sa-volt-absorb', 'sa-static'],
 }
 
 /** As três habilidades (ids, em ordem) da linha de uma espécie — null se a linha não tem. */
