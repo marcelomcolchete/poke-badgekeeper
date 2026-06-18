@@ -42,8 +42,21 @@
   color: var(--c-hud-muted);
 }
 
-.market,
-.team {
+/* Topo da manhã: Previsão do Dia × Seu Time lado a lado; empilha em telas estreitas. */
+.topColumns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+@media (max-width: 720px) {
+  .topColumns {
+    grid-template-columns: 1fr;
+  }
+}
+
+.market {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -200,50 +213,7 @@
   cursor: not-allowed;
 }
 
-.teamHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.teamActions {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.ghostBtn {
-  font-family: var(--font-pixel);
-  font-size: 8px;
-  color: var(--c-btn-text);
-  background: var(--c-btn-bg);
-  border: 2px solid var(--c-btn-border);
-  border-radius: 4px;
-  padding: 6px 8px;
-}
-
-/* Time da manhã: 3 Pokémon por linha (grade organizada). */
-.roster {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-}
-
-.rosterCard {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.rosterHearts {
-  display: inline-flex;
-  justify-content: center;
-}
-
-/* Aviso + começar o dia agrupados acima do time. */
+/* Aviso + começar o dia agrupados abaixo do mercado. */
 .startBlock {
   display: flex;
   flex-direction: column;
