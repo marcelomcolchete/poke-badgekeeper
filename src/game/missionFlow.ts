@@ -198,6 +198,10 @@ export function applyWeatherHold(s: GameState, mission: MissionInstance, nowMs: 
 
   const city = getCity(s.run.cityIndex)
   const graph = graphWithTunnels(city.graph, s.today.digTunnels)
+  // Velocidade efetiva AGORA (base + Swift Swim se chovendo). O extraMs do desvio é LINEAR a essa
+  // taxa instantânea, enquanto a chegada-base veio do integrador (rainSpeed) — aproximação
+  // consciente: como o sprite interpola linear em [legStart, arriveAtMs], os extremos não
+  // dessincronizam (ver "Notas de implementação" no plano da feature).
   const speedMult =
     teamTravelSpeedMultiplier(team, s.runItems) +
     (teamHasSwiftSwim(team) && isRaining(s.weather, nowMs) ? SWIFT_SWIM_RAIN_BONUS : 0)

@@ -8,8 +8,7 @@ import { createRng } from '../engine/rng.ts'
 import { getCity } from '../data/cities.ts'
 import { graphWithoutNodes, graphWithoutSurf, pointAlongPath, shortestPath } from '../engine/pathfinding.ts'
 import type { WeatherSchedule } from '../engine/weather.ts'
-import { applyWeatherHold } from './missionFlow.ts'
-import { acceptMission } from './missionFlow.ts'
+import { acceptMission, applyWeatherHold } from './missionFlow.ts'
 import { DAY_LENGTH_MS } from '../engine/constants.ts'
 
 const CERULEAN = getCity(1)
