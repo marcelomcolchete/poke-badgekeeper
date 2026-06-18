@@ -252,6 +252,10 @@ export const THICK_FAT_VS_ICE_MULT = 1.5
 export const MOXIE_BATTLE_PER_WIN = 1
 /** Pressure: multiplicador da Batalha do oponente enfrentado (−25%). */
 export const PRESSURE_ENEMY_MULT = 0.75
+/** Static/Paralyze: multiplicador da Batalha do inimigo paralisado (−50%, até o fim da batalha). */
+export const STATIC_PARALYZE_MULT = 0.5
+/** Quick Feet: bônus aditivo de velocidade de viagem quando despachado sozinho (+100% → ×2). */
+export const QUICK_FEET_SPEED_BONUS = 1
 /** Regenerator: vida recuperada por Pokémon derrotado em batalha. */
 export const REGENERATOR_HEAL_PER_WIN = 1
 /** Natural Cure: vida recuperada ao sair em missão. */

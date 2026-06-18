@@ -21,6 +21,7 @@ import {
   RIVALRY_BATTLE_BONUS,
   ROCK_HEAD_ESCORT_MULT,
   ROCK_HEAD_STUDY_MULT,
+  QUICK_FEET_SPEED_BONUS,
   ROLLOUT_BATTLE_BONUS,
   SHELL_ARMOR_DAMAGE,
   TORRENT_MISSION_MULT,
@@ -95,6 +96,15 @@ export function hasThickFat(p: Pokemon): boolean {
 }
 export function hasPressure(p: Pokemon): boolean {
   return hasSecret(p, 'sa-pressure')
+}
+export function hasStatic(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-static')
+}
+export function hasVitalSpirit(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-vital-spirit')
+}
+export function hasQuickFeet(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-quick-feet')
 }
 export function hasMoxie(p: Pokemon): boolean {
   return hasSecret(p, 'sa-moxie')
@@ -253,6 +263,16 @@ export function teamSnipes(team: readonly Pokemon[]): boolean {
   return team.length === 1 && hasSniper(team[0] as Pokemon)
 }
 
+/** Quick Feet: +100% de velocidade de viagem, só quando despachado SOZINHO. */
+export function teamHasQuickFeet(team: readonly Pokemon[]): boolean {
+  return team.length === 1 && hasQuickFeet(team[0] as Pokemon)
+}
+
+/** O time tenta a missão de novo ao falhar (Vital Spirit em qualquer membro)? */
+export function teamHasVitalSpirit(team: readonly Pokemon[]): boolean {
+  return team.some(hasVitalSpirit)
+}
+
 /**
  * O time deve exibir a aura de "veloz" no mapa? Verdadeiro quando o multiplicador base já é >1
  * (Weak Armor/Fly/itens) OU quando há Swift Swim no time e está chovendo AGORA (efeito ao vivo).
@@ -286,6 +306,8 @@ export function teamTravelSpeedMultiplier(
     }
   }
   if (teamFlies(team)) speed += FLY_SPEED_BONUS
+  // Quick Feet: +100% de velocidade quando despachado sozinho.
+  if (teamHasQuickFeet(team)) speed += QUICK_FEET_SPEED_BONUS
   // Lagging Tail: time mais lento nas viagens de missão (multiplicativo sobre a velocidade).
   speed *= itemTravelSpeedMultiplier(runItems)
   return Math.max(speed, 0.0001)

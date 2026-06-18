@@ -52,6 +52,12 @@ export type SecretId =
   | 'sa-dry-skin'
   | 'sa-overcoat'
   | 'sa-own-tempo'
+  // Vermilion (Elétrico) — habilidades novas.
+  | 'sa-static'
+  | 'sa-vital-spirit'
+  | 'sa-quick-feet'
+  // Vermilion — só descrição por ora (depende da tempestade, ainda não implementada).
+  | 'sa-volt-absorb'
 
 export interface SecretKind {
   id: SecretId
@@ -237,6 +243,26 @@ export const SECRET_KINDS: Record<SecretId, SecretKind> = {
     name: 'Own Tempo',
     effect: 'Previne o Pokémon de ficar confuso. (sem efeito até existir o status de confusão)',
   },
+  'sa-static': {
+    id: 'sa-static',
+    name: 'Static',
+    effect: 'Ao perder um duelo em batalha, paralisa o inimigo que o derrotou: a Batalha dele cai pela metade até o fim daquela batalha.',
+  },
+  'sa-vital-spirit': {
+    id: 'sa-vital-spirit',
+    name: 'Vital Spirit',
+    effect: 'Ao falhar uma missão, o time tenta de novo uma vez (mesma chance); só falha de fato se as duas tentativas falharem.',
+  },
+  'sa-quick-feet': {
+    id: 'sa-quick-feet',
+    name: 'Quick Feet',
+    effect: '+100% de velocidade de movimento quando despachado sozinho.',
+  },
+  'sa-volt-absorb': {
+    id: 'sa-volt-absorb',
+    name: 'Volt Absorb',
+    effect: 'Ao ser atingido por um raio, fica eletrizado pelo resto do dia: +50% de movimento e +50% nos atributos. (sem efeito até existir a tempestade em Vermilion)',
+  },
 }
 
 // Mapa filho → pai (a partir dos passos de evolução), para achar a raiz de uma linha.
@@ -262,6 +288,18 @@ export function lineRootId(speciesId: number): number {
  * chaveadas pelo id da forma-base (raiz). Linhas de Pedra/Ground/Fóssil (Pewter).
  */
 export const SECRET_LINES: Record<number, readonly [SecretId, SecretId, SecretId]> = {
+  // ---- Vermilion (Elétrico) ----
+  // Pikachu → Raichu
+  25: ['sa-static', 'sa-dig', 'sa-lightning-rod'],
+  // Magnemite → Magneton
+  81: ['sa-sturdy', 'sa-analytic', 'sa-fly'],
+  // Voltorb → Electrode
+  100: ['sa-explosion', 'sa-rollout', 'sa-static'],
+  // Electabuzz (Volt Absorb fica sem efeito até existir a tempestade)
+  125: ['sa-vital-spirit', 'sa-volt-absorb', 'sa-static'],
+  // Zapdos (ave-trovão lendária)
+  145: ['sa-fly', 'sa-fly-plus', 'sa-pressure'],
+
   // Sandshrew → Sandslash
   27: ['sa-rollout', 'sa-dig', 'sa-sand-rush'],
   // Nidoran♀ → Nidorina → Nidoqueen
@@ -284,6 +322,10 @@ export const SECRET_LINES: Record<number, readonly [SecretId, SecretId, SecretId
   140: ['sa-battle-armor', 'sa-weak-armor', 'sa-swift-swim'],
   // Aerodactyl
   142: ['sa-fly', 'sa-rock-head', 'sa-fly-plus'],
+
+  // ---- Dragões ----
+  // Dratini → Dragonair → Dragonite
+  147: ['sa-surf', 'sa-fly', 'sa-fly-plus'],
 
   // ---- Cerulean (Água/Gelo) ----
   // Squirtle → Wartortle → Blastoise
@@ -328,6 +370,8 @@ export const SECRET_LINES: Record<number, readonly [SecretId, SecretId, SecretId
 const SECRET_LINE_BY_SPECIES: Partial<Record<number, readonly [SecretId, SecretId, SecretId]>> = {
   // Vaporeon
   134: ['sa-surf', 'sa-surf-plus', 'sa-water-absorb'],
+  // Jolteon (Volt Absorb fica sem efeito até existir a tempestade)
+  135: ['sa-quick-feet', 'sa-volt-absorb', 'sa-static'],
 }
 
 /** As três habilidades (ids, em ordem) da linha de uma espécie — null se a linha não tem. */

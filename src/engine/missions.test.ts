@@ -13,6 +13,7 @@ import {
   missionDurationMs,
   missionFailureDamage,
   missionSuccessProbability,
+  missionSuccessProbabilityCtx,
   resolveMission,
   travelRoute,
 } from './missions.ts'
@@ -276,5 +277,26 @@ describe('createMissionInstance (PLAN §3.1)', () => {
       templateId: 'rocket',
     })
     expect(inst.templateId).toBe('rocket')
+  })
+})
+
+describe('missionSuccessProbabilityCtx — Vital Spirit', () => {
+  // Exigência com dois eixos adjacentes (área de hexágono > 0) e time abaixo dela.
+  const req = makeAttrs({ batalha: 40, inteligencia: 40 })
+  const lowAttrs = makeAttrs({ batalha: 10, inteligencia: 10 })
+
+  it('dobra a chance ao falhar: efetiva = 1 − (1 − p)²', () => {
+    const electa = makeMon({ id: 'e', speciesId: 125, secretCount: 1, baseAttrs: lowAttrs })
+    const base = missionSuccessProbability([electa], req)
+    expect(base).toBeGreaterThan(0)
+    expect(base).toBeLessThan(1)
+    const ctx = { team: [electa], template: template(), runtime: {}, runItems: [] }
+    expect(missionSuccessProbabilityCtx(ctx, req)).toBeCloseTo(1 - (1 - base) ** 2, 6)
+  })
+
+  it('sem Vital Spirit, a chance não muda', () => {
+    const plain = makeMon({ id: 'p', baseAttrs: lowAttrs })
+    const ctx = { team: [plain], template: template(), runtime: {}, runItems: [] }
+    expect(missionSuccessProbabilityCtx(ctx, req)).toBeCloseTo(missionSuccessProbability([plain], req), 6)
   })
 })

@@ -172,6 +172,39 @@ describe('resolveDefense — Habilidades Secretas', () => {
     expect(out.duels[0]?.yourId).toBe('a')
   })
 
+  it('Static: ao perder um duelo, paralisa o inimigo (Batalha ×0,5) nos duelos seguintes', () => {
+    // Pikachu (25) secretCount 1 = [Static]. Bate fraco e tanque (sobrevive e passa a vez).
+    const pika = makeMon({
+      id: 'p', speciesId: 25, secretCount: 1, types: ['electric'],
+      baseAttrs: makeAttrs({ batalha: 10, resistencia: 100 }),
+    })
+    const next = makeMon({
+      id: 'n', types: ['normal'], baseAttrs: makeAttrs({ batalha: 50, resistencia: 100 }),
+    })
+    const enemy: EnemyUnit[] = [{ battle: 100, types: ['normal'] }]
+    const out = resolveDefense(fixedRng(0.999), [pika, next], enemy)
+    expect(out.duels[0]?.yourId).toBe('p')
+    expect(out.duels[0]?.youWon).toBe(false)
+    expect(out.duels[1]?.yourId).toBe('n')
+    // Inimigo paralisado: enemyEff = 100 × 0,5 = 50.
+    const expected = duelWinProbability(effectiveBattle(next, ['normal']), 50)
+    expect(out.duels[1]?.pWin).toBeCloseTo(expected, 6)
+  })
+
+  it('sem Static, o inimigo não é paralisado (Batalha cheia no duelo seguinte)', () => {
+    const plain = makeMon({
+      id: 'p', types: ['normal'], baseAttrs: makeAttrs({ batalha: 10, resistencia: 100 }),
+    })
+    const next = makeMon({
+      id: 'n', types: ['normal'], baseAttrs: makeAttrs({ batalha: 50, resistencia: 100 }),
+    })
+    const enemy: EnemyUnit[] = [{ battle: 100, types: ['normal'] }]
+    const out = resolveDefense(fixedRng(0.999), [plain, next], enemy)
+    expect(out.duels[1]?.yourId).toBe('n')
+    const expected = duelWinProbability(effectiveBattle(next, ['normal']), 100)
+    expect(out.duels[1]?.pWin).toBeCloseTo(expected, 6)
+  })
+
   it('Reckless: ao perder, tenta de novo sem passar a vez (até desmaiar)', () => {
     // Rhyhorn (111) secretCount 3 = [Lightning Rod, Rock Head, Reckless].
     const rhy = makeMon({

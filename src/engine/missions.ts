@@ -45,6 +45,7 @@ import {
 import {
   damageTaken,
   teamFlies,
+  teamHasVitalSpirit,
   teamSecretSum,
   teamSnipes,
   teamSurfs,
@@ -146,7 +147,10 @@ export function missionSuccessProbabilityCtx(ctx: MissionSecretCtx, requirement:
   const requiredArea = hexagonArea(requirement)
   if (requiredArea <= 0) return 1
   const intersection = hexagonArea(axisMin(teamSecretSum(ctx), requirement))
-  return clamp(intersection / requiredArea, 0, 1)
+  const base = clamp(intersection / requiredArea, 0, 1)
+  // Vital Spirit: o time tenta a missão de novo ao falhar (uma 2ª tentativa) → a chance
+  // efetiva de sucesso vira 1 − (1 − p)². O dano em falha continua o do dia (inalterado).
+  return teamHasVitalSpirit(ctx.team) ? 1 - (1 - base) ** 2 : base
 }
 
 /** Dano em falha = max(1, round((1 − P)·perigo)) — PLAN §4.2 (fallback; o dia define o dano real). */

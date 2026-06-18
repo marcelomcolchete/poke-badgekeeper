@@ -13,9 +13,11 @@ import {
   hasExplosion,
   hasLightningRod,
   hasReckless,
+  hasQuickFeet,
   hasShellArmor,
   hasSturdy,
   hasSurf,
+  hasVitalSpirit,
   hasWeakArmor,
   hustleBattleBonus,
   missionAttrMultiplier,
@@ -24,8 +26,10 @@ import {
   sturdyAvailable,
   teamFlies,
   teamHasFly,
+  teamHasQuickFeet,
   teamHasSwiftSwim,
   teamHasSurf,
+  teamHasVitalSpirit,
   teamIsSpeedy,
   teamSecretAxisSum,
   teamSnipes,
@@ -320,5 +324,41 @@ describe('teamIsSpeedy (aura de velocidade ao vivo)', () => {
     // Onix (95): Weak Armor na posição 1; com HP faltante o multiplicador base passa de 1.
     const hurt = makeMon({ speciesId: 95, secretCount: 1, maxHp: 10, currentHp: 7 })
     expect(teamIsSpeedy([hurt], [], dry, 0)).toBe(true)
+  })
+})
+
+describe('Vital Spirit (Electabuzz)', () => {
+  it('hasVitalSpirit ativa na 1ª posição da linha (Electabuzz 125)', () => {
+    // Electabuzz (125): [Vital Spirit, Volt Absorb, Static].
+    expect(hasVitalSpirit(makeMon({ speciesId: 125, secretCount: 0 }))).toBe(false)
+    expect(hasVitalSpirit(makeMon({ speciesId: 125, secretCount: 1 }))).toBe(true)
+  })
+
+  it('teamHasVitalSpirit = qualquer membro do time com a habilidade', () => {
+    const carrier = makeMon({ id: 'e', speciesId: 125, secretCount: 1 })
+    const other = makeMon({ id: 'o' })
+    expect(teamHasVitalSpirit([other])).toBe(false)
+    expect(teamHasVitalSpirit([other, carrier])).toBe(true)
+  })
+})
+
+describe('Quick Feet (Jolteon, linha divergente)', () => {
+  it('hasQuickFeet ativa na 1ª posição da linha do Jolteon (135)', () => {
+    // Jolteon (135): [Quick Feet, Volt Absorb, Static] — via SECRET_LINE_BY_SPECIES.
+    expect(hasQuickFeet(makeMon({ speciesId: 135, secretCount: 0 }))).toBe(false)
+    expect(hasQuickFeet(makeMon({ speciesId: 135, secretCount: 1 }))).toBe(true)
+  })
+
+  it('não vaza para outros eeveelutions (Flareon 136 sem linha)', () => {
+    expect(hasQuickFeet(makeMon({ speciesId: 136, secretCount: 3 }))).toBe(false)
+  })
+
+  it('teamHasQuickFeet só vale sozinho; dobra a velocidade de viagem (×2)', () => {
+    const jolteon = makeMon({ id: 'j', speciesId: 135, secretCount: 1 })
+    const other = makeMon({ id: 'o' })
+    expect(teamHasQuickFeet([jolteon])).toBe(true)
+    expect(teamHasQuickFeet([jolteon, other])).toBe(false) // acompanhado não corre
+    expect(teamTravelSpeedMultiplier([jolteon])).toBeCloseTo(2, 6) // +100%
+    expect(teamTravelSpeedMultiplier([jolteon, other])).toBeCloseTo(1, 6) // sem bônus em grupo
   })
 })
