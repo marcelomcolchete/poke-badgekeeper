@@ -3,6 +3,7 @@ import { makeMon } from './testkit.ts'
 import { graphTravelMs } from './missions.ts'
 import { SWIFT_SWIM_RAIN_BONUS } from './balance.ts'
 import { rainTravelMs } from './rainSpeed.ts'
+import { teamTravelSpeedMultiplier } from './secretEffects.ts'
 import { emptyWeatherSchedule, type WeatherSchedule } from './weather.ts'
 
 // Omanyte (138): Swift Swim na posição 1 (sem Surf na linha). Mesma espécie sem habilidade = base.
@@ -48,5 +49,16 @@ describe('rainTravelMs', () => {
 
   it('distância zero → tempo zero (ex.: Sniper)', () => {
     expect(rainTravelMs(rainUntil(1_000_000), 0, 0, [swimmer()])).toBe(0)
+  })
+
+  it('sem chuva com multiplicador base ≠ 1 (Weak Armor) → ainda igual ao linear', () => {
+    // Omanyte (138) secretCount 3: tem Swift Swim E Weak Armor. Com HP faltante, base > 1 —
+    // o fast-path (sem chuva) deve bater com graphTravelMs usando esse base.
+    const team = [makeMon({ speciesId: 138, secretCount: 3, maxHp: 10, currentHp: 7 })]
+    const baseMult = teamTravelSpeedMultiplier(team, [])
+    expect(baseMult).toBeGreaterThan(1) // garante que o caso realmente testa base ≠ 1
+    expect(rainTravelMs(emptyWeatherSchedule(), 0, DIST, team)).toBeCloseTo(
+      graphTravelMs(DIST, team, baseMult),
+    )
   })
 })
