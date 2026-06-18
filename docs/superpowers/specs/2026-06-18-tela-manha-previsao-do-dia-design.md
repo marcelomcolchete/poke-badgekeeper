@@ -23,9 +23,11 @@ Repensar a tela da manhã (`MorningScreen`) para:
 - `WeatherForecastPanel.tsx`: mostra "PREVISÃO DO TEMPO". Para `rain`, exibe **3** estatísticas
   (Chance de Chuva = `forecast.rainChancePercent`, Quantidade de Chuva em mm/h, Pancadas possíveis =
   `forecast.potentialRainCount`). **Retorna `null`** em cidades sem clima.
-- `engine/weather.ts`: `buildWeatherSchedule(seed, day, city).forecast` expõe `rainChancePercent`
-  (chance **por pancada**, 0–100), `rainMmPerHour` e `potentialRainCount` (0–4). Função pura,
-  determinística por `(seed, day, cidade)`.
+- `engine/weather.ts`: `buildWeatherSchedule(seed, day, city, extraChancePercent = 0).forecast`
+  expõe `rainChancePercent` (chance **por pancada**, 0–100, já somado o bônus de Cloud Nine quando
+  passado), `rainMmPerHour` e `potentialRainCount` (0–4). Função pura, determinística.
+- `engine/secretEffects.ts`: `hasCloudNine(p)`; `engine/balance.ts`:
+  `CLOUD_NINE_RAIN_CHANCE_BONUS_PP = 25`.
 - `engine/timeline.ts`: `missionsForDay(day)` (missões **normais**, tabela fixa), `defensesForDay(day)`
   (batalhas/defesas), `rocketDays(seed)` (os **2 dias** distintos da run com missão Rocket — máx. 1/dia).
 - `components/common/ItemsBar.tsx`: já mostra os itens ativos e permite **usar Potion/Revive**
@@ -71,6 +73,11 @@ Seção sempre renderizada (independe de a cidade ter clima). Título: **"PREVIS
 - **Chuva:** mostra **uma única** % = chance de **pelo menos uma pancada** no dia.
 - Sem clima na cidade **ou** chance resultante 0 → estado **☀️ "Tempo firme"** (sol, sem números).
 - Pronto para crescer: cada efeito futuro vira sua própria linha/card no mesmo bloco.
+- **Fidelidade ao dia real (Cloud Nine):** `buildWeatherSchedule` agora aceita um 4º parâmetro
+  `extraChancePercent` (bônus de chuva por portador de Cloud Nine), e `setupDay` o passa. Para a
+  previsão "bater com o que vai acontecer", o painel calcula o **mesmo** bônus
+  (`roster.filter(hasCloudNine).length * CLOUD_NINE_RAIN_CHANCE_BONUS_PP`) e o repassa — corrigindo
+  uma defasagem do painel atual, que ignora Cloud Nine.
 
 #### Fórmula da chance de chuva
 
@@ -115,27 +122,32 @@ Abaixo das duas colunas, na ordem:
 
 - **Novo** `components/screens/DayForecastPanel.tsx` + `.module.css` — "PREVISÃO DO DIA" (bloco de
   clima "Previsão do Tempo" + as 3 contagens). Substitui o uso de `WeatherForecastPanel` na manhã.
-  O bloco de clima pode reaproveitar/renomear a lógica de `WeatherForecastPanel` como sub-bloco
-  interno; `WeatherForecastPanel.tsx`/`.module.css` antigos saem de uso (remover se não houver outro
-  consumidor — confirmar via busca).
+  A lógica de clima do `WeatherForecastPanel` é absorvida pelo novo painel como sub-bloco interno.
+- **Removido** `components/screens/WeatherForecastPanel.tsx` + `.module.css` — só `MorningScreen` os
+  consumia (confirmado por busca); viram código morto.
+- **Removido** `components/TeamPanel/TeamPanel.tsx` + `.module.css` — só `MorningScreen` os consumia;
+  a alocação de pontos que ele fazia continua disponível no dia via `MemberDetail`.
 - **Novo** `components/screens/TeamSummary.tsx` + `.module.css` — time compacto + botão Computador.
 - **Editado** `components/screens/MorningScreen.tsx` — novo layout em 2 colunas + rodapé; remove o
-  uso de `PokemonCard` e `TeamPanel` (e o botão "Gerenciar") na manhã; passa a usar `DayForecastPanel`
-  e `TeamSummary`. O estado/handlers de `BoxPanel` (Computador) e do Rare Candy permanecem.
+  uso de `PokemonCard`, `TeamPanel` e `WeatherForecastPanel` (e o botão "Gerenciar") na manhã; passa
+  a usar `DayForecastPanel` e `TeamSummary`. Estado/handlers de `BoxPanel` (Computador) e do Rare
+  Candy permanecem.
 - **Editado** `engine/weather.ts` — novo helper puro `rainAtLeastOnceChance(p, n)`.
 - **Editado** `MorningScreen.module.css` — grid de 2 colunas do topo; estilos do time antigo
   (`roster`/`rosterCard`) saem; estilos de Mercado/rodapé permanecem.
 
 ## Testes
 
+O projeto roda Vitest em `environment: 'node'` e coleta **apenas** `src/**/*.test.ts` — não há
+harness de DOM (jsdom/testing-library) e os componentes não são testados por render. Seguimos esse
+padrão: a lógica testável vive em funções **puras** (`.ts`); os componentes ficam finos e são
+verificados por `typecheck`/`lint`/`build`.
+
 - **Unitário** `rainAtLeastOnceChance` (em `weather.test.ts`): `60,3→94`; `0,_→0`; `_,0→0`;
-  `100,_→100`; arredondamento.
-- **DOM leve** (preferência do projeto — sem screenshots/preview):
-  - `DayForecastPanel`: sem clima → "Tempo firme"; com chuva → exibe a **% combinada** (não as 3
-    estatísticas antigas); linha Rocket sempre **`???`**; contagens de Missões/Batalhas conferem com
-    `missionsForDay`/`defensesForDay`.
-  - `TeamSummary`: renderiza nome, Nv e corações de cada membro; botão "Computador (n)" presente;
-    **não** renderiza `HexRadar` nem botão "Gerenciar".
+  `100,_→100`; arredondamento (`50,2→75`).
+- **Componentes** (`DayForecastPanel`, `TeamSummary`): sem teste de render (sem harness de DOM no
+  projeto). Mantidos finos — toda a lógica não trivial é o helper puro acima. Verificação por
+  `npm run typecheck`, `npm run lint` e `npm run build`.
 
 ## Tradeoffs registrados
 
