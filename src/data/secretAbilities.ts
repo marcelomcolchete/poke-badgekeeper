@@ -54,6 +54,9 @@ export type SecretId =
   | 'sa-own-tempo'
   // Vermilion (Elétrico) — habilidades novas.
   | 'sa-static'
+  | 'sa-vital-spirit'
+  // Vermilion — só descrição por ora (depende da tempestade, ainda não implementada).
+  | 'sa-volt-absorb'
 
 export interface SecretKind {
   id: SecretId
@@ -244,6 +247,16 @@ export const SECRET_KINDS: Record<SecretId, SecretKind> = {
     name: 'Static',
     effect: 'Ao perder um duelo em batalha, paralisa o inimigo que o derrotou: a Batalha dele cai pela metade até o fim daquela batalha.',
   },
+  'sa-vital-spirit': {
+    id: 'sa-vital-spirit',
+    name: 'Vital Spirit',
+    effect: 'Ao falhar uma missão, o time tenta de novo uma vez (mesma chance); só falha de fato se as duas tentativas falharem.',
+  },
+  'sa-volt-absorb': {
+    id: 'sa-volt-absorb',
+    name: 'Volt Absorb',
+    effect: 'Ao ser atingido por um raio, fica eletrizado pelo resto do dia: +50% de movimento e +50% nos atributos. (sem efeito até existir a tempestade em Vermilion)',
+  },
 }
 
 // Mapa filho → pai (a partir dos passos de evolução), para achar a raiz de uma linha.
@@ -276,6 +289,8 @@ export const SECRET_LINES: Record<number, readonly [SecretId, SecretId, SecretId
   81: ['sa-sturdy', 'sa-analytic', 'sa-fly'],
   // Voltorb → Electrode
   100: ['sa-explosion', 'sa-rollout', 'sa-static'],
+  // Electabuzz (Volt Absorb fica sem efeito até existir a tempestade)
+  125: ['sa-vital-spirit', 'sa-volt-absorb', 'sa-static'],
 
   // Sandshrew → Sandslash
   27: ['sa-rollout', 'sa-dig', 'sa-sand-rush'],

@@ -16,6 +16,7 @@ import {
   hasShellArmor,
   hasSturdy,
   hasSurf,
+  hasVitalSpirit,
   hasWeakArmor,
   hustleBattleBonus,
   missionAttrMultiplier,
@@ -26,6 +27,7 @@ import {
   teamHasFly,
   teamHasSwiftSwim,
   teamHasSurf,
+  teamHasVitalSpirit,
   teamIsSpeedy,
   teamSecretAxisSum,
   teamSnipes,
@@ -320,5 +322,20 @@ describe('teamIsSpeedy (aura de velocidade ao vivo)', () => {
     // Onix (95): Weak Armor na posição 1; com HP faltante o multiplicador base passa de 1.
     const hurt = makeMon({ speciesId: 95, secretCount: 1, maxHp: 10, currentHp: 7 })
     expect(teamIsSpeedy([hurt], [], dry, 0)).toBe(true)
+  })
+})
+
+describe('Vital Spirit (Electabuzz)', () => {
+  it('hasVitalSpirit ativa na 1ª posição da linha (Electabuzz 125)', () => {
+    // Electabuzz (125): [Vital Spirit, Volt Absorb, Static].
+    expect(hasVitalSpirit(makeMon({ speciesId: 125, secretCount: 0 }))).toBe(false)
+    expect(hasVitalSpirit(makeMon({ speciesId: 125, secretCount: 1 }))).toBe(true)
+  })
+
+  it('teamHasVitalSpirit = qualquer membro do time com a habilidade', () => {
+    const carrier = makeMon({ id: 'e', speciesId: 125, secretCount: 1 })
+    const other = makeMon({ id: 'o' })
+    expect(teamHasVitalSpirit([other])).toBe(false)
+    expect(teamHasVitalSpirit([other, carrier])).toBe(true)
   })
 })

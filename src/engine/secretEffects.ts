@@ -99,6 +99,9 @@ export function hasPressure(p: Pokemon): boolean {
 export function hasStatic(p: Pokemon): boolean {
   return hasSecret(p, 'sa-static')
 }
+export function hasVitalSpirit(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-vital-spirit')
+}
 export function hasMoxie(p: Pokemon): boolean {
   return hasSecret(p, 'sa-moxie')
 }
@@ -254,6 +257,11 @@ export function teamSurfs(team: readonly Pokemon[], runItems: readonly string[] 
 /** O time atua do ginásio (Sniper, só sozinho)? Faz a missão sem viajar. */
 export function teamSnipes(team: readonly Pokemon[]): boolean {
   return team.length === 1 && hasSniper(team[0] as Pokemon)
+}
+
+/** O time tenta a missão de novo ao falhar (Vital Spirit em qualquer membro)? */
+export function teamHasVitalSpirit(team: readonly Pokemon[]): boolean {
+  return team.some(hasVitalSpirit)
 }
 
 /**
