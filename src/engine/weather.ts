@@ -158,11 +158,16 @@ function rollPuddles(rng: Rng, pool: string[], start: number, end: number): Pudd
  * Agenda climática completa do dia, reprodutível por (seed, day, cidade). Usa RNG PRÓPRIO
  * (WEATHER_SEED_SALT) — não toca o cursor de RNG da run (missões/captura/defesa intactas).
  */
-export function buildWeatherSchedule(seed: number, day: number, city: CityData): WeatherSchedule {
+export function buildWeatherSchedule(
+  seed: number,
+  day: number,
+  city: CityData,
+  extraChancePercent = 0,
+): WeatherSchedule {
   if (day < WEATHER_FIRST_ELIGIBLE_DAY || !cityHasRain(city.index)) {
     return emptyWeatherSchedule()
   }
-  const chance = rainChanceForDay(seed, day)
+  const chance = clamp(rainChanceForDay(seed, day) + extraChancePercent, 0, 100)
   const maxTimes = maxRainTimes(day)
   const forecast: WeatherForecast = {
     rainChancePercent: chance,

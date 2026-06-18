@@ -16,9 +16,10 @@ import { createMissionInstance } from '../engine/missions.ts'
 import { buildWeatherSchedule } from '../engine/weather.ts'
 import { enemySquadSizeForDay, generateDefenseEnemies } from '../engine/gymDefense.ts'
 import { createPokemon } from '../engine/leveling.ts'
-import { hasDig, hasDigPlus, hasForewarn } from '../engine/secretEffects.ts'
+import { hasDig, hasDigPlus, hasCloudNine, hasForewarn } from '../engine/secretEffects.ts'
 import { createRng, deriveSeed } from '../engine/rng.ts'
 import {
+  CLOUD_NINE_RAIN_CHANCE_BONUS_PP,
   DEFENSE_LIFETIME_MS,
   DIG_HOLES_PER_TUNNEL,
   MISSION_LIFETIME_MS,
@@ -72,7 +73,13 @@ export function setupDay(s: GameState): void {
   s.captureSpotSpawnsAtMs = spots.map((p) => p.at)
   s.today.digTunnels = computeDigTunnels(s, city)
   // Clima do dia (chuva/poças em Cerulean): pré-computado e reprodutível por (seed, dia, cidade).
-  s.weather = buildWeatherSchedule(s.run.seed, s.run.day, city)
+  const cloudNine = s.roster.filter(hasCloudNine).length
+  s.weather = buildWeatherSchedule(
+    s.run.seed,
+    s.run.day,
+    city,
+    cloudNine * CLOUD_NINE_RAIN_CHANCE_BONUS_PP,
+  )
   applyForewarn(s)
   s.clock.dayElapsedMs = 0
   s.clock.speed = 1

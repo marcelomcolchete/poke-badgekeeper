@@ -192,6 +192,22 @@ describe('puddleLevelAt', () => {
   })
 })
 
+describe('Cloud Nine (extraChancePercent em buildWeatherSchedule)', () => {
+  it('soma os pontos percentuais à chance do dia, com teto de 100', () => {
+    const seed = 7777
+    const day = 7
+    const base = buildWeatherSchedule(seed, day, CERULEAN, 0).forecast.rainChancePercent
+    const boosted = buildWeatherSchedule(seed, day, CERULEAN, 25).forecast.rainChancePercent
+    expect(boosted).toBe(Math.min(100, base + 25))
+    expect(buildWeatherSchedule(seed, day, CERULEAN, 200).forecast.rainChancePercent).toBe(100)
+  })
+
+  it('não cria chuva em dia 1-2 nem em cidade sem chuva, mesmo com bônus alto', () => {
+    expect(buildWeatherSchedule(1, 1, CERULEAN, 100).rain).toEqual([])
+    expect(buildWeatherSchedule(1, 5, PEWTER, 100).rain).toEqual([])
+  })
+})
+
 describe('derivações de bloqueio', () => {
   const schedule: WeatherSchedule = {
     rain: [
