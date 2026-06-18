@@ -1,8 +1,8 @@
 // Relatório de FIM DE JOGO (vitória no dia 10 ou derrota): agrega o acumulador vitalício + o dia
 // em curso num único resumo da run inteira (PLAN — tela de fim de jogo). Puro: só lê o GameState.
 
-import type { Pokemon } from '../types/index.ts'
-import type { GameState, LifetimeStats, RunInfo } from './state.ts'
+import type { Pokemon, PokemonType } from '../types/index.ts'
+import type { EnemyRef, GameState, RunInfo } from './state.ts'
 import { combineLifetime } from './lifetime.ts'
 import { averageStars, isHired } from './approval.ts'
 import { pokemonRank, type Rank } from './ranking.ts'
@@ -52,7 +52,7 @@ export interface FinalReportMon {
   rank: Rank
 }
 
-/** Destaque do JOGO: o Pokémon com mais feitos acumulados (missões + derrotas). */
+/** Destaque do JOGO: um Pokémon do time com seus feitos acumulados (missões + derrotas). */
 export interface FinalReportMvp {
   pokemon: Pokemon
   rank: Rank
@@ -60,6 +60,13 @@ export interface FinalReportMvp {
   defeats: number
   /** Nível da medalha da Habilidade Secreta (0 = nenhuma, 1 Bronze, 2 Prata, 3 Ouro). */
   medalIndex: number
+}
+
+/** Carrasco: a espécie inimiga que mais venceu duelos contra o seu time. */
+export interface FinalReportTormentor {
+  speciesId: number
+  types: PokemonType[]
+  count: number
 }
 
 export interface FinalReport {
@@ -95,10 +102,12 @@ export interface FinalReport {
    * ordenados por grupo (bolas → cura/revive → outros) e, dentro do grupo, do mais comprado ao menos.
    */
   purchasedItems: PurchasedEntry[]
-  /** Inimigo mais forte derrotado (maior poder de Batalha) com medalha/tipos; null se nenhum. */
-  strongestEnemy: LifetimeStats['strongestEnemy']
-  /** Destaque do jogo; null se ninguém somou feitos (ou o Pokémon não está mais em mãos). */
-  mvp: FinalReportMvp | null
+  /** Os 3 inimigos mais fortes enfrentados (maior poder de Batalha), do mais forte ao menos. */
+  strongestEnemies: EnemyRef[]
+  /** Top 3 do time por feitos (missões + derrotas); vazio se ninguém somou feitos. */
+  topTeam: FinalReportMvp[]
+  /** Carrasco: espécie inimiga que mais venceu seu time; null se nenhuma derrota registrada. */
+  tormentor: FinalReportTormentor | null
   /** Time final (roster) com rank — exibe corações na UI. */
   finalTeam: FinalReportMon[]
 }
@@ -129,26 +138,28 @@ export function buildFinalReport(state: GameState, outcome: EndOutcome): FinalRe
         a.name.localeCompare(b.name),
     )
 
-  // Destaque do jogo: mais feitos (missões + derrotas); desempata por missões. Só conta quem ainda
-  // está em mãos (um Pokémon liberado some da seleção e cede o posto ao próximo).
-  let mvp: FinalReportMvp | null = null
-  let bestDeeds = 0
-  let bestMissions = -1
-  for (const [id, use] of Object.entries(life.usage)) {
-    const deeds = use.missions + use.defeats
-    if (deeds <= 0) continue
-    if (deeds < bestDeeds || (deeds === bestDeeds && use.missions <= bestMissions)) continue
-    const mon = byId.get(id)
-    if (!mon) continue
-    bestDeeds = deeds
-    bestMissions = use.missions
-    mvp = {
-      pokemon: mon,
-      rank: pokemonRank(mon),
-      missions: use.missions,
-      defeats: use.defeats,
-      medalIndex: secretCountOf(mon),
-    }
+  // Top 3 do time: mais feitos (missões + derrotas); desempata por missões e depois pela ordem de
+  // registro. Só conta quem ainda está em mãos (um Pokémon liberado some da seleção).
+  const topTeam: FinalReportMvp[] = Object.entries(life.usage)
+    .map(([id, use]) => ({ id, use, deeds: use.missions + use.defeats }))
+    .filter((e) => e.deeds > 0 && byId.has(e.id))
+    .sort((a, b) => b.deeds - a.deeds || b.use.missions - a.use.missions)
+    .slice(0, 3)
+    .map(({ id, use }) => {
+      const mon = byId.get(id) as Pokemon
+      return {
+        pokemon: mon,
+        rank: pokemonRank(mon),
+        missions: use.missions,
+        defeats: use.defeats,
+        medalIndex: secretCountOf(mon),
+      }
+    })
+
+  // Carrasco: a espécie que mais venceu seu time; empate → a que apareceu primeiro (ordem de defeatedBy).
+  let tormentor: FinalReportTormentor | null = null
+  for (const e of life.defeatedBy) {
+    if (!tormentor || e.count > tormentor.count) tormentor = e
   }
 
   const toReportMon = (p: Pokemon): FinalReportMon => ({ pokemon: p, rank: pokemonRank(p) })
@@ -177,8 +188,9 @@ export function buildFinalReport(state: GameState, outcome: EndOutcome): FinalRe
     capturedCount: held.length,
     captured: held.map(toReportMon),
     purchasedItems,
-    strongestEnemy: life.strongestEnemy,
-    mvp,
+    strongestEnemies: life.strongestEnemies,
+    topTeam,
+    tormentor,
     finalTeam: roster.map(toReportMon),
   }
 }

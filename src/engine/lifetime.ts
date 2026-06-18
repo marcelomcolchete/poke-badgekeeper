@@ -2,7 +2,10 @@
 // Puro e determinístico. O GameState guarda só os dias FECHADOS; a tela de fim de jogo soma o
 // dia em curso na exibição (combineLifetime) para não duplicar nem perder o último dia parcial.
 
-import type { DayTally, LifetimeStats } from './state.ts'
+import type { DayTally, EnemyRef, LifetimeStats } from './state.ts'
+
+/** Quantos inimigos mais fortes o relatório guarda ("Pokémons enfrentados"). */
+const TOP_ENEMIES = 3
 
 /**
  * Dobra um dia (DayTally) no acumulador vitalício, devolvendo um NOVO objeto (não muta as entradas).
@@ -29,18 +32,26 @@ export function foldDayIntoLifetime(life: LifetimeStats, today: DayTally): Lifet
   const purchasedItems: Record<string, number> = { ...life.purchasedItems }
   for (const id of today.purchasedItems) purchasedItems[id] = (purchasedItems[id] ?? 0) + 1
 
-  // Inimigo mais forte derrotado (maior poder de Batalha) — só kills com poder registrado.
-  let strongestEnemy = life.strongestEnemy
+  // Top inimigos derrotados (maior poder de Batalha) — só kills com poder registrado; mantém os 3 maiores.
+  const enemyCandidates: EnemyRef[] = [...life.strongestEnemies]
   for (const k of today.defenseKills) {
     if (k.enemyBattle == null) continue
-    if (!strongestEnemy || k.enemyBattle > strongestEnemy.battle) {
-      strongestEnemy = {
-        battle: k.enemyBattle,
-        medal: k.enemyMedal,
-        types: k.enemyTypes ?? [],
-        speciesId: k.speciesId,
-      }
-    }
+    enemyCandidates.push({
+      battle: k.enemyBattle,
+      medal: k.enemyMedal,
+      types: k.enemyTypes ?? [],
+      speciesId: k.speciesId,
+    })
+  }
+  const strongestEnemies = enemyCandidates.sort((a, b) => b.battle - a.battle).slice(0, TOP_ENEMIES)
+
+  // Carrasco: espécies inimigas que venceram seus duelos, somadas por espécie na ordem de 1ª aparição.
+  const defeatedBy = life.defeatedBy.map((e) => ({ ...e }))
+  for (const l of today.defenseLosses) {
+    if (l.speciesId == null) continue
+    const existing = defeatedBy.find((e) => e.speciesId === l.speciesId)
+    if (existing) existing.count += 1
+    else defeatedBy.push({ speciesId: l.speciesId, types: l.enemyTypes ?? [], count: 1 })
   }
 
   return {
@@ -53,7 +64,8 @@ export function foldDayIntoLifetime(life: LifetimeStats, today: DayTally): Lifet
     defeats: life.defeats + defeats,
     purchasedItems,
     usage,
-    strongestEnemy,
+    strongestEnemies,
+    defeatedBy,
   }
 }
 
