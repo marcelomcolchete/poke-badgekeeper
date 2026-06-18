@@ -1,10 +1,13 @@
 // Tela de FIM DE JOGO (PLAN — fim de jogo): mostra o resumo da run inteira na vitória (dia 10 com
-// média ≥ 3) ou na derrota (GAMEOVER, ou dia 10 com média < 3). Reúne missões, defesas, corações,
-// ouro, mortes, itens, capturados, derrotados (+ mais forte), o Destaque do Jogo e o time final.
-// Vitória → "Próximo Ginásio" (começo limpo na próxima cidade); derrota → "Voltar" (menu).
+// média ≥ 3) ou na derrota (GAMEOVER, ou dia 10 com média < 3). Layout: uma FAIXA-HERÓI fixa no
+// topo (ilustração de fundo escolhida pela média de estrelas + scrim escuro + título/notas/botões)
+// e três ABAS abaixo (Estatísticas, Time, Itens) — só uma renderiza por vez, mantendo a tela curta
+// e quase sem scroll. O botão "Voltar" (→ menu) está SEMPRE presente; na vitória com próximo
+// ginásio, ele acompanha o "Próximo Ginásio".
 
+import { useState } from 'react'
 import type { GameState, RunInfo } from '../../engine/state.ts'
-import { buildFinalReport, type EndOutcome } from '../../engine/finalReport.ts'
+import { buildFinalReport, type EndOutcome, type PurchasedEntry } from '../../engine/finalReport.ts'
 import type { Rank } from '../../engine/ranking.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
 import { Hearts } from '../common/Hearts.tsx'
@@ -16,11 +19,13 @@ import styles from './EndGameScreen.module.css'
 interface Props {
   state: GameState
   outcome: EndOutcome
-  /** Volta ao menu principal (botão único na derrota / "Concluir" no último ginásio). */
+  /** Volta ao menu principal (sempre disponível). */
   onBack: () => void
   /** Avança para a próxima cidade (começo limpo) — só na vitória com próximo ginásio disponível. */
   onNextGym?: (cityIndex: number) => void
 }
+
+type Tab = 'stats' | 'team' | 'items'
 
 /** Mensagem da derrota por GAMEOVER (mesmo texto da tela antiga) ou por não efetivar no dia 10. */
 const LOSS_MESSAGE: Record<NonNullable<RunInfo['gameOverReason']>, string> = {
@@ -30,9 +35,22 @@ const LOSS_MESSAGE: Record<NonNullable<RunInfo['gameOverReason']>, string> = {
   fainted: 'Todo o seu time foi derrotado! Sem ninguém em condições de lutar, seu período de testes foi encerrado.',
 }
 
+/** Faixa-herói: arte de fundo conforme a média (0–0,9→1star … 4–5→5star). */
+function heroBackground(avgStars: number): string {
+  const tier = Math.min(5, Math.max(1, Math.floor(avgStars) + 1))
+  return `/background/jpg/${tier}star.jpg`
+}
+
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'stats', label: 'Estatísticas' },
+  { id: 'team', label: 'Time' },
+  { id: 'items', label: 'Itens' },
+]
+
 export function EndGameScreen({ state, outcome, onBack, onNextGym }: Props) {
   const r = buildFinalReport(state, outcome)
   const won = outcome === 'win'
+  const [tab, setTab] = useState<Tab>('stats')
 
   const lossText = r.reason
     ? LOSS_MESSAGE[r.reason]
@@ -42,25 +60,77 @@ export function EndGameScreen({ state, outcome, onBack, onNextGym }: Props) {
 
   return (
     <div className={styles.screen}>
-      <header className={styles.header}>
-        <span className={`${styles.title} ${won ? styles.win : styles.loss}`}>
-          {won ? '★ VOCÊ VENCEU! ★' : 'FIM DE JOGO'}
-        </span>
-        <span className={styles.subtitle}>
-          {won
-            ? `Efetivado no Ginásio de ${r.cityName} com média ${r.avgStars.toFixed(2)}/5!`
-            : lossText}
-        </span>
-        <div className={styles.scores}>
-          <span className={styles.score}>🎯 Missões <b>{r.missionStars.toFixed(1)}</b>/5</span>
-          <span className={styles.score}>⚔️ Batalhas <b>{r.battleStars.toFixed(1)}</b>/5</span>
-          <span className={`${styles.avg} ${r.hired ? styles.avgGood : styles.avgBad}`}>
-            Média <b>{r.avgStars.toFixed(2)}</b>/5
+      {/* ---- Faixa-herói (sempre visível): arte por nota + scrim + resultado + botões ---- */}
+      <header
+        className={`${styles.hero} ${won ? styles.heroWin : styles.heroLoss}`}
+        style={{ backgroundImage: `url('${heroBackground(r.avgStars)}')` }}
+      >
+        <div className={styles.heroScrim} />
+        <div className={styles.heroContent}>
+          <span className={`${styles.title} ${won ? styles.win : styles.loss}`}>
+            {won ? '★ VOCÊ VENCEU! ★' : 'FIM DE JOGO'}
           </span>
+          <span className={styles.subtitle}>
+            {won
+              ? `Efetivado no Ginásio de ${r.cityName} com média ${r.avgStars.toFixed(2)}/5!`
+              : lossText}
+          </span>
+          <div className={styles.scores}>
+            <span className={styles.score}>🎯 Missões <b>{r.missionStars.toFixed(1)}</b>/5</span>
+            <span className={styles.score}>⚔️ Batalhas <b>{r.battleStars.toFixed(1)}</b>/5</span>
+            <span className={`${styles.avg} ${r.hired ? styles.avgGood : styles.avgBad}`}>
+              Média <b>{r.avgStars.toFixed(2)}</b>/5
+            </span>
+          </div>
+          <div className={styles.actions}>
+            {canAdvance && (
+              <button
+                type="button"
+                className={styles.primary}
+                onClick={() => onNextGym!(r.nextCityIndex as number)}
+              >
+                Próximo Ginásio: {r.nextCityName} ▶
+              </button>
+            )}
+            <button type="button" className={styles.back} onClick={onBack}>
+              Voltar
+            </button>
+          </div>
         </div>
       </header>
 
-      {/* ---- Estatísticas gerais da run ---- */}
+      {/* ---- Abas ---- */}
+      <div className={styles.tabBar} role="tablist" aria-label="Resumo da run">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={tab === t.id}
+            className={`${styles.tab} ${tab === t.id ? styles.tabActive : ''}`}
+            onClick={() => setTab(t.id)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      <div className={styles.tabPanel} role="tabpanel">
+        {tab === 'stats' && <StatsTab r={r} />}
+        {tab === 'team' && <TeamTab r={r} />}
+        {tab === 'items' && <ItemsTab items={r.purchasedItems} />}
+      </div>
+    </div>
+  )
+}
+
+type Report = ReturnType<typeof buildFinalReport>
+
+/* ---------------------------------- Abas ----------------------------------- */
+
+function StatsTab({ r }: { r: Report }) {
+  return (
+    <div className={styles.stack}>
       <div className={styles.statsGrid}>
         <Tile icon="🎯" label="Missões" value={`${r.missionsCompleted}/${r.missionsTotal}`} />
         <Tile icon="🛡️" label="Defesas" value={`${r.defensesWon}/${r.defensesTotal}`} />
@@ -69,20 +139,17 @@ export function EndGameScreen({ state, outcome, onBack, onNextGym }: Props) {
         <Tile icon="💀" label="Pokémon mortos" value={`${r.faints}`} danger={r.faints > 0} />
         <Tile icon="⚔️" label="Derrotados" value={`${r.defeats}`} />
       </div>
-
       <div className={styles.columns}>
-        {/* ---- Destaque do jogo (Pokémon mais utilizado) ---- */}
         <GameMvp mvp={r.mvp} />
-
-        <div className={styles.sideCol}>
-          {/* ---- Inimigo mais forte enfrentado ---- */}
-          <StrongestEnemy enemy={r.strongestEnemy} />
-          {/* ---- Itens comprados ---- */}
-          <PurchasedItems items={r.purchasedItems} />
-        </div>
+        <StrongestEnemy enemy={r.strongestEnemy} />
       </div>
+    </div>
+  )
+}
 
-      {/* ---- Pokémon capturados (miniaturas + rank) ---- */}
+function TeamTab({ r }: { r: Report }) {
+  return (
+    <div className={styles.stack}>
       <section className={styles.panel}>
         <span className={styles.panelTitle}>⚪ Capturados — {r.capturedCount}</span>
         {r.captured.length === 0 ? (
@@ -104,7 +171,6 @@ export function EndGameScreen({ state, outcome, onBack, onNextGym }: Props) {
         )}
       </section>
 
-      {/* ---- Time final com corações ---- */}
       <section className={styles.panel}>
         <span className={styles.panelTitle}>👥 Time final</span>
         <ul className={styles.teamGrid}>
@@ -122,30 +188,52 @@ export function EndGameScreen({ state, outcome, onBack, onNextGym }: Props) {
           ))}
         </ul>
       </section>
-
-      {/* ---- Ação final ---- */}
-      {canAdvance ? (
-        <button
-          type="button"
-          className={styles.primary}
-          onClick={() => onNextGym!(r.nextCityIndex as number)}
-        >
-          Próximo Ginásio: {r.nextCityName} ▶
-        </button>
-      ) : won ? (
-        <button type="button" className={styles.primary} onClick={onBack}>
-          Concluir ▶
-        </button>
-      ) : (
-        <button type="button" className={styles.back} onClick={onBack}>
-          Voltar
-        </button>
-      )}
     </div>
   )
 }
 
-function GameMvp({ mvp }: { mvp: ReturnType<typeof buildFinalReport>['mvp'] }) {
+const ITEM_GROUPS: { title: string; category: PurchasedEntry['category'] }[] = [
+  { title: '⚪ Pokébolas', category: 'ball' },
+  { title: '🧪 Cura / Revive', category: 'healing' },
+  { title: '🎒 Outros', category: 'other' },
+]
+
+function ItemsTab({ items }: { items: PurchasedEntry[] }) {
+  if (items.length === 0) {
+    return (
+      <section className={styles.panel}>
+        <span className={styles.panelTitle}>🛒 Itens comprados</span>
+        <span className={styles.empty}>Nenhum item comprado.</span>
+      </section>
+    )
+  }
+  return (
+    <div className={styles.itemGroups}>
+      {ITEM_GROUPS.map(({ title, category }) => {
+        const group = items.filter((i) => i.category === category)
+        if (group.length === 0) return null
+        return (
+          <section key={category} className={styles.panel}>
+            <span className={styles.panelTitle}>{title}</span>
+            <ul className={styles.itemList}>
+              {group.map((entry) => (
+                <li key={entry.id} className={styles.itemRow}>
+                  <img className={styles.itemSprite} src={entry.sprite} alt={entry.name} />
+                  <span className={styles.itemName}>{entry.name}</span>
+                  <span className={styles.itemCount}>×{entry.count}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      })}
+    </div>
+  )
+}
+
+/* ------------------------------- Subcomponentes ------------------------------ */
+
+function GameMvp({ mvp }: { mvp: Report['mvp'] }) {
   if (!mvp) {
     return (
       <div className={`${styles.mvp} ${styles.mvpEmpty}`}>
@@ -196,7 +284,7 @@ function GameMvp({ mvp }: { mvp: ReturnType<typeof buildFinalReport>['mvp'] }) {
   )
 }
 
-function StrongestEnemy({ enemy }: { enemy: ReturnType<typeof buildFinalReport>['strongestEnemy'] }) {
+function StrongestEnemy({ enemy }: { enemy: Report['strongestEnemy'] }) {
   if (!enemy) {
     return (
       <div className={styles.panel}>
@@ -231,27 +319,6 @@ function StrongestEnemy({ enemy }: { enemy: ReturnType<typeof buildFinalReport>[
           </span>
         </div>
       </div>
-    </div>
-  )
-}
-
-function PurchasedItems({ items }: { items: ReturnType<typeof buildFinalReport>['purchasedItems'] }) {
-  return (
-    <div className={styles.panel}>
-      <span className={styles.panelTitle}>🛒 Itens comprados</span>
-      {items.length === 0 ? (
-        <span className={styles.empty}>Nenhum item comprado.</span>
-      ) : (
-        <ul className={styles.itemList}>
-          {items.map(({ item, count }) => (
-            <li key={item.id} className={styles.itemRow}>
-              <img className={styles.itemSprite} src={item.sprite} alt={item.name} />
-              <span className={styles.itemName}>{item.name}</span>
-              <span className={styles.itemCount}>×{count}</span>
-            </li>
-          ))}
-        </ul>
-      )}
     </div>
   )
 }
