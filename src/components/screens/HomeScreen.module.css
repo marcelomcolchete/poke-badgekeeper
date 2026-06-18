@@ -1,4 +1,4 @@
-/* Tela cheia com o background da Home; conteúdo (título + menu) centrado.
+/* Tela cheia — a foto de fundo vem do root do App (camada global).
    Fixed para ignorar a moldura de 1100px do App e ocupar a viewport inteira. */
 .screen {
   position: fixed;
@@ -9,12 +9,6 @@
   align-items: center;
   justify-content: center;
   overflow-y: auto;
-  background-image: url('/background/background.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  /* A arte é uma ilustração suave — anula o pixelated global. */
-  image-rendering: auto;
 }
 
 /* Véu escuro para garantir contraste do título/botões sobre qualquer parte da arte. */

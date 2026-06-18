@@ -68,6 +68,9 @@ export default function App() {
     window.location.reload()
   }
 
+  // A foto fica atrás de tudo; o véu escurece só quando a run está ativa
+  // (Manhã/Dia/Resumo/Fim). Home e setup (CitySelect/NewGame) ficam claros.
+  const darkened = started && !needsSetup
   // "Próximo Ginásio" (vitória): começo limpo na cidade seguinte — refaz a escolha de iniciais.
   const goToGym = (cityIndex: number): void => {
     dispatch({ type: 'RESET_TO_CITY', cityIndex, seed: Math.floor(Date.now()) })
@@ -79,6 +82,8 @@ export default function App() {
 
   return (
     <div className={styles.app} onClickCapture={handleClickSound}>
+      <div className={styles.bgImage} aria-hidden />
+      <div className={styles.bgVeil} aria-hidden data-dark={darkened || undefined} />
       <MuteButton />
       {!started ? (
         <HomeScreen onPlayStory={() => setStarted(true)} />

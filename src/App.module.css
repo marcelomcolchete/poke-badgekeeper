@@ -13,3 +13,34 @@
   margin: auto;
   padding: 16px;
 }
+
+/* Camada de fundo global: a mesma arte da Home atrás de todas as telas.
+   Fixos e em z-index negativo → todo conteúdo das telas renderiza por cima. */
+.bgImage {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background-image: url('/background/background.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  /* A arte é ilustração suave — anula o pixelated global. */
+  image-rendering: auto;
+}
+
+/* Véu neutro: invisível por padrão (Home/setup), visível quando a run roda.
+   Escurece só a foto (fica atrás do conteúdo); fade suave ao entrar na run. */
+.bgVeil {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: rgba(10, 12, 14, 0.5);
+  opacity: 0;
+  transition: opacity 350ms ease;
+}
+
+.bgVeil[data-dark] {
+  opacity: 1;
+}
