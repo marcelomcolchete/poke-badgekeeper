@@ -11,9 +11,8 @@ import { buildFinalReport, type EndOutcome, type PurchasedEntry } from '../../en
 import type { Rank } from '../../engine/ranking.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
 import { Hearts } from '../common/Hearts.tsx'
-import { TypeBadge } from '../common/TypeBadge.tsx'
 import { MEDAL_TIER_RANK, RANK_COLOR, SECRET_MEDAL, SECRET_TIER_LABEL } from '../common/visual.ts'
-import { displayNameOf, genderColor, genderSymbol } from '../common/naming.ts'
+import { displayNameOf } from '../common/naming.ts'
 import styles from './EndGameScreen.module.css'
 
 interface Props {
@@ -128,20 +127,35 @@ type Report = ReturnType<typeof buildFinalReport>
 
 /* ---------------------------------- Abas ----------------------------------- */
 
+/** Porcentagem concluída (0 quando não há total) — "10/20" → 50%. */
+function pct(done: number, total: number): number {
+  return total > 0 ? Math.round((done / total) * 100) : 0
+}
+
 function StatsTab({ r }: { r: Report }) {
   return (
     <div className={styles.stack}>
       <div className={styles.statsGrid}>
-        <Tile icon="🎯" label="Missões" value={`${r.missionsCompleted}/${r.missionsTotal}`} />
-        <Tile icon="🛡️" label="Defesas" value={`${r.defensesWon}/${r.defensesTotal}`} />
-        <Tile icon="♥" label="Média de coração" value={r.avgHearts.toFixed(1).replace('.', ',')} />
+        <Tile
+          icon="🎯"
+          label="Missões"
+          value={`${r.missionsCompleted}/${r.missionsTotal}`}
+          pct={pct(r.missionsCompleted, r.missionsTotal)}
+        />
+        <Tile
+          icon="🛡️"
+          label="Defesas"
+          value={`${r.defensesWon}/${r.defensesTotal}`}
+          pct={pct(r.defensesWon, r.defensesTotal)}
+        />
+        <Tile icon="♥" label="Média de coração" value={r.avgHearts.toFixed(1).replace('.', ',')} heart />
         <Tile icon="💰" label="Ouro ganho" value={`$${r.goldEarned}`} accent />
         <Tile icon="💀" label="Pokémon mortos" value={`${r.faints}`} danger={r.faints > 0} />
         <Tile icon="⚔️" label="Derrotados" value={`${r.defeats}`} />
       </div>
       <div className={styles.columns}>
-        <GameMvp mvp={r.mvp} />
-        <StrongestEnemy enemy={r.strongestEnemy} />
+        <TopTeam team={r.topTeam} />
+        <EnemiesFaced enemies={r.strongestEnemies} tormentor={r.tormentor} />
       </div>
     </div>
   )
@@ -233,91 +247,103 @@ function ItemsTab({ items }: { items: PurchasedEntry[] }) {
 
 /* ------------------------------- Subcomponentes ------------------------------ */
 
-function GameMvp({ mvp }: { mvp: Report['mvp'] }) {
-  if (!mvp) {
-    return (
-      <div className={`${styles.mvp} ${styles.mvpEmpty}`}>
-        <span className={styles.mvpBadge}>★ DESTAQUE DO JOGO</span>
-        <span className={styles.empty}>Nenhum feito registrado.</span>
-      </div>
-    )
-  }
-  const species = getSpecies(mvp.pokemon.speciesId)
-  const symbol = genderSymbol(mvp.pokemon.gender)
+function TopTeam({ team }: { team: Report['topTeam'] }) {
   return (
-    <div className={styles.mvp}>
-      <span className={styles.mvpBadge}>★ DESTAQUE DO JOGO</span>
-      <div className={styles.mvpTop}>
-        <RankBadge rank={mvp.rank} />
-        {mvp.medalIndex > 0 && (
-          <span className={styles.mvpMedal} title={`Habilidade Secreta ${SECRET_TIER_LABEL[mvp.medalIndex]}`}>
-            {SECRET_MEDAL[mvp.medalIndex]}
-          </span>
-        )}
-      </div>
-      <img className={styles.mvpSprite} src={species.spritePath} alt={species.displayName} />
-      <span className={styles.mvpName}>
-        {displayNameOf(mvp.pokemon)}
-        {symbol && (
-          <span className={styles.mvpGender} style={{ color: genderColor(mvp.pokemon.gender) }}>
-            {symbol}
-          </span>
-        )}
-      </span>
-      <span className={styles.mvpTypes}>
-        {mvp.pokemon.types.map((t) => (
-          <TypeBadge key={t} type={t} />
-        ))}
-      </span>
-      <ol className={styles.mvpDeeds}>
-        <li className={styles.mvpDeed}>
-          <span>🎯</span> <b>{mvp.missions}</b> {mvp.missions === 1 ? 'missão concluída' : 'missões concluídas'}
-        </li>
-        <li className={styles.mvpDeed}>
-          <span>⚔️</span> <b>{mvp.defeats}</b> {mvp.defeats === 1 ? 'derrotado' : 'derrotados'}
-        </li>
-        <li className={styles.mvpDeed}>
-          <span>♥</span> <Hearts value={mvp.pokemon.hearts} />
-        </li>
-      </ol>
+    <div className={styles.panel}>
+      <span className={styles.panelTitle}>🏅 Top 3 do time</span>
+      {team.length === 0 ? (
+        <span className={styles.empty}>Nenhum feito registrado.</span>
+      ) : (
+        <ol className={styles.topList}>
+          {team.map((m, i) => {
+            const species = getSpecies(m.pokemon.speciesId)
+            return (
+              <li key={m.pokemon.id} className={styles.topRow}>
+                <span className={styles.topPos}>{i + 1}</span>
+                <img className={styles.topSprite} src={species.spritePath} alt={species.displayName} />
+                <div className={styles.topInfo}>
+                  <span className={styles.topName}>
+                    {displayNameOf(m.pokemon)}
+                    {m.medalIndex > 0 && (
+                      <span
+                        className={styles.topMedal}
+                        title={`Habilidade Secreta ${SECRET_TIER_LABEL[m.medalIndex]}`}
+                      >
+                        {SECRET_MEDAL[m.medalIndex]}
+                      </span>
+                    )}
+                  </span>
+                  <span className={styles.topDeeds}>
+                    🎯 <b>{m.missions}</b> · ⚔️ <b>{m.defeats}</b>
+                  </span>
+                </div>
+                <RankBadge rank={m.rank} />
+              </li>
+            )
+          })}
+        </ol>
+      )}
     </div>
   )
 }
 
-function StrongestEnemy({ enemy }: { enemy: Report['strongestEnemy'] }) {
-  if (!enemy) {
-    return (
-      <div className={styles.panel}>
-        <span className={styles.panelTitle}>🔥 Mais forte enfrentado</span>
-        <span className={styles.empty}>Nenhum inimigo derrotado.</span>
-      </div>
-    )
-  }
-  const species = enemy.speciesId !== undefined ? getSpecies(enemy.speciesId) : null
-  const medalIndex = enemy.medal ? MEDAL_TIER_RANK[enemy.medal] : 0
+function EnemiesFaced({
+  enemies,
+  tormentor,
+}: {
+  enemies: Report['strongestEnemies']
+  tormentor: Report['tormentor']
+}) {
   return (
     <div className={styles.panel}>
-      <span className={styles.panelTitle}>🔥 Mais forte enfrentado</span>
-      <div className={styles.enemyRow}>
-        {species && (
-          <img className={styles.enemySprite} src={species.spritePath} alt={species.displayName} />
-        )}
-        <div className={styles.enemyInfo}>
-          <span className={styles.enemyName}>{species?.displayName ?? 'Invasor'}</span>
-          <span className={styles.enemyTypes}>
-            {enemy.types.map((t) => (
-              <TypeBadge key={t} type={t} />
-            ))}
-          </span>
-          <span className={styles.enemyMeta}>
-            <span className={styles.enemyPower} title="Poder de Batalha">⚔️ {enemy.battle}</span>
-            {medalIndex > 0 && (
-              <span className={styles.enemyMedal} title={`Medalha ${SECRET_TIER_LABEL[medalIndex]}`}>
-                {SECRET_MEDAL[medalIndex]} {SECRET_TIER_LABEL[medalIndex]}
-              </span>
-            )}
-          </span>
-        </div>
+      <span className={styles.panelTitle}>⚔️ Pokémons enfrentados</span>
+      {enemies.length === 0 ? (
+        <span className={styles.empty}>Nenhum inimigo enfrentado.</span>
+      ) : (
+        <ol className={styles.topList}>
+          {enemies.map((e, i) => {
+            const species = e.speciesId !== undefined ? getSpecies(e.speciesId) : null
+            const medalIndex = e.medal ? MEDAL_TIER_RANK[e.medal] : 0
+            return (
+              <li key={i} className={styles.topRow}>
+                <span className={styles.topPos}>{i + 1}</span>
+                {species ? (
+                  <img className={styles.enemyMini} src={species.spritePath} alt={species.displayName} />
+                ) : (
+                  <span className={styles.enemyMini} />
+                )}
+                <div className={styles.topInfo}>
+                  <span className={styles.topName}>{species?.displayName ?? 'Invasor'}</span>
+                  <span className={styles.enemyMeta}>
+                    <span className={styles.enemyPower} title="Poder de Batalha">⚔️ {e.battle}</span>
+                    {medalIndex > 0 && (
+                      <span className={styles.enemyMedal} title={`Medalha ${SECRET_TIER_LABEL[medalIndex]}`}>
+                        {SECRET_MEDAL[medalIndex]}
+                      </span>
+                    )}
+                  </span>
+                </div>
+              </li>
+            )
+          })}
+        </ol>
+      )}
+      {tormentor && <Tormentor tormentor={tormentor} />}
+    </div>
+  )
+}
+
+function Tormentor({ tormentor }: { tormentor: NonNullable<Report['tormentor']> }) {
+  const species = getSpecies(tormentor.speciesId)
+  return (
+    <div className={styles.tormentor}>
+      <span className={styles.tormentorBadge}>🔪 CARRASCO</span>
+      <img className={styles.enemyMini} src={species.spritePath} alt={species.displayName} />
+      <div className={styles.topInfo}>
+        <span className={styles.topName}>{species.displayName}</span>
+        <span className={styles.tormentorMeta}>
+          derrotou seu time <b>{tormentor.count}</b>{tormentor.count === 1 ? ' vez' : ' vezes'}
+        </span>
       </div>
     </div>
   )
@@ -341,18 +367,27 @@ function Tile({
   value,
   accent = false,
   danger = false,
+  heart = false,
+  pct,
 }: {
   icon: string
   label: string
   value: string
   accent?: boolean
   danger?: boolean
+  /** Pinta o ícone de coração de vermelho (visível sobre o painel claro). */
+  heart?: boolean
+  /** Porcentagem concluída exibida ao lado do valor (ex.: 50%). */
+  pct?: number
 }) {
   const cls = [styles.tile, accent ? styles.tileAccent : '', danger ? styles.tileDanger : ''].join(' ')
   return (
     <div className={cls}>
-      <span className={styles.tileIcon}>{icon}</span>
-      <span className={styles.tileValue}>{value}</span>
+      <span className={`${styles.tileIcon} ${heart ? styles.tileHeart : ''}`}>{icon}</span>
+      <span className={styles.tileValueRow}>
+        <span className={styles.tileValue}>{value}</span>
+        {pct !== undefined && <span className={styles.tilePct}>{pct}%</span>}
+      </span>
       <span className={styles.tileLabel}>{label}</span>
     </div>
   )

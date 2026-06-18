@@ -296,6 +296,28 @@ export interface DefenseKill {
   enemyTypes?: PokemonType[]
 }
 
+/**
+ * Um duelo PERDIDO numa batalha do dia: o inimigo que venceu o seu Pokémon (vítima) + a espécie
+ * dele. Simétrico ao DefenseKill — base do "Carrasco" (espécie que mais venceu seu time) no fim.
+ */
+export interface DefenseLoss {
+  /** Seu Pokémon que perdeu o duelo. */
+  victimId: string
+  /** Espécie do inimigo que venceu — miniatura/agrupamento do Carrasco. */
+  speciesId?: number
+  enemyBattle?: number
+  enemyMedal?: MedalTier
+  enemyTypes?: PokemonType[]
+}
+
+/** Inimigo (efêmero) referenciado no relatório de fim de jogo: poder + espécie/tipos/medalha. */
+export interface EnemyRef {
+  battle: number
+  medal?: MedalTier
+  types: PokemonType[]
+  speciesId?: number
+}
+
 /** Acumulador do dia em curso (zerado a cada manhã) — base do resumo/aprovação. */
 export interface DayTally {
   missionResults: MissionResultLog[]
@@ -322,6 +344,8 @@ export interface DayTally {
   exploredSpots: number[]
   /** Inimigos derrotados em defesas hoje (MVP por derrotas + miniaturas no relatório). */
   defenseKills: DefenseKill[]
+  /** Duelos perdidos hoje (o inimigo que venceu seu Pokémon) — base do "Carrasco" no fim de jogo. */
+  defenseLosses: DefenseLoss[]
   /** Quantos Pokémon do jogador desmaiaram hoje (eventos de desmaio) — base das "mortes" no fim. */
   faints: number
   /**
@@ -374,13 +398,13 @@ export interface LifetimeStats {
   purchasedItems: Record<string, number>
   /** pokemonId → feitos acumulados (missões bem-sucedidas + derrotas) — base do Destaque do Jogo. */
   usage: Record<string, { missions: number; defeats: number }>
-  /** Inimigo mais forte DERROTADO na run (maior poder de Batalha); null se nenhum. */
-  strongestEnemy: {
-    battle: number
-    medal?: MedalTier
-    types: PokemonType[]
-    speciesId?: number
-  } | null
+  /** Top inimigos DERROTADOS na run (maior poder de Batalha), até 3 — "Pokémons enfrentados". */
+  strongestEnemies: EnemyRef[]
+  /**
+   * Espécies inimigas que venceram duelos contra o seu time, em ORDEM de 1ª aparição (o desempate
+   * do Carrasco é "o primeiro a aparecer"). count = nº de duelos vencidos contra você.
+   */
+  defeatedBy: { speciesId: number; types: PokemonType[]; count: number }[]
 }
 
 export interface GameState {
@@ -440,6 +464,7 @@ export function emptyTally(): DayTally {
     activeIds: [],
     exploredSpots: [],
     defenseKills: [],
+    defenseLosses: [],
     faints: 0,
     secretUnlock: null,
     mvpHeartsGained: 0,
@@ -462,7 +487,8 @@ export function emptyLifetime(): LifetimeStats {
     defeats: 0,
     purchasedItems: {},
     usage: {},
-    strongestEnemy: null,
+    strongestEnemies: [],
+    defeatedBy: [],
   }
 }
 

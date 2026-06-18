@@ -84,11 +84,12 @@ export function assignDefense(s: GameState, defenseId: string, squadIds: string[
     damagePerLoss: damageForDay(s.run.day),
   })
 
-  // Registra o desafiante derrotado (defeaterId + espécie) para o MVP/relatório.
+  // Registra cada duelo: vitória → desafiante derrotado (MVP/"enfrentados"); derrota → o inimigo
+  // que venceu seu Pokémon (Carrasco). `theirs` só avança quando você vence (o inimigo sai).
   let theirs = 0
   for (const duel of resolution.duels) {
+    const enemy = defense.enemies[theirs]
     if (duel.youWon) {
-      const enemy = defense.enemies[theirs]
       s.today.defenseKills.push({
         defeaterId: duel.yourId,
         speciesId: enemy?.speciesId,
@@ -97,6 +98,14 @@ export function assignDefense(s: GameState, defenseId: string, squadIds: string[
         enemyTypes: enemy?.types,
       })
       theirs += 1
+    } else {
+      s.today.defenseLosses.push({
+        victimId: duel.yourId,
+        speciesId: enemy?.speciesId,
+        enemyBattle: enemy?.battle,
+        enemyMedal: enemy?.medal,
+        enemyTypes: enemy?.types,
+      })
     }
   }
 
