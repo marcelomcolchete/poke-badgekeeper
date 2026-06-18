@@ -20,6 +20,7 @@ import { fileURLToPath } from 'node:url'
 import type { Attrs, PokemonType, Rarity } from '../src/types/index.ts'
 import type { EvolutionStep, SpeciesBase } from '../src/data/types.ts'
 import { SPECIES_BASE } from '../src/data/pokemon/species.generated.ts'
+import { resolveDisplayAndSprite } from './pokemonRow.ts'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 // CSV canônico (fonte de verdade do balanceamento). Passe outro caminho via argv[2].
@@ -104,10 +105,11 @@ const minWild = new Map<number, number>()
 for (const r of rows.slice(1)) {
   const id = num(r[C.id])
   const prev = existingById.get(id)
-  if (!prev) throw new Error(`id ${id} não existe nas espécies atuais — não reimportável`)
-  if (r[C.name].trim() !== prev.name) {
+  if (prev && r[C.name].trim() !== prev.name) {
     console.warn(`Aviso: name divergente p/ id ${id}: CSV="${r[C.name]}" vs "${prev.name}"`)
   }
+  const name = prev ? prev.name : r[C.name].trim()
+  const { displayName, spritePath } = resolveDisplayAndSprite(id, name, prev)
 
   const types = [r[C.type1].trim(), r[C.type2].trim()].filter(Boolean) as PokemonType[]
   const baseAttrs: Attrs = {
@@ -118,15 +120,7 @@ for (const r of rows.slice(1)) {
     resistencia: num(r[C.resistencia]),
     percepcao: num(r[C.percepcao]),
   }
-  species.push({
-    id,
-    name: prev.name,
-    displayName: prev.displayName,
-    types,
-    baseAttrs,
-    rarity: r[C.rarity].trim() as Rarity,
-    spritePath: prev.spritePath,
-  })
+  species.push({ id, name, displayName, types, baseAttrs, rarity: r[C.rarity].trim() as Rarity, spritePath })
 
   const targets = r[C.evolvesTo]
     .split(',')
