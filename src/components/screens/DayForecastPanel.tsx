@@ -39,6 +39,8 @@ export function DayForecastPanel({ state }: { state: GameState }) {
       <div className={styles.weather}>
         <span className={styles.subTitle}>PREVISÃO DO TEMPO</span>
         <div className={styles.effects}>
+          {/* Hoje só há chuva: `rainChance` (combinado) modela ESTE efeito. Ao adicionar um novo
+              WeatherEffectKind, calcular a chance própria dele — não reusar `rainChance` aqui. */}
           {weather && rainChance > 0 ? (
             weather.effects.map((effect) =>
               effect.kind === 'rain' ? (
