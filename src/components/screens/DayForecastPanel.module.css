@@ -1,7 +1,7 @@
 .panel {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .sectionTitle {
@@ -10,36 +10,50 @@
   color: var(--c-hud-muted);
 }
 
-/* Faixa de cards de efeitos (cresce com o nº de efeitos; rola na horizontal se faltar espaço). */
-.cards {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+.subTitle {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--c-hud-muted);
 }
 
-.card {
-  position: relative;
+/* Bloco "Previsão do Tempo" (céu azul-água) — cresce com o nº de efeitos. */
+.weather {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  min-width: 220px;
-  text-align: center;
-  /* Painel "céu": gradiente azul-água combinando com a chuva. */
+  gap: 8px;
   background: linear-gradient(160deg, #e9f2ff 0%, var(--c-panel) 70%);
   border: 3px solid var(--c-panel-border);
   border-radius: var(--radius-pixel);
   padding: 12px 14px;
 }
 
-.cardIcon {
+.effects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.effect {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.effectIcon {
   font-size: 26px;
   line-height: 1;
 }
 
-.cardName {
+.effectName {
   font-family: var(--font-pixel);
   font-size: 11px;
+  color: var(--c-ink);
+}
+
+.effectChance {
+  font-family: var(--font-text);
+  font-size: 18px;
+  font-weight: bold;
   color: var(--c-ink);
 }
 
@@ -49,15 +63,15 @@
   color: var(--c-ink-muted);
 }
 
-.stats {
+/* Contagens do dia. */
+.counts {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  width: 100%;
   margin: 0;
 }
 
-.stat {
+.count {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -65,14 +79,19 @@
   font-family: var(--font-text);
 }
 
-.stat dt {
+.count dt {
   font-size: 15px;
   color: var(--c-ink-muted);
 }
 
-.stat dd {
+.count dd {
   margin: 0;
   font-size: 18px;
   font-weight: bold;
   color: var(--c-ink);
+}
+
+.rocket dd {
+  color: var(--c-hp-low);
+  letter-spacing: 2px;
 }
