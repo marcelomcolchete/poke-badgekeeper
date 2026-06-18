@@ -13,6 +13,16 @@ import { getSpecies } from '../../data/pokemon/index.ts'
 import { Hearts } from '../common/Hearts.tsx'
 import { MEDAL_TIER_RANK, RANK_COLOR, SECRET_MEDAL, SECRET_TIER_LABEL } from '../common/visual.ts'
 import { displayNameOf } from '../common/naming.ts'
+import { Stars } from '../common/Stars.tsx'
+import {
+  BADGE_COLORS,
+  BADGE_LABELS,
+  CITY_SPEECHES,
+  GYM_SPEECHES,
+  NURSE_JOY_SPRITE,
+  gymLeaderFor,
+  starBucket,
+} from '../../data/endgameVerdict.ts'
 import styles from './EndGameScreen.module.css'
 
 interface Props {
@@ -34,11 +44,6 @@ const LOSS_MESSAGE: Record<NonNullable<RunInfo['gameOverReason']>, string> = {
   fainted: 'Todo o seu time foi derrotado! Sem ninguém em condições de lutar, seu período de testes foi encerrado.',
 }
 
-/** Faixa-herói: arte de fundo conforme a média (0–0,9→1star … 4–5→5star). */
-function heroBackground(avgStars: number): string {
-  const tier = Math.min(5, Math.max(1, Math.floor(avgStars) + 1))
-  return `/background/jpg/${tier}star.jpg`
-}
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'stats', label: 'Estatísticas' },
@@ -59,42 +64,33 @@ export function EndGameScreen({ state, outcome, onBack, onNextGym }: Props) {
 
   return (
     <div className={styles.screen}>
-      {/* ---- Faixa-herói (sempre visível): arte por nota + scrim + resultado + botões ---- */}
+      {/* ---- Faixa-herói: 3 colunas (Ginásio · Cidade · Veredito) sobre o mapa da cidade ---- */}
       <header
         className={`${styles.hero} ${won ? styles.heroWin : styles.heroLoss}`}
-        style={{ backgroundImage: `url('${heroBackground(r.avgStars)}')` }}
+        style={{ backgroundImage: `url('/maps/kanto/${state.run.cityIndex + 1}.png')` }}
       >
         <div className={styles.heroScrim} />
-        <div className={styles.heroContent}>
-          <span className={`${styles.title} ${won ? styles.win : styles.loss}`}>
-            {won ? '★ VOCÊ VENCEU! ★' : 'FIM DE JOGO'}
-          </span>
-          <span className={styles.subtitle}>
-            {won
-              ? `Efetivado no Ginásio de ${r.cityName} com média ${r.avgStars.toFixed(2)}/5!`
-              : lossText}
-          </span>
-          <div className={styles.scores}>
-            <span className={styles.score}>🎯 Missões <b>{r.missionStars.toFixed(1)}</b>/5</span>
-            <span className={styles.score}>⚔️ Batalhas <b>{r.battleStars.toFixed(1)}</b>/5</span>
-            <span className={`${styles.avg} ${r.hired ? styles.avgGood : styles.avgBad}`}>
-              Média <b>{r.avgStars.toFixed(2)}</b>/5
-            </span>
-          </div>
-          <div className={styles.actions}>
-            {canAdvance && (
-              <button
-                type="button"
-                className={styles.primary}
-                onClick={() => onNextGym!(r.nextCityIndex as number)}
-              >
-                Próximo Ginásio: {r.nextCityName} ▶
-              </button>
-            )}
-            <button type="button" className={styles.back} onClick={onBack}>
-              Voltar
-            </button>
-          </div>
+        <div className={styles.heroColumns}>
+          <PerformanceColumn
+            heading="Ginásio"
+            persona={gymLeaderFor(state.run.cityIndex)}
+            stars={r.battleStars}
+            speeches={GYM_SPEECHES}
+          />
+          <PerformanceColumn
+            heading="Cidade"
+            persona={{ name: 'Enfermeira Joy', sprite: NURSE_JOY_SPRITE }}
+            stars={r.missionStars}
+            speeches={CITY_SPEECHES}
+          />
+          <VerdictColumn
+            won={won}
+            report={r}
+            lossText={lossText}
+            canAdvance={canAdvance}
+            onBack={onBack}
+            onNextGym={onNextGym}
+          />
         </div>
       </header>
 
@@ -120,6 +116,91 @@ export function EndGameScreen({ state, outcome, onBack, onNextGym }: Props) {
         {tab === 'items' && <ItemsTab items={r.purchasedItems} />}
       </div>
     </div>
+  )
+}
+
+/** Coluna de desempenho (Ginásio ou Cidade): foto da persona + selo + estrelas + fala do bucket. */
+function PerformanceColumn({
+  heading,
+  persona,
+  stars,
+  speeches,
+}: {
+  heading: string
+  persona: { name: string; sprite: string }
+  stars: number
+  speeches: readonly string[]
+}) {
+  const bucket = starBucket(stars)
+  return (
+    <section className={styles.col}>
+      <span className={styles.colHeading}>{heading}</span>
+      <img className={styles.persona} src={persona.sprite} alt={persona.name} />
+      <span className={styles.personaName}>{persona.name}</span>
+      <span
+        className={styles.badge}
+        style={{ backgroundColor: BADGE_COLORS[bucket], borderColor: BADGE_COLORS[bucket] }}
+      >
+        {BADGE_LABELS[bucket]}
+      </span>
+      <span className={styles.colStars}>
+        <Stars value={stars} />
+        <span className={styles.colStarsNum}>{stars.toFixed(1).replace('.', ',')}/5</span>
+      </span>
+      <p className={styles.speech}>{speeches[bucket]}</p>
+    </section>
+  )
+}
+
+/** Coluna do veredito: desfecho da run, aprovado/reprovado, média, motivo e botões. */
+function VerdictColumn({
+  won,
+  report,
+  lossText,
+  canAdvance,
+  onBack,
+  onNextGym,
+}: {
+  won: boolean
+  report: Report
+  lossText: string
+  canAdvance: boolean
+  onBack: () => void
+  onNextGym?: (cityIndex: number) => void
+}) {
+  return (
+    <section className={`${styles.col} ${styles.verdictCol}`}>
+      <span className={`${styles.title} ${won ? styles.win : styles.loss}`}>
+        {won ? '★ VOCÊ VENCEU! ★' : 'FIM DE JOGO'}
+      </span>
+      <span className={`${styles.avg} ${won ? styles.avgGood : styles.avgBad}`}>
+        {won ? 'APROVADO' : 'REPROVADO'}
+      </span>
+      <span className={styles.avgNum}>
+        Média {report.avgStars.toFixed(2).replace('.', ',')}/5
+      </span>
+      <p className={styles.verdictText}>
+        {won
+          ? `Efetivado no Ginásio de ${report.cityName} com média ${report.avgStars
+              .toFixed(2)
+              .replace('.', ',')}/5!`
+          : lossText}
+      </p>
+      <div className={styles.actions}>
+        {canAdvance && (
+          <button
+            type="button"
+            className={styles.primary}
+            onClick={() => onNextGym!(report.nextCityIndex as number)}
+          >
+            Próximo Ginásio: {report.nextCityName} ▶
+          </button>
+        )}
+        <button type="button" className={styles.back} onClick={onBack}>
+          Voltar
+        </button>
+      </div>
+    </section>
   )
 }
 

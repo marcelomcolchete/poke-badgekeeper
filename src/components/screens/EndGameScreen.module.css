@@ -36,16 +36,6 @@
   pointer-events: none;
 }
 
-.heroContent {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  text-align: center;
-  padding: 18px 16px 16px;
-}
-
 .title {
   font-family: var(--font-pixel);
   font-size: 18px;
@@ -71,31 +61,6 @@
   }
 }
 
-.subtitle {
-  font-family: var(--font-text);
-  font-size: 16px;
-  color: #eaf2ec;
-  line-height: 1.35;
-  max-width: 48ch;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
-}
-
-.scores {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 12px;
-  font-family: var(--font-text);
-  font-size: 16px;
-  color: #dfeae1;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
-}
-
-.score b {
-  color: #ffffff;
-}
-
 .avg {
   font-family: var(--font-pixel);
   font-size: 11px;
@@ -115,6 +80,101 @@
   background: rgba(232, 64, 64, 0.85);
   color: #2a0f0f;
   border-color: #f7b1b1;
+}
+
+/* ---- Faixa-herói em 3 colunas (Ginásio · Cidade · Veredito) ---- */
+.heroColumns {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  padding: 16px;
+  align-items: stretch;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  padding: 14px 12px;
+  background: rgba(8, 16, 10, 0.55);
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius-pixel);
+}
+
+.colHeading {
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--c-hud-accent);
+}
+
+.persona {
+  width: 96px;
+  height: 96px;
+  image-rendering: pixelated;
+  object-fit: contain;
+}
+
+.personaName {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  color: #eaf2ec;
+}
+
+.badge {
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  color: #fff;
+  border: 2px solid;
+  border-radius: var(--radius-pixel);
+  padding: 4px 10px;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.4);
+}
+
+.colStars {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.colStarsNum {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: #dfeae1;
+}
+
+.speech {
+  margin: 0;
+  font-family: var(--font-text);
+  font-size: 15px;
+  line-height: 1.35;
+  color: #eaf2ec;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+}
+
+/* Coluna do veredito (3ª): desfecho + aprovado/reprovado + média + motivo + botões. */
+.verdictCol {
+  justify-content: center;
+  gap: 10px;
+}
+
+.avgNum {
+  font-family: var(--font-text);
+  font-size: 16px;
+  color: #dfeae1;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+}
+
+.verdictText {
+  margin: 0;
+  font-family: var(--font-text);
+  font-size: 14px;
+  line-height: 1.35;
+  color: #eaf2ec;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
 }
 
 /* ---- Botões de ação (dentro do herói) ---- */
@@ -274,6 +334,9 @@
 }
 
 @media (max-width: 480px) {
+  .heroColumns {
+    grid-template-columns: 1fr;
+  }
   .columns {
     grid-template-columns: 1fr;
   }
