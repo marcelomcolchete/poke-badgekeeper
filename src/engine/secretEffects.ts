@@ -29,6 +29,7 @@ import {
 } from './balance.ts'
 import { effectiveAttr, mapAttrs } from './attributes.ts'
 import { itemMissionMultiplier, itemTravelSpeedMultiplier } from './itemEffects.ts'
+import { isRaining, type WeatherSchedule } from './weather.ts'
 
 export type SecretRuntimeMap = Record<string, SecretRuntime>
 
@@ -250,6 +251,22 @@ export function teamSurfs(team: readonly Pokemon[], runItems: readonly string[] 
 /** O time atua do ginásio (Sniper, só sozinho)? Faz a missão sem viajar. */
 export function teamSnipes(team: readonly Pokemon[]): boolean {
   return team.length === 1 && hasSniper(team[0] as Pokemon)
+}
+
+/**
+ * O time deve exibir a aura de "veloz" no mapa? Verdadeiro quando o multiplicador base já é >1
+ * (Weak Armor/Fly/itens) OU quando há Swift Swim no time e está chovendo AGORA (efeito ao vivo).
+ */
+export function teamIsSpeedy(
+  team: readonly Pokemon[],
+  runItems: readonly string[],
+  weather: WeatherSchedule,
+  nowMs: number,
+): boolean {
+  return (
+    teamTravelSpeedMultiplier(team, runItems) > 1 ||
+    (teamHasSwiftSwim(team) && isRaining(weather, nowMs))
+  )
 }
 
 /**

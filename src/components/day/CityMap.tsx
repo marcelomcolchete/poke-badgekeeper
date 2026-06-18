@@ -19,7 +19,7 @@ import { getMissionTemplate, missionReward } from '../../data/missionTemplates.t
 import { getSpecies } from '../../data/pokemon/index.ts'
 import { graphWithTunnels, pointAlongPath } from '../../engine/pathfinding.ts'
 import { activePuddlesAt } from '../../engine/weather.ts'
-import { teamTravelSpeedMultiplier } from '../../engine/secretEffects.ts'
+import { teamIsSpeedy } from '../../engine/secretEffects.ts'
 import { clamp } from '../../engine/math.ts'
 import styles from './CityMap.module.css'
 
@@ -228,7 +228,7 @@ function MapTravelers({ state, graph, now }: { state: GameState; graph: CityGrap
         const team = m.teamIds
           .map((id) => state.roster.find((p) => p.id === id))
           .filter((p): p is Pokemon => p !== undefined)
-        const speedy = teamTravelSpeedMultiplier(team, state.runItems) > 1
+        const speedy = teamIsSpeedy(team, state.runItems, state.weather, now)
         return (
           <TravelerGroup
             key={`m-${m.id}`}
