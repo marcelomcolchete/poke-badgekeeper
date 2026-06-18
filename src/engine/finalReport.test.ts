@@ -22,7 +22,7 @@ function gameState() {
     goldEarned: 5000,
     faints: 3,
     defeats: 20,
-    purchasedItems: { potion: 3 },
+    purchasedItems: { potion: 3, 'great-ball': 1, 'exp-share': 1 },
     usage: { a: { missions: 30, defeats: 10 }, b: { missions: 5, defeats: 2 } },
     strongestEnemy: { battle: 60, medal: 'gold', types: ['dragon'], speciesId: 149 },
   }
@@ -80,8 +80,31 @@ describe('buildFinalReport', () => {
 
   it('itens comprados acumulam lifetime + today', () => {
     const r = buildFinalReport(gameState(), 'win')
-    const byId = Object.fromEntries(r.purchasedItems.map((p) => [p.item.id, p.count]))
-    expect(byId).toEqual({ potion: 3, revive: 1 })
+    const byId = Object.fromEntries(r.purchasedItems.map((p) => [p.id, p.count]))
+    expect(byId).toEqual({ potion: 3, revive: 1, 'great-ball': 1, 'exp-share': 1 })
+  })
+
+  it('resolve bolas (catálogo BALLS) e categoriza as compras', () => {
+    const r = buildFinalReport(gameState(), 'win')
+    const cat = Object.fromEntries(r.purchasedItems.map((p) => [p.id, p.category]))
+    expect(cat).toEqual({
+      potion: 'healing',
+      revive: 'healing',
+      'great-ball': 'ball',
+      'exp-share': 'other',
+    })
+    // A bola evolutiva (great-ball vive em balls.ts, fora de ITEMS) é resolvida com nome/sprite.
+    const ball = r.purchasedItems.find((p) => p.id === 'great-ball')
+    expect(ball?.name).toBe('Great Ball')
+    expect(ball?.sprite).toContain('great-ball')
+  })
+
+  it('ignora ids de compra desconhecidos (saves antigos)', () => {
+    const s = gameState()
+    s.lifetime = { ...s.lifetime, purchasedItems: { potion: 1, 'item-removido': 2 } }
+    s.today.purchasedItems = []
+    const r = buildFinalReport(s, 'win')
+    expect(r.purchasedItems.map((p) => p.id)).toEqual(['potion'])
   })
 
   it('vitória oferece a próxima cidade; última cidade não', () => {

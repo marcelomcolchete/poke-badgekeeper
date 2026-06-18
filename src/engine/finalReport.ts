@@ -3,18 +3,48 @@
 
 import type { Pokemon } from '../types/index.ts'
 import type { GameState, LifetimeStats, RunInfo } from './state.ts'
-import type { ItemData } from '../data/types.ts'
 import { combineLifetime } from './lifetime.ts'
 import { averageStars, isHired } from './approval.ts'
 import { pokemonRank, type Rank } from './ranking.ts'
 import { heartsOf } from './hearts.ts'
 import { CITIES, getCity } from '../data/cities.ts'
-import { ITEMS } from '../data/items.ts'
+import { findItem } from '../data/items.ts'
+import { BALLS } from '../data/balls.ts'
 import { secretCountOf } from '../data/secretAbilities.ts'
 
-const ITEM_BY_ID = new Map(ITEMS.map((i) => [i.id, i]))
+const BALL_BY_ID = new Map(BALLS.map((b) => [b.id, b]))
 
 export type EndOutcome = 'win' | 'loss'
+
+/** Categoria de uma compra na tela de fim de jogo — agrupa a aba "Itens". */
+export type PurchaseCategory = 'ball' | 'healing' | 'other'
+
+/** Uma compra da run já resolvida (nome/sprite) e categorizada, com a contagem acumulada. */
+export interface PurchasedEntry {
+  id: string
+  name: string
+  sprite: string
+  count: number
+  category: PurchaseCategory
+}
+
+/** Ordem de exibição dos grupos na aba "Itens". */
+const CATEGORY_ORDER: Record<PurchaseCategory, number> = { ball: 0, healing: 1, other: 2 }
+
+/**
+ * Resolve um id comprado (nome/sprite/categoria). As bolas evolutivas vivem em `balls.ts` (fora
+ * do catálogo ITEMS) — por isso tentamos os dois; ids desconhecidos (saves antigos) viram null.
+ */
+function resolvePurchase(id: string, count: number): PurchasedEntry | null {
+  const ball = BALL_BY_ID.get(id)
+  if (ball) return { id, name: ball.name, sprite: ball.sprite, count, category: 'ball' }
+  const item = findItem(id)
+  if (!item) return null
+  const kind = item.effect.kind
+  const category: PurchaseCategory =
+    kind === 'premierBall' ? 'ball' : kind === 'heal' || kind === 'revive' ? 'healing' : 'other'
+  return { id, name: item.name, sprite: item.sprite, count, category }
+}
 
 /** Um Pokémon do relatório com o seu rank já calculado (miniaturas/listas). */
 export interface FinalReportMon {
@@ -60,8 +90,11 @@ export interface FinalReport {
   capturedCount: number
   /** Todos os Pokémon em mãos (time + PC) com rank, p/ a grade de miniaturas. */
   captured: FinalReportMon[]
-  /** Itens comprados na run (id resolvido para o catálogo + quantidade), do mais comprado ao menos. */
-  purchasedItems: { item: ItemData; count: number }[]
+  /**
+   * Itens comprados na run (id resolvido para o catálogo/bolas + quantidade), já categorizados e
+   * ordenados por grupo (bolas → cura/revive → outros) e, dentro do grupo, do mais comprado ao menos.
+   */
+  purchasedItems: PurchasedEntry[]
   /** Inimigo mais forte derrotado (maior poder de Batalha) com medalha/tipos; null se nenhum. */
   strongestEnemy: LifetimeStats['strongestEnemy']
   /** Destaque do jogo; null se ninguém somou feitos (ou o Pokémon não está mais em mãos). */
@@ -85,10 +118,16 @@ export function buildFinalReport(state: GameState, outcome: EndOutcome): FinalRe
     ? roster.reduce((sum, p) => sum + heartsOf(p.hearts), 0) / roster.length
     : 0
 
+  // Resolve cada compra (ITEMS + bolas), categoriza e ordena por grupo e depois por quantidade.
   const purchasedItems = Object.entries(life.purchasedItems)
-    .map(([id, count]) => ({ item: ITEM_BY_ID.get(id), count }))
-    .filter((e): e is { item: ItemData; count: number } => e.item !== undefined)
-    .sort((a, b) => b.count - a.count)
+    .map(([id, count]) => resolvePurchase(id, count))
+    .filter((e): e is PurchasedEntry => e !== null)
+    .sort(
+      (a, b) =>
+        CATEGORY_ORDER[a.category] - CATEGORY_ORDER[b.category] ||
+        b.count - a.count ||
+        a.name.localeCompare(b.name),
+    )
 
   // Destaque do jogo: mais feitos (missões + derrotas); desempata por missões. Só conta quem ainda
   // está em mãos (um Pokémon liberado some da seleção e cede o posto ao próximo).
