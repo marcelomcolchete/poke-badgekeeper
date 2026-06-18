@@ -1,6 +1,6 @@
 // Manhã / Mercado (PLAN — Sistema de Itens): 3 itens sorteados do dia em cards (foto, nome,
 // efeito, preço), fixos no dia — comprar marca o slot como VENDIDO. O aviso e o botão de
-// começar o dia ficam acima do time; o Rare Candy abre um seletor enxuto (atributos por escrito).
+// começar o dia ficam abaixo das colunas do topo; o Rare Candy abre um seletor enxuto (atributos por escrito).
 
 import { useState } from 'react'
 import type { Dispatch } from 'react'
@@ -8,20 +8,18 @@ import { ATTR_KEYS } from '../../types/index.ts'
 import type { GameState } from '../../engine/state.ts'
 import type { GameAction } from '../../game/actions.ts'
 import type { ItemData } from '../../data/types.ts'
-import { MAX_ROSTER_SIZE, LEVEL_MAX, TOTAL_DAYS } from '../../engine/constants.ts'
+import { LEVEL_MAX, TOTAL_DAYS } from '../../engine/constants.ts'
 import { getDailyShop, getItem } from '../../data/items.ts'
 import { currentBall, nextBall, RARITY_LABEL_PT, type BallDef } from '../../data/balls.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
 import { effectiveAttr } from '../../engine/attributes.ts'
-import { PokemonCard } from '../PokemonCard/PokemonCard.tsx'
-import { TeamPanel } from '../TeamPanel/TeamPanel.tsx'
+import { DayForecastPanel } from './DayForecastPanel.tsx'
+import { TeamSummary } from './TeamSummary.tsx'
 import { BoxPanel } from '../BoxPanel/BoxPanel.tsx'
 import { Textbox } from '../Textbox/Textbox.tsx'
 import { Overlay } from '../common/Overlay.tsx'
 import { Stars } from '../common/Stars.tsx'
-import { Hearts } from '../common/Hearts.tsx'
 import { ItemsBar } from '../common/ItemsBar.tsx'
-import { WeatherForecastPanel } from './WeatherForecastPanel.tsx'
 import { ATTR_SHORT_PT } from '../common/visual.ts'
 import { displayNameOf } from '../common/naming.ts'
 import styles from './MorningScreen.module.css'
@@ -88,7 +86,6 @@ function BallCard({
 }
 
 export function MorningScreen({ state, dispatch }: Props) {
-  const [teamOpen, setTeamOpen] = useState(false)
   const [boxOpen, setBoxOpen] = useState(false)
   // Seletor de alvo do Rare Candy (null = fechado).
   const [candyOpen, setCandyOpen] = useState(false)
@@ -133,7 +130,10 @@ export function MorningScreen({ state, dispatch }: Props) {
         </span>
       </header>
 
-      <WeatherForecastPanel state={state} />
+      <div className={styles.topColumns}>
+        <DayForecastPanel state={state} />
+        <TeamSummary state={state} onOpenBox={() => setBoxOpen(true)} />
+      </div>
 
       <section className={styles.market}>
         <span className={styles.sectionTitle}>MERCADO — 5 ITENS DO DIA</span>
@@ -174,7 +174,7 @@ export function MorningScreen({ state, dispatch }: Props) {
 
       <ItemsBar state={state} dispatch={dispatch} />
 
-      {/* Aviso + começar o dia ACIMA do time (sem precisar rolar a tela). */}
+      {/* Aviso + começar o dia abaixo do mercado. */}
       <div className={styles.startBlock}>
         <Textbox>Prepare-se: compre itens e monte seu time. Pronto para começar o dia?</Textbox>
         <button
@@ -185,34 +185,6 @@ export function MorningScreen({ state, dispatch }: Props) {
           Começar o dia ▶
         </button>
       </div>
-
-      <section className={styles.team}>
-        <div className={styles.teamHead}>
-          <span className={styles.sectionTitle}>
-            SEU TIME ({state.roster.length}/{MAX_ROSTER_SIZE})
-          </span>
-          <span className={styles.teamActions}>
-            <button type="button" className={styles.ghostBtn} onClick={() => setBoxOpen(true)}>
-              Computador ({state.box.length}) ▸
-            </button>
-            <button type="button" className={styles.ghostBtn} onClick={() => setTeamOpen(true)}>
-              Gerenciar ▸
-            </button>
-          </span>
-        </div>
-        <div className={styles.roster}>
-          {state.roster.map((mon) => (
-            <div key={mon.id} className={styles.rosterCard}>
-              <PokemonCard pokemon={mon} />
-              <span className={styles.rosterHearts}>
-                <Hearts value={mon.hearts} />
-              </span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {teamOpen && <TeamPanel state={state} dispatch={dispatch} onClose={() => setTeamOpen(false)} />}
 
       {boxOpen && <BoxPanel state={state} dispatch={dispatch} onClose={() => setBoxOpen(false)} />}
 
