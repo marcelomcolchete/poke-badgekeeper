@@ -17,6 +17,7 @@ import {
   RETURN_SPEED_BONUS_ON_SUCCESS,
   ROCKET_GOLD_BONUS,
   ROCKET_XP_MULTIPLIER,
+  SWIFT_SWIM_RAIN_BONUS,
   WATER_ABSORB_XP,
 } from '../engine/balance.ts'
 import {
@@ -27,7 +28,6 @@ import {
 import { goldForDefense, goldForMart } from '../engine/economy.ts'
 import {
   executionMs,
-  graphTravelMs,
   missionSuccessProbabilityCtx,
   resolveMission,
   travelRoute,
@@ -36,10 +36,13 @@ import {
   hasNaturalCure,
   hasWaterAbsorb,
   sturdyAvailable,
+  teamHasSwiftSwim,
   teamSurfs,
   teamTravelSpeedMultiplier,
   type MissionSecretCtx,
 } from '../engine/secretEffects.ts'
+import { rainTravelMs } from '../engine/rainSpeed.ts'
+import { isRaining } from '../engine/weather.ts'
 import { graphWithTunnels, pathUsesSurf } from '../engine/pathfinding.ts'
 import { planWeatherLeg } from '../engine/weatherTravel.ts'
 import { createRng } from '../engine/rng.ts'
@@ -105,9 +108,7 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
   // já bloqueia, mas a guarda evita uma viagem instantânea por engano. Voo/Sniper nunca dão [].
   if (outbound.path.length === 0) return
   const inbound = travelRoute(graph, mission.node, city.siteNodes.gym, team, s.runItems)
-  const speedMult = teamTravelSpeedMultiplier(team, s.runItems)
-  const outMs = graphTravelMs(outbound.distance, team, speedMult)
-  const inMs = graphTravelMs(inbound.distance, team, speedMult)
+  const outMs = rainTravelMs(s.weather, now, outbound.distance, team, s.runItems)
   const execution = executionMs(team, template.baseExecutionMs)
   const ctx: MissionSecretCtx = {
     team,
@@ -125,8 +126,9 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
   mission.status = 'traveling'
   mission.acceptedAtMs = now
   mission.arriveAtMs = now + outMs
-  mission.resolveAtMs = now + outMs + execution
-  mission.returnEndsAtMs = now + outMs + execution + inMs
+  mission.resolveAtMs = mission.arriveAtMs + execution
+  mission.returnEndsAtMs =
+    mission.resolveAtMs + rainTravelMs(s.weather, mission.resolveAtMs, inbound.distance, team, s.runItems)
   mission.pSuccess = missionSuccessProbabilityCtx(ctx, mission.requirement)
   // Natural Cure: recupera vida ao sair em missão (cap em maxHp); demais só viajam.
   for (const p of team) {
@@ -196,7 +198,13 @@ export function applyWeatherHold(s: GameState, mission: MissionInstance, nowMs: 
 
   const city = getCity(s.run.cityIndex)
   const graph = graphWithTunnels(city.graph, s.today.digTunnels)
-  const speedMult = teamTravelSpeedMultiplier(team, s.runItems)
+  // Velocidade efetiva AGORA (base + Swift Swim se chovendo). O extraMs do desvio é LINEAR a essa
+  // taxa instantânea, enquanto a chegada-base veio do integrador (rainSpeed) — aproximação
+  // consciente: como o sprite interpola linear em [legStart, arriveAtMs], os extremos não
+  // dessincronizam (ver "Notas de implementação" no plano da feature).
+  const speedMult =
+    teamTravelSpeedMultiplier(team, s.runItems) +
+    (teamHasSwiftSwim(team) && isRaining(s.weather, nowMs) ? SWIFT_SWIM_RAIN_BONUS : 0)
   const plan = planWeatherLeg({
     graph,
     weather: s.weather,

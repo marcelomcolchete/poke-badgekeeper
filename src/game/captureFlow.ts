@@ -12,10 +12,13 @@ import { maxRarityIndexForBall } from '../data/balls.ts'
 import { effectiveAttr } from '../engine/attributes.ts'
 import { perceptionRankCenter } from '../engine/ranking.ts'
 import { createPokemon } from '../engine/leveling.ts'
-import { graphTravelMs, travelRoute } from '../engine/missions.ts'
+import { travelRoute } from '../engine/missions.ts'
 import { graphWithTunnels } from '../engine/pathfinding.ts'
 import { planWeatherLeg } from '../engine/weatherTravel.ts'
-import { teamSurfs, teamTravelSpeedMultiplier } from '../engine/secretEffects.ts'
+import { teamHasSwiftSwim, teamSurfs, teamTravelSpeedMultiplier } from '../engine/secretEffects.ts'
+import { rainTravelMs } from '../engine/rainSpeed.ts'
+import { isRaining } from '../engine/weather.ts'
+import { SWIFT_SWIM_RAIN_BONUS } from '../engine/balance.ts'
 import { createRng } from '../engine/rng.ts'
 import { findMon, replaceMon, takeId, takeRng } from './runtime.ts'
 
@@ -39,9 +42,8 @@ export function startSearch(s: GameState, searcherId: string, spotIndex: number)
   // que só liga por 'a'/'n'). Sem rota, não despacha — a UI já bloqueia, mas a guarda evita uma
   // "viagem instantânea" de caminho vazio (espelha acceptMission). Voo/Sniper nunca dão [].
   if (path.length === 0) return
-  const speedMult = teamTravelSpeedMultiplier([searcher], s.runItems)
-  const oneWay = graphTravelMs(distance, [searcher], speedMult)
   const now = s.clock.dayElapsedMs
+  const oneWay = rainTravelMs(s.weather, now, distance, [searcher], s.runItems)
   const arriveAtMs = now + oneWay
   // Fast Ball: a busca é resolvida na hora em que o Pokémon chega na área (sem tempo de busca).
   const instant = s.runItems.includes('fast-ball')
@@ -84,7 +86,11 @@ function applySearchWeatherHold(s: GameState, search: CaptureSearch, nowMs: numb
   const city = getCity(s.run.cityIndex)
   const graph = graphWithTunnels(city.graph, s.today.digTunnels)
   const baseLeg = search.reroutePath ?? search.path
-  const speedMult = teamTravelSpeedMultiplier(team, s.runItems)
+  // Velocidade efetiva AGORA (base + Swift Swim se chovendo); o extraMs do desvio é linear a essa
+  // taxa, enquanto a chegada-base veio do integrador (rainSpeed) — aproximação consciente (ver plano).
+  const speedMult =
+    teamTravelSpeedMultiplier(team, s.runItems) +
+    (teamHasSwiftSwim(team) && isRaining(s.weather, nowMs) ? SWIFT_SWIM_RAIN_BONUS : 0)
   const plan = planWeatherLeg({
     graph,
     weather: s.weather,
@@ -164,9 +170,8 @@ function startReturn(s: GameState, searcherId: string, spotIndex: number, captur
   // Volta = rota REAL do ponto até o ginásio (não o reverso da ida): com arestas de mão única
   // (ex.: voltar de 'k' por k→t→u) o caminho/tempo da volta diferem da ida (PLAN §3.1).
   const { flying, surfing, path, distance } = travelRoute(graph, node, city.siteNodes.gym, [searcher], s.runItems)
-  const speedMult = teamTravelSpeedMultiplier([searcher], s.runItems)
-  const oneWay = graphTravelMs(distance, [searcher], speedMult)
   const now = s.clock.dayElapsedMs
+  const oneWay = rainTravelMs(s.weather, now, distance, [searcher], s.runItems)
   replaceMon(s, { ...searcher, status: 'returning' })
   s.captureReturns.push({
     searcherId,
@@ -203,7 +208,11 @@ function applyReturnWeatherHold(s: GameState, ret: CaptureReturn, nowMs: number)
   // `path` é ponto→ginásio (volta real); saves antigos guardavam ginásio→ponto (detecta e inverte).
   const back = ret.path[0] === ret.node ? ret.path : [...ret.path].reverse()
   const baseLeg = ret.reroutePath ?? back
-  const speedMult = teamTravelSpeedMultiplier(team, s.runItems)
+  // Velocidade efetiva AGORA (base + Swift Swim se chovendo); o extraMs do desvio é linear a essa
+  // taxa, enquanto a chegada-base veio do integrador (rainSpeed) — aproximação consciente (ver plano).
+  const speedMult =
+    teamTravelSpeedMultiplier(team, s.runItems) +
+    (teamHasSwiftSwim(team) && isRaining(s.weather, nowMs) ? SWIFT_SWIM_RAIN_BONUS : 0)
   const plan = planWeatherLeg({
     graph,
     weather: s.weather,

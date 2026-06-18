@@ -8,6 +8,7 @@ import {
   damageTaken,
   explosionSelfDamage,
   hasBattleArmor,
+  hasCloudNine,
   hasDig,
   hasExplosion,
   hasLightningRod,
@@ -23,7 +24,9 @@ import {
   sturdyAvailable,
   teamFlies,
   teamHasFly,
+  teamHasSwiftSwim,
   teamHasSurf,
+  teamIsSpeedy,
   teamSecretAxisSum,
   teamSnipes,
   teamSurfs,
@@ -280,5 +283,42 @@ describe('Dig: túneis no grafo', () => {
 
   it('lista vazia devolve o próprio grafo', () => {
     expect(graphWithTunnels(graph, [])).toBe(graph)
+  })
+})
+
+describe('predicados de chuva (Swift Swim / Cloud Nine)', () => {
+  it('teamHasSwiftSwim: true se ALGUÉM no time tem Swift Swim', () => {
+    // Omanyte (138): [Swift Swim, Shell Armor, Weak Armor] → posição 1.
+    const swimmer = makeMon({ speciesId: 138, secretCount: 1 })
+    const plain = makeMon({ speciesId: 138, secretCount: 0 })
+    expect(teamHasSwiftSwim([swimmer])).toBe(true)
+    expect(teamHasSwiftSwim([plain])).toBe(false)
+    expect(teamHasSwiftSwim([plain, swimmer])).toBe(true)
+  })
+
+  it('hasCloudNine: só com a habilidade desbloqueada (Psyduck 54, posição 3)', () => {
+    expect(hasCloudNine(makeMon({ speciesId: 54, secretCount: 3 }))).toBe(true)
+    expect(hasCloudNine(makeMon({ speciesId: 54, secretCount: 2 }))).toBe(false)
+  })
+})
+
+describe('teamIsSpeedy (aura de velocidade ao vivo)', () => {
+  const rainNow = {
+    rain: [{ startMs: 0, endMs: 100_000, puddles: [] }],
+    forecast: { rainChancePercent: 100, rainMmPerHour: 30, potentialRainCount: 1 },
+  }
+  const dry = { rain: [], forecast: { rainChancePercent: 0, rainMmPerHour: 0, potentialRainCount: 0 } }
+
+  it('Swift Swim acende a aura SÓ enquanto chove', () => {
+    const swimmer = makeMon({ speciesId: 138, secretCount: 1 })
+    expect(teamIsSpeedy([swimmer], [], rainNow, 5_000)).toBe(true) // chovendo
+    expect(teamIsSpeedy([swimmer], [], rainNow, 200_000)).toBe(false) // depois da chuva
+    expect(teamIsSpeedy([swimmer], [], dry, 0)).toBe(false) // sem chuva
+  })
+
+  it('Weak Armor (HP faltante) mantém a aura como antes, sem depender de chuva', () => {
+    // Onix (95): Weak Armor na posição 1; com HP faltante o multiplicador base passa de 1.
+    const hurt = makeMon({ speciesId: 95, secretCount: 1, maxHp: 10, currentHp: 7 })
+    expect(teamIsSpeedy([hurt], [], dry, 0)).toBe(true)
   })
 })
