@@ -79,8 +79,8 @@ id,name,type1,type2,rarity,evolvesTo_id,evolve_atLevel,batalha,inteligencia,cari
 78,rapidash,fire,,rare,,,35,33,24,41,25,24,182,4,50,50,7
 79,slowpoke,water,psychic,uncommon,80,6,21,16,32,10,25,31,135,4,50,50,1
 80,slowbro,water,psychic,uncommon,,,36,38,28,15,36,27,180,4,50,50,6
-81,magnemite,electric,,uncommon,82,5,24,32,24,20,15,23,138,-1,,,1
-82,magneton,electric,,uncommon,,,35,41,22,29,24,22,173,-1,,,5
+81,magnemite,electric,,uncommon,82,4,24,32,24,20,15,23,138,-1,,,1
+82,magneton,electric,,uncommon,,,35,41,22,29,24,22,173,-1,,,4
 83,farfetchd,normal,flying,epic,,,28,25,27,26,19,36,161,4,50,50,3
 84,doduo,normal,flying,rare,85,5,22,14,28,31,11,28,134,4,50,50,1
 85,dodrio,normal,flying,rare,,,33,25,26,43,22,26,175,4,50,50,5

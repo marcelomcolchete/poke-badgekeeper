@@ -272,6 +272,8 @@ export const SECRET_LINES: Record<number, readonly [SecretId, SecretId, SecretId
   // ---- Vermilion (Elétrico) ----
   // Pikachu → Raichu
   25: ['sa-static', 'sa-dig', 'sa-lightning-rod'],
+  // Magnemite → Magneton
+  81: ['sa-sturdy', 'sa-analytic', 'sa-fly'],
 
   // Sandshrew → Sandslash
   27: ['sa-rollout', 'sa-dig', 'sa-sand-rush'],

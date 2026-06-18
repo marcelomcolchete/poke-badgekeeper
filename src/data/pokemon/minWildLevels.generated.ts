@@ -83,7 +83,7 @@ export const MIN_WILD_LEVEL: Record<number, number> = {
   79: 1,
   80: 6,
   81: 1,
-  82: 5,
+  82: 4,
   83: 3,
   84: 1,
   85: 5,
