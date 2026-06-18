@@ -68,9 +68,9 @@ export default function App() {
     window.location.reload()
   }
 
-  // A foto fica atrás de tudo; o véu escurece só quando a run está ativa
-  // (Manhã/Dia/Resumo/Fim). Home e setup (CitySelect/NewGame) ficam claros.
-  const darkened = started && !needsSetup
+  // A foto fica atrás de tudo; o véu escurece em tudo que não é a Home:
+  // setup (escolha de ginásio/iniciais) e run (Manhã/Dia/Resumo/Fim).
+  const darkened = started
   // "Próximo Ginásio" (vitória): começo limpo na cidade seguinte — refaz a escolha de iniciais.
   const goToGym = (cityIndex: number): void => {
     dispatch({ type: 'RESET_TO_CITY', cityIndex, seed: Math.floor(Date.now()) })
