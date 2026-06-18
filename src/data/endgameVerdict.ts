@@ -54,7 +54,7 @@ export interface GymLeader {
 }
 
 /** Líder por cidade (só Pewter/Cerulean jogáveis hoje); demais usam o fallback genérico. */
-const GYM_LEADERS: Record<number, GymLeader> = {
+const GYM_LEADERS: Partial<Record<number, GymLeader>> = {
   0: { name: 'Brock', sprite: '/sprites/trainers/gen3/brock-gen3.png' },
   1: { name: 'Misty', sprite: '/sprites/trainers/gen3/misty-gen3.png' },
 }

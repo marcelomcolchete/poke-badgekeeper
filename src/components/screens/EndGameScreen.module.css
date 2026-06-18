@@ -36,7 +36,6 @@
   pointer-events: none;
 }
 
-
 .title {
   font-family: var(--font-pixel);
   font-size: 18px;
@@ -61,8 +60,6 @@
     filter: brightness(1.12);
   }
 }
-
-
 
 .avg {
   font-family: var(--font-pixel);

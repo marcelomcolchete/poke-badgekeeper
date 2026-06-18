@@ -173,8 +173,8 @@ function VerdictColumn({
       <span className={`${styles.title} ${won ? styles.win : styles.loss}`}>
         {won ? '★ VOCÊ VENCEU! ★' : 'FIM DE JOGO'}
       </span>
-      <span className={`${styles.avg} ${report.hired ? styles.avgGood : styles.avgBad}`}>
-        {report.hired ? 'APROVADO' : 'REPROVADO'}
+      <span className={`${styles.avg} ${won ? styles.avgGood : styles.avgBad}`}>
+        {won ? 'APROVADO' : 'REPROVADO'}
       </span>
       <span className={styles.avgNum}>
         Média {report.avgStars.toFixed(2).replace('.', ',')}/5
