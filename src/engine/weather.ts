@@ -117,6 +117,17 @@ export function rainChanceForDay(seed: number, day: number): number {
   return clamp(Math.round(raw), 0, 100)
 }
 
+/**
+ * Chance (0–100) de chover ao menos UMA vez no dia, combinando a chance por pancada
+ * (`perEventPercent`) com a quantidade de pancadas potenciais (`count`). Eventos independentes:
+ * P(≥1) = 1 − (1 − p)^n. Usada na previsão da manhã para um número único e honesto.
+ */
+export function rainAtLeastOnceChance(perEventPercent: number, count: number): number {
+  if (perEventPercent <= 0 || count <= 0) return 0
+  const p = clamp(perEventPercent, 0, 100) / 100
+  return Math.round((1 - (1 - p) ** count) * 100)
+}
+
 // ---- Geração da agenda ------------------------------------------------------------------
 
 /** Pontos onde poças podem cair: andáveis, exceto o ginásio, os surfNodes e os nós de exploração (g3x). */
