@@ -323,6 +323,10 @@ export const SECRET_LINES: Record<number, readonly [SecretId, SecretId, SecretId
   // Aerodactyl
   142: ['sa-fly', 'sa-rock-head', 'sa-fly-plus'],
 
+  // ---- Dragões ----
+  // Dratini → Dragonair → Dragonite
+  147: ['sa-surf', 'sa-fly', 'sa-fly-plus'],
+
   // ---- Cerulean (Água/Gelo) ----
   // Squirtle → Wartortle → Blastoise
   7: ['sa-surf', 'sa-torrent', 'sa-surf-plus'],

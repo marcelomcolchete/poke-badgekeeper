@@ -72,6 +72,6 @@ export const EVOLUTIONS: EvolutionStep[] = [
   { from: 133, to: 136, atLevel: 5 },
   { from: 138, to: 139, atLevel: 7 },
   { from: 140, to: 141, atLevel: 7 },
-  { from: 147, to: 148, atLevel: 5 },
-  { from: 148, to: 149, atLevel: 8 },
+  { from: 147, to: 148, atLevel: 4 },
+  { from: 148, to: 149, atLevel: 7 },
 ]

@@ -149,8 +149,8 @@ export const MIN_WILD_LEVEL: Record<number, number> = {
   145: 6,
   146: 6,
   147: 1,
-  148: 5,
-  149: 8,
+  148: 4,
+  149: 7,
   150: 6,
   151: 6,
 }
