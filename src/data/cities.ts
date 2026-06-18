@@ -282,7 +282,7 @@ const SEEDS: CitySeed[] = [
   {
     name: 'Vermilion',
     primaryType: 'electric',
-    secondaryType: 'normal',
+    secondaryType: 'dragon',
     starters: [
       { speciesId: 25, level: 3 }, // Pikachu
       { speciesId: 81, level: 1 }, // Magnemite
