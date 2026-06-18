@@ -8,6 +8,7 @@ import {
   damageTaken,
   explosionSelfDamage,
   hasBattleArmor,
+  hasCloudNine,
   hasDig,
   hasExplosion,
   hasLightningRod,
@@ -23,6 +24,7 @@ import {
   sturdyAvailable,
   teamFlies,
   teamHasFly,
+  teamHasSwiftSwim,
   teamHasSurf,
   teamSecretAxisSum,
   teamSnipes,
@@ -280,5 +282,21 @@ describe('Dig: túneis no grafo', () => {
 
   it('lista vazia devolve o próprio grafo', () => {
     expect(graphWithTunnels(graph, [])).toBe(graph)
+  })
+})
+
+describe('predicados de chuva (Swift Swim / Cloud Nine)', () => {
+  it('teamHasSwiftSwim: true se ALGUÉM no time tem Swift Swim', () => {
+    // Omanyte (138): [Swift Swim, Shell Armor, Weak Armor] → posição 1.
+    const swimmer = makeMon({ speciesId: 138, secretCount: 1 })
+    const plain = makeMon({ speciesId: 138, secretCount: 0 })
+    expect(teamHasSwiftSwim([swimmer])).toBe(true)
+    expect(teamHasSwiftSwim([plain])).toBe(false)
+    expect(teamHasSwiftSwim([plain, swimmer])).toBe(true)
+  })
+
+  it('hasCloudNine: só com a habilidade desbloqueada (Psyduck 54, posição 3)', () => {
+    expect(hasCloudNine(makeMon({ speciesId: 54, secretCount: 3 }))).toBe(true)
+    expect(hasCloudNine(makeMon({ speciesId: 54, secretCount: 2 }))).toBe(false)
   })
 })

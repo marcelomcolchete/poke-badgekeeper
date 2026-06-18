@@ -130,7 +130,7 @@ export const SECRET_KINDS: Record<SecretId, SecretKind> = {
   'sa-swift-swim': {
     id: 'sa-swift-swim',
     name: 'Swift Swim',
-    effect: '+200% de velocidade do time durante chuva. (sem efeito até existir clima)',
+    effect: '+200% de velocidade do time enquanto chove.',
   },
   'sa-shell-armor': {
     id: 'sa-shell-armor',
@@ -215,7 +215,7 @@ export const SECRET_KINDS: Record<SecretId, SecretKind> = {
   'sa-cloud-nine': {
     id: 'sa-cloud-nine',
     name: 'Cloud Nine',
-    effect: 'Aumenta em 25% a chance de chover ao longo do dia. (sem efeito até existir clima)',
+    effect: '+25 pontos percentuais na chance de chover hoje (acumula por portador).',
   },
   'sa-ice-body': {
     id: 'sa-ice-body',

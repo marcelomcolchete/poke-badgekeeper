@@ -231,6 +231,10 @@ export const SHELL_ARMOR_DAMAGE = 1
 export const EXPLOSION_SELF_DAMAGE_FRACTION = 0.5
 /** Fly: bônus de velocidade do time ao voar (além do atalho em linha reta). */
 export const FLY_SPEED_BONUS = 0.5
+/** Swift Swim: bônus ADITIVO de velocidade do time enquanto chove (×3 = base +2). */
+export const SWIFT_SWIM_RAIN_BONUS = 2
+/** Cloud Nine: pontos percentuais somados à chance de chuva do dia POR portador no roster. */
+export const CLOUD_NINE_RAIN_CHANCE_BONUS_PP = 25
 /** Dig: quantos buracos (pontos) cada túnel liga — sempre 2 (dois pontos). */
 export const DIG_HOLES_PER_TUNNEL = 2
 /** Dig: custo do túnel entre os pontos (distância-do-grafo, bem baixa = atalho). */
