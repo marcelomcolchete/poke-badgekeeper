@@ -24,4 +24,17 @@ describe('Cloud Nine no setupDay', () => {
       Math.min(100, noCN.weather.forecast.rainChancePercent + 25),
     )
   })
+
+  it('dois portadores somam +50pp (acumula por portador)', () => {
+    const noCN = dayState([createPokemon({ id: 'p1', speciesId: 19, level: 5, rng: createRng(1) })])
+    setupDay(noCN)
+    const two = dayState([
+      { ...createPokemon({ id: 'p1', speciesId: 54, level: 5, rng: createRng(1) }), secretCount: 3 },
+      { ...createPokemon({ id: 'p2', speciesId: 54, level: 5, rng: createRng(2) }), secretCount: 3 },
+    ])
+    setupDay(two)
+    expect(two.weather.forecast.rainChancePercent).toBe(
+      Math.min(100, noCN.weather.forecast.rainChancePercent + 50),
+    )
+  })
 })
