@@ -397,11 +397,12 @@ export function resolveRocketBattle(s: GameState, missionId: string): void {
     runItems: s.runItems,
     damagePerLoss: damageForDay(s.run.day),
   })
-  // Registra os desafiantes derrotados (MVP/relatório).
+  // Registra cada duelo: vitória → desafiante derrotado; derrota → o inimigo que venceu seu
+  // Pokémon (Carrasco). `theirs` só avança quando você vence (mesma regra da defesa de ginásio).
   let theirs = 0
   for (const duel of resolution.duels) {
+    const enemy = mission.rocket.enemies[theirs]
     if (duel.youWon) {
-      const enemy = mission.rocket.enemies[theirs]
       s.today.defenseKills.push({
         defeaterId: duel.yourId,
         speciesId: enemy?.speciesId,
@@ -410,6 +411,14 @@ export function resolveRocketBattle(s: GameState, missionId: string): void {
         enemyTypes: enemy?.types,
       })
       theirs += 1
+    } else {
+      s.today.defenseLosses.push({
+        victimId: duel.yourId,
+        speciesId: enemy?.speciesId,
+        enemyBattle: enemy?.battle,
+        enemyMedal: enemy?.medal,
+        enemyTypes: enemy?.types,
+      })
     }
   }
   for (const member of resolution.squad) replaceMon(s, settleFaintTracked(s, member))

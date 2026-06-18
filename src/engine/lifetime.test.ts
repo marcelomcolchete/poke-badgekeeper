@@ -18,6 +18,11 @@ function dayA() {
     { defeaterId: 'a', speciesId: 19, enemyBattle: 40, enemyMedal: 'bronze', enemyTypes: ['normal'] },
     { defeaterId: 'b', speciesId: 16, enemyBattle: 55, enemyMedal: 'gold', enemyTypes: ['flying'] },
   ]
+  t.defenseLosses = [
+    { victimId: 'a', speciesId: 23, enemyBattle: 35, enemyTypes: ['poison'] }, // Ekans venceu 2×
+    { victimId: 'b', speciesId: 23, enemyBattle: 35, enemyTypes: ['poison'] },
+    { victimId: 'c', speciesId: 41, enemyBattle: 30, enemyTypes: ['poison', 'flying'] }, // Zubat 1×
+  ]
   return t
 }
 
@@ -44,9 +49,10 @@ describe('foldDayIntoLifetime', () => {
     expect(life.usage.b).toEqual({ missions: 1, defeats: 1 })
   })
 
-  it('guarda o inimigo mais forte derrotado (maior poder de batalha)', () => {
+  it('guarda os 3 inimigos mais fortes derrotados (ordem decrescente de batalha)', () => {
     const life = foldDayIntoLifetime(emptyLifetime(), dayA())
-    expect(life.strongestEnemy).toEqual({
+    expect(life.strongestEnemies.map((e) => e.battle)).toEqual([55, 40])
+    expect(life.strongestEnemies[0]).toEqual({
       battle: 55,
       medal: 'gold',
       types: ['flying'],
@@ -54,27 +60,41 @@ describe('foldDayIntoLifetime', () => {
     })
   })
 
+  it('Carrasco: soma duelos perdidos por espécie inimiga (ordem de 1ª aparição)', () => {
+    const life = foldDayIntoLifetime(emptyLifetime(), dayA())
+    expect(life.defeatedBy).toEqual([
+      { speciesId: 23, types: ['poison'], count: 2 },
+      { speciesId: 41, types: ['poison', 'flying'], count: 1 },
+    ])
+  })
+
   it('é puro: não muta a entrada', () => {
     const base = emptyLifetime()
     foldDayIntoLifetime(base, dayA())
     expect(base.missionsTotal).toBe(0)
     expect(base.usage).toEqual({})
-    expect(base.strongestEnemy).toBeNull()
+    expect(base.strongestEnemies).toEqual([])
+    expect(base.defeatedBy).toEqual([])
   })
 
-  it('acumula vários dias e mantém o inimigo mais forte global', () => {
+  it('acumula vários dias: mantém só os 3 mais fortes e soma o Carrasco', () => {
     const t2 = emptyTally()
     t2.missionResults = [{ templateId: 'm', success: true, teamIds: ['a'] }]
     t2.goldEarned = 100
     t2.defenseKills = [
       { defeaterId: 'a', speciesId: 1, enemyBattle: 30, enemyMedal: 'bronze', enemyTypes: ['rock'] },
+      { defeaterId: 'a', speciesId: 2, enemyBattle: 60, enemyMedal: 'gold', enemyTypes: ['grass'] },
     ]
+    t2.defenseLosses = [{ victimId: 'a', speciesId: 23, enemyBattle: 35, enemyTypes: ['poison'] }]
     let life = foldDayIntoLifetime(emptyLifetime(), dayA())
     life = foldDayIntoLifetime(life, t2)
     expect(life.missionsCompleted).toBe(2)
     expect(life.goldEarned).toBe(400)
-    expect(life.usage.a).toEqual({ missions: 2, defeats: 2 })
-    expect(life.strongestEnemy?.battle).toBe(55) // o do dia A continua sendo o mais forte
+    expect(life.usage.a).toEqual({ missions: 2, defeats: 3 })
+    // 4 kills no total (40,55,30,60) → guarda os 3 maiores.
+    expect(life.strongestEnemies.map((e) => e.battle)).toEqual([60, 55, 40])
+    // Ekans (23) passa a 3 duelos vencidos contra você.
+    expect(life.defeatedBy[0]).toEqual({ speciesId: 23, types: ['poison'], count: 3 })
   })
 })
 

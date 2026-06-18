@@ -181,3 +181,28 @@ Fora de escopo: nenhuma mudança na engine de jogo, salvar/carregar, ou no fluxo
 - As ilustrações `Nstar` ainda não estão commitadas (`public/background/jpg|png`) — entram junto.
 - Mapeamento por média trata vitória e derrota igual; um GAMEOVER com média alta mostra arte
   "épica". Aceito por ora (decisão 2). Ajuste futuro possível: rebaixar a arte em GAMEOVER.
+
+## 11. Adendo (2026-06-17) — Aba Estatísticas reformulada
+
+Iteração após o redesign inicial, na aba **Estatísticas**:
+
+- **Top 3 do time** (substitui o "Destaque do Jogo" único): os 3 Pokémon com mais feitos
+  acumulados (missões + derrotas), desempate por missões e ordem de registro. `finalReport.mvp`
+  → `finalReport.topTeam: FinalReportMvp[]`.
+- **Pokémons enfrentados** (substitui "Mais forte enfrentado"): os **3 inimigos mais fortes**
+  (maior Poder de Batalha) derrotados na run. `LifetimeStats.strongestEnemy` (único) →
+  `strongestEnemies: EnemyRef[]` (top 3, acumulado no fold) e `finalReport.strongestEnemies`.
+- **Carrasco**: a espécie inimiga que mais venceu duelos contra o seu time (defesas **e** Rocket);
+  empate → a primeira a aparecer. Exige rastrear os duelos perdidos: nova `DayTally.defenseLosses`
+  (simétrica a `defenseKills`, registrada em `defenseFlow`/`missionFlow`), acumulada em
+  `LifetimeStats.defeatedBy` (espécie → contagem, em ordem de 1ª aparição) e exposta como
+  `finalReport.tormentor`.
+- **% concluído** nas tiles de ratio (Missões, Defesas): ex. `10/20` mostra `50%`.
+- **Cor do coração** da tile "Média de coração": agora vermelho (`--c-hp-low`) — antes saía branco
+  e sumia no painel claro.
+
+Migração de save **v31 → v32**: `today.defenseLosses = []`; `lifetime` troca `strongestEnemy`
+(único) pela lista `strongestEnemies` (com o antigo, se houver) e ganha `defeatedBy: []`.
+
+Nota de mecânica: "carrasco" conta **duelos vencidos** pelo inimigo contra os seus Pokémon (não
+arremessos/KO exatos), simétrico ao `defenseKills` que conta os seus duelos vencidos.

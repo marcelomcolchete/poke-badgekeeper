@@ -24,7 +24,11 @@ function gameState() {
     defeats: 20,
     purchasedItems: { potion: 3, 'great-ball': 1, 'exp-share': 1 },
     usage: { a: { missions: 30, defeats: 10 }, b: { missions: 5, defeats: 2 } },
-    strongestEnemy: { battle: 60, medal: 'gold', types: ['dragon'], speciesId: 149 },
+    strongestEnemies: [{ battle: 60, medal: 'gold', types: ['dragon'], speciesId: 149 }],
+    defeatedBy: [
+      { speciesId: 23, types: ['poison'], count: 4 }, // Ekans = carrasco
+      { speciesId: 41, types: ['poison', 'flying'], count: 1 },
+    ],
   }
   s.today.missionResults = [
     { templateId: 'm', success: true, teamIds: ['a'] },
@@ -38,6 +42,7 @@ function gameState() {
   s.today.defenseKills = [
     { defeaterId: 'a', speciesId: 16, enemyBattle: 70, enemyMedal: 'gold', enemyTypes: ['flying'] },
   ]
+  s.today.defenseLosses = [{ victimId: 'b', speciesId: 23, enemyBattle: 35, enemyTypes: ['poison'] }]
   return s
 }
 
@@ -65,17 +70,22 @@ describe('buildFinalReport', () => {
     expect(r.captured.every((c) => typeof c.rank === 'string')).toBe(true)
   })
 
-  it('mais forte enfrentado = maior poder entre lifetime e today', () => {
+  it('pokémons enfrentados = top 3 mais fortes entre lifetime e today', () => {
     const r = buildFinalReport(gameState(), 'win')
-    expect(r.strongestEnemy?.battle).toBe(70) // today (70) supera lifetime (60)
+    expect(r.strongestEnemies.map((e) => e.battle)).toEqual([70, 60]) // today (70) + lifetime (60)
   })
 
-  it('destaque do jogo = mais feitos acumulados, com medalha da Habilidade Secreta', () => {
+  it('top 3 do time = mais feitos acumulados, com medalha da Habilidade Secreta', () => {
     const r = buildFinalReport(gameState(), 'win')
-    expect(r.mvp?.pokemon.id).toBe('a')
-    expect(r.mvp?.missions).toBe(31)
-    expect(r.mvp?.defeats).toBe(11)
-    expect(r.mvp?.medalIndex).toBe(2)
+    expect(r.topTeam.map((m) => m.pokemon.id)).toEqual(['a', 'b']) // 'c' não somou feitos
+    expect(r.topTeam[0]?.missions).toBe(31)
+    expect(r.topTeam[0]?.defeats).toBe(11)
+    expect(r.topTeam[0]?.medalIndex).toBe(2)
+  })
+
+  it('carrasco = espécie que mais venceu seu time (lifetime + today)', () => {
+    const r = buildFinalReport(gameState(), 'win')
+    expect(r.tormentor).toEqual({ speciesId: 23, types: ['poison'], count: 5 }) // 4 + 1 hoje
   })
 
   it('itens comprados acumulam lifetime + today', () => {

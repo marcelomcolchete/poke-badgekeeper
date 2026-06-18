@@ -222,11 +222,28 @@
   line-height: 1;
 }
 
+/* Coração da "Média de coração": vermelho para contrastar com o painel claro. */
+.tileHeart {
+  color: var(--c-hp-low);
+}
+
+.tileValueRow {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
 .tileValue {
   font-family: var(--font-pixel);
   font-size: 13px;
   color: var(--c-ink);
   font-variant-numeric: tabular-nums;
+}
+
+.tilePct {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--c-hud-accent);
 }
 
 .tileLabel {
@@ -248,12 +265,12 @@
   color: var(--c-hp-low);
 }
 
-/* ---- Colunas: destaque do jogo | inimigo mais forte ---- */
+/* ---- Colunas: Top 3 do time | Pokémons enfrentados ---- */
 .columns {
   display: grid;
-  grid-template-columns: minmax(160px, 0.9fr) 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 12px;
-  align-items: stretch;
+  align-items: start;
 }
 
 @media (max-width: 480px) {
@@ -293,132 +310,107 @@
   color: var(--c-ink-muted);
 }
 
-/* ---- Destaque do jogo (MVP) ---- */
-.mvp {
-  position: relative;
+/* ---- Listas Top (Top 3 do time / Pokémons enfrentados) ---- */
+.topList {
+  list-style: none;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
   gap: 6px;
-  background: var(--c-panel);
-  border: 3px solid var(--c-hud-accent);
-  border-radius: var(--radius-pixel);
-  padding: 20px 12px 14px;
-  text-align: center;
+  margin: 0;
+  padding: 0;
 }
 
-.mvpEmpty {
-  border-color: var(--c-panel-border);
-  justify-content: center;
-}
-
-.mvpBadge {
-  position: absolute;
-  top: -11px;
-  left: 50%;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  font-family: var(--font-pixel);
-  font-size: 9px;
-  color: var(--c-ink);
-  background: var(--c-hud-accent);
-  border: 2px solid var(--c-ink);
-  border-radius: var(--radius-pixel);
-  padding: 2px 6px;
-}
-
-.mvpTop {
+.topRow {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.mvpMedal {
-  font-size: 20px;
-  line-height: 1;
+.topPos {
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  color: var(--c-hud-accent);
+  min-width: 14px;
+  text-align: center;
 }
 
-.mvpSprite {
-  width: 84px;
-  height: 84px;
+.topSprite {
+  width: 40px;
+  height: 40px;
   image-rendering: pixelated;
   object-fit: contain;
+  flex-shrink: 0;
 }
 
-.mvpName {
-  font-family: var(--font-pixel);
-  font-size: 12px;
-  color: var(--c-ink);
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.mvpGender {
-  font-size: 16px;
-  font-weight: bold;
-}
-
-.mvpTypes {
-  display: inline-flex;
-  gap: 4px;
-}
-
-.mvpDeeds {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin: 4px 0 0;
-  padding: 0;
-}
-
-.mvpDeed {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 5px;
-  font-family: var(--font-text);
-  font-size: 15px;
-  color: var(--c-ink-muted);
-}
-
-.mvpDeed b {
-  color: var(--c-ink);
-}
-
-/* ---- Inimigo mais forte ---- */
-.enemyRow {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.enemySprite {
-  width: 64px;
-  height: 64px;
+.enemyMini {
+  width: 40px;
+  height: 40px;
   image-rendering: pixelated;
   object-fit: contain;
   flex-shrink: 0;
   transform: scaleX(-1);
 }
 
-.enemyInfo {
+.topInfo {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
 }
 
-.enemyName {
+.topName {
   font-family: var(--font-pixel);
-  font-size: 11px;
+  font-size: 10px;
+  color: var(--c-ink);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.topMedal {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.topDeeds {
+  font-family: var(--font-text);
+  font-size: 14px;
+  color: var(--c-ink-muted);
+}
+
+.topDeeds b {
   color: var(--c-ink);
 }
 
-.enemyTypes {
-  display: inline-flex;
-  gap: 4px;
+/* ---- Carrasco ---- */
+.tormentor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 2px dashed color-mix(in srgb, var(--c-hp-low) 45%, transparent);
+}
+
+.tormentorBadge {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: #fff;
+  background: var(--c-hp-low);
+  border-radius: 4px;
+  padding: 3px 5px;
+  align-self: flex-start;
+}
+
+.tormentorMeta {
+  font-family: var(--font-text);
+  font-size: 14px;
+  color: var(--c-ink-muted);
+}
+
+.tormentorMeta b {
+  color: var(--c-hp-low);
 }
 
 .enemyMeta {

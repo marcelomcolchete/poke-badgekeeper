@@ -386,6 +386,32 @@ function migrate(file: Partial<SaveFile>): SaveFile | null {
     version = 31
   }
 
+  // v31 → v32: "Pokémons enfrentados" (top 3) + Carrasco. today ganha defenseLosses; o lifetime
+  // troca o inimigo único (strongestEnemy) pela lista dos 3 mais fortes e ganha defeatedBy vazio.
+  if (version === 31) {
+    const today = state.today as Record<string, unknown> | undefined
+    const life = state.lifetime as Record<string, unknown> | undefined
+    const old = life?.strongestEnemy as Record<string, unknown> | null | undefined
+    state = {
+      ...state,
+      today:
+        today && typeof today === 'object' ? { defenseLosses: [], ...today } : today,
+      lifetime:
+        life && typeof life === 'object'
+          ? (() => {
+              const rest = { ...life }
+              delete rest.strongestEnemy
+              return {
+                strongestEnemies: old ? [old] : [],
+                defeatedBy: [],
+                ...rest,
+              }
+            })()
+          : life,
+    } as typeof state
+    version = 32
+  }
+
   if (version !== SAVE_VERSION) return null
   return { version, savedAtMs: (file as SaveFile).savedAtMs, state } as unknown as SaveFile
 }
