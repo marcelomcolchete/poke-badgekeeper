@@ -13,6 +13,7 @@ import {
   ANALYTIC_PATROL_MULT,
   ANALYTIC_STUDY_MULT,
   BATTLE_ARMOR_MISSION_MULT,
+  CLOUD_NINE_RAIN_CHANCE_BONUS_PP,
   EXPLOSION_SELF_DAMAGE_FRACTION,
   FLY_SPEED_BONUS,
   HUSTLE_BATTLE_BONUS,
@@ -23,6 +24,7 @@ import {
   ROCK_HEAD_STUDY_MULT,
   ROLLOUT_BATTLE_BONUS,
   SHELL_ARMOR_DAMAGE,
+  SWIFT_SWIM_RAIN_BONUS,
   TORRENT_MISSION_MULT,
   WEAK_ARMOR_DAMAGE_MULT,
   WEAK_ARMOR_SPEED_PER_MISSING_HP,
@@ -76,6 +78,10 @@ export function hasSandRush(p: Pokemon): boolean {
 export function hasSwiftSwim(p: Pokemon): boolean {
   return hasSecret(p, 'sa-swift-swim')
 }
+/** Algum Pokémon do time tem Swift Swim? (basta um para o time inteiro acelerar na chuva). */
+export function teamHasSwiftSwim(team: readonly Pokemon[]): boolean {
+  return team.some(hasSwiftSwim)
+}
 export function hasTorrent(p: Pokemon): boolean {
   return hasSecret(p, 'sa-torrent')
 }
@@ -105,6 +111,9 @@ export function hasWaterAbsorb(p: Pokemon): boolean {
 }
 export function hasForewarn(p: Pokemon): boolean {
   return hasSecret(p, 'sa-forewarn')
+}
+export function hasCloudNine(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-cloud-nine')
 }
 export function hasSniper(p: Pokemon): boolean {
   return hasSecret(p, 'sa-sniper')
