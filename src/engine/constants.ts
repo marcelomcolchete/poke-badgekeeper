@@ -70,9 +70,9 @@ export const WEATHER_SEED_SALT = 0x57656174 // 'Weat'
 
 /**
  * Quantidade de Pokémon do treinador invasor por dia (PLAN §4.4). Indexado pelo dia (1–10);
- * a posição 0 é só preenchimento. Cresce de 1 (dia 1) a 6 (dias 9–10).
+ * a posição 0 é só preenchimento. Cresce de 1 (dia 1) a 6 (dias 8–10).
  */
-export const DEFENSE_SQUAD_BY_DAY = [0, 1, 2, 2, 3, 3, 4, 5, 5, 6, 6] as const
+export const DEFENSE_SQUAD_BY_DAY = [0, 1, 2, 3, 4, 4, 5, 5, 6, 6, 6] as const
 
 /** Natureza: modificadores do valor por ponto alocado (+15 favorecido, +5 penalizado). */
 export const NATURE_BOOSTED_PER_POINT = 15
@@ -96,12 +96,27 @@ export const HP_MAX = 12
 export const RESISTANCE_PER_HP = 10
 export const HP_PER_RESISTANCE_STEP = 2
 
-/** Aprovação: estrelas de 0 a 5, começa em 1, passo de 0,5; efetivado se > 3. Zerar = game over. */
+/**
+ * Aprovação: DUAS trilhas de estrelas (missões e batalhas), cada uma de 0 a 5, começa em 1,
+ * passo de 0,5. Zerar uma trilha (e ainda falhar) = game over. Efetivação no fim do período:
+ * MÉDIA das duas trilhas ≥ 3 (STARS_HIRE_THRESHOLD).
+ */
 export const STARS_MIN = 0
 export const STARS_MAX = 5
 export const STARS_START = 1
 export const STARS_STEP = 0.5
 export const STARS_HIRE_THRESHOLD = 3
+
+/**
+ * Corações por Pokémon: 0 a 5, passo de 0,5. Novos Pokémon (capturados/escolhidos) começam com 2.
+ * Cada coração rende +10% de XP ganho, até o teto de +50% (5 corações).
+ */
+export const HEARTS_MIN = 0
+export const HEARTS_MAX = 5
+export const HEARTS_START = 2
+export const HEARTS_STEP = 0.5
+export const HEARTS_XP_PER = 0.1
+export const HEARTS_XP_MAX_BONUS = 0.5
 
 /** Defesa: vantagem de tipo ×1,5, desvantagem ×0,5; perdedor de cada duelo perde HP (PLAN §4.4). */
 export const TYPE_ADVANTAGE_MULT = 1.5
@@ -181,6 +196,13 @@ export const DRAFT_CHOICES = 3
  * s.weather vazio; missões em andamento mantêm seus tempos (sem poças retroativas).
  * v28: Percepção vira CENTRO de rank contínuo (cada ponto conta) no lugar da janela em degraus.
  * CaptureEncounter.rankWindow → rankCenter (número). A migração converte [lo,hi] no centro
- * (lo+hi)/2; encontros sem janela ficam sem viés. */
-export const SAVE_VERSION = 28
+ * (lo+hi)/2; encontros sem janela ficam sem viés.
+ * v29: medalhas dos invasores (Bronze +10 / Prata +20 / Ouro +50) por dia, com chance e raridade
+ * crescentes (100% Ouro no dia 30), no lugar do destaque único. EnemyUnit.buffed → EnemyUnit.medal.
+ * A migração troca buffed:true por medal:'silver' (a Batalha já tinha o +15 embutido).
+ * v30: pontuação em DUAS trilhas (approval.missionStars/battleStars no lugar de stars) e corações
+ * por Pokémon (pokemon.hearts, 0–5). Adiciona today.activeIds (participação do dia) e
+ * today.missionStarsBefore/battleStarsBefore. A migração duplica a estrela antiga nas duas trilhas,
+ * dá 2 corações a todo Pokémon (roster + PC) e inicia activeIds vazio. */
+export const SAVE_VERSION = 32
 export const SAVE_KEY = 'poke-badgekeeper:save'

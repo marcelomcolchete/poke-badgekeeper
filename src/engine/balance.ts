@@ -181,8 +181,20 @@ export const ROCKET_GOLD_BONUS = 300
 /** Rocket §recompensa: a missão Rocket rende 3× o pool de XP normal (só na vitória). */
 export const ROCKET_XP_MULTIPLIER = 3
 
-/** Defesa/Rocket §destaque: um desafiante do esquadrão ganha +15 de Batalha e exibe medalha. */
-export const DEFENSE_BUFF_BATTLE = 15
+/**
+ * Defesa/Rocket §medalhas: cada invasor pode sair com uma medalha que soma Batalha (acima do
+ * teto normal). Bronze < Prata < Ouro — quanto mais raro o tier, maior o bônus.
+ */
+export const DEFENSE_MEDAL_BATTLE = { bronze: 10, silver: 20, gold: 50 } as const
+
+/**
+ * Probabilidade da medalha por dia. Cada tier "abre" num dia (MEDAL_UNLOCK_DAY) e a chance
+ * (acumulada — "pelo menos esse tier") rampa LINEARMENTE até 100% no dia MEDAL_FULL_DAY,
+ * pensando em modos de dias infinitos: do dia 30 em diante todo invasor sai com Ouro.
+ * O denominador usa (dia − (abertura − 1)) para já dar chance > 0 no próprio dia de abertura.
+ */
+export const MEDAL_FULL_DAY = 30
+export const MEDAL_UNLOCK_DAY = { bronze: 2, silver: 6, gold: 10 } as const
 
 /**
  * Rivais §4.4: o líder do rival EVOLUI conforme o dia. Cada valor é o dia (inclusive) em que
@@ -258,5 +270,7 @@ export const LAGGING_TAIL_BATTLE_MULT = 1.5
 export const LAGGING_TAIL_TRAVEL_MULT = 0.5
 /** Thick Club: +50% em batalhas para Pokémon do tipo Ground. */
 export const THICK_CLUB_BATTLE_MULT = 1.5
+/** Mystic Water: +50% em batalhas para Pokémon do tipo Water. */
+export const MYSTIC_WATER_BATTLE_MULT = 1.5
 /** Exp Share: fração da XP de um Pokémon repassada ao resto do time. */
 export const EXP_SHARE_RATE = 0.05

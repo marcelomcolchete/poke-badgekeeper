@@ -19,6 +19,7 @@ import { BoxPanel } from '../BoxPanel/BoxPanel.tsx'
 import { Textbox } from '../Textbox/Textbox.tsx'
 import { Overlay } from '../common/Overlay.tsx'
 import { Stars } from '../common/Stars.tsx'
+import { Hearts } from '../common/Hearts.tsx'
 import { ItemsBar } from '../common/ItemsBar.tsx'
 import { WeatherForecastPanel } from './WeatherForecastPanel.tsx'
 import { ATTR_SHORT_PT } from '../common/visual.ts'
@@ -62,12 +63,10 @@ function BallCard({
   gold: number
   onBuy: () => void
 }) {
-  const free = ball.price === 0
-  const label = sold ? 'VENDIDO' : free ? 'GRÁTIS' : `$ ${ball.price}`
-  const disabled = sold || (!free && gold < ball.price)
+  const label = sold ? 'VENDIDO' : `$ ${ball.price}`
+  const disabled = sold || gold < ball.price
   return (
     <div className={`${styles.card} ${sold ? styles.cardSold : ''}`}>
-      {free && !sold && <span className={styles.cardBadge}>GRÁTIS</span>}
       <span className={styles.cardKind}>BOLA</span>
       <img className={styles.cardImg} src={ball.sprite} alt={ball.name} />
       <span className={styles.cardName}>{ball.name}</span>
@@ -98,7 +97,7 @@ export function MorningScreen({ state, dispatch }: Props) {
   const offerIds =
     state.today.shopOffer.length > 0
       ? state.today.shopOffer
-      : getDailyShop(state.run.seed, state.run.day, state.run.cityIndex, state.runItems)
+      : getDailyShop(state.run.seed, state.run.day, state.run.cityIndex, state.runItems, state.run.ballLevel)
 
   // Pokébola evolutiva: slot fixo à esquerda. Após comprá-la hoje, mostra-a VENDIDA (só evolui
   // no dia seguinte); senão, mostra a próxima bola comprável. Sem bola a mostrar = 5 itens normais.
@@ -125,7 +124,12 @@ export function MorningScreen({ state, dispatch }: Props) {
         </span>
         <span className={styles.meta}>
           <span className={styles.gold}>$ {state.gold}</span>
-          <Stars value={state.approval.stars} />
+          <span className={styles.starTrack} title="Estrelas de missões">
+            🎯 <Stars value={state.approval.missionStars} />
+          </span>
+          <span className={styles.starTrack} title="Estrelas de batalhas">
+            ⚔️ <Stars value={state.approval.battleStars} />
+          </span>
         </span>
       </header>
 
@@ -168,7 +172,7 @@ export function MorningScreen({ state, dispatch }: Props) {
         </div>
       </section>
 
-      <ItemsBar state={state} />
+      <ItemsBar state={state} dispatch={dispatch} />
 
       {/* Aviso + começar o dia ACIMA do time (sem precisar rolar a tela). */}
       <div className={styles.startBlock}>
@@ -198,7 +202,12 @@ export function MorningScreen({ state, dispatch }: Props) {
         </div>
         <div className={styles.roster}>
           {state.roster.map((mon) => (
-            <PokemonCard key={mon.id} pokemon={mon} />
+            <div key={mon.id} className={styles.rosterCard}>
+              <PokemonCard pokemon={mon} />
+              <span className={styles.rosterHearts}>
+                <Hearts value={mon.hearts} />
+              </span>
+            </div>
           ))}
         </div>
       </section>

@@ -1,0 +1,564 @@
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: stretch;
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+/* ============================ Faixa-herói ============================ */
+.hero {
+  position: relative;
+  border: 3px solid var(--c-panel-border);
+  border-radius: var(--radius-pixel);
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  /* As ilustrações são artes suaves — anula o pixelated global. */
+  image-rendering: auto;
+}
+
+.heroWin {
+  border-color: #e0a020;
+}
+
+.heroLoss {
+  border-color: #8a2020;
+}
+
+/* Scrim escuro garante contraste do texto claro sobre qualquer arte (inclusive as claras). */
+.heroScrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(8, 16, 10, 0.58), rgba(8, 16, 10, 0.84));
+  pointer-events: none;
+}
+
+.heroContent {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  padding: 18px 16px 16px;
+}
+
+.title {
+  font-family: var(--font-pixel);
+  font-size: 18px;
+  line-height: 1.4;
+  letter-spacing: 1px;
+}
+
+.win {
+  color: #ffcf45;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7), 0 0 10px rgba(224, 160, 32, 0.7);
+  animation: winGlow 1.2s ease-in-out infinite;
+}
+
+.loss {
+  color: #ff6b6b;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+@keyframes winGlow {
+  50% {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7), 0 0 18px rgba(255, 207, 69, 0.95);
+    filter: brightness(1.12);
+  }
+}
+
+.subtitle {
+  font-family: var(--font-text);
+  font-size: 16px;
+  color: #eaf2ec;
+  line-height: 1.35;
+  max-width: 48ch;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+}
+
+.scores {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-family: var(--font-text);
+  font-size: 16px;
+  color: #dfeae1;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+}
+
+.score b {
+  color: #ffffff;
+}
+
+.avg {
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  padding: 4px 10px;
+  border: 2px solid #ffffff;
+  border-radius: var(--radius-pixel);
+  text-shadow: none;
+}
+
+.avgGood {
+  background: rgba(111, 207, 63, 0.85);
+  color: #0f2a14;
+  border-color: #bff39a;
+}
+
+.avgBad {
+  background: rgba(232, 64, 64, 0.85);
+  color: #2a0f0f;
+  border-color: #f7b1b1;
+}
+
+/* ---- Botões de ação (dentro do herói) ---- */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.primary {
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  color: var(--c-ink);
+  background: var(--c-hud-accent);
+  border: 3px solid var(--c-ink);
+  border-radius: var(--radius-pixel);
+  padding: 12px 18px;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+}
+
+.back {
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  color: #f4fbf2;
+  background: rgba(20, 40, 26, 0.85);
+  border: 3px solid #76d18d;
+  border-radius: var(--radius-pixel);
+  padding: 12px 22px;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+}
+
+.primary:hover {
+  filter: brightness(1.06);
+}
+
+.back:hover {
+  border-color: #ffffff;
+}
+
+/* ============================ Abas ============================ */
+.tabBar {
+  display: flex;
+  gap: 6px;
+}
+
+.tab {
+  flex: 1;
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  color: var(--c-ink-muted);
+  background: var(--c-panel);
+  border: 3px solid var(--c-panel-border);
+  border-radius: var(--radius-pixel);
+  padding: 10px 8px;
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--c-ink);
+}
+
+.tabActive {
+  color: var(--c-ink);
+  background: color-mix(in srgb, var(--c-hud-accent) 30%, var(--c-panel));
+  border-color: var(--c-hud-accent);
+}
+
+.tabPanel {
+  display: flex;
+  flex-direction: column;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ---- Grade de estatísticas ---- */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: var(--c-panel);
+  border: 3px solid var(--c-panel-border);
+  border-radius: var(--radius-pixel);
+  padding: 10px 6px;
+}
+
+.tileIcon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* Coração da "Média de coração": vermelho para contrastar com o painel claro. */
+.tileHeart {
+  color: var(--c-hp-low);
+}
+
+.tileValueRow {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.tileValue {
+  font-family: var(--font-pixel);
+  font-size: 13px;
+  color: var(--c-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.tilePct {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--c-hud-accent);
+}
+
+.tileLabel {
+  font-family: var(--font-text);
+  font-size: 13px;
+  color: var(--c-ink-muted);
+  text-align: center;
+}
+
+.tileAccent {
+  border-color: #b8860b;
+}
+
+.tileAccent .tileValue {
+  color: #b8860b;
+}
+
+.tileDanger .tileValue {
+  color: var(--c-hp-low);
+}
+
+/* ---- Colunas: Top 3 do time | Pokémons enfrentados ---- */
+.columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+@media (max-width: 480px) {
+  .columns {
+    grid-template-columns: 1fr;
+  }
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .title {
+    font-size: 15px;
+  }
+}
+
+/* ---- Painel genérico ---- */
+.panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--c-panel);
+  border: 3px solid var(--c-panel-border);
+  border-radius: var(--radius-pixel);
+  padding: 14px 12px 12px;
+}
+
+.panelTitle {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  color: var(--c-hud-accent);
+  letter-spacing: 0.5px;
+}
+
+.empty {
+  font-family: var(--font-text);
+  font-size: 14px;
+  color: var(--c-ink-muted);
+}
+
+/* ---- Listas Top (Top 3 do time / Pokémons enfrentados) ---- */
+.topList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+}
+
+.topRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topPos {
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  color: var(--c-hud-accent);
+  min-width: 14px;
+  text-align: center;
+}
+
+.topSprite {
+  width: 40px;
+  height: 40px;
+  image-rendering: pixelated;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.enemyMini {
+  width: 40px;
+  height: 40px;
+  image-rendering: pixelated;
+  object-fit: contain;
+  flex-shrink: 0;
+  transform: scaleX(-1);
+}
+
+.topInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.topName {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  color: var(--c-ink);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.topMedal {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.topDeeds {
+  font-family: var(--font-text);
+  font-size: 14px;
+  color: var(--c-ink-muted);
+}
+
+.topDeeds b {
+  color: var(--c-ink);
+}
+
+/* ---- Carrasco ---- */
+.tormentor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 2px dashed color-mix(in srgb, var(--c-hp-low) 45%, transparent);
+}
+
+.tormentorBadge {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: #fff;
+  background: var(--c-hp-low);
+  border-radius: 4px;
+  padding: 3px 5px;
+  align-self: flex-start;
+}
+
+.tormentorMeta {
+  font-family: var(--font-text);
+  font-size: 14px;
+  color: var(--c-ink-muted);
+}
+
+.tormentorMeta b {
+  color: var(--c-hp-low);
+}
+
+.enemyMeta {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-family: var(--font-text);
+  font-size: 14px;
+  color: var(--c-ink-muted);
+}
+
+.enemyPower {
+  color: var(--c-hp-low);
+  font-weight: bold;
+}
+
+.enemyMedal {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* ---- Itens comprados (agrupados) ---- */
+.itemGroups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.itemList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+}
+
+.itemRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-text);
+  font-size: 14px;
+  color: var(--c-ink);
+}
+
+.itemSprite {
+  width: 26px;
+  height: 26px;
+  image-rendering: pixelated;
+  background: #e9e4cf;
+  border: 2px solid var(--c-panel-border);
+  border-radius: 4px;
+}
+
+.itemName {
+  flex: 1;
+}
+
+.itemCount {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  color: var(--c-hud-accent);
+}
+
+/* ---- Grade de capturados (miniaturas + rank) ---- */
+.miniGrid {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+
+.miniCell {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  background: #e9e4cf;
+  border: 2px solid var(--c-panel-border);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.miniSprite {
+  width: 42px;
+  height: 42px;
+  image-rendering: pixelated;
+  object-fit: contain;
+}
+
+/* ---- Time final ---- */
+.teamGrid {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+}
+
+.teamMember {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 84px;
+  padding-top: 4px;
+}
+
+.teamSprite {
+  width: 52px;
+  height: 52px;
+  image-rendering: pixelated;
+  object-fit: contain;
+}
+
+.teamName {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: var(--c-ink);
+}
+
+/* ---- Badge de rank ---- */
+.rankBadge {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  font-weight: bold;
+  border: 2px solid;
+  border-radius: 4px;
+  padding: 1px 5px;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.rankSmall {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  font-size: 8px;
+  padding: 0 3px;
+  background: var(--c-panel);
+  z-index: 1;
+}

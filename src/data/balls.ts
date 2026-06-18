@@ -1,7 +1,7 @@
 // Bolas (item evolutivo do mercado): cada nível libera UMA raridade a mais nos encontros
-// da exploração. Pokébola → Greatball → Ultraball → Masterball. A Pokébola (primeiro nível,
-// que libera os "Incomum") é grátis; as demais custam 500. O nível possuído vive em
-// run.ballLevel (0 = nenhuma) e sobe ao comprar a próxima bola no mercado.
+// da exploração. Pokébola → Greatball → Ultraball → Masterball, com preço crescente
+// (200 → 400 → 800 → 1600). O nível possuído vive em run.ballLevel (0 = nenhuma) e sobe ao
+// comprar a próxima bola no mercado.
 
 import type { Rarity } from '../types/index.ts'
 import { RARITIES } from '../types/index.ts'
@@ -12,7 +12,7 @@ export interface BallDef {
   id: string
   name: string
   sprite: string
-  /** Preço no mercado: Pokébola grátis (0); as demais 500. */
+  /** Preço no mercado (crescente por nível: 200 → 400 → 800 → 1600). */
   price: number
   /** Raridade MÁXIMA liberada nos encontros enquanto esta é a bola atual. */
   ceiling: Rarity
@@ -20,14 +20,11 @@ export interface BallDef {
 
 const sprite = (id: string): string => `/sprites/itens/${id}.png`
 
-/** Preço padrão das evoluções da bola (a Pokébola inicial é grátis). */
-export const BALL_PRICE = 500
-
 export const BALLS: BallDef[] = [
-  { level: 1, id: 'poke-ball', name: 'Pokébola', sprite: sprite('poke-ball'), price: 0, ceiling: 'uncommon' },
-  { level: 2, id: 'great-ball', name: 'Great Ball', sprite: sprite('great-ball'), price: BALL_PRICE, ceiling: 'rare' },
-  { level: 3, id: 'ultra-ball', name: 'Ultra Ball', sprite: sprite('ultra-ball'), price: BALL_PRICE, ceiling: 'epic' },
-  { level: 4, id: 'master-ball', name: 'Master Ball', sprite: sprite('master-ball'), price: BALL_PRICE, ceiling: 'legend' },
+  { level: 1, id: 'poke-ball', name: 'Pokébola', sprite: sprite('poke-ball'), price: 200, ceiling: 'uncommon' },
+  { level: 2, id: 'great-ball', name: 'Great Ball', sprite: sprite('great-ball'), price: 400, ceiling: 'rare' },
+  { level: 3, id: 'ultra-ball', name: 'Ultra Ball', sprite: sprite('ultra-ball'), price: 800, ceiling: 'epic' },
+  { level: 4, id: 'master-ball', name: 'Master Ball', sprite: sprite('master-ball'), price: 1600, ceiling: 'legend' },
 ]
 
 /** Nível máximo (Masterball) — atingi-lo libera todas as raridades. */

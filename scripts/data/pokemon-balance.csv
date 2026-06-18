@@ -116,8 +116,8 @@ id,name,type1,type2,rarity,evolvesTo_id,evolve_atLevel,batalha,inteligencia,cari
 115,kangaskhan,normal,,epic,,,30,24,28,36,34,28,180,8,100,0,4
 116,horsea,water,,common,117,3,20,20,26,26,12,26,130,4,50,50,1
 117,seadra,water,,common,,,31,30,25,34,22,25,167,4,50,50,3
-118,goldeen,water,,uncommon,119,4,21,17,27,27,17,27,136,4,50,50,1
-119,seaking,water,,uncommon,,,31,30,27,28,27,27,170,4,50,50,4
+118,goldeen,water,,common,119,4,21,17,27,27,17,27,136,4,50,50,1
+119,seaking,water,,common,,,31,30,27,28,27,27,170,4,50,50,4
 120,staryu,water,,rare,121,5,21,26,24,34,14,23,142,-1,,,1
 121,starmie,water,psychic,rare,,,35,39,21,45,26,21,187,-1,,,5
 122,mr-mime,psychic,,epic,,,30,45,19,36,24,18,172,4,50,50,3

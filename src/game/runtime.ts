@@ -44,3 +44,13 @@ export function replaceMon(s: GameState, updated: Pokemon): void {
 export function settleFaint(mon: Pokemon): Pokemon {
   return mon.currentHp > 0 ? { ...mon, status: 'idle' } : { ...mon, status: 'fainted' }
 }
+
+/**
+ * Como settleFaint, mas CONTA o desmaio no tally do dia (today.faints) quando o Pokémon acaba de
+ * cair (não estava desmaiado antes). Base das "mortes" da run na tela de fim de jogo.
+ */
+export function settleFaintTracked(s: GameState, mon: Pokemon): Pokemon {
+  const settled = settleFaint(mon)
+  if (settled.status === 'fainted' && mon.status !== 'fainted') s.today.faints += 1
+  return settled
+}

@@ -5,6 +5,8 @@ import { useState } from 'react'
 import { createInitialState } from './engine/state.ts'
 import { clearSave } from './persistence/saveLoad.ts'
 import { pendingPoints } from './engine/leveling.ts'
+import { isHired } from './engine/approval.ts'
+import { TOTAL_DAYS } from './engine/constants.ts'
 import { useGameState } from './game/useGameState.ts'
 import { useGameClock } from './game/useGameClock.ts'
 import { HomeScreen } from './components/screens/HomeScreen.tsx'
@@ -12,7 +14,7 @@ import { CitySelectScreen } from './components/screens/CitySelectScreen.tsx'
 import { NewGameScreen } from './components/screens/NewGameScreen.tsx'
 import { MorningScreen } from './components/screens/MorningScreen.tsx'
 import { SummaryScreen } from './components/screens/SummaryScreen.tsx'
-import { GameOverScreen } from './components/screens/GameOverScreen.tsx'
+import { EndGameScreen } from './components/screens/EndGameScreen.tsx'
 import { DayScreen } from './components/day/DayScreen.tsx'
 import { LevelUpModal } from './components/LevelUpModal/LevelUpModal.tsx'
 import { MuteButton } from './audio/MuteButton.tsx'
@@ -69,6 +71,14 @@ export default function App() {
   // A foto fica atrás de tudo; o véu escurece só quando a run está ativa
   // (Manhã/Dia/Resumo/Fim). Home e setup (CitySelect/NewGame) ficam claros.
   const darkened = started && !needsSetup
+  // "Próximo Ginásio" (vitória): começo limpo na cidade seguinte — refaz a escolha de iniciais.
+  const goToGym = (cityIndex: number): void => {
+    dispatch({ type: 'RESET_TO_CITY', cityIndex, seed: Math.floor(Date.now()) })
+    setCityChosen(true)
+  }
+
+  // Dia 10 alcançado: vitória se efetivado (média ≥ 3); senão é derrota (só "Voltar").
+  const wonLastDay = isHired(state.approval.missionStars, state.approval.battleStars)
 
   return (
     <div className={styles.app} onClickCapture={handleClickSound}>
@@ -91,7 +101,14 @@ export default function App() {
             />
           )
         ) : state.run.phase === 'GAMEOVER' ? (
-          <GameOverScreen reason={state.run.gameOverReason} onRestart={restart} />
+          <EndGameScreen state={state} outcome="loss" onBack={restart} />
+        ) : state.run.phase === 'SUMMARY' && state.run.day >= TOTAL_DAYS ? (
+          <EndGameScreen
+            state={state}
+            outcome={wonLastDay ? 'win' : 'loss'}
+            onBack={restart}
+            onNextGym={goToGym}
+          />
         ) : state.run.phase === 'SUMMARY' ? (
           <SummaryScreen state={state} dispatch={dispatch} onRestart={restart} />
         ) : state.run.phase === 'DAY' ? (

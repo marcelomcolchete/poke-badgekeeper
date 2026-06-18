@@ -4,48 +4,60 @@ import { fixedRng, makeAttrs, makeMon } from '../engine/testkit.ts'
 import { reducer } from './reducer.ts'
 import { autoSeedRun } from './setup.ts'
 import { startSearch } from './captureFlow.ts'
-import { applyAutoItems, applyXpGains } from './itemFlow.ts'
+import { applyXpGains } from './itemFlow.ts'
 
 const SEED = 12345
 
-describe('applyAutoItems (cura/revive automáticos)', () => {
-  it('Potion enche o HP de quem está ferido e consome 1 uso', () => {
-    const s = createInitialState(SEED)
+describe('uso MANUAL de cura/revive (USE_ITEM)', () => {
+  it('Potion (single) enche o HP do alvo ferido e consome 1 uso', () => {
+    let s = createInitialState(SEED)
     s.roster = [makeMon({ id: 'a', baseAttrs: makeAttrs({ resistencia: 50 }), currentHp: 1 })]
     s.inventory = [{ itemId: 'potion', quantity: 1 }]
-    applyAutoItems(s)
+    s = reducer(s, { type: 'USE_ITEM', itemId: 'potion', targetId: 'a' })
     expect(s.roster[0]?.currentHp).toBe(s.roster[0]?.maxHp)
     expect(s.inventory).toEqual([]) // pilha zerada some
   })
 
-  it('Revive traz o desmaiado de volta com HP cheio (Potion não revive)', () => {
+  it('Potion não age em desmaiado (nem consome); Revive (single) traz de volta', () => {
     const fainted = makeMon({ id: 'a', baseAttrs: makeAttrs({ resistencia: 50 }), currentHp: 0, status: 'fainted' })
-    const withPotion = createInitialState(SEED)
+    let withPotion = createInitialState(SEED)
     withPotion.roster = [{ ...fainted }]
     withPotion.inventory = [{ itemId: 'potion', quantity: 1 }]
-    applyAutoItems(withPotion)
+    withPotion = reducer(withPotion, { type: 'USE_ITEM', itemId: 'potion', targetId: 'a' })
     expect(withPotion.roster[0]?.currentHp).toBe(0) // Potion não age em desmaiado
     expect(withPotion.inventory[0]?.quantity).toBe(1) // nada consumido
 
-    const withRevive = createInitialState(SEED)
+    let withRevive = createInitialState(SEED)
     withRevive.roster = [{ ...fainted }]
     withRevive.inventory = [{ itemId: 'revive', quantity: 1 }]
-    applyAutoItems(withRevive)
+    withRevive = reducer(withRevive, { type: 'USE_ITEM', itemId: 'revive', targetId: 'a' })
     expect(withRevive.roster[0]?.currentHp).toBe(withRevive.roster[0]?.maxHp)
     expect(withRevive.roster[0]?.status).toBe('idle')
     expect(withRevive.inventory).toEqual([])
   })
 
-  it('Super Potion (3 usos) cura vários Pokémon', () => {
-    const s = createInitialState(SEED)
+  it('Super Potion (team) cura o time inteiro com 1 uso', () => {
+    let s = createInitialState(SEED)
     s.roster = [
       makeMon({ id: 'a', baseAttrs: makeAttrs({ resistencia: 50 }), currentHp: 1 }),
       makeMon({ id: 'b', baseAttrs: makeAttrs({ resistencia: 50 }), currentHp: 2 }),
     ]
-    s.inventory = [{ itemId: 'super-potion', quantity: 3 }]
-    applyAutoItems(s)
+    s.inventory = [{ itemId: 'super-potion', quantity: 1 }]
+    s = reducer(s, { type: 'USE_ITEM', itemId: 'super-potion', targetId: '' })
     expect(s.roster.every((p) => p.currentHp === p.maxHp)).toBe(true)
-    expect(s.inventory[0]?.quantity).toBe(1) // 2 usos gastos, sobra 1
+    expect(s.inventory).toEqual([]) // uso único consumido
+  })
+
+  it('Max Revive (team) revive o time inteiro com 1 uso', () => {
+    let s = createInitialState(SEED)
+    s.roster = [
+      makeMon({ id: 'a', baseAttrs: makeAttrs({ resistencia: 50 }), currentHp: 0, status: 'fainted' }),
+      makeMon({ id: 'b', baseAttrs: makeAttrs({ resistencia: 50 }), currentHp: 0, status: 'fainted' }),
+    ]
+    s.inventory = [{ itemId: 'max-revive', quantity: 1 }]
+    s = reducer(s, { type: 'USE_ITEM', itemId: 'max-revive', targetId: '' })
+    expect(s.roster.every((p) => p.currentHp === p.maxHp && p.status === 'idle')).toBe(true)
+    expect(s.inventory).toEqual([])
   })
 })
 
@@ -100,9 +112,9 @@ describe('mercado — efeitos de compra (reducer)', () => {
     s.gold = 2000
     s = reducer(s, { type: 'BUY_ITEM', itemId: 'eviolite' })
     expect(s.runItems).toContain('eviolite')
-    expect(s.gold).toBe(500)
+    expect(s.gold).toBe(1500) // 2000 − 500
     s = reducer(s, { type: 'BUY_ITEM', itemId: 'eviolite' }) // já possui → no-op
-    expect(s.gold).toBe(500)
+    expect(s.gold).toBe(1500)
     expect(s.runItems.filter((i) => i === 'eviolite')).toHaveLength(1)
   })
 
@@ -130,9 +142,9 @@ describe('mercado — efeitos de compra (reducer)', () => {
 })
 
 describe('mercado — bola evolutiva (BUY_BALL)', () => {
-  it('a Pokébola é grátis e sobe o ballLevel para 1', () => {
+  it('a Pokébola custa 200 e sobe o ballLevel para 1', () => {
     let s = createInitialState(SEED)
-    s.gold = 0 // sem ouro: a Pokébola inicial é grátis
+    s.gold = 200
     expect(s.run.ballLevel).toBe(0)
     s = reducer(s, { type: 'BUY_BALL' })
     expect(s.run.ballLevel).toBe(1)
@@ -140,10 +152,10 @@ describe('mercado — bola evolutiva (BUY_BALL)', () => {
     expect(s.today.purchasedItems).toContain('poke-ball')
   })
 
-  it('a próxima bola custa 500 e não é comprada duas vezes no mesmo dia', () => {
+  it('a próxima bola (Great Ball) custa 400 e não é comprada duas vezes no mesmo dia', () => {
     let s = createInitialState(SEED)
-    s.run.ballLevel = 1 // já tem Pokébola → próxima é Great Ball ($500)
-    s.gold = 500
+    s.run.ballLevel = 1 // já tem Pokébola → próxima é Great Ball ($400)
+    s.gold = 400
     s = reducer(s, { type: 'BUY_BALL' })
     expect(s.run.ballLevel).toBe(2)
     expect(s.gold).toBe(0)
@@ -155,7 +167,7 @@ describe('mercado — bola evolutiva (BUY_BALL)', () => {
   it('sem ouro para a próxima bola é no-op', () => {
     let s = createInitialState(SEED)
     s.run.ballLevel = 1
-    s.gold = 100 // < 500
+    s.gold = 100 // < 400 (Great Ball)
     s = reducer(s, { type: 'BUY_BALL' })
     expect(s.run.ballLevel).toBe(1)
     expect(s.gold).toBe(100)
@@ -168,6 +180,51 @@ describe('mercado — bola evolutiva (BUY_BALL)', () => {
     s = reducer(s, { type: 'BUY_BALL' })
     expect(s.run.ballLevel).toBe(4)
     expect(s.gold).toBe(5000)
+  })
+})
+
+describe('Premier Ball (sobe a bola de graça)', () => {
+  it('do nível 0 leva à Pokébola (nível 1) cobrando só os 100', () => {
+    let s = createInitialState(SEED)
+    s.gold = 100
+    expect(s.run.ballLevel).toBe(0)
+    s = reducer(s, { type: 'BUY_ITEM', itemId: 'premier-ball' })
+    expect(s.run.ballLevel).toBe(1)
+    expect(s.gold).toBe(0)
+    expect(s.today.purchasedItems).toContain('premier-ball')
+  })
+
+  it('na Masterball (nível 4) é no-op', () => {
+    let s = createInitialState(SEED)
+    s.run.ballLevel = 4
+    s.gold = 100
+    s = reducer(s, { type: 'BUY_ITEM', itemId: 'premier-ball' })
+    expect(s.run.ballLevel).toBe(4)
+    expect(s.gold).toBe(100)
+  })
+})
+
+describe('Fossil Stone (gera um fóssil)', () => {
+  const FOSSILS = [138, 139, 140, 141, 142]
+  it('adiciona um Pokémon fóssil nível 1 ao time e cobra 800', () => {
+    let s = createInitialState(SEED)
+    s.gold = 800
+    s.roster = [makeMon({ id: 'a' })]
+    s = reducer(s, { type: 'BUY_ITEM', itemId: 'fossil-stone' })
+    expect(s.gold).toBe(0)
+    expect(s.roster).toHaveLength(2)
+    const fossil = s.roster[1]!
+    expect(FOSSILS).toContain(fossil.speciesId)
+    expect(fossil.level).toBe(1)
+  })
+
+  it('sem ouro é no-op', () => {
+    let s = createInitialState(SEED)
+    s.gold = 100
+    s.roster = [makeMon({ id: 'a' })]
+    s = reducer(s, { type: 'BUY_ITEM', itemId: 'fossil-stone' })
+    expect(s.roster).toHaveLength(1)
+    expect(s.gold).toBe(100)
   })
 })
 

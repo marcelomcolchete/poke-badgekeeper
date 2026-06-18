@@ -123,6 +123,11 @@ export interface Pokemon {
    */
   secretCount?: number
   /**
+   * Corações de afininade (0..5, passo 0,5). Novos Pokémon começam com 2. Cada coração dá +10% de
+   * XP ganho (teto +50%). Sobem/descem no fim do dia conforme o desempenho. Ausente = trata como 2.
+   */
+  hearts?: number
+  /**
    * Buffs temporários por eixo aplicados por itens x_* (somados ao atributo efetivo, afetando
    * inclusive o HP). Valem só no dia da compra e são limpos na virada do dia. Ausente = sem buff.
    */
@@ -170,14 +175,17 @@ export interface MapPos {
   y: number
 }
 
+/** Tier de medalha de um invasor: Bronze < Prata < Ouro (bônus de Batalha crescente). */
+export type MedalTier = 'bronze' | 'silver' | 'gold'
+
 /** Inimigo efêmero de uma defesa de ginásio (só Batalha + tipo) — PLAN §4.4. */
 export interface EnemyUnit {
   battle: number
   types: PokemonType[]
   /** Espécie do invasor — usada só para exibir o sprite na batalha (pode faltar em dados antigos/testes). */
   speciesId?: number
-  /** Desafiante em destaque: recebeu +15 de Batalha e exibe medalha (1 por esquadrão). */
-  buffed?: boolean
+  /** Medalha sorteada por dia (chance/raridade crescem com o dia): soma Batalha e exibe o selo. */
+  medal?: MedalTier
   /** Sexo sorteado pela proporção da espécie (exibido na foto; ausente em dados antigos). */
   gender?: Gender
 }

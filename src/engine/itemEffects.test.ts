@@ -36,6 +36,11 @@ describe('itemBattleMultiplier', () => {
     expect(itemBattleMultiplier(makeMon({ types: ['normal'] }), ['thick-club'])).toBe(1)
   })
 
+  it('Mystic Water vale só para o tipo Water', () => {
+    expect(itemBattleMultiplier(makeMon({ types: ['water'] }), ['mystic-water'])).toBeCloseTo(1.5)
+    expect(itemBattleMultiplier(makeMon({ types: ['normal'] }), ['mystic-water'])).toBe(1)
+  })
+
   it('Lagging Tail dá +50% em batalha a todos', () => {
     expect(itemBattleMultiplier(makeMon({ types: ['normal'] }), ['lagging-tail'])).toBeCloseTo(1.5)
     expect(itemBattleMultiplier(makeMon({ types: ['ground'] }), ['thick-club', 'lagging-tail'])).toBeCloseTo(2.25)

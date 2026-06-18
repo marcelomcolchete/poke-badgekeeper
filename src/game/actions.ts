@@ -8,6 +8,11 @@ export type GameAction =
   /** Escolhe a cidade de Kanto (grava o índice na run antes do novo jogo) — PLAN §3. */
   | { type: 'SELECT_CITY'; cityIndex: number }
   /**
+   * Recomeça do zero numa nova cidade (botão "Próximo Ginásio" no fim de jogo): estado inicial
+   * limpo com a `cityIndex` dada e uma `seed` nova. O jogador refaz a escolha de iniciais no ginásio.
+   */
+  | { type: 'RESET_TO_CITY'; cityIndex: number; seed: number }
+  /**
    * Inicia a run: os tipos do ginásio são fixos da cidade; o roster vem das versões
    * escolhidas dos iniciais fixos (espécie + nível + seed do roll) — PLAN §3.
    */

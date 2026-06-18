@@ -58,6 +58,28 @@
   }
 }
 
+/* ---- Trilhas de estrelas do cabeçalho (missões + batalhas) ---- */
+.starTracks {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  flex-wrap: wrap;
+}
+
+.starTrack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.starTrackLabel {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--c-hud-muted);
+}
+
 /* ---- Aprovação (estrelas com brilho/perda) ---- */
 .approval {
   display: flex;
@@ -316,6 +338,75 @@
   border: 3px solid var(--c-ink);
   border-radius: var(--radius-pixel);
   padding: 12px 18px;
+}
+
+/* ---- Relatório final do período (dia 10): trilhas + média + time com corações ---- */
+.finalReport {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--c-panel);
+  border: 3px solid var(--c-panel-border);
+  border-radius: var(--radius-pixel);
+}
+
+.finalScores {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-family: var(--font-text);
+  font-size: 16px;
+}
+
+.finalAvg {
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  padding: 4px 10px;
+  border: 2px solid var(--c-ink);
+  border-radius: var(--radius-pixel);
+}
+
+.finalAvgGood {
+  background: color-mix(in srgb, var(--c-hp-high) 25%, transparent);
+  color: var(--c-hp-high);
+}
+
+.finalAvgBad {
+  background: color-mix(in srgb, var(--c-hp-low) 22%, transparent);
+  color: var(--c-hp-low);
+}
+
+.finalTeam {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.finalMember {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 84px;
+}
+
+.finalSprite {
+  width: 48px;
+  height: 48px;
+  image-rendering: pixelated;
+}
+
+.finalName {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: var(--c-ink);
 }
 
 /* ---- Reveal da Habilidade Secreta desbloqueada no dia ---- */

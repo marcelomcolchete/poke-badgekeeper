@@ -224,16 +224,18 @@ export function teamFlies(team: readonly Pokemon[]): boolean {
   return team.length === 1 || team.some((p) => hasSecret(p, 'sa-fly-plus'))
 }
 
-/** O time tem um surfista? */
-export function teamHasSurf(team: readonly Pokemon[]): boolean {
-  return team.some(hasSurf)
+/** O time tem um surfista? (o item Surfboard dá surf a todo o time). */
+export function teamHasSurf(team: readonly Pokemon[], runItems: readonly string[] = []): boolean {
+  return runItems.includes('surfboard') || team.some(hasSurf)
 }
 
 /**
  * O time consegue SURFAR nesta tarefa (atravessar a água)? Por padrão o surfista precisa estar
  * SOZINHO; com Surf+ (sa-surf-plus) leva o time inteiro. Espelha a lógica de `teamFlies`/Fly+.
+ * O item Surfboard (runItems) faz o time inteiro surfar, como o Surf+.
  */
-export function teamSurfs(team: readonly Pokemon[]): boolean {
+export function teamSurfs(team: readonly Pokemon[], runItems: readonly string[] = []): boolean {
+  if (runItems.includes('surfboard')) return true
   if (!teamHasSurf(team)) return false
   return team.length === 1 || team.some((p) => hasSecret(p, 'sa-surf-plus'))
 }

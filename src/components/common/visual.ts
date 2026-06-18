@@ -98,6 +98,9 @@ export const RARITY_COLOR: Record<Rarity, string> = {
   legend: '#e0a020',
 }
 
+/** Tier de medalha do invasor → nível numérico das tabelas de medalha (Bronze/Prata/Ouro). */
+export const MEDAL_TIER_RANK = { bronze: 1, silver: 2, gold: 3 } as const
+
 /** Medalha (emoji) por nível da Habilidade Secreta: 1 Bronze, 2 Prata, 3 Ouro. */
 export const SECRET_MEDAL: Record<number, string> = { 1: '🥉', 2: '🥈', 3: '🥇' }
 

@@ -9,7 +9,8 @@ interface HudProps {
   dayLengthMs: number
   speed: GameSpeed
   gold: number
-  stars: number
+  missionStars: number
+  battleStars: number
   onSpeedChange?: (speed: GameSpeed) => void
   /** Abre a confirmação de desistir (ícone no canto do header). */
   onQuit?: () => void
@@ -47,14 +48,14 @@ export function Hud({
   dayLengthMs,
   speed,
   gold,
-  stars,
+  missionStars,
+  battleStars,
   onSpeedChange,
   onQuit,
 }: HudProps) {
   const remaining = formatClock(elapsedMs, dayLengthMs)
   // Ao chegar nas 18:00 o relógio trava e fica vermelho, sinalizando o fim do dia.
   const overtime = elapsedMs >= dayLengthMs
-  const starsPct = `${(stars / STARS_MAX) * 100}%`
 
   return (
     <div className={styles.hud}>
@@ -102,12 +103,28 @@ export function Hud({
 
       <span className={styles.sep} aria-hidden="true" />
 
-      <span className={styles.stars}>
+      <span className={styles.starTracks}>
+        <StarTrack icon="🎯" label="Estrelas de missões" value={missionStars} />
+        <StarTrack icon="⚔️" label="Estrelas de batalhas" value={battleStars} />
+      </span>
+    </div>
+  )
+}
+
+/** Uma trilha de estrelas do HUD: ícone do domínio + 5 estrelas preenchidas por largura. */
+function StarTrack({ icon, label, value }: { icon: string; label: string; value: number }) {
+  const pct = `${(value / STARS_MAX) * 100}%`
+  return (
+    <span className={styles.starTrack} title={`${label}: ${value.toFixed(1)}/${STARS_MAX}`}>
+      <span className={styles.starTrackIcon} aria-hidden="true">
+        {icon}
+      </span>
+      <span className={styles.stars} aria-label={`${label}: ${value} de ${STARS_MAX}`}>
         <span className={styles.starsOff}>{'★'.repeat(STARS_MAX)}</span>
-        <span className={styles.starsOn} style={{ width: starsPct }}>
+        <span className={styles.starsOn} style={{ width: pct }}>
           {'★'.repeat(STARS_MAX)}
         </span>
       </span>
-    </div>
+    </span>
   )
 }

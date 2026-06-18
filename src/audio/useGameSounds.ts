@@ -17,6 +17,7 @@ const WARNING_MS = 6_000
 export function useGameSounds(state: GameState): void {
   const ready = useRef(false)
   const availableIds = useRef<Set<string>>(new Set())
+  const activeDefenseIds = useRef<Set<string>>(new Set())
   const resolvedIds = useRef<Set<string>>(new Set())
   const pendingTotal = useRef(0)
   const warnedIds = useRef<Set<string>>(new Set())
@@ -34,6 +35,16 @@ export function useGameSounds(state: GameState): void {
       }
     }
     availableIds.current = available
+
+    // 1b) Defesa de ginásio surgiu (virou 'active'): mesmo som da nova missão (batalha hoje).
+    const activeDefenses = new Set<string>()
+    for (const d of state.defenses) {
+      if (d.status === 'active') {
+        activeDefenses.add(d.id)
+        if (!first && !activeDefenseIds.current.has(d.id)) playSound('missionNew')
+      }
+    }
+    activeDefenseIds.current = activeDefenses
 
     // 2) Missão resolvida: success/failure tocam; 'expired' (não despachada) fica em silêncio.
     for (const m of state.missions) {

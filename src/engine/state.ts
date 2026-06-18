@@ -9,6 +9,7 @@ import type {
   GamePhase,
   GameSpeed,
   MapPos,
+  MedalTier,
   MissionCategory,
   Pokemon,
   PokemonType,
@@ -33,7 +34,7 @@ export interface RunInfo {
    */
   ballLevel: number
   /** Motivo da derrota quando phase === 'GAMEOVER' (mensagem da tela de fim de jogo). */
-  gameOverReason?: 'gym' | 'stars' | 'rocket'
+  gameOverReason?: 'gym' | 'stars' | 'rocket' | 'fainted'
 }
 
 export interface ClockState {
@@ -145,7 +146,7 @@ export interface MissionInstance {
 export interface RocketBattle {
   /** Treinador Rocket sorteado (define o elenco e a arte). */
   trainerId: TrainerId
-  /** Esquadrão inimigo (mesma quantidade por dia que a defesa de ginásio), um em destaque. */
+  /** Esquadrão inimigo (mesma quantidade por dia que a defesa de ginásio), com medalhas do dia. */
   enemies: EnemyUnit[]
   /** Log da cadeia de duelos, preenchido ao resolver a batalha. */
   duels?: DuelLog[]
@@ -260,8 +261,10 @@ export interface ItemStack {
 }
 
 export interface Approval {
-  /** 1.0–5.0 em passos de 0.5 (PLAN §4.7). */
-  stars: number
+  /** Estrelas de missões (0–5, passo 0,5). */
+  missionStars: number
+  /** Estrelas de batalhas/defesas (0–5, passo 0,5). */
+  battleStars: number
   dailyGoalMet: boolean
 }
 
@@ -285,6 +288,34 @@ export interface DefenseKill {
   defeaterId: string
   /** Espécie do desafiante derrotado — usada só para a miniatura no relatório. */
   speciesId?: number
+  /** Poder de Batalha do inimigo derrotado — base do "mais forte enfrentado" no fim de jogo. */
+  enemyBattle?: number
+  /** Medalha (Bronze/Prata/Ouro) que o inimigo derrotado carregava. */
+  enemyMedal?: MedalTier
+  /** Tipos do inimigo derrotado (selos na tela de fim de jogo). */
+  enemyTypes?: PokemonType[]
+}
+
+/**
+ * Um duelo PERDIDO numa batalha do dia: o inimigo que venceu o seu Pokémon (vítima) + a espécie
+ * dele. Simétrico ao DefenseKill — base do "Carrasco" (espécie que mais venceu seu time) no fim.
+ */
+export interface DefenseLoss {
+  /** Seu Pokémon que perdeu o duelo. */
+  victimId: string
+  /** Espécie do inimigo que venceu — miniatura/agrupamento do Carrasco. */
+  speciesId?: number
+  enemyBattle?: number
+  enemyMedal?: MedalTier
+  enemyTypes?: PokemonType[]
+}
+
+/** Inimigo (efêmero) referenciado no relatório de fim de jogo: poder + espécie/tipos/medalha. */
+export interface EnemyRef {
+  battle: number
+  medal?: MedalTier
+  types: PokemonType[]
+  speciesId?: number
 }
 
 /** Acumulador do dia em curso (zerado a cada manhã) — base do resumo/aprovação. */
@@ -300,17 +331,30 @@ export interface DayTally {
   xpEarned: number
   /** Ouro vindo só de defesas (base do bônus de +30% por dia perfeito) — PLAN §4.6. */
   defenseGold: number
-  /** Estrelas no início do dia (preenchido no fechamento) — para o resumo. */
-  starsBefore: number
+  /** Estrelas de missões no início do dia (preenchido no fechamento) — para o resumo. */
+  missionStarsBefore: number
+  /** Estrelas de batalhas no início do dia (preenchido no fechamento) — para o resumo. */
+  battleStarsBefore: number
+  /**
+   * Ids de Pokémon que PARTICIPARAM de algo hoje (missão, exploração ou batalha direta) —
+   * base da regra de corações do fim do dia (quem não fez nada perde ½ coração).
+   */
+  activeIds: string[]
   /** Áreas de captura já exploradas hoje (índices em captureSpots) — somem do mapa. */
   exploredSpots: number[]
   /** Inimigos derrotados em defesas hoje (MVP por derrotas + miniaturas no relatório). */
   defenseKills: DefenseKill[]
+  /** Duelos perdidos hoje (o inimigo que venceu seu Pokémon) — base do "Carrasco" no fim de jogo. */
+  defenseLosses: DefenseLoss[]
+  /** Quantos Pokémon do jogador desmaiaram hoje (eventos de desmaio) — base das "mortes" no fim. */
+  faints: number
   /**
    * Habilidade Secreta desbloqueada HOJE pelo Destaque do Dia (reveal no resumo); null se
    * nenhuma. `secretId` é o id do tipo de habilidade e `index` é a posição na linha (1, 2 ou 3).
    */
   secretUnlock: { pokemonId: string; secretId: string; index: number } | null
+  /** Corações que o Destaque do Dia ganhou no fechamento (delta já capado em [0,5]) — resumo. */
+  mvpHeartsGained: number
   /** Estado por-Pokémon das Habilidades Secretas hoje (stacks/flags), por id de Pokémon. */
   secretRuntime: Record<string, SecretRuntime>
   /**
@@ -326,9 +370,41 @@ export interface DayTally {
 
 export interface DayLog {
   day: number
-  starsAfter: number
+  missionStarsAfter: number
+  battleStarsAfter: number
   goldEarned: number
   captured: number
+}
+
+/**
+ * Acumulador VITALÍCIO da run (toda a cidade/10 dias) — base da tela de fim de jogo. Guarda só os
+ * dias JÁ FECHADOS (dobrado em startNextDay antes de zerar `today`); o dia em curso é somado na
+ * exibição via combineLifetime. Assim a soma nunca duplica, seja na vitória do dia 10 ou na derrota.
+ */
+export interface LifetimeStats {
+  /** Missões bem-sucedidas acumuladas. */
+  missionsCompleted: number
+  /** Missões que surgiram (aceitas + ignoradas/expiradas) acumuladas — o "de quantas possíveis". */
+  missionsTotal: number
+  defensesWon: number
+  defensesTotal: number
+  /** Ouro BRUTO ganho na run (não é o saldo). */
+  goldEarned: number
+  /** Eventos de desmaio do time (mortes). */
+  faints: number
+  /** Inimigos derrotados em batalhas (defesas + Rocket). */
+  defeats: number
+  /** itemId → quantidade comprada na run. */
+  purchasedItems: Record<string, number>
+  /** pokemonId → feitos acumulados (missões bem-sucedidas + derrotas) — base do Destaque do Jogo. */
+  usage: Record<string, { missions: number; defeats: number }>
+  /** Top inimigos DERROTADOS na run (maior poder de Batalha), até 3 — "Pokémons enfrentados". */
+  strongestEnemies: EnemyRef[]
+  /**
+   * Espécies inimigas que venceram duelos contra o seu time, em ORDEM de 1ª aparição (o desempate
+   * do Carrasco é "o primeiro a aparecer"). count = nº de duelos vencidos contra você.
+   */
+  defeatedBy: { speciesId: number; types: PokemonType[]; count: number }[]
 }
 
 export interface GameState {
@@ -357,6 +433,8 @@ export interface GameState {
   /** Itens/passivas permanentes da run. */
   runItems: string[]
   today: DayTally
+  /** Acumulador vitalício da run (dias fechados) — alimenta a tela de fim de jogo. */
+  lifetime: LifetimeStats
   /** Agenda climática do dia (eventos de chuva + poças + previsão), pré-computada em setupDay. */
   weather: WeatherSchedule
   history: DayLog[]
@@ -364,6 +442,11 @@ export interface GameState {
   nextId: number
   /** Cursor determinístico para derivar sub-seeds de RNG durante o dia. */
   rngCursor: number
+}
+
+/** Marca um Pokémon como participante do dia (idempotente) — base dos corações do fim do dia. */
+export function markActive(today: DayTally, pokemonId: string): void {
+  if (!today.activeIds.includes(pokemonId)) today.activeIds.push(pokemonId)
 }
 
 export function emptyTally(): DayTally {
@@ -376,14 +459,36 @@ export function emptyTally(): DayTally {
     goldEarned: 0,
     xpEarned: 0,
     defenseGold: 0,
-    starsBefore: 0,
+    missionStarsBefore: 0,
+    battleStarsBefore: 0,
+    activeIds: [],
     exploredSpots: [],
     defenseKills: [],
+    defenseLosses: [],
+    faints: 0,
     secretUnlock: null,
+    mvpHeartsGained: 0,
     secretRuntime: {},
     digTunnels: [],
     shopOffer: [],
     purchasedItems: [],
+  }
+}
+
+/** Acumulador vitalício zerado (início da run). */
+export function emptyLifetime(): LifetimeStats {
+  return {
+    missionsCompleted: 0,
+    missionsTotal: 0,
+    defensesWon: 0,
+    defensesTotal: 0,
+    goldEarned: 0,
+    faints: 0,
+    defeats: 0,
+    purchasedItems: {},
+    usage: {},
+    strongestEnemies: [],
+    defeatedBy: [],
   }
 }
 
@@ -403,11 +508,12 @@ export function createInitialState(seed: number): GameState {
     encounters: [],
     captureSpots: [],
     captureSpotSpawnsAtMs: [],
-    approval: { stars: STARS_START, dailyGoalMet: false },
+    approval: { missionStars: STARS_START, battleStars: STARS_START, dailyGoalMet: false },
     gold: STARTING_GOLD,
     inventory: [],
     runItems: [],
     today: emptyTally(),
+    lifetime: emptyLifetime(),
     weather: emptyWeatherSchedule(),
     history: [],
     nextId: 1,

@@ -3,13 +3,14 @@
 
 import type { Pokemon } from '../types/index.ts'
 import type { DefenseEvent, GameState } from '../engine/state.ts'
+import { markActive } from '../engine/state.ts'
 import { canDefend, gymWinXp, resolveDefense, type DefenseResolution } from '../engine/gymDefense.ts'
 import { hasBattleArmor, sturdyAvailable } from '../engine/secretEffects.ts'
 import { goldForDefense } from '../engine/economy.ts'
 import { damageForDay } from '../engine/constants.ts'
 import { createRng } from '../engine/rng.ts'
-import { applyAutoItems, applyXpGains } from './itemFlow.ts'
-import { findMon, replaceMon, settleFaint, takeRng } from './runtime.ts'
+import { applyXpGains } from './itemFlow.ts'
+import { findMon, replaceMon, settleFaintTracked, takeRng } from './runtime.ts'
 
 /** Promove a defesa a 'active' (símbolo no ginásio) e conta no total do dia (PLAN §3.1). */
 export function spawnDefense(s: GameState, defense: DefenseEvent, nowMs: number): void {
@@ -71,6 +72,7 @@ export function assignDefense(s: GameState, defenseId: string, squadIds: string[
   if (!defense || defense.status !== 'active') return
   const squad = squadOf(s, squadIds)
   if (!canDefend(squad)) return
+  for (const p of squad) markActive(s.today, p.id) // participação do dia (corações)
 
   // Sturdy disponível para quem tem a habilidade e ainda não usou (escopo por jogo/dia).
   const sturdyAvailableIds = new Set(
@@ -82,23 +84,34 @@ export function assignDefense(s: GameState, defenseId: string, squadIds: string[
     damagePerLoss: damageForDay(s.run.day),
   })
 
-  // Registra o desafiante derrotado (defeaterId + espécie) para o MVP/relatório.
+  // Registra cada duelo: vitória → desafiante derrotado (MVP/"enfrentados"); derrota → o inimigo
+  // que venceu seu Pokémon (Carrasco). `theirs` só avança quando você vence (o inimigo sai).
   let theirs = 0
   for (const duel of resolution.duels) {
+    const enemy = defense.enemies[theirs]
     if (duel.youWon) {
       s.today.defenseKills.push({
         defeaterId: duel.yourId,
-        speciesId: defense.enemies[theirs]?.speciesId,
+        speciesId: enemy?.speciesId,
+        enemyBattle: enemy?.battle,
+        enemyMedal: enemy?.medal,
+        enemyTypes: enemy?.types,
       })
       theirs += 1
+    } else {
+      s.today.defenseLosses.push({
+        victimId: duel.yourId,
+        speciesId: enemy?.speciesId,
+        enemyBattle: enemy?.battle,
+        enemyMedal: enemy?.medal,
+        enemyTypes: enemy?.types,
+      })
     }
   }
 
   // HP/desmaio aplicados já (a batalha acontece agora); o XP fica para completeDefense.
-  for (const member of resolution.squad) replaceMon(s, settleFaint(member))
+  for (const member of resolution.squad) replaceMon(s, settleFaintTracked(s, member))
   applyBattleSecretRuntime(s, squad, resolution)
-  // Itens automáticos: Potion cura feridos; Revive traz desmaiados de volta.
-  applyAutoItems(s)
 
   defense.squadIds = squad.map((p) => p.id)
   defense.duels = resolution.duels

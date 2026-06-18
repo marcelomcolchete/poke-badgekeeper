@@ -6,6 +6,7 @@
 import type { Pokemon, TrainerId } from '../types/index.ts'
 import type { MissionTemplate } from '../data/types.ts'
 import type { GameState, MissionInstance, MissionStatus } from '../engine/state.ts'
+import { markActive } from '../engine/state.ts'
 import { getCity } from '../data/cities.ts'
 import { getMissionTemplate } from '../data/missionTemplates.ts'
 import { getTrainer } from '../data/trainers.ts'
@@ -43,8 +44,8 @@ import { graphWithTunnels, pathUsesSurf } from '../engine/pathfinding.ts'
 import { planWeatherLeg } from '../engine/weatherTravel.ts'
 import { createRng } from '../engine/rng.ts'
 import { applyBattleSecretRuntime } from './defenseFlow.ts'
-import { applyAutoItems, applyXpGains } from './itemFlow.ts'
-import { findMon, replaceMon, settleFaint, takeRng } from './runtime.ts'
+import { applyXpGains } from './itemFlow.ts'
+import { findMon, replaceMon, settleFaintTracked, takeRng } from './runtime.ts'
 
 /** Status que "ocupam" um ponto do mapa (já visível ou com time em trânsito/ação). */
 const OCCUPYING_STATUSES: MissionStatus[] = ['available', 'traveling', 'inProgress', 'returning']
@@ -99,11 +100,11 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
   const graph = graphWithTunnels(city.graph, s.today.digTunnels)
   // Ida e VOLTA calculadas separadamente: com arestas de mão única (ex.: k→t) a volta NÃO é o
   // reverso da ida (PLAN §3.1). Em grafos simétricos as duas rotas/distâncias coincidem.
-  const outbound = travelRoute(graph, city.siteNodes.gym, mission.node, team)
+  const outbound = travelRoute(graph, city.siteNodes.gym, mission.node, team, s.runItems)
   // Inalcançável (a rota cruzaria a água e o time não consegue surfar): não despacha — a UI
   // já bloqueia, mas a guarda evita uma viagem instantânea por engano. Voo/Sniper nunca dão [].
   if (outbound.path.length === 0) return
-  const inbound = travelRoute(graph, mission.node, city.siteNodes.gym, team)
+  const inbound = travelRoute(graph, mission.node, city.siteNodes.gym, team, s.runItems)
   const speedMult = teamTravelSpeedMultiplier(team, s.runItems)
   const outMs = graphTravelMs(outbound.distance, team, speedMult)
   const inMs = graphTravelMs(inbound.distance, team, speedMult)
@@ -116,6 +117,7 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
   }
 
   mission.teamIds = team.map((p) => p.id)
+  for (const p of team) markActive(s.today, p.id) // participação do dia (corações)
   mission.path = outbound.path
   mission.returnPath = inbound.path
   mission.flying = outbound.flying
@@ -142,12 +144,26 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
   }
 }
 
-/** Desloca os marcos POSTERIORES da missão por `deltaMs` (atraso de poça embutido). */
-function shiftMissionTimestamps(mission: MissionInstance, fromLeg: 'out' | 'back', deltaMs: number): void {
+/**
+ * Desloca os marcos da missão por `deltaMs` (atraso de poça embutido). `shiftStart` translada a
+ * janela INTEIRA da perna (início + fim) — usado na ESPERA, em que o sprite fica parado por
+ * `deltaMs` e a fração de progresso (now − início)/(fim − início) precisa retomar de onde congelou.
+ * Sem `shiftStart`, só estica o fim — usado no DESVIO, em que o caminho fica mais longo mas o
+ * sprite segue andando (o início da perna continua válido).
+ */
+function shiftMissionTimestamps(
+  mission: MissionInstance,
+  fromLeg: 'out' | 'back',
+  deltaMs: number,
+  shiftStart = false,
+): void {
   if (deltaMs <= 0) return
   if (fromLeg === 'out') {
+    if (shiftStart && mission.acceptedAtMs !== null) mission.acceptedAtMs += deltaMs
     if (mission.arriveAtMs !== null) mission.arriveAtMs += deltaMs
     if (mission.resolveAtMs !== null) mission.resolveAtMs += deltaMs
+  } else if (shiftStart && mission.resolveAtMs !== null) {
+    mission.resolveAtMs += deltaMs
   }
   if (mission.returnEndsAtMs !== null) mission.returnEndsAtMs += deltaMs
   mission.weatherDelayMs = (mission.weatherDelayMs ?? 0) + deltaMs
@@ -162,7 +178,7 @@ export function applyWeatherHold(s: GameState, mission: MissionInstance, nowMs: 
   if (s.weather.rain.length === 0) return
   if (mission.flying) return
   const team = teamOf(s, mission.teamIds)
-  if (team.length === 0 || teamSurfs(team)) return
+  if (team.length === 0 || teamSurfs(team, s.runItems)) return
 
   // Espera em andamento: fica parado até a poça secar; só então reavalia.
   if (mission.weatherHold) {
@@ -196,7 +212,8 @@ export function applyWeatherHold(s: GameState, mission: MissionInstance, nowMs: 
     shiftMissionTimestamps(mission, traveling ? 'out' : 'back', plan.extraMs)
   } else if (plan.kind === 'wait') {
     mission.weatherHold = { node: plan.node, untilMs: plan.untilMs }
-    shiftMissionTimestamps(mission, traveling ? 'out' : 'back', plan.extraMs)
+    // Espera: translada a janela inteira (início + fim) para o progresso retomar do ponto congelado.
+    shiftMissionTimestamps(mission, traveling ? 'out' : 'back', plan.extraMs, true)
   }
 }
 
@@ -274,8 +291,6 @@ export function resolveMissionNow(s: GameState, mission: MissionInstance): void 
     }
     replaceMon(s, { ...mon, status: 'returning' })
   }
-  // Itens automáticos: Potion cura quem perdeu HP; Revive traz desmaiados de volta.
-  applyAutoItems(s)
   // Seed de evolução sorteado AGORA (mantém o cursor do RNG estável); usado só na volta.
   mission.xpSeed = takeRng(s).int(0, 0x7fffffff)
   if (outcome.success) {
@@ -321,7 +336,7 @@ export function freeOnReturn(s: GameState, mission: MissionInstance): void {
   for (const member of team) {
     let mon = findMon(s, member.id) ?? member
     if (success && template.healOnSuccess) mon = { ...mon, currentHp: mon.maxHp }
-    replaceMon(s, settleFaint(mon))
+    replaceMon(s, settleFaintTracked(s, mon))
   }
   mission.status = 'resolved'
 }
@@ -382,23 +397,34 @@ export function resolveRocketBattle(s: GameState, missionId: string): void {
     runItems: s.runItems,
     damagePerLoss: damageForDay(s.run.day),
   })
-  // Registra os desafiantes derrotados (MVP/relatório).
+  // Registra cada duelo: vitória → desafiante derrotado; derrota → o inimigo que venceu seu
+  // Pokémon (Carrasco). `theirs` só avança quando você vence (mesma regra da defesa de ginásio).
   let theirs = 0
   for (const duel of resolution.duels) {
+    const enemy = mission.rocket.enemies[theirs]
     if (duel.youWon) {
       s.today.defenseKills.push({
         defeaterId: duel.yourId,
-        speciesId: mission.rocket.enemies[theirs]?.speciesId,
+        speciesId: enemy?.speciesId,
+        enemyBattle: enemy?.battle,
+        enemyMedal: enemy?.medal,
+        enemyTypes: enemy?.types,
       })
       theirs += 1
+    } else {
+      s.today.defenseLosses.push({
+        victimId: duel.yourId,
+        speciesId: enemy?.speciesId,
+        enemyBattle: enemy?.battle,
+        enemyMedal: enemy?.medal,
+        enemyTypes: enemy?.types,
+      })
     }
   }
-  for (const member of resolution.squad) replaceMon(s, settleFaint(member))
+  for (const member of resolution.squad) replaceMon(s, settleFaintTracked(s, member))
   // Habilidades Secretas de batalha (Battle Armor/Weak Armor/Shell Armor/Sturdy) — a missão
   // Rocket conta como batalha para o Battle Armor.
   applyBattleSecretRuntime(s, team, resolution)
-  // Itens automáticos: Potion/Revive disparam após a batalha.
-  applyAutoItems(s)
   mission.rocket.duels = resolution.duels
   mission.rocket.won = resolution.won
   mission.rocket.resolved = true

@@ -31,7 +31,7 @@ import { takeId } from './runtime.ts'
  * re-sortear quando o jogador compra. Exclui os passivos já possuídos (1×/run).
  */
 export function setupMorningShop(s: GameState): void {
-  s.today.shopOffer = getDailyShop(s.run.seed, s.run.day, s.run.cityIndex, s.runItems)
+  s.today.shopOffer = getDailyShop(s.run.seed, s.run.day, s.run.cityIndex, s.runItems, s.run.ballLevel)
   s.today.purchasedItems = []
 }
 

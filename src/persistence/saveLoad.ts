@@ -1,6 +1,7 @@
 // Persistência: slot único com autosave no localStorage + schema versionado (PLAN §5).
 
 import type { GameState } from '../engine/state.ts'
+import { emptyLifetime } from '../engine/state.ts'
 import { emptyWeatherSchedule } from '../engine/weather.ts'
 import { SAVE_KEY, SAVE_VERSION } from '../engine/constants.ts'
 
@@ -297,6 +298,118 @@ function migrate(file: Partial<SaveFile>): SaveFile | null {
       } as typeof state
     }
     version = 28
+  }
+
+  // v28 → v29: medalhas dos invasores (Bronze/Prata/Ouro) substituem o destaque único `buffed`.
+  // A Batalha já vem com o +15 antigo embutido — só o selo muda: buffed → medal:'silver' (o tier
+  // cujo bônus +20 mais se aproxima do +15). Aplica nas defesas e na batalha Rocket em andamento.
+  if (version === 28) {
+    const fixEnemies = (arr: unknown): unknown =>
+      Array.isArray(arr)
+        ? arr.map((e) => {
+            const enemy = e as Record<string, unknown>
+            if (!enemy.buffed) return enemy
+            const rest = { ...enemy }
+            delete rest.buffed
+            return { ...rest, medal: 'silver' }
+          })
+        : arr
+    const defenses = state.defenses as Array<Record<string, unknown>> | undefined
+    const missions = state.missions as Array<Record<string, unknown>> | undefined
+    state = {
+      ...state,
+      defenses: Array.isArray(defenses)
+        ? defenses.map((d) => ({ ...d, enemies: fixEnemies(d.enemies) }))
+        : defenses,
+      missions: Array.isArray(missions)
+        ? missions.map((m) => {
+            const rocket = m.rocket as Record<string, unknown> | undefined
+            return rocket && typeof rocket === 'object'
+              ? { ...m, rocket: { ...rocket, enemies: fixEnemies(rocket.enemies) } }
+              : m
+          })
+        : missions,
+    } as typeof state
+    version = 29
+  }
+
+  // v29 → v30: pontuação em DUAS trilhas e corações por Pokémon. A estrela antiga (approval.stars)
+  // vira missionStars E battleStars; cada Pokémon (time + PC) ganha 2 corações; today recebe
+  // activeIds vazio e missionStarsBefore/battleStarsBefore a partir do antigo starsBefore.
+  if (version === 29) {
+    const approval = state.approval as Record<string, unknown> | undefined
+    const oldStars = typeof approval?.stars === 'number' ? (approval.stars as number) : 1
+    const addHearts = (arr: unknown): unknown =>
+      Array.isArray(arr)
+        ? arr.map((p) => {
+            const mon = p as Record<string, unknown>
+            return typeof mon.hearts === 'number' ? mon : { ...mon, hearts: 2 }
+          })
+        : arr
+    const today = state.today as Record<string, unknown> | undefined
+    const oldBefore = typeof today?.starsBefore === 'number' ? (today.starsBefore as number) : 0
+    state = {
+      ...state,
+      approval:
+        approval && typeof approval === 'object'
+          ? {
+              missionStars: oldStars,
+              battleStars: oldStars,
+              dailyGoalMet: approval.dailyGoalMet === true,
+            }
+          : approval,
+      roster: addHearts(state.roster),
+      box: addHearts(state.box),
+      today:
+        today && typeof today === 'object'
+          ? {
+              ...today,
+              activeIds: Array.isArray(today.activeIds) ? today.activeIds : [],
+              missionStarsBefore: oldBefore,
+              battleStarsBefore: oldBefore,
+            }
+          : today,
+    } as typeof state
+    version = 30
+  }
+
+  // v30 → v31: acumulador vitalício (tela de fim de jogo). Saves antigos começam com lifetime
+  // zerado (perdem o histórico dos dias já fechados) e today.faints = 0. Os campos de inimigo nos
+  // defenseKills são opcionais (kills antigos não entram no "mais forte enfrentado").
+  if (version === 30) {
+    const today = state.today as Record<string, unknown> | undefined
+    state = {
+      lifetime: emptyLifetime(),
+      ...state,
+      today: today && typeof today === 'object' ? { faints: 0, ...today } : today,
+    }
+    version = 31
+  }
+
+  // v31 → v32: "Pokémons enfrentados" (top 3) + Carrasco. today ganha defenseLosses; o lifetime
+  // troca o inimigo único (strongestEnemy) pela lista dos 3 mais fortes e ganha defeatedBy vazio.
+  if (version === 31) {
+    const today = state.today as Record<string, unknown> | undefined
+    const life = state.lifetime as Record<string, unknown> | undefined
+    const old = life?.strongestEnemy as Record<string, unknown> | null | undefined
+    state = {
+      ...state,
+      today:
+        today && typeof today === 'object' ? { defenseLosses: [], ...today } : today,
+      lifetime:
+        life && typeof life === 'object'
+          ? (() => {
+              const rest = { ...life }
+              delete rest.strongestEnemy
+              return {
+                strongestEnemies: old ? [old] : [],
+                defeatedBy: [],
+                ...rest,
+              }
+            })()
+          : life,
+    } as typeof state
+    version = 32
   }
 
   if (version !== SAVE_VERSION) return null

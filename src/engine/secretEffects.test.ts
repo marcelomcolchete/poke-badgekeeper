@@ -136,6 +136,13 @@ describe('Surf / Sniper: predicados de time', () => {
     expect(teamSurfs([other])).toBe(false)
   })
 
+  it('o item Surfboard faz o time inteiro surfar (como o Surf+)', () => {
+    expect(teamSurfs([other], ['surfboard'])).toBe(true)
+    expect(teamSurfs([other, other], ['surfboard'])).toBe(true)
+    expect(teamHasSurf([other], ['surfboard'])).toBe(true)
+    expect(teamSurfs([other], [])).toBe(false) // sem o item, ninguém surfa
+  })
+
   it('teamSnipes: só sozinho', () => {
     expect(teamSnipes([horsea])).toBe(true)
     expect(teamSnipes([horsea, other])).toBe(false)

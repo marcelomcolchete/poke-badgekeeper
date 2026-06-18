@@ -81,6 +81,12 @@ describe('travelRoute — Surf/Sniper/Fly em Cerulean', () => {
     expect(r.path).toEqual([])
   })
 
+  it('item Surfboard leva um time SEM surfista pela água', () => {
+    const r = travelRoute(graph, GYM, WATER_NODE, [plain, plain], ['surfboard'])
+    expect(r.surfing).toBe(true)
+    expect(r.path.length).toBeGreaterThan(0)
+  })
+
   it('Sniper sozinho atua do ginásio: alcança qualquer ponto com distância 0', () => {
     const r = travelRoute(graph, GYM, WATER_NODE, [horseaSniper])
     expect(r.path).toEqual([GYM, WATER_NODE])

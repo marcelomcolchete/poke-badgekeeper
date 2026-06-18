@@ -5,6 +5,7 @@
 
 import type { Pokemon } from '../types/index.ts'
 import type { GameState } from '../engine/state.ts'
+import { isFainted } from '../engine/attributes.ts'
 import { getMissionTemplate } from '../data/missionTemplates.ts'
 import { advanceMission, expireMission, loseRunByRocket, promoteMission } from './missionFlow.ts'
 import { expireDefense, loseRunByUndefendedGym, spawnDefense } from './defenseFlow.ts'
@@ -28,7 +29,19 @@ export function tick(s: GameState, deltaMs: number): void {
   if (s.run.phase !== 'DAY') return // derrota por ginásio indefeso encerrou a run
   processSearches(s, now)
 
+  // Time inteiro desmaiado no dia = derrota imediata (sem ninguém para lutar/agir).
+  checkTeamWipeout(s)
+  if (s.run.phase !== 'DAY') return
+
   if (overtime && dayComplete(s)) finalizeDay(s)
+}
+
+/** Todo o time desmaiado encerra a run na hora (PLAN — condição de derrota). */
+function checkTeamWipeout(s: GameState): void {
+  if (s.roster.length === 0 || !s.roster.every(isFainted)) return
+  s.run.phase = 'GAMEOVER'
+  s.run.gameOverReason = 'fainted'
+  s.clock.speed = 0
 }
 
 function processMissions(s: GameState, now: number, overtime: boolean): void {
@@ -37,20 +50,23 @@ function processMissions(s: GameState, now: number, overtime: boolean): void {
     // imediata. Surgir e expirar no mesmo salto de tempo (aba oculta) apenas a descarta.
     const wasAvailableRocket =
       mission.status === 'available' && getMissionTemplate(mission.templateId).isRocket
+    // Encerramento (18h): apenas missões que AINDA não surgiram são descartadas. As que já
+    // estão como pop-up na tela ('available') continuam até o PRÓPRIO timer acabar — sumir no
+    // 18h faria o jogador perder na hora se fosse batalha/Rocket (PLAN §3.1, ajuste).
     if (overtime) {
-      // Encerramento: missões não despachadas viram oportunidade perdida (não surgem mais).
-      if (mission.status === 'scheduled' || mission.status === 'available') {
+      if (mission.status === 'scheduled') {
         expireMission(s, mission)
-        if (wasAvailableRocket) loseRunByRocket(s)
         continue
       }
     } else {
       promoteMission(s, mission, now)
-      if (mission.status === 'available' && now >= mission.expiresAtMs) {
-        expireMission(s, mission)
-        if (wasAvailableRocket) loseRunByRocket(s)
-        continue
-      }
+    }
+    // Pop-up ignorado até o fim do tempo dele expira (e Rocket não despachada = derrota) — vale
+    // tanto no horário normal quanto no encerramento, dando ao jogador a janela inteira.
+    if (mission.status === 'available' && now >= mission.expiresAtMs) {
+      expireMission(s, mission)
+      if (wasAvailableRocket) loseRunByRocket(s)
+      continue
     }
     if (
       mission.status === 'traveling' ||
@@ -91,5 +107,7 @@ function dayComplete(s: GameState): boolean {
   if (s.captureSearches.length > 0 || s.captureReturns.length > 0) return false
   if (s.encounters.length > 0) return false
   if (s.defenses.some((d) => d.status === 'active')) return false
+  // Pop-up de missão ainda na tela: o dia espera o jogador despachar ou o timer dela esgotar.
+  if (s.missions.some((m) => m.status === 'available')) return false
   return true
 }

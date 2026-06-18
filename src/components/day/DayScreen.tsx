@@ -232,14 +232,15 @@ export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) 
             dayLengthMs={state.clock.dayLengthMs}
             speed={state.clock.speed}
             gold={state.gold}
-            stars={state.approval.stars}
+            missionStars={state.approval.missionStars}
+            battleStars={state.approval.battleStars}
             onSpeedChange={setSpeed}
             onQuit={() => setOpen({ kind: 'quit' })}
           />
         </div>
 
         <div className={styles.itemsFloat}>
-          <ItemsBar state={state} />
+          <ItemsBar state={state} dispatch={dispatch} />
         </div>
       </div>
 

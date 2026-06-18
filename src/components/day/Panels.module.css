@@ -804,6 +804,35 @@
   cursor: not-allowed;
 }
 
+/* Ações ao pé da batalha: pular (secundário) + continuar, empilhados. */
+.battleActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.battleActions .confirm {
+  margin-top: 0;
+}
+
+.skipBattle {
+  width: 100%;
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  color: var(--c-ink);
+  background: transparent;
+  border: 3px solid var(--c-ink);
+  border-radius: var(--radius-pixel);
+  padding: 10px;
+  cursor: pointer;
+}
+
+.skipBattle:hover {
+  background: var(--c-ink);
+  color: var(--c-hud-text);
+}
+
 .hint {
   font-family: var(--font-text);
   font-size: 17px;

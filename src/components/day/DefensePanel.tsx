@@ -1,7 +1,7 @@
 // Defesa de ginásio (PLAN §4.4): escolha do esquadrão (≥1) e, em seguida, a animação da
 // cadeia de duelos 1v1 (componente compartilhado BattleView). A resolução acontece na hora
 // (reducer); o log de duelos guardado no estado alimenta a animação. Cada Pokémon — seu e
-// desafiante — mostra a nota E–S; o desafiante em destaque (+15) exibe medalha.
+// desafiante — mostra a nota E–S; invasores com medalha (Bronze/Prata/Ouro) exibem o selo.
 
 import { useState } from 'react'
 import type { Dispatch } from 'react'
