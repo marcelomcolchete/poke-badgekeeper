@@ -297,6 +297,8 @@ export const SECRET_LINES: Record<number, readonly [SecretId, SecretId, SecretId
   100: ['sa-explosion', 'sa-rollout', 'sa-static'],
   // Electabuzz (Volt Absorb fica sem efeito até existir a tempestade)
   125: ['sa-vital-spirit', 'sa-volt-absorb', 'sa-static'],
+  // Zapdos (ave-trovão lendária)
+  145: ['sa-fly', 'sa-fly-plus', 'sa-pressure'],
 
   // Sandshrew → Sandslash
   27: ['sa-rollout', 'sa-dig', 'sa-sand-rush'],
