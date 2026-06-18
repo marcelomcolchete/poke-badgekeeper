@@ -282,7 +282,7 @@ const SEEDS: CitySeed[] = [
   {
     name: 'Vermilion',
     primaryType: 'electric',
-    secondaryType: 'steel',
+    secondaryType: 'normal',
     starters: [
       { speciesId: 25, level: 3 }, // Pikachu
       { speciesId: 81, level: 1 }, // Magnemite
@@ -291,7 +291,7 @@ const SEEDS: CitySeed[] = [
   {
     name: 'Celadon',
     primaryType: 'grass',
-    secondaryType: 'poison',
+    secondaryType: 'bug',
     starters: [
       { speciesId: 44, level: 3 }, // Gloom
       { speciesId: 1, level: 1 }, // Bulbasaur
@@ -300,7 +300,7 @@ const SEEDS: CitySeed[] = [
   {
     name: 'Fuchsia',
     primaryType: 'poison',
-    secondaryType: 'flying',
+    secondaryType: 'dragon',
     starters: [
       { speciesId: 109, level: 3 }, // Koffing
       { speciesId: 41, level: 1 }, // Zubat
@@ -318,7 +318,7 @@ const SEEDS: CitySeed[] = [
   {
     name: 'Cinnabar',
     primaryType: 'fire',
-    secondaryType: 'dragon',
+    secondaryType: 'fighting',
     starters: [
       { speciesId: 58, level: 3 }, // Growlithe
       { speciesId: 147, level: 1 }, // Dratini
