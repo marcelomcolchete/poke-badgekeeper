@@ -9,6 +9,8 @@ import { getCity } from '../data/cities.ts'
 import { graphWithoutNodes, graphWithoutSurf, pointAlongPath, shortestPath } from '../engine/pathfinding.ts'
 import type { WeatherSchedule } from '../engine/weather.ts'
 import { applyWeatherHold } from './missionFlow.ts'
+import { acceptMission } from './missionFlow.ts'
+import { DAY_LENGTH_MS } from '../engine/constants.ts'
 
 const CERULEAN = getCity(1)
 const DRY = graphWithoutSurf(CERULEAN.graph) // grafo de quem não surfa (sem água)
@@ -136,5 +138,64 @@ describe('applyWeatherHold (replaneja/espera por poça)', () => {
     applyWeatherHold(s, m, 0)
     expect(m.weatherHold).toBeUndefined()
     expect(m.arriveAtMs).toBe(20_000)
+  })
+})
+
+describe('Swift Swim acelera a ida da missão sob chuva', () => {
+  // Chuva cobrindo o dia inteiro, sem poças (não interfere com desvio/espera).
+  const rainAllDay: WeatherSchedule = {
+    rain: [{ startMs: 0, endMs: DAY_LENGTH_MS, puddles: [] }],
+    forecast: { rainChancePercent: 100, rainMmPerHour: 30, potentialRainCount: 1 },
+  }
+  // Destino alcançável a pé (sem surf) a partir do ginásio de Cerulean.
+  const gym = CERULEAN.siteNodes.gym
+  const dest = Object.keys(CERULEAN.graph.nodes).find(
+    (n) => shortestPath(DRY, gym, n).length >= 3,
+  )!
+
+  /** Estado pronto para despachar UMA missão 'available' em `dest`, com o roster dado. */
+  function dispatchState(secretCount: number) {
+    const s = createInitialState(1)
+    s.run.cityIndex = 1
+    s.weather = rainAllDay
+    const mon = createPokemon({ id: 'p1', speciesId: 138 /* Omanyte */, level: 10, rng: createRng(1) })
+    mon.secretCount = secretCount // 1 = Swift Swim desbloqueado; 0 = sem habilidade
+    mon.status = 'idle' // acceptMission só despacha quem está idle
+    s.roster = [mon]
+    s.missions = [
+      {
+        id: 'm1',
+        templateId: 'patrulha',
+        requirement: {} as MissionInstance['requirement'],
+        node: dest,
+        path: [],
+        returnPath: [],
+        spawnAtMs: 0,
+        expiresAtMs: 999_999,
+        status: 'available',
+        teamIds: [],
+        acceptedAtMs: null,
+        arriveAtMs: null,
+        resolveAtMs: null,
+        returnEndsAtMs: null,
+        result: null,
+        pSuccess: 0,
+      },
+    ]
+    return s
+  }
+
+  it('time com Swift Swim chega antes do que sem, sob chuva', () => {
+    const withSS = dispatchState(1)
+    acceptMission(withSS, 'm1', ['p1'])
+    const plain = dispatchState(0)
+    acceptMission(plain, 'm1', ['p1'])
+
+    const swiftArrive = withSS.missions[0]!.arriveAtMs!
+    const plainArrive = plain.missions[0]!.arriveAtMs!
+    expect(swiftArrive).toBeGreaterThan(0)
+    expect(swiftArrive).toBeLessThan(plainArrive)
+    // Chuva o dia todo → ×3 → ~1/3 do tempo de ida.
+    expect(swiftArrive).toBeCloseTo(plainArrive / 3, 0)
   })
 })
