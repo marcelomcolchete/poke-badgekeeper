@@ -158,6 +158,24 @@ export const ITEMS: ItemData[] = [
     effect: { kind: 'passive' },
   },
   {
+    id: 'dragon-fang',
+    name: 'Dragon Fang',
+    type: 'passive',
+    price: 1000,
+    description: 'Pokémon do tipo Dragão ganham +50% em batalhas.',
+    sprite: sprite('dragon-fang'),
+    effect: { kind: 'passive' },
+  },
+  {
+    id: 'magnet',
+    name: 'Magnet',
+    type: 'passive',
+    price: 1000,
+    description: 'Pokémon do tipo Elétrico ganham +50% em batalhas.',
+    sprite: sprite('magnet'),
+    effect: { kind: 'passive' },
+  },
+  {
     id: 'surfboard',
     name: 'Surfboard',
     type: 'passive',
@@ -210,10 +228,11 @@ export const GLOBAL_ITEM_IDS: string[] = [
   'premier-ball',
 ]
 
-/** Itens EXTRAS por cidade (índice de CITIES): Pewter (0) e Cerulean (1). */
+/** Itens EXTRAS por cidade (índice de CITIES): Pewter (0), Cerulean (1) e Vermilion (2). */
 export const CITY_ITEM_IDS: Record<number, string[]> = {
   0: ['lagging-tail', 'thick-club', 'fossil-stone'],
   1: ['mystic-water', 'surfboard', 'fresh-water'],
+  2: ['dragon-fang', 'magnet'],
 }
 
 /** Subconjunto do qual ao menos 1 item SEMPRE aparece no mercado (potion/revive/x_*). */

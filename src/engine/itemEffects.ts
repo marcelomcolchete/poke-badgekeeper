@@ -6,10 +6,12 @@
 import type { Pokemon } from '../types/index.ts'
 import { getSpecies } from '../data/pokemon/index.ts'
 import {
+  DRAGON_FANG_BATTLE_MULT,
   EVIOLITE_MISSION_MULT,
   LAGGING_TAIL_BATTLE_MULT,
   LAGGING_TAIL_MISSION_MULT,
   LAGGING_TAIL_TRAVEL_MULT,
+  MAGNET_BATTLE_MULT,
   MYSTIC_WATER_BATTLE_MULT,
   THICK_CLUB_BATTLE_MULT,
 } from './balance.ts'
@@ -40,6 +42,8 @@ export function itemMissionMultiplier(p: Pokemon, runItems: readonly string[]): 
  * Multiplicador de Batalha vindo de itens passivos (1 = sem efeito):
  *  - Thick Club: +50% para Pokémon do tipo Ground.
  *  - Mystic Water: +50% para Pokémon do tipo Water.
+ *  - Dragon Fang: +50% para Pokémon do tipo Dragão.
+ *  - Magnet: +50% para Pokémon do tipo Elétrico.
  *  - Lagging Tail: +50% para todos.
  */
 export function itemBattleMultiplier(p: Pokemon, runItems: readonly string[]): number {
@@ -49,6 +53,12 @@ export function itemBattleMultiplier(p: Pokemon, runItems: readonly string[]): n
   }
   if (hasRunItem(runItems, 'mystic-water') && p.types.includes('water')) {
     mult *= MYSTIC_WATER_BATTLE_MULT
+  }
+  if (hasRunItem(runItems, 'dragon-fang') && p.types.includes('dragon')) {
+    mult *= DRAGON_FANG_BATTLE_MULT
+  }
+  if (hasRunItem(runItems, 'magnet') && p.types.includes('electric')) {
+    mult *= MAGNET_BATTLE_MULT
   }
   if (hasRunItem(runItems, 'lagging-tail')) mult *= LAGGING_TAIL_BATTLE_MULT
   return mult

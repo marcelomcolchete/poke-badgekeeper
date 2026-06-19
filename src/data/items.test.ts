@@ -57,22 +57,30 @@ describe('getDailyShop', () => {
   it('extras de cidade só aparecem na própria cidade', () => {
     const pewterOnly = CITY_ITEM_IDS[0] ?? []
     const ceruleanOnly = CITY_ITEM_IDS[1] ?? []
-    // Cidade 2 (Vermilion) não tem extras: só itens globais aparecem.
-    for (let seed = 0; seed < 80; seed++) {
-      const shop = getDailyShop(seed, 1, 2)
-      for (const id of shop) expect(GLOBAL_ITEM_IDS).toContain(id)
+    const vermilionOnly = CITY_ITEM_IDS[2] ?? []
+    // Toda oferta de uma cidade sai do pool global + extras da própria cidade.
+    for (const city of [0, 1, 2]) {
+      const allowed = new Set([...GLOBAL_ITEM_IDS, ...(CITY_ITEM_IDS[city] ?? [])])
+      for (let seed = 0; seed < 80; seed++) {
+        for (const id of getDailyShop(seed, 1, city)) expect(allowed.has(id)).toBe(true)
+      }
     }
-    // Os extras de Cerulean nunca aparecem em Pewter, e vice-versa.
-    const pewterSeen = new Set<string>()
-    const ceruleanSeen = new Set<string>()
+    // Extras de uma cidade nunca aparecem em outra.
+    const seen: Record<number, Set<string>> = { 0: new Set(), 1: new Set(), 2: new Set() }
     for (let seed = 0; seed < 200; seed++) {
-      for (const id of getDailyShop(seed, 1, 0)) pewterSeen.add(id)
-      for (const id of getDailyShop(seed, 1, 1)) ceruleanSeen.add(id)
+      for (const city of [0, 1, 2]) {
+        for (const id of getDailyShop(seed, 1, city)) seen[city]!.add(id)
+      }
     }
-    expect(ceruleanOnly.some((id) => pewterSeen.has(id))).toBe(false)
-    expect(pewterOnly.some((id) => ceruleanSeen.has(id))).toBe(false)
+    expect(ceruleanOnly.some((id) => seen[0]!.has(id))).toBe(false)
+    expect(vermilionOnly.some((id) => seen[0]!.has(id))).toBe(false)
+    expect(pewterOnly.some((id) => seen[1]!.has(id))).toBe(false)
+    expect(vermilionOnly.some((id) => seen[1]!.has(id))).toBe(false)
+    expect(pewterOnly.some((id) => seen[2]!.has(id))).toBe(false)
+    expect(ceruleanOnly.some((id) => seen[2]!.has(id))).toBe(false)
     // Em cada cidade, ao varrer seeds, pelo menos um extra próprio acaba aparecendo.
-    expect(pewterOnly.some((id) => pewterSeen.has(id))).toBe(true)
-    expect(ceruleanOnly.some((id) => ceruleanSeen.has(id))).toBe(true)
+    expect(pewterOnly.some((id) => seen[0]!.has(id))).toBe(true)
+    expect(ceruleanOnly.some((id) => seen[1]!.has(id))).toBe(true)
+    expect(vermilionOnly.some((id) => seen[2]!.has(id))).toBe(true)
   })
 })

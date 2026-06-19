@@ -45,6 +45,16 @@ describe('itemBattleMultiplier', () => {
     expect(itemBattleMultiplier(makeMon({ types: ['normal'] }), ['lagging-tail'])).toBeCloseTo(1.5)
     expect(itemBattleMultiplier(makeMon({ types: ['ground'] }), ['thick-club', 'lagging-tail'])).toBeCloseTo(2.25)
   })
+
+  it('Dragon Fang dá +50% só para o tipo Dragão', () => {
+    expect(itemBattleMultiplier(makeMon({ types: ['dragon'] }), ['dragon-fang'])).toBeCloseTo(1.5)
+    expect(itemBattleMultiplier(makeMon({ types: ['normal', 'flying'] }), ['dragon-fang'])).toBe(1)
+  })
+
+  it('Magnet dá +50% só para o tipo Elétrico', () => {
+    expect(itemBattleMultiplier(makeMon({ types: ['electric'] }), ['magnet'])).toBeCloseTo(1.5)
+    expect(itemBattleMultiplier(makeMon({ types: ['normal'] }), ['magnet'])).toBe(1)
+  })
 })
 
 describe('itemTravelSpeedMultiplier', () => {
