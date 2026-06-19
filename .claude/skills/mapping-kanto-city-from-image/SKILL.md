@@ -63,18 +63,24 @@ meio de um "pente" de setas paralelas (ex.: `E–L`, perdida entre `D–K` e `F�
    **não adjacentes**. São as que mais escapam.
 3. **Regra do grid/pente.** Onde os pontos se alinham em **colunas/fileiras** (duas fileiras de
    colunas alinhadas), cheque **cada par alinhado** por uma seta — não pare em "duas verticais já
-   bastam". Enumere coluna por coluna; as do **meio**, sem âncora visual, são as que somem.
-4. **Reconciliação por contagem.** Por região, **conte as pontas de seta visíveis** e bata com o
+   bastam". Enumere coluna por coluna; as do **meio**, sem âncora visual, são as que somem
+   (ex.: `E–L`, perdida entre `D–K` e `F–M`).
+4. **Linhas colineares inteiras + junções.** Trace cada **linha reta** (coluna ou fileira de
+   círculos alinhados) **ponta a ponta**, passando por TODOS os pontos: não deixe a linha
+   "terminar" só porque um nó também entra noutra cadeia cruzada. Todo nó num **cruzamento**
+   (vertical × horizontal) tem **2 eixos** — confirme os DOIS através dele. Foi assim que `Z–AF`
+   se perdeu: `AF` foi reivindicado pela fileira `AE–AF–AG` e a espinha `T–Z–AF` parou em `Z`.
+5. **Reconciliação por contagem.** Por região, **conte as pontas de seta visíveis** e bata com o
    nº de arestas que você listou. Vi 3 verticais mas listei 2? Falta uma. Esta é a **única**
-   defesa contra a aresta **redundante** faltando — o check de cheiro (passo 5) não a enxerga.
-5. **Check de cheiro.** Reexamine — não apresente como fato — todo nó de **grau 1**, toda região
+   defesa contra a aresta **redundante** faltando — o check de cheiro (passo 6) não a enxerga.
+6. **Check de cheiro.** Reexamine — não apresente como fato — todo nó de **grau 1**, toda região
    alcançável **só por Surf**, e todo cluster **isolado**. Quase sempre é aresta faltando, não um
    beco real. ⚠️ Este check é **unidirecional**: só pega **sub-conexão**. Ele é **cego** a aresta
-   redundante (caminho paralelo) — por isso os passos 3–4 são obrigatórios.
-6. **Conectividade nunca subtrai.** Raciocínio de alcance só pode **adicionar** candidatas
+   redundante (caminho paralelo) — por isso os passos 3–5 são obrigatórios.
+7. **Conectividade nunca subtrai.** Raciocínio de alcance só pode **adicionar** candidatas
    (quando algo está inalcançável). **Nunca** use "essa aresta é redundante / desnecessária" para
    descartar uma seta que você **vê** na imagem. Seta visível = aresta, ponto final.
-7. **Confirmação neutra.** Na tabela, pergunte "**rastreei estas setas — faltou alguma?**" em vez
+8. **Confirmação neutra.** Na tabela, pergunte "**rastreei estas setas — faltou alguma?**" em vez
    de "tal ponto não conecta, certo?" (não induza a resposta à sua hipótese).
 
 **Legenda de palavras → sítio:**
