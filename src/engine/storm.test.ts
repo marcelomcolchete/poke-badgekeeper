@@ -165,6 +165,7 @@ describe('storm — runtime e composição', () => {
     expect(a.forecast.stormChancePercent).toBeGreaterThanOrEqual(0)
     // storms é array (pode ser vazio conforme sorteio, mas o campo existe).
     expect(Array.isArray(a.storms)).toBe(true)
+    expect(a.forecast.potentialStormCount).toBe(maxStormTimes(9))
   })
 
   it('buildDayWeather não adiciona tempestade em cidade sem o efeito', () => {

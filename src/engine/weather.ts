@@ -148,7 +148,7 @@ export function rainAtLeastOnceChance(perEventPercent: number, count: number): n
 // ---- Geração da agenda ------------------------------------------------------------------
 
 /** Pontos onde poças podem cair: andáveis, exceto o ginásio, os surfNodes e os nós de exploração (g3x). */
-function puddleNodePool(city: CityData): string[] {
+export function puddleNodePool(city: CityData): string[] {
   const surf = new Set(city.graph.surfNodes ?? [])
   const gym = city.siteNodes.gym
   return Object.keys(city.graph.nodes).filter(

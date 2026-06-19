@@ -7,6 +7,7 @@ import type { GameState } from '../engine/state.ts'
 import type { StormEvent } from '../engine/storm.ts'
 import { travelerPositionsAt } from '../engine/travelerPositions.ts'
 import { getCity } from '../data/cities.ts'
+import { PARALYZE_STUN_MS } from '../engine/balance.ts'
 
 // Helpers locais -----------------------------------------------------------------
 
@@ -157,5 +158,46 @@ describe('stormFlow — aplicação dos raios', () => {
     const after = s.roster.find((p) => p.id === id)!
     expect(after.currentHp).toBe(0)
     expect(after.status).toBe('traveling') // não 'fainted' aqui
+  })
+
+  it('time de 2 membros atingidos por UM raio: cada membro perde 1 HP e é paralisado, mas a missão congela apenas +PARALYZE_STUN_MS (não 2×)', () => {
+    // Monta estado base com 1 membro já criado por autoSeedRun
+    const { s, id: id1, pos } = travelingState()
+    const mon1 = s.roster.find((p) => p.id === id1)!
+
+    // Cria um segundo Pokémon clonando o primeiro (mesmo path/pos por construção)
+    const id2 = 'p_test2'
+    const mon2 = { ...mon1, id: id2, currentHp: 5, maxHp: 5, status: 'traveling' as const }
+    s.roster.push(mon2)
+
+    // Adiciona o segundo membro à missão existente
+    const mission = s.missions[0]!
+    mission.teamIds = [id1, id2]
+    const arriveAtMsBefore = mission.arriveAtMs!
+
+    // Raio enorme que cobre com certeza a posição dos viajantes
+    const strikeAtMs = 5_000
+    const storm: StormEvent = {
+      startMs: 0,
+      endMs: 30_000,
+      strikes: [{ warnAtMs: 0, strikeAtMs, circles: [{ cx: pos.x, cy: pos.y, radius: 0.5 }] }],
+    }
+    s.weather = { ...s.weather, storms: [storm] }
+
+    processStorms(s, 0, 6_000)
+
+    // (a) Ambos os membros perderam exatamente 1 HP
+    expect(s.roster.find((p) => p.id === id1)!.currentHp).toBe(mon1.currentHp - 1)
+    expect(s.roster.find((p) => p.id === id2)!.currentHp).toBe(mon2.currentHp - 1)
+
+    // (b) Ambos os IDs estão em paralyzedBattleIds
+    expect(s.today.paralyzedBattleIds).toContain(id1)
+    expect(s.today.paralyzedBattleIds).toContain(id2)
+
+    // (c) A missão deslocou exatamente +PARALYZE_STUN_MS (não 2× por ter 2 membros)
+    expect(s.missions[0]!.arriveAtMs).toBe(arriveAtMsBefore + PARALYZE_STUN_MS)
+
+    // (d) paralyzeHold.untilMs === strikeAtMs + PARALYZE_STUN_MS
+    expect(s.missions[0]!.paralyzeHold?.untilMs).toBe(strikeAtMs + PARALYZE_STUN_MS)
   })
 })

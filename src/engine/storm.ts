@@ -14,7 +14,7 @@ import { createRng, deriveSeed, type Rng } from './rng.ts'
 import { DAY_LENGTH_MS, TOTAL_DAYS, STORM_SEED_SALT, MAP_ASPECT_W } from './constants.ts'
 import { clamp, lerp } from './math.ts'
 import { segmentLength } from './pathfinding.ts'
-import { puddleLevelAt, type RainEvent, WEATHER_FIRST_ELIGIBLE_DAY, maxRainTimes } from './weather.ts'
+import { puddleLevelAt, puddleNodePool, type RainEvent, WEATHER_FIRST_ELIGIBLE_DAY, maxRainTimes } from './weather.ts'
 import type { WeatherSchedule } from './weather.ts'
 import { buildWeatherSchedule } from './weather.ts'
 import { cityHasStorm } from '../data/cityWeather.ts'
@@ -103,11 +103,7 @@ export function strikeCountForDay(day: number, poolSize: number): number {
 
 /** Pontos onde uma poça pode cair — base do cap de raios (andáveis, exceto ginásio/surf/exploração). */
 function stormPoolSize(city: CityData): number {
-  const surf = new Set(city.graph.surfNodes ?? [])
-  const gym = city.siteNodes.gym
-  return Object.keys(city.graph.nodes).filter(
-    (id) => id !== gym && !surf.has(id) && !/^g\d/.test(id),
-  ).length
+  return puddleNodePool(city).length
 }
 
 /** Cria os raios de UMA tempestade [start, end]: count escala com o dia; cada raio sorteia centro/tempo. */
@@ -171,7 +167,7 @@ export function buildStorms(
   // Acopladas: uma tempestade DENTRO da janela de cada chuva (15–30s, encaixada).
   for (const rain of rainEvents) {
     const window = rain.endMs - rain.startMs
-    const duration = Math.min(rng.int(STORM_EVENT_MIN_MS, STORM_EVENT_MAX_MS), Math.max(STORM_EVENT_MIN_MS, window))
+    const duration = Math.min(rng.int(STORM_EVENT_MIN_MS, STORM_EVENT_MAX_MS), window)
     const latestStart = Math.max(rain.startMs, rain.endMs - duration)
     const start = rng.int(rain.startMs, latestStart)
     const end = start + duration
@@ -278,8 +274,8 @@ export function resolveStrikeCircles(
   if (water.has(center)) {
     return [{ cx: pos.x, cy: pos.y, radius: STRIKE_RADIUS_ON_WATER }]
   }
-  const circles: StrikeCircle[] = [{ cx: pos.x, cy: pos.y, radius: STRIKE_RADIUS }]
   const primary: StrikeCircle = { cx: pos.x, cy: pos.y, radius: STRIKE_RADIUS }
+  const circles: StrikeCircle[] = [primary]
   for (const node of water) {
     const wp = city.graph.nodes[node]
     if (wp && pointInCircle(primary, wp)) {
