@@ -46,6 +46,12 @@ function shopState(item: ItemData, state: GameState): ShopState {
     const anyLevelable = state.roster.some((p) => p.level < LEVEL_MAX)
     return { label: `$ ${item.price}`, disabled: !afford || !anyLevelable, sold: false, needsTarget: true }
   }
+  if (item.effect.kind === 'moonStone') {
+    const anyEvolvable = [...state.roster, ...state.box].some(
+      (p) => getSpecies(p.speciesId).evolvesTo !== null,
+    )
+    return { label: `$ ${item.price}`, disabled: !afford || !anyEvolvable, sold: false, needsTarget: true }
+  }
   return { label: `$ ${item.price}`, disabled: !afford, sold: false, needsTarget: false }
 }
 
@@ -89,6 +95,8 @@ export function MorningScreen({ state, dispatch }: Props) {
   const [boxOpen, setBoxOpen] = useState(false)
   // Seletor de alvo do Rare Candy (null = fechado).
   const [candyOpen, setCandyOpen] = useState(false)
+  // Seletor de alvo da Moon Stone (false = fechado).
+  const [moonOpen, setMoonOpen] = useState(false)
 
   // Oferta fixa do dia (vinda do estado); saves antigos sem oferta caem no sorteio derivado.
   const offerIds =
@@ -105,12 +113,18 @@ export function MorningScreen({ state, dispatch }: Props) {
 
   const buy = (item: ItemData): void => {
     if (item.effect.kind === 'rareCandy') setCandyOpen(true)
+    else if (item.effect.kind === 'moonStone') setMoonOpen(true)
     else dispatch({ type: 'BUY_ITEM', itemId: item.id })
   }
 
   const pickCandyTarget = (pokemonId: string): void => {
     dispatch({ type: 'USE_RARE_CANDY', pokemonId })
     setCandyOpen(false)
+  }
+
+  const pickMoonTarget = (pokemonId: string): void => {
+    dispatch({ type: 'USE_MOON_STONE', pokemonId })
+    setMoonOpen(false)
   }
 
   return (
@@ -222,6 +236,37 @@ export function MorningScreen({ state, dispatch }: Props) {
                 </button>
               )
             })}
+          </div>
+        </Overlay>
+      )}
+
+      {moonOpen && (
+        <Overlay title="MOON STONE — ESCOLHA UM POKÉMON" onClose={() => setMoonOpen(false)}>
+          <p className={styles.candyHint}>O Pokémon escolhido evolui na hora, mesmo sem o nível.</p>
+          <div className={styles.candyList}>
+            {[...state.roster, ...state.box]
+              .filter((mon) => getSpecies(mon.speciesId).evolvesTo !== null)
+              .map((mon) => {
+                const species = getSpecies(mon.speciesId)
+                return (
+                  <button
+                    key={mon.id}
+                    type="button"
+                    className={styles.candyRow}
+                    onClick={() => pickMoonTarget(mon.id)}
+                    data-sound="select"
+                  >
+                    <img className={styles.candyImg} src={species.spritePath} alt="" />
+                    <span className={styles.candyMain}>
+                      <span className={styles.candyName}>
+                        {displayNameOf(mon)}
+                        <span className={styles.candyLvl}>Nv {mon.level}</span>
+                      </span>
+                    </span>
+                    <span className={styles.candyPlus}>Evoluir</span>
+                  </button>
+                )
+              })}
           </div>
         </Overlay>
       )}

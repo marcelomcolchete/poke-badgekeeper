@@ -142,11 +142,11 @@ export const ITEMS: ItemData[] = [
   {
     id: 'fossil-stone',
     name: 'Fossil Stone',
-    type: 'consumable',
-    price: 800,
-    description: 'Recebe um Pokémon fóssil aleatório (nível 1, rank sorteado de F a S).',
+    type: 'passive',
+    price: 1000,
+    description: 'Pokémon fósseis ganham +50% em batalhas.',
     sprite: sprite('fossil-stone'),
-    effect: { kind: 'fossilStone' },
+    effect: { kind: 'passive' },
   },
   {
     id: 'mystic-water',
@@ -155,6 +155,34 @@ export const ITEMS: ItemData[] = [
     price: 1000,
     description: 'Pokémon do tipo Água ganham +50% em batalhas.',
     sprite: sprite('mystic-water'),
+    effect: { kind: 'passive' },
+  },
+  {
+    id: 'electirizer',
+    name: 'Electirizer',
+    type: 'passive',
+    price: 650,
+    description:
+      'Quando um Pokémon seu é atingido por um raio, ele ganha +50% na próxima missão (acumula a cada raio).',
+    sprite: sprite('electirizer'),
+    effect: { kind: 'passive' },
+  },
+  {
+    id: 'dragon-fang',
+    name: 'Dragon Fang',
+    type: 'passive',
+    price: 1000,
+    description: 'Pokémon do tipo Dragão ganham +50% em batalhas.',
+    sprite: sprite('dragon-fang'),
+    effect: { kind: 'passive' },
+  },
+  {
+    id: 'magnet',
+    name: 'Magnet',
+    type: 'passive',
+    price: 1000,
+    description: 'Pokémon do tipo Elétrico ganham +50% em batalhas.',
+    sprite: sprite('magnet'),
     effect: { kind: 'passive' },
   },
   {
@@ -174,6 +202,24 @@ export const ITEMS: ItemData[] = [
     description: 'Use para curar todo o HP de um Pokémon à escolha (2 usos).',
     sprite: sprite('fresh-water'),
     effect: { kind: 'heal', scope: 'single', uses: 2 },
+  },
+  {
+    id: 'shiny-charm',
+    name: 'Shiny Charm',
+    type: 'passive',
+    price: 1000,
+    description: 'Aumenta em +4% a chance de encontrar Pokémon shiny.',
+    sprite: sprite('shiny-charm'),
+    effect: { kind: 'passive' },
+  },
+  {
+    id: 'moon-stone',
+    name: 'Moon Stone',
+    type: 'consumable',
+    price: 700,
+    description: 'Escolha um Pokémon para evoluir na hora, mesmo sem o nível.',
+    sprite: sprite('moon-stone'),
+    effect: { kind: 'moonStone' },
   },
 ]
 
@@ -208,12 +254,15 @@ export const GLOBAL_ITEM_IDS: string[] = [
   'rare-candy',
   'love-ball',
   'premier-ball',
+  'shiny-charm',
+  'moon-stone',
 ]
 
-/** Itens EXTRAS por cidade (índice de CITIES): Pewter (0) e Cerulean (1). */
+/** Itens EXTRAS por cidade (índice de CITIES): Pewter (0), Cerulean (1) e Vermilion (2). */
 export const CITY_ITEM_IDS: Record<number, string[]> = {
   0: ['lagging-tail', 'thick-club', 'fossil-stone'],
   1: ['mystic-water', 'surfboard', 'fresh-water'],
+  2: ['electirizer', 'dragon-fang', 'magnet'],
 }
 
 /** Subconjunto do qual ao menos 1 item SEMPRE aparece no mercado (potion/revive/x_*). */

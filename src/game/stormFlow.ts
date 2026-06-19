@@ -130,6 +130,11 @@ export function processStorms(s: GameState, prevMs: number, nowMs: number): void
       // Reduz HP SEM virar fainted aqui (preserva 'traveling'/'returning'); settle normal cuida.
       replaceMon(s, { ...mon, currentHp: Math.max(0, mon.currentHp - STRIKE_DAMAGE) })
       applyParalyze(s, id, pos, strike.strikeAtMs, frozenContainers)
+      // Electirizer: cada raio sofrido vira +1 carga de bônus para a PRÓXIMA missão deste Pokémon.
+      if (s.runItems.includes('electirizer')) {
+        const charges = (s.electirizerCharges ??= {})
+        charges[id] = (charges[id] ?? 0) + 1
+      }
     }
   }
 }

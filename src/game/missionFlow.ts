@@ -93,6 +93,16 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
   const team = teamOf(s, teamIds).filter((p) => p.status === 'idle')
   if (team.length < MIN_DISPATCH || team.length > MAX_DISPATCH) return
 
+  // Electirizer: fixa (e consome) as cargas acumuladas dos membros despachados — bônus desta missão.
+  const charges = (s.electirizerCharges ??= {})
+  const electirizerBonus: Record<string, number> = {}
+  for (const p of team) {
+    if (charges[p.id]) {
+      electirizerBonus[p.id] = charges[p.id]!
+      delete charges[p.id]
+    }
+  }
+
   const city = getCity(s.run.cityIndex)
   const template = getMissionTemplate(mission.templateId)
   const now = s.clock.dayElapsedMs
@@ -111,9 +121,11 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
     template,
     runtime: s.today.secretRuntime,
     runItems: s.runItems,
+    electirizerBonus,
   }
 
   mission.teamIds = team.map((p) => p.id)
+  if (Object.keys(electirizerBonus).length > 0) mission.electirizerBonus = electirizerBonus
   for (const p of team) markActive(s.today, p.id) // participação do dia (corações)
   mission.path = outbound.path
   mission.returnPath = inbound.path
@@ -261,6 +273,7 @@ export function resolveMissionNow(s: GameState, mission: MissionInstance): void 
     template,
     runtime: s.today.secretRuntime,
     runItems: s.runItems,
+    electirizerBonus: mission.electirizerBonus,
   }
   const pSuccess = missionSuccessProbabilityCtx(ctx, mission.requirement)
   const outcome = resolveMission(

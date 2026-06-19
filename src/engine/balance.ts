@@ -327,5 +327,13 @@ export const LAGGING_TAIL_TRAVEL_MULT = 0.5
 export const THICK_CLUB_BATTLE_MULT = 1.5
 /** Mystic Water: +50% em batalhas para Pokémon do tipo Water. */
 export const MYSTIC_WATER_BATTLE_MULT = 1.5
+/** Dragon Fang: +50% em batalhas para Pokémon do tipo Dragão. */
+export const DRAGON_FANG_BATTLE_MULT = 1.5
+/** Magnet: +50% em batalhas para Pokémon do tipo Elétrico. */
+export const MAGNET_BATTLE_MULT = 1.5
+/** Fossil Stone: +50% em batalhas para Pokémon fósseis (Omanyte/Omastar/Kabuto/Kabutops/Aerodactyl). */
+export const FOSSIL_STONE_BATTLE_MULT = 1.5
+/** Electirizer: +50% no sucesso da próxima missão por raio sofrido (acumula por carga). */
+export const ELECTIRIZER_MISSION_BONUS = 0.5
 /** Exp Share: fração da XP de um Pokémon repassada ao resto do time. */
 export const EXP_SHARE_RATE = 0.05

@@ -13,6 +13,7 @@ import {
   ANALYTIC_PATROL_MULT,
   ANALYTIC_STUDY_MULT,
   BATTLE_ARMOR_MISSION_MULT,
+  ELECTIRIZER_MISSION_BONUS,
   EXPLOSION_SELF_DAMAGE_FRACTION,
   FLY_SPEED_BONUS,
   HUSTLE_BATTLE_BONUS,
@@ -168,6 +169,8 @@ export interface MissionSecretCtx {
   runtime: SecretRuntimeMap
   /** Itens passivos da run (Eviolite/Lagging Tail…) — entram no multiplicador de atributos. */
   runItems: readonly string[]
+  /** Electirizer: cargas de bônus por Pokémon (id → nº de raios) fixadas no despacho. */
+  electirizerBonus?: Record<string, number>
 }
 
 /**
@@ -198,7 +201,10 @@ export function missionAttrMultiplier(p: Pokemon, ctx: MissionSecretCtx): number
   if (hasBattleArmor(p) && ctx.runtime[p.id]?.battleArmorPending) mult *= BATTLE_ARMOR_MISSION_MULT
   if (hasHustle(p)) mult *= HUSTLE_MISSION_MULT
   // Clear Body (nível de time): nenhum membro recebe debuff de atributo (multiplicador < 1).
-  if (mult < 1 && ctx.team.some(hasClearBody)) return 1
+  if (mult < 1 && ctx.team.some(hasClearBody)) mult = 1
+  // Electirizer: bônus positivo da "próxima missão" por raio sofrido (não anulado pelo Clear Body).
+  const charges = ctx.electirizerBonus?.[p.id] ?? 0
+  if (charges > 0) mult *= 1 + ELECTIRIZER_MISSION_BONUS * charges
   return mult
 }
 

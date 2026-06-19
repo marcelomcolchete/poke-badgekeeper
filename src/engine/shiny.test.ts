@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createRng } from './rng.ts'
-import { SHINY_CHANCE } from './constants.ts'
-import { rollShiny, shinyFor, spotHasShiny } from './shiny.ts'
+import { SHINY_CHANCE, SHINY_CHARM_BONUS } from './constants.ts'
+import { rollShiny, shinyChance, shinyFor, shinyForChance, spotHasShiny } from './shiny.ts'
 
 describe('rollShiny', () => {
   it('é true quando o próximo float fica abaixo de SHINY_CHANCE', () => {
@@ -45,5 +45,30 @@ describe('spotHasShiny', () => {
       }
     }
     expect(found).toBe(true)
+  })
+})
+
+describe('shiny charm', () => {
+  it('shinyChance soma +4% quando o item está na run', () => {
+    expect(shinyChance([])).toBeCloseTo(SHINY_CHANCE)
+    expect(shinyChance(['shiny-charm'])).toBeCloseTo(SHINY_CHANCE + SHINY_CHARM_BONUS)
+  })
+
+  it('é monotônico: tudo que era shiny a 1% segue shiny a 5%', () => {
+    const base = SHINY_CHANCE
+    const boosted = SHINY_CHANCE + SHINY_CHARM_BONUS
+    for (let i = 0; i < 2000; i++) {
+      if (shinyForChance(base, i)) expect(shinyForChance(boosted, i)).toBe(true)
+    }
+  })
+
+  it('a chance maior produz MAIS shinies no agregado', () => {
+    let lo = 0
+    let hi = 0
+    for (let i = 0; i < 5000; i++) {
+      if (shinyForChance(SHINY_CHANCE, i)) lo++
+      if (shinyForChance(SHINY_CHANCE + SHINY_CHARM_BONUS, i)) hi++
+    }
+    expect(hi).toBeGreaterThan(lo)
   })
 })

@@ -19,7 +19,7 @@ import {
   startSearch,
   withdrawPokemon,
 } from './captureFlow.ts'
-import { allocatePoint, applyItem, buyBall, buyItem, useRareCandy } from './marketFlow.ts'
+import { allocatePoint, applyItem, buyBall, buyItem, useMoonStone, useRareCandy } from './marketFlow.ts'
 
 export function reducer(state: GameState, action: GameAction): GameState {
   // Reinício total numa nova cidade: descarta o estado atual (não dobra no draft) — começo limpo.
@@ -89,6 +89,9 @@ export function reducer(state: GameState, action: GameAction): GameState {
       break
     case 'USE_RARE_CANDY':
       useRareCandy(s, action.pokemonId)
+      break
+    case 'USE_MOON_STONE':
+      useMoonStone(s, action.pokemonId)
       break
     case 'ALLOCATE_POINT':
       allocatePoint(s, action.pokemonId, action.attr)

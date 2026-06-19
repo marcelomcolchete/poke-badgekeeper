@@ -144,6 +144,16 @@ export function evolveToLevel(p: Pokemon, rng?: Rng): Pokemon {
   }
 }
 
+/**
+ * Evolui UM estágio ignorando o nível (Moon Stone): troca para a próxima forma (sorteando o ramo
+ * com `rng`, ex.: Eevee) mantendo nível/XP/alocações e a PROPORÇÃO de HP. Espécie final → inalterada.
+ */
+export function evolveOneStage(p: Pokemon, rng: Rng): Pokemon {
+  const evo = getSpecies(p.speciesId).evolvesTo
+  if (!evo) return p
+  return evolveInto(p, rng.pick(evo.ids))
+}
+
 /** Troca para a forma evoluída preservando nível/XP/alocações e a PROPORÇÃO de HP. */
 function evolveInto(p: Pokemon, toId: number): Pokemon {
   const target = getSpecies(toId)

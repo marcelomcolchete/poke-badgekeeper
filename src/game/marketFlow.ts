@@ -10,19 +10,14 @@ import { nextBall } from '../data/balls.ts'
 import { canAfford } from '../engine/economy.ts'
 import { LEVEL_MAX } from '../engine/constants.ts'
 import { heal, recomputeMaxHp } from '../engine/attributes.ts'
-import { rosterIsFull } from '../engine/capture.ts'
-import { RANKS } from '../engine/ranking.ts'
-import { shinyFor } from '../engine/shiny.ts'
+import { getSpecies } from '../data/pokemon/index.ts'
 import {
   allocatePoint as engineAllocate,
-  createPokemon,
+  evolveOneStage,
   evolveToLevel,
   pendingPoints,
 } from '../engine/leveling.ts'
-import { findMon, replaceMon, takeId, takeRng } from './runtime.ts'
-
-/** Espécies fósseis sorteadas pela Fossil Stone (Omanyte/Omastar/Kabuto/Kabutops/Aerodactyl). */
-const FOSSIL_SPECIES_IDS = [138, 139, 140, 141, 142]
+import { findMon, replaceMon, takeRng } from './runtime.ts'
 
 /** Marca um item como vendido hoje (vira "VENDIDO" no mercado — 1 compra por slot/dia). */
 function markSold(s: GameState, itemId: string): void {
@@ -58,14 +53,6 @@ export function buyItem(s: GameState, itemId: string, quantity = 1): void {
       markSold(s, itemId)
       return
     }
-    case 'fossilStone': {
-      // Gera um Pokémon fóssil aleatório (nível 1, rank F–S sorteado) no time ou no PC.
-      if (!canAfford(s.gold, item)) return
-      s.gold -= item.price
-      grantFossil(s)
-      markSold(s, itemId)
-      return
-    }
     case 'statBuff': {
       // Buff diário: +amount no eixo para TODO o time (afeta inclusive o HP); some de manhã.
       if (!canAfford(s.gold, item, quantity)) return
@@ -85,6 +72,9 @@ export function buyItem(s: GameState, itemId: string, quantity = 1): void {
     }
     case 'rareCandy':
       // Precisa de um alvo escolhido na compra → tratado por useRareCandy (ação dedicada).
+      return
+    case 'moonStone':
+      // Precisa de um alvo escolhido na compra → tratado por useMoonStone (ação dedicada).
       return
   }
 }
@@ -133,6 +123,23 @@ export function useRareCandy(s: GameState, pokemonId: string): void {
   const rng = takeRng(s)
   const leveled = recomputeMaxHp(evolveToLevel({ ...mon, level: mon.level + 1 }, rng))
   replaceMon(s, leveled)
+  markSold(s, item.id)
+}
+
+/**
+ * Moon Stone: evolui o Pokémon escolhido (time OU caixa) um estágio, ignorando o nível (sorteia o
+ * ramo). Sem ouro, alvo inexistente, que não evolui, ou já comprado hoje → no-op (a UI bloqueia).
+ */
+export function useMoonStone(s: GameState, pokemonId: string): void {
+  const item = getItem('moon-stone')
+  if (s.today.purchasedItems.includes(item.id)) return
+  const fromRoster = s.roster.find((p) => p.id === pokemonId)
+  const target = fromRoster ?? s.box.find((p) => p.id === pokemonId)
+  if (!target || getSpecies(target.speciesId).evolvesTo === null || !canAfford(s.gold, item)) return
+  s.gold -= item.price
+  const evolved = evolveOneStage(target, takeRng(s))
+  if (fromRoster) s.roster = s.roster.map((p) => (p.id === pokemonId ? evolved : p))
+  else s.box = s.box.map((p) => (p.id === pokemonId ? evolved : p))
   markSold(s, item.id)
 }
 
@@ -189,21 +196,6 @@ function applyTeamItem(s: GameState, kind: 'heal' | 'revive'): boolean {
     return p
   })
   return changed
-}
-
-/** Fossil Stone: cria um Pokémon fóssil aleatório (nível 1, rank F–S) no time (ou no PC se cheio). */
-function grantFossil(s: GameState): void {
-  const rng = takeRng(s)
-  const speciesId = rng.pick(FOSSIL_SPECIES_IDS)
-  // Rank sorteado uniformemente de F (0) a S (RANKS.length − 1) vira o centro de rank dos IVs.
-  const rankCenter = rng.int(0, RANKS.length - 1)
-  // Shiny (1%) derivado do estado ATUAL do rng (não consome): sobrepõe o rank → rank S.
-  const shiny = shinyFor(rng.state())
-  const id = takeId(s, 'p')
-  const mon = createPokemon({ id, speciesId, level: 1, rng, rankCenter, shiny })
-  if (rosterIsFull(s.roster)) s.box = [...s.box, mon]
-  else s.roster = [...s.roster, mon]
-  if (!s.caughtSpecies.includes(speciesId)) s.caughtSpecies = [...s.caughtSpecies, speciesId]
 }
 
 /** Aloca o ponto pendente de um level-up no atributo escolhido (PLAN §4.1). */

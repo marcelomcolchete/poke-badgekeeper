@@ -5,7 +5,6 @@ import { reducer } from './reducer.ts'
 import { autoSeedRun } from './setup.ts'
 import { startSearch } from './captureFlow.ts'
 import { applyXpGains } from './itemFlow.ts'
-import { pokemonRank } from '../engine/ranking.ts'
 
 const SEED = 12345
 
@@ -205,45 +204,6 @@ describe('Premier Ball (sobe a bola de graça)', () => {
   })
 })
 
-describe('Fossil Stone (gera um fóssil)', () => {
-  const FOSSILS = [138, 139, 140, 141, 142]
-  it('adiciona um Pokémon fóssil nível 1 ao time e cobra 800', () => {
-    let s = createInitialState(SEED)
-    s.gold = 800
-    s.roster = [makeMon({ id: 'a' })]
-    s = reducer(s, { type: 'BUY_ITEM', itemId: 'fossil-stone' })
-    expect(s.gold).toBe(0)
-    expect(s.roster).toHaveLength(2)
-    const fossil = s.roster[1]!
-    expect(FOSSILS).toContain(fossil.speciesId)
-    expect(fossil.level).toBe(1)
-  })
-
-  it('sem ouro é no-op', () => {
-    let s = createInitialState(SEED)
-    s.gold = 100
-    s.roster = [makeMon({ id: 'a' })]
-    s = reducer(s, { type: 'BUY_ITEM', itemId: 'fossil-stone' })
-    expect(s.roster).toHaveLength(1)
-    expect(s.gold).toBe(100)
-  })
-
-  it('quando o fóssil sai shiny, é sempre rank S', () => {
-    // Shiny é 1%: varia o seed da run até obter um fóssil shiny (determinístico) e confere o rank.
-    let shinyFossil: ReturnType<typeof makeMon> | undefined
-    for (let seed = 0; seed < 20000 && !shinyFossil; seed++) {
-      let s = createInitialState(seed)
-      s.gold = 800
-      s.roster = [makeMon({ id: 'a' })]
-      s = reducer(s, { type: 'BUY_ITEM', itemId: 'fossil-stone' })
-      const fossil = s.roster[1]
-      if (fossil?.shiny) shinyFossil = fossil
-    }
-    expect(shinyFossil).toBeDefined()
-    expect(pokemonRank(shinyFossil!)).toBe('S')
-  })
-})
-
 describe('mercado da manhã (oferta fixa do dia)', () => {
   it('a virada do dia gera 5 itens, zera os vendidos e exclui passivos possuídos', () => {
     let s = createInitialState(SEED)
@@ -279,5 +239,34 @@ describe('Fast Ball', () => {
     startSearch(fast, fast.roster[0]!.id, 0)
     const quick = fast.captureSearches[0]!
     expect(quick.readyAtMs).toBe(quick.arriveAtMs)
+  })
+})
+
+describe('Moon Stone (evolui ignorando o nível)', () => {
+  it('evolui um Pokémon do time e cobra 700', () => {
+    let s = createInitialState(SEED)
+    s.gold = 700
+    s.roster = [makeMon({ id: 'a', speciesId: 1, level: 1 })] // Bulbasaur
+    s = reducer(s, { type: 'USE_MOON_STONE', pokemonId: 'a' })
+    expect(s.roster[0]!.speciesId).toBe(2) // Ivysaur
+    expect(s.gold).toBe(0)
+  })
+
+  it('evolui um Pokémon da caixa', () => {
+    let s = createInitialState(SEED)
+    s.gold = 700
+    s.box = [makeMon({ id: 'bx', speciesId: 4, level: 1 })] // Charmander
+    s = reducer(s, { type: 'USE_MOON_STONE', pokemonId: 'bx' })
+    expect(s.box[0]!.speciesId).toBe(5) // Charmeleon
+    expect(s.gold).toBe(0)
+  })
+
+  it('sem ouro é no-op', () => {
+    let s = createInitialState(SEED)
+    s.gold = 100
+    s.roster = [makeMon({ id: 'a', speciesId: 1, level: 1 })]
+    s = reducer(s, { type: 'USE_MOON_STONE', pokemonId: 'a' })
+    expect(s.roster[0]!.speciesId).toBe(1)
+    expect(s.gold).toBe(100)
   })
 })

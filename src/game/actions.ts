@@ -53,5 +53,7 @@ export type GameAction =
   | { type: 'USE_ITEM'; itemId: string; targetId: string }
   /** Compra um Rare Candy e o aplica no Pokémon escolhido (+1 nível) — PLAN — Itens. */
   | { type: 'USE_RARE_CANDY'; pokemonId: string }
+  /** Compra uma Moon Stone e evolui (1 estágio, ignorando o nível) o Pokémon escolhido — PLAN — Itens. */
+  | { type: 'USE_MOON_STONE'; pokemonId: string }
   /** Aloca o ponto de um level-up no atributo escolhido (modal) — PLAN §4.1. */
   | { type: 'ALLOCATE_POINT'; pokemonId: string; attr: AttrKey }

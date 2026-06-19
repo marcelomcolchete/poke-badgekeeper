@@ -129,6 +129,11 @@ export interface MissionInstance {
    */
   paralyzeHold?: { pos: MapPos; untilMs: number }
   /**
+   * Electirizer: cargas de bônus (raios sofridos) por Pokémon, FIXADAS no despacho e consumidas
+   * nesta missão — `id → nº de raios`. Cada carga vale +50% no sucesso. Ausente = sem bônus.
+   */
+  electirizerBonus?: Record<string, number>
+  /**
    * Sub-seed do RNG de evolução, sorteado ao resolver. O XP só é APLICADO na volta ao
    * ginásio (PLAN §4.1, ajuste) — guardar o seed mantém a evolução determinística.
    */
@@ -452,6 +457,11 @@ export interface GameState {
   inventory: ItemStack[]
   /** Itens/passivas permanentes da run. */
   runItems: string[]
+  /**
+   * Electirizer: cargas de "próxima missão" acumuladas por Pokémon (raios sofridos), aguardando
+   * despacho. Persiste até ser consumida (snapshot em acceptMission). Vazio = sem cargas pendentes.
+   */
+  electirizerCharges: Record<string, number>
   today: DayTally
   /** Acumulador vitalício da run (dias fechados) — alimenta a tela de fim de jogo. */
   lifetime: LifetimeStats
@@ -533,6 +543,7 @@ export function createInitialState(seed: number): GameState {
     gold: STARTING_GOLD,
     inventory: [],
     runItems: [],
+    electirizerCharges: {},
     today: emptyTally(),
     lifetime: emptyLifetime(),
     weather: emptyWeatherSchedule(),
