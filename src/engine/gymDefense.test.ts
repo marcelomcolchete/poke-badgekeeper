@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { POKEMON_TYPES } from '../types/index.ts'
 import { ATTR_MAX, DEFENSE_SQUAD_BY_DAY } from './constants.ts'
-import { DEFENSE_MEDAL_BATTLE } from './balance.ts'
+import { DEFENSE_MEDAL_BATTLE, PARALYZE_BATTLE_MULT } from './balance.ts'
 import { createRng } from './rng.ts'
 import { getTrainer } from '../data/trainers.ts'
 import { getSpecies } from '../data/pokemon/index.ts'
@@ -378,6 +378,28 @@ describe('enemySquadSizeForDay (PLAN §4.4)', () => {
     for (let day = 1; day <= 10; day++) {
       expect(enemySquadSizeForDay(day)).toBe(DEFENSE_SQUAD_BY_DAY[day])
     }
+  })
+})
+
+describe('resolveDefense — Paralyze (-50% Batalha)', () => {
+  it('um Pokémon paralisado luta com metade da Batalha efetiva', () => {
+    const rng = createRng(1)
+    // makeMon com batalha=40, ivs/allocations zerados, tipos neutros — effectiveAttr devolve a base.
+    const you = makeMon({ id: 'p1', types: ['normal'], baseAttrs: makeAttrs({ batalha: 40 }) })
+    const enemy: EnemyUnit = { battle: 30, types: ['normal'] }
+    // Sem paralisia: 40 vs 30 → vitória garantida (pWin clamp 1).
+    const normal = resolveDefense(createRng(1), [you], [enemy])
+    expect(normal.duels[0]?.pWin).toBe(1)
+    // Com paralisia: 20 vs 30 → pWin ≈ 0,667.
+    const para = resolveDefense(rng, [you], [enemy], { paralyzedIds: new Set(['p1']) })
+    expect(para.duels[0]?.pWin).toBeCloseTo((40 * PARALYZE_BATTLE_MULT) / 30, 5)
+  })
+
+  it('sem id paralisado, nada muda', () => {
+    const you = makeMon({ id: 'p1', types: ['normal'], baseAttrs: makeAttrs({ batalha: 40 }) })
+    const enemy: EnemyUnit = { battle: 30, types: ['normal'] }
+    const r = resolveDefense(createRng(1), [you], [enemy], { paralyzedIds: new Set(['outro']) })
+    expect(r.duels[0]?.pWin).toBe(1)
   })
 })
 

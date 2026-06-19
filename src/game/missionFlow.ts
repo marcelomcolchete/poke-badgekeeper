@@ -404,6 +404,7 @@ export function resolveRocketBattle(s: GameState, missionId: string): void {
     sturdyAvailableIds,
     runItems: s.runItems,
     damagePerLoss: damageForDay(s.run.day),
+    paralyzedIds: new Set(s.today.paralyzedBattleIds),
   })
   // Registra cada duelo: vitória → desafiante derrotado; derrota → o inimigo que venceu seu
   // Pokémon (Carrasco). `theirs` só avança quando você vence (mesma regra da defesa de ginásio).
