@@ -8,7 +8,7 @@ import type { Attrs, Pokemon } from '../../types/index.ts'
 import { ATTR_KEYS } from '../../types/index.ts'
 import type { GameState, MissionInstance } from '../../engine/state.ts'
 import { getMissionTemplate, missionReward } from '../../data/missionTemplates.ts'
-import { getSpecies } from '../../data/pokemon/index.ts'
+import { pokemonSpritePath } from '../../data/pokemon/index.ts'
 import { teamSum } from '../../engine/attributes.ts'
 import { TEAM_ATTR_MAX } from '../../engine/constants.ts'
 import { HexRadar } from '../HexRadar/HexRadar.tsx'
@@ -154,7 +154,7 @@ export function MissionRevealModal({ state, mission, onClose, onBattle }: Props)
                   <li key={mon.id} className={styles.crewRow}>
                     <img
                       className={styles.crewSprite}
-                      src={getSpecies(mon.speciesId).spritePath}
+                      src={pokemonSpritePath(mon)}
                       alt=""
                       draggable={false}
                     />

@@ -1,6 +1,6 @@
 import type { Pokemon } from '../../types/index.ts'
 import { ATTR_KEYS } from '../../types/index.ts'
-import { getSpecies } from '../../data/pokemon/index.ts'
+import { getSpecies, pokemonSpritePath } from '../../data/pokemon/index.ts'
 import { getNatureEntry, NATURE_LABEL_PT } from '../../data/natures.ts'
 import { LEVEL_MAX } from '../../engine/constants.ts'
 import { effectiveAttr, effectiveAttrs } from '../../engine/attributes.ts'
@@ -52,7 +52,12 @@ export function PokemonCard({ pokemon, selected = false, disabled = false, toggl
         <span className={styles.rankLetter}>{rank}</span>
       </span>
       <div className={styles.head}>
-        <img className={styles.sprite} src={species.spritePath} alt={species.displayName} />
+        <img className={styles.sprite} src={pokemonSpritePath(pokemon)} alt={species.displayName} />
+        {pokemon.shiny && (
+          <span className={styles.shiny} aria-label="Shiny" title="Shiny">
+            ✨
+          </span>
+        )}
         <div className={styles.id}>
           <span className={styles.name}>
             {displayNameOf(pokemon)}

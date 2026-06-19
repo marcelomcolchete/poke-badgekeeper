@@ -9,7 +9,7 @@ import type { DailyProgress } from '../../engine/approval.ts'
 import { battleGoal, battleStarDelta, missionGoal, missionStarDelta } from '../../engine/approval.ts'
 import { computeMvp } from '../../engine/daySummary.ts'
 import { clamp } from '../../engine/math.ts'
-import { getSpecies } from '../../data/pokemon/index.ts'
+import { getSpecies, pokemonSpritePath } from '../../data/pokemon/index.ts'
 import { displayNameOf } from '../common/naming.ts'
 import styles from './ReportSidebar.module.css'
 
@@ -117,7 +117,7 @@ export function ReportSidebar({ state, messages }: Props) {
           {capturedSpecies ? (
             <img
               className={styles.capturedSprite}
-              src={capturedSpecies.spritePath}
+              src={capturedMon ? pokemonSpritePath(capturedMon) : capturedSpecies.spritePath}
               alt={capturedSpecies.displayName}
             />
           ) : (
@@ -307,7 +307,7 @@ function DayMvp({
     <div className={styles.mvp}>
       <span className={styles.mvpBadge}>★ DESTAQUE DO DIA</span>
       <div className={styles.mvpRow}>
-        <img className={styles.mvpSprite} src={species.spritePath} alt={species.displayName} />
+        <img className={styles.mvpSprite} src={pokemonSpritePath(mvp)} alt={species.displayName} />
         <span className={styles.mvpInfo}>
           <span className={styles.mvpName}>{displayNameOf(mvp)}</span>
           <ol className={styles.mvpDeeds}>

@@ -8,7 +8,7 @@ import type { Pokemon } from '../../types/index.ts'
 import type { GameState } from '../../engine/state.ts'
 import type { GameAction } from '../../game/actions.ts'
 import { MAX_ROSTER_SIZE } from '../../engine/constants.ts'
-import { getSpecies } from '../../data/pokemon/index.ts'
+import { getSpecies, pokemonSpritePath } from '../../data/pokemon/index.ts'
 import { effectiveAttr } from '../../engine/attributes.ts'
 import { pokemonRank } from '../../engine/ranking.ts'
 import { Overlay } from '../common/Overlay.tsx'
@@ -50,7 +50,7 @@ function MonCard({ pokemon, action, disabled, onClick }: MonCardProps) {
         {rank}
       </span>
       <div className={styles.top}>
-        <img className={styles.sprite} src={species.spritePath} alt={species.displayName} />
+        <img className={styles.sprite} src={pokemonSpritePath(pokemon)} alt={species.displayName} />
         <span className={styles.id}>
           <span className={styles.name}>
             {displayNameOf(pokemon)}

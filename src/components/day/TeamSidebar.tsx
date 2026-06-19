@@ -6,7 +6,7 @@
 import { ATTR_KEYS } from '../../types/index.ts'
 import type { GameState } from '../../engine/state.ts'
 import type { Pokemon } from '../../types/index.ts'
-import { getSpecies } from '../../data/pokemon/index.ts'
+import { getSpecies, pokemonSpritePath } from '../../data/pokemon/index.ts'
 import { getMissionTemplate } from '../../data/missionTemplates.ts'
 import { secretCountOf, SECRET_KINDS, unlockedSecretIds } from '../../data/secretAbilities.ts'
 import { ATTR_MAX, ATTR_PER_POINT, LEVEL_MAX } from '../../engine/constants.ts'
@@ -160,7 +160,7 @@ export function TeamSidebar({ state, onSelect }: Props) {
               >
                 <div className={styles.top}>
                   <span className={styles.avatar}>
-                    <img src={species.spritePath} alt={species.displayName} draggable={false} />
+                    <img src={pokemonSpritePath(mon)} alt={species.displayName} draggable={false} />
                     <span
                       className={styles.rank}
                       style={{ color: RANK_COLOR[rank], borderColor: RANK_COLOR[rank] }}
