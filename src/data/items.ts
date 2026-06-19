@@ -142,11 +142,11 @@ export const ITEMS: ItemData[] = [
   {
     id: 'fossil-stone',
     name: 'Fossil Stone',
-    type: 'consumable',
-    price: 800,
-    description: 'Recebe um Pokémon fóssil aleatório (nível 1, rank sorteado de F a S).',
+    type: 'passive',
+    price: 1000,
+    description: 'Pokémon fósseis ganham +50% em batalhas.',
     sprite: sprite('fossil-stone'),
-    effect: { kind: 'fossilStone' },
+    effect: { kind: 'passive' },
   },
   {
     id: 'mystic-water',

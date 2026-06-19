@@ -8,6 +8,7 @@ import { getSpecies } from '../data/pokemon/index.ts'
 import {
   DRAGON_FANG_BATTLE_MULT,
   EVIOLITE_MISSION_MULT,
+  FOSSIL_STONE_BATTLE_MULT,
   LAGGING_TAIL_BATTLE_MULT,
   LAGGING_TAIL_MISSION_MULT,
   LAGGING_TAIL_TRAVEL_MULT,
@@ -16,9 +17,17 @@ import {
   THICK_CLUB_BATTLE_MULT,
 } from './balance.ts'
 
+/** Espécies fósseis (Omanyte/Omastar/Kabuto/Kabutops/Aerodactyl) — alvo da Fossil Stone. */
+const FOSSIL_SPECIES_IDS = [138, 139, 140, 141, 142]
+
 /** O time possui um item passivo da run? */
 export function hasRunItem(runItems: readonly string[], id: string): boolean {
   return runItems.includes(id)
+}
+
+/** Este Pokémon é um fóssil? (Fossil Stone). */
+export function isFossilSpecies(speciesId: number): boolean {
+  return FOSSIL_SPECIES_IDS.includes(speciesId)
 }
 
 /** Este Pokémon ainda NÃO chegou à última evolução? (Eviolite). */
@@ -44,6 +53,7 @@ export function itemMissionMultiplier(p: Pokemon, runItems: readonly string[]): 
  *  - Mystic Water: +50% para Pokémon do tipo Water.
  *  - Dragon Fang: +50% para Pokémon do tipo Dragão.
  *  - Magnet: +50% para Pokémon do tipo Elétrico.
+ *  - Fossil Stone: +50% para Pokémon fósseis (espécies 138–142).
  *  - Lagging Tail: +50% para todos.
  */
 export function itemBattleMultiplier(p: Pokemon, runItems: readonly string[]): number {
@@ -59,6 +69,9 @@ export function itemBattleMultiplier(p: Pokemon, runItems: readonly string[]): n
   }
   if (hasRunItem(runItems, 'magnet') && p.types.includes('electric')) {
     mult *= MAGNET_BATTLE_MULT
+  }
+  if (hasRunItem(runItems, 'fossil-stone') && isFossilSpecies(p.speciesId)) {
+    mult *= FOSSIL_STONE_BATTLE_MULT
   }
   if (hasRunItem(runItems, 'lagging-tail')) mult *= LAGGING_TAIL_BATTLE_MULT
   return mult

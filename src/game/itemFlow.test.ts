@@ -5,7 +5,6 @@ import { reducer } from './reducer.ts'
 import { autoSeedRun } from './setup.ts'
 import { startSearch } from './captureFlow.ts'
 import { applyXpGains } from './itemFlow.ts'
-import { pokemonRank } from '../engine/ranking.ts'
 
 const SEED = 12345
 
@@ -202,45 +201,6 @@ describe('Premier Ball (sobe a bola de graça)', () => {
     s = reducer(s, { type: 'BUY_ITEM', itemId: 'premier-ball' })
     expect(s.run.ballLevel).toBe(4)
     expect(s.gold).toBe(100)
-  })
-})
-
-describe('Fossil Stone (gera um fóssil)', () => {
-  const FOSSILS = [138, 139, 140, 141, 142]
-  it('adiciona um Pokémon fóssil nível 1 ao time e cobra 800', () => {
-    let s = createInitialState(SEED)
-    s.gold = 800
-    s.roster = [makeMon({ id: 'a' })]
-    s = reducer(s, { type: 'BUY_ITEM', itemId: 'fossil-stone' })
-    expect(s.gold).toBe(0)
-    expect(s.roster).toHaveLength(2)
-    const fossil = s.roster[1]!
-    expect(FOSSILS).toContain(fossil.speciesId)
-    expect(fossil.level).toBe(1)
-  })
-
-  it('sem ouro é no-op', () => {
-    let s = createInitialState(SEED)
-    s.gold = 100
-    s.roster = [makeMon({ id: 'a' })]
-    s = reducer(s, { type: 'BUY_ITEM', itemId: 'fossil-stone' })
-    expect(s.roster).toHaveLength(1)
-    expect(s.gold).toBe(100)
-  })
-
-  it('quando o fóssil sai shiny, é sempre rank S', () => {
-    // Shiny é 1%: varia o seed da run até obter um fóssil shiny (determinístico) e confere o rank.
-    let shinyFossil: ReturnType<typeof makeMon> | undefined
-    for (let seed = 0; seed < 20000 && !shinyFossil; seed++) {
-      let s = createInitialState(seed)
-      s.gold = 800
-      s.roster = [makeMon({ id: 'a' })]
-      s = reducer(s, { type: 'BUY_ITEM', itemId: 'fossil-stone' })
-      const fossil = s.roster[1]
-      if (fossil?.shiny) shinyFossil = fossil
-    }
-    expect(shinyFossil).toBeDefined()
-    expect(pokemonRank(shinyFossil!)).toBe('S')
   })
 })
 

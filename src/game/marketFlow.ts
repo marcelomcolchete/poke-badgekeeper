@@ -10,19 +10,12 @@ import { nextBall } from '../data/balls.ts'
 import { canAfford } from '../engine/economy.ts'
 import { LEVEL_MAX } from '../engine/constants.ts'
 import { heal, recomputeMaxHp } from '../engine/attributes.ts'
-import { rosterIsFull } from '../engine/capture.ts'
-import { RANKS } from '../engine/ranking.ts'
-import { shinyFor } from '../engine/shiny.ts'
 import {
   allocatePoint as engineAllocate,
-  createPokemon,
   evolveToLevel,
   pendingPoints,
 } from '../engine/leveling.ts'
-import { findMon, replaceMon, takeId, takeRng } from './runtime.ts'
-
-/** Espécies fósseis sorteadas pela Fossil Stone (Omanyte/Omastar/Kabuto/Kabutops/Aerodactyl). */
-const FOSSIL_SPECIES_IDS = [138, 139, 140, 141, 142]
+import { findMon, replaceMon, takeRng } from './runtime.ts'
 
 /** Marca um item como vendido hoje (vira "VENDIDO" no mercado — 1 compra por slot/dia). */
 function markSold(s: GameState, itemId: string): void {
@@ -55,14 +48,6 @@ export function buyItem(s: GameState, itemId: string, quantity = 1): void {
       if (!canAfford(s.gold, item)) return
       s.gold -= item.price
       s.run.ballLevel += 1
-      markSold(s, itemId)
-      return
-    }
-    case 'fossilStone': {
-      // Gera um Pokémon fóssil aleatório (nível 1, rank F–S sorteado) no time ou no PC.
-      if (!canAfford(s.gold, item)) return
-      s.gold -= item.price
-      grantFossil(s)
       markSold(s, itemId)
       return
     }
@@ -189,21 +174,6 @@ function applyTeamItem(s: GameState, kind: 'heal' | 'revive'): boolean {
     return p
   })
   return changed
-}
-
-/** Fossil Stone: cria um Pokémon fóssil aleatório (nível 1, rank F–S) no time (ou no PC se cheio). */
-function grantFossil(s: GameState): void {
-  const rng = takeRng(s)
-  const speciesId = rng.pick(FOSSIL_SPECIES_IDS)
-  // Rank sorteado uniformemente de F (0) a S (RANKS.length − 1) vira o centro de rank dos IVs.
-  const rankCenter = rng.int(0, RANKS.length - 1)
-  // Shiny (1%) derivado do estado ATUAL do rng (não consome): sobrepõe o rank → rank S.
-  const shiny = shinyFor(rng.state())
-  const id = takeId(s, 'p')
-  const mon = createPokemon({ id, speciesId, level: 1, rng, rankCenter, shiny })
-  if (rosterIsFull(s.roster)) s.box = [...s.box, mon]
-  else s.roster = [...s.roster, mon]
-  if (!s.caughtSpecies.includes(speciesId)) s.caughtSpecies = [...s.caughtSpecies, speciesId]
 }
 
 /** Aloca o ponto pendente de um level-up no atributo escolhido (PLAN §4.1). */

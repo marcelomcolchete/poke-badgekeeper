@@ -55,6 +55,12 @@ describe('itemBattleMultiplier', () => {
     expect(itemBattleMultiplier(makeMon({ types: ['electric'] }), ['magnet'])).toBeCloseTo(1.5)
     expect(itemBattleMultiplier(makeMon({ types: ['normal'] }), ['magnet'])).toBe(1)
   })
+
+  it('Fossil Stone dá +50% para Pokémon fóssil (espécies 138–142)', () => {
+    expect(itemBattleMultiplier(makeMon({ speciesId: 138 }), ['fossil-stone'])).toBeCloseTo(1.5)
+    expect(itemBattleMultiplier(makeMon({ speciesId: 142 }), ['fossil-stone'])).toBeCloseTo(1.5)
+    expect(itemBattleMultiplier(makeMon({ speciesId: 25 }), ['fossil-stone'])).toBe(1)
+  })
 })
 
 describe('itemTravelSpeedMultiplier', () => {

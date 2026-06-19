@@ -135,7 +135,7 @@ export type ItemKind = 'consumable' | 'passive'
  * - passive: adiciona o `id` do item a s.runItems (efeito permanente lido pela engine).
  * - rareCandy: na compra, escolhe um Pokémon que sobe 1 nível.
  * - premierBall: na compra, sobe 1 nível a bola atual de graça (Pokébola→…→Masterball).
- * - fossilStone: na compra, gera um Pokémon fóssil aleatório (nível 1, rank F–S sorteado).
+ * - moonStone: na compra, escolhe um Pokémon (time/caixa) que evolui 1 estágio ignorando o nível.
  */
 export type ItemScope = 'single' | 'team'
 export type ItemEffect =
@@ -145,7 +145,7 @@ export type ItemEffect =
   | { kind: 'passive' }
   | { kind: 'rareCandy' }
   | { kind: 'premierBall' }
-  | { kind: 'fossilStone' }
+  | { kind: 'moonStone' }
 
 export interface ItemData {
   id: string
