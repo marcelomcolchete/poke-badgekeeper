@@ -14,6 +14,7 @@ import {
   xpToNext,
 } from './leveling.ts'
 import { makeMon } from './testkit.ts'
+import { pokemonRank } from './ranking.ts'
 
 const rng = () => createRng(2024)
 
@@ -39,6 +40,17 @@ describe('createPokemon', () => {
     const mon = createPokemon({ id: 'w0', speciesId: 4, level: 1, rng: rng() })
     expect(totalAllocated(mon)).toBe(0)
     expect(pendingPoints(mon)).toBe(0)
+  })
+
+  it('shiny nasce sempre rank S e com a flag', () => {
+    const mon = createPokemon({ id: 's1', speciesId: 1, level: 5, rng: createRng(1), shiny: true })
+    expect(mon.shiny).toBe(true)
+    expect(pokemonRank(mon)).toBe('S')
+  })
+
+  it('não-shiny não ganha a flag', () => {
+    const mon = createPokemon({ id: 'n1', speciesId: 1, level: 5, rng: createRng(1) })
+    expect(mon.shiny).toBeUndefined()
   })
 
   it('é determinístico para a mesma seed', () => {

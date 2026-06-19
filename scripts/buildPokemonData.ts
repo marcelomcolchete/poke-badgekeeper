@@ -159,16 +159,21 @@ function gen1Types(p: any): PokemonType[] {
     .map((t: any) => t.type.name as PokemonType)
 }
 
-async function downloadSprite(id: number, spriteDir: string): Promise<void> {
-  if (existsSync(resolve(spriteDir, `${id}.png`))) return
+async function downloadOne(url: string, dest: string): Promise<void> {
+  if (existsSync(dest)) return
   try {
-    const res = await fetch(`${SPRITE_CDN}/${id}.png`)
+    const res = await fetch(url)
     if (!res.ok) return
     const buf = Buffer.from(await res.arrayBuffer())
-    writeFileSync(resolve(spriteDir, `${id}.png`), buf)
+    writeFileSync(dest, buf)
   } catch {
     // sprite ausente é não-fatal
   }
+}
+
+async function downloadSprite(id: number, spriteDir: string, shinyDir: string): Promise<void> {
+  await downloadOne(`${SPRITE_CDN}/${id}.png`, resolve(spriteDir, `${id}.png`))
+  await downloadOne(`${SPRITE_CDN}/shiny/${id}.png`, resolve(shinyDir, `${id}.png`))
 }
 
 const ATTR_TOTAL = (a: Attrs): number =>
@@ -212,8 +217,10 @@ function serializeAttrs(a: Attrs): string {
 
 async function main(): Promise<void> {
   const spriteDir = resolve(ROOT, 'public/sprites/pokemons/gen1')
+  const shinyDir = resolve(ROOT, 'public/sprites/pokemons/gen1/shiny')
   const pokemonDir = resolve(ROOT, 'src/data/pokemon')
   mkdirSync(spriteDir, { recursive: true })
+  mkdirSync(shinyDir, { recursive: true })
   mkdirSync(pokemonDir, { recursive: true })
 
   const ids = Array.from({ length: GEN1_MAX }, (_, i) => i + 1)
@@ -231,7 +238,7 @@ async function main(): Promise<void> {
     const friendship: number = sp.base_happiness ?? 70
     genderRate.set(id, sp.gender_rate ?? -1)
     if (sp.evolution_chain?.url) chainUrls.add(sp.evolution_chain.url)
-    await downloadSprite(id, spriteDir)
+    await downloadSprite(id, spriteDir, shinyDir)
     return {
       id,
       name: p.name,

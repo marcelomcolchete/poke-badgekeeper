@@ -3,7 +3,7 @@
 // pois acelera a busca). Sem radar/EXP/raridade, para caber todo o time sem rolagem.
 
 import type { AttrKey, Pokemon } from '../../types/index.ts'
-import { getSpecies } from '../../data/pokemon/index.ts'
+import { getSpecies, pokemonSpritePath } from '../../data/pokemon/index.ts'
 import { effectiveAttr } from '../../engine/attributes.ts'
 import { displayNameOf, genderColor, genderSymbol } from '../common/naming.ts'
 import { STATUS_LABEL_PT } from '../common/visual.ts'
@@ -35,7 +35,7 @@ export function ExplorerPick({ pokemon, disabled = false, note, onClick }: Props
       onClick={onClick}
       data-sound={disabled ? undefined : 'select'}
     >
-      <img className={styles.explorerSprite} src={species.spritePath} alt={species.displayName} />
+      <img className={styles.explorerSprite} src={pokemonSpritePath(pokemon)} alt={species.displayName} />
       <span className={styles.explorerInfo}>
         <span className={styles.explorerName}>
           {displayNameOf(pokemon)}

@@ -4,7 +4,7 @@
 
 import { ATTR_KEYS } from '../../types/index.ts'
 import type { CaptureEncounter } from '../../engine/state.ts'
-import { getSpecies } from '../../data/pokemon/index.ts'
+import { getSpecies, pokemonSpritePath } from '../../data/pokemon/index.ts'
 import { effectiveAttr } from '../../engine/attributes.ts'
 import { pokemonRank } from '../../engine/ranking.ts'
 import { getNatureEntry, NATURE_LABEL_PT } from '../../data/natures.ts'
@@ -39,6 +39,7 @@ export function EncounterChoice({ encounter, full, onPick, onDismiss }: Props) {
           const mon = previewPokemon(id, level, {
             seed: encounter.candidateSeeds?.[i],
             rankCenter: encounter.rankCenter,
+            shiny: encounter.candidateShiny?.[i],
           })
           const species = getSpecies(id)
           const rank = pokemonRank(mon)
@@ -54,7 +55,12 @@ export function EncounterChoice({ encounter, full, onPick, onDismiss }: Props) {
                 {rank}
               </span>
               <span className={styles.encLevel}>Nv {level}</span>
-              <img className={styles.encSprite} src={species.spritePath} alt={species.displayName} />
+              <img className={styles.encSprite} src={pokemonSpritePath(mon)} alt={species.displayName} />
+              {mon.shiny && (
+                <span className={styles.encShiny} aria-label="Shiny" title="Shiny">
+                  ✨
+                </span>
+              )}
               <span className={styles.encName}>
                 {species.displayName}
                 {symbol && <span style={{ color: genderColor(mon.gender) }}> {symbol}</span>}

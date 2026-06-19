@@ -65,6 +65,12 @@ export const ROCKET_SEED_SALT = 0x526f636b // 'Rock'
 /** Sub-seed do mercado da manhã: sorteia os 3 itens do dia (por seed+dia+cidade). */
 export const SHOP_SEED_SALT = 0x53686f70 // 'Shop'
 
+/** Chance de um Pokémon nascer shiny (iniciais, captura por candidato, Fossil Stone). */
+export const SHINY_CHANCE = 0.01
+
+/** Sub-seed dedicado da rolagem de shiny — isola-a das demais sequências de RNG. */
+export const SHINY_SEED_SALT = 0x5417
+
 /** Sub-seed dos efeitos climáticos (chuva): agenda do dia + distribuição da chance na run. */
 export const WEATHER_SEED_SALT = 0x57656174 // 'Weat'
 
@@ -210,6 +216,8 @@ export const DRAFT_CHOICES = 3
  * v33: efeito Tempestade. WeatherSchedule ganha `storms` e a previsão ganha
  * stormChancePercent/potentialStormCount; today ganha paralyzedBattleIds; missões/buscas
  * ganham paralyzeHold opcional. A migração inicia storms vazio, previsão de tempestade
- * zerada e paralyzedBattleIds vazio (recalculados no próximo setupDay). */
-export const SAVE_VERSION = 33
+ * zerada e paralyzedBattleIds vazio (recalculados no próximo setupDay).
+ * v34: sistema de shiny. pokemon.shiny? e CaptureEncounter.candidateShiny? são opcionais
+ * (ausente = não-shiny); nada a preencher — passthrough. */
+export const SAVE_VERSION = 34
 export const SAVE_KEY = 'poke-badgekeeper:save'

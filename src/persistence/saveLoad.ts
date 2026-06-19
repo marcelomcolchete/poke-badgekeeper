@@ -434,6 +434,11 @@ function migrate(file: Partial<SaveFile>): SaveFile | null {
     version = 33
   }
 
+  // v33 → v34: sistema de shiny. shiny/candidateShiny são opcionais (ausente = não-shiny). Só passa.
+  if (version === 33) {
+    version = 34
+  }
+
   if (version !== SAVE_VERSION) return null
   return { version, savedAtMs: (file as SaveFile).savedAtMs, state } as unknown as SaveFile
 }

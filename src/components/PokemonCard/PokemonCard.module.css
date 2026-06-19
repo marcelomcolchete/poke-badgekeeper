@@ -63,9 +63,20 @@
 }
 
 .head {
+  position: relative;
   display: flex;
   align-items: flex-start;
   gap: 8px;
+}
+
+.shiny {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  font-size: 14px;
+  line-height: 1;
+  filter: drop-shadow(0 0 2px #e0a020);
+  pointer-events: none;
 }
 
 .sprite {

@@ -16,8 +16,9 @@ import type {
 } from '../../engine/state.ts'
 import { getCity, markerPos } from '../../data/cities.ts'
 import { getMissionTemplate, missionReward } from '../../data/missionTemplates.ts'
-import { getSpecies } from '../../data/pokemon/index.ts'
+import { pokemonSpritePath } from '../../data/pokemon/index.ts'
 import { graphWithTunnels } from '../../engine/pathfinding.ts'
+import { spotHasShiny } from '../../engine/shiny.ts'
 import { activePuddlesAt } from '../../engine/weather.ts'
 import { activeStrikeCirclesAt } from '../../engine/storm.ts'
 import { teamIsSpeedy } from '../../engine/secretEffects.ts'
@@ -115,6 +116,7 @@ export function CityMap({ state, onMission, onDefense, onSpot }: Props) {
                 search={state.captureSearches.find((c) => c.spotIndex === i)}
                 ret={ret}
                 ready={state.encounters.some((e) => e.spotIndex === i)}
+                shinyHere={spotHasShiny(state.run.seed, state.run.day, i)}
                 now={now}
                 onClick={() => onSpot(i)}
               />
@@ -313,7 +315,7 @@ function TravelerGroup({
         <img
           key={mon.id}
           className={styles.traveler}
-          src={getSpecies(mon.speciesId).spritePath}
+          src={pokemonSpritePath(mon)}
           alt=""
           draggable={false}
         />
@@ -448,6 +450,7 @@ function explorationVisual(
   ret: CaptureReturn | undefined,
   ready: boolean,
   now: number,
+  shinyHere = false,
 ): ExplorationVisual {
   if (ret) {
     const ok = ret.captured
@@ -496,11 +499,11 @@ function explorationVisual(
   }
   return {
     iconClass: undefined,
-    ringColor: 'var(--c-grass-dark)',
-    content: '🌿',
+    ringColor: shinyHere ? '#e0a020' : 'var(--c-grass-dark)',
+    content: shinyHere ? '🍂' : '🌿',
     fraction: 1,
     pulse: true,
-    ariaLabel: 'Área de exploração',
+    ariaLabel: shinyHere ? 'Área de exploração (shiny!)' : 'Área de exploração',
     interactive: true,
   }
 }
@@ -510,6 +513,7 @@ function ExplorationMarker({
   search,
   ret,
   ready,
+  shinyHere,
   now,
   onClick,
 }: {
@@ -517,10 +521,11 @@ function ExplorationMarker({
   search: CaptureSearch | undefined
   ret: CaptureReturn | undefined
   ready: boolean
+  shinyHere?: boolean
   now: number
   onClick: () => void
 }) {
-  const v = explorationVisual(search, ret, ready, now)
+  const v = explorationVisual(search, ret, ready, now, shinyHere)
   const className = `${styles.ring} ${v.pulse ? '' : styles.ringBusy}`
   const inner = <span className={`${styles.icon} ${v.iconClass ?? ''}`}>{v.content}</span>
   if (!v.interactive) {

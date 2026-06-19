@@ -10,7 +10,7 @@ import type { MissionTemplate } from '../../data/types.ts'
 import { MAX_DISPATCH, MIN_DISPATCH, TEAM_ATTR_MAX } from '../../engine/constants.ts'
 import { getCity } from '../../data/cities.ts'
 import { getMissionTemplate, missionReward } from '../../data/missionTemplates.ts'
-import { getSpecies } from '../../data/pokemon/index.ts'
+import { getSpecies, pokemonSpritePath } from '../../data/pokemon/index.ts'
 import { missionDurationMs, missionSuccessProbabilityCtx, travelRoute } from '../../engine/missions.ts'
 import {
   teamHasAttrBoost,
@@ -157,7 +157,7 @@ export function MissionDispatch({ state, dispatch, missionId, onClose }: Props) 
                   <li key={mon.id} className={styles.chip}>
                     <img
                       className={styles.chipSprite}
-                      src={getSpecies(mon.speciesId).spritePath}
+                      src={pokemonSpritePath(mon)}
                       alt=""
                       draggable={false}
                     />

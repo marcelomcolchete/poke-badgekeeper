@@ -12,6 +12,7 @@ import { LEVEL_MAX } from '../engine/constants.ts'
 import { heal, recomputeMaxHp } from '../engine/attributes.ts'
 import { rosterIsFull } from '../engine/capture.ts'
 import { RANKS } from '../engine/ranking.ts'
+import { shinyFor } from '../engine/shiny.ts'
 import {
   allocatePoint as engineAllocate,
   createPokemon,
@@ -196,8 +197,10 @@ function grantFossil(s: GameState): void {
   const speciesId = rng.pick(FOSSIL_SPECIES_IDS)
   // Rank sorteado uniformemente de F (0) a S (RANKS.length − 1) vira o centro de rank dos IVs.
   const rankCenter = rng.int(0, RANKS.length - 1)
+  // Shiny (1%) derivado do estado ATUAL do rng (não consome): sobrepõe o rank → rank S.
+  const shiny = shinyFor(rng.state())
   const id = takeId(s, 'p')
-  const mon = createPokemon({ id, speciesId, level: 1, rng, rankCenter })
+  const mon = createPokemon({ id, speciesId, level: 1, rng, rankCenter, shiny })
   if (rosterIsFull(s.roster)) s.box = [...s.box, mon]
   else s.roster = [...s.roster, mon]
   if (!s.caughtSpecies.includes(speciesId)) s.caughtSpecies = [...s.caughtSpecies, speciesId]

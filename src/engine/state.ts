@@ -263,6 +263,8 @@ export interface CaptureEncounter {
   candidateLevels?: number[]
   /** Seed estável por candidato: preview = Pokémon capturado (natureza, IVs/rank) — §4.5. */
   candidateSeeds: number[]
+  /** Shiny por candidato (paralelo a candidateSpeciesIds). Ausente = todos não-shiny. */
+  candidateShiny?: boolean[]
   /**
    * Centro de rank (0=F … 6=S, contínuo) mirado pela Percepção do explorador: enviesa os
    * IVs/rank dos candidatos. Ausente em saves antigos → captura/preview sem viés (§4.5).
