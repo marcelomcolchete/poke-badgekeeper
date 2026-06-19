@@ -13,7 +13,7 @@ import { getDailyShop } from '../data/items.ts'
 import { getTrainer, trainerSprites } from '../data/trainers.ts'
 import { buildDaySchedule, type DefenseSlot } from '../engine/timeline.ts'
 import { createMissionInstance } from '../engine/missions.ts'
-import { buildWeatherSchedule } from '../engine/weather.ts'
+import { buildDayWeather } from '../engine/storm.ts'
 import { enemySquadSizeForDay, generateDefenseEnemies } from '../engine/gymDefense.ts'
 import { createPokemon } from '../engine/leveling.ts'
 import { hasDig, hasDigPlus, hasCloudNine, hasForewarn } from '../engine/secretEffects.ts'
@@ -72,9 +72,9 @@ export function setupDay(s: GameState): void {
   s.captureSpots = spots.map((p) => p.node)
   s.captureSpotSpawnsAtMs = spots.map((p) => p.at)
   s.today.digTunnels = computeDigTunnels(s, city)
-  // Clima do dia (chuva/poças em Cerulean): pré-computado e reprodutível por (seed, dia, cidade).
+  // Clima do dia (chuva + tempestade): pré-computado e reprodutível por (seed, dia, cidade).
   const cloudNine = s.roster.filter(hasCloudNine).length
-  s.weather = buildWeatherSchedule(
+  s.weather = buildDayWeather(
     s.run.seed,
     s.run.day,
     city,

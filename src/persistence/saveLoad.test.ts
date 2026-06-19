@@ -50,6 +50,29 @@ describe('saveLoad (PLAN §5)', () => {
     expect(loaded!.weather).toEqual(emptyWeatherSchedule())
   })
 
+  it('migra v32 → v33: adiciona storms, previsão de tempestade e paralyzedBattleIds', () => {
+    const base = autoSeedRun(42) as unknown as Record<string, unknown>
+    // Simula save v32: weather sem storms, forecast sem campos de tempestade, today sem paralyzedBattleIds.
+    const weatherV32 = {
+      rain: [],
+      forecast: { rainChancePercent: 0, rainMmPerHour: 0, potentialRainCount: 0 },
+    }
+    const todayBase = base.today as Record<string, unknown>
+    const todayV32 = { ...todayBase }
+    delete todayV32.paralyzedBattleIds
+    const v32 = {
+      version: 32,
+      savedAtMs: 0,
+      state: { ...base, weather: weatherV32, today: todayV32 },
+    }
+    localStorage.setItem(SAVE_KEY, JSON.stringify(v32))
+    const loaded = loadGame()
+    expect(loaded).not.toBeNull()
+    expect(loaded!.weather.storms).toEqual([])
+    expect(loaded!.weather.forecast.stormChancePercent).toBe(0)
+    expect(loaded!.today.paralyzedBattleIds).toEqual([])
+  })
+
   it('clearSave remove o save', () => {
     saveGame(autoSeedRun(1), 0)
     clearSave()
