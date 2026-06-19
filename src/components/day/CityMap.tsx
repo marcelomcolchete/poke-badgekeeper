@@ -18,7 +18,7 @@ import { getCity, markerPos } from '../../data/cities.ts'
 import { getMissionTemplate, missionReward } from '../../data/missionTemplates.ts'
 import { pokemonSpritePath } from '../../data/pokemon/index.ts'
 import { graphWithTunnels } from '../../engine/pathfinding.ts'
-import { spotHasShiny } from '../../engine/shiny.ts'
+import { shinyChance, spotHasShinyChance } from '../../engine/shiny.ts'
 import { activePuddlesAt } from '../../engine/weather.ts'
 import { activeStrikeCirclesAt } from '../../engine/storm.ts'
 import { teamIsSpeedy } from '../../engine/secretEffects.ts'
@@ -116,7 +116,7 @@ export function CityMap({ state, onMission, onDefense, onSpot }: Props) {
                 search={state.captureSearches.find((c) => c.spotIndex === i)}
                 ret={ret}
                 ready={state.encounters.some((e) => e.spotIndex === i)}
-                shinyHere={spotHasShiny(state.run.seed, state.run.day, i)}
+                shinyHere={spotHasShinyChance(shinyChance(state.runItems), state.run.seed, state.run.day, i)}
                 now={now}
                 onClick={() => onSpot(i)}
               />

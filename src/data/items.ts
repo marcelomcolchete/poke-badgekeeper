@@ -203,6 +203,15 @@ export const ITEMS: ItemData[] = [
     sprite: sprite('fresh-water'),
     effect: { kind: 'heal', scope: 'single', uses: 2 },
   },
+  {
+    id: 'shiny-charm',
+    name: 'Shiny Charm',
+    type: 'passive',
+    price: 1000,
+    description: 'Aumenta em +4% a chance de encontrar Pokémon shiny.',
+    sprite: sprite('shiny-charm'),
+    effect: { kind: 'passive' },
+  },
 ]
 
 const ITEMS_BY_ID: Map<string, ItemData> = new Map(ITEMS.map((i) => [i.id, i]))
@@ -236,6 +245,7 @@ export const GLOBAL_ITEM_IDS: string[] = [
   'rare-candy',
   'love-ball',
   'premier-ball',
+  'shiny-charm',
 ]
 
 /** Itens EXTRAS por cidade (índice de CITIES): Pewter (0), Cerulean (1) e Vermilion (2). */

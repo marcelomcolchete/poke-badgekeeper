@@ -19,7 +19,7 @@ import { rainTravelMs } from '../engine/rainSpeed.ts'
 import { isRaining } from '../engine/weather.ts'
 import { SWIFT_SWIM_RAIN_BONUS } from '../engine/balance.ts'
 import { createRng } from '../engine/rng.ts'
-import { shinyFor } from '../engine/shiny.ts'
+import { shinyChance, shinyForChance } from '../engine/shiny.ts'
 import { findMon, replaceMon, takeId, takeRng } from './runtime.ts'
 
 /**
@@ -146,7 +146,7 @@ export function readySearch(s: GameState, search: CaptureSearch): void {
     candidateLevels: encounter.levels,
     candidateSeeds: encounter.candidates.map(() => seedRng.int(0, 0x7fffffff)),
     candidateShiny: encounter.candidates.map((_, i) =>
-      shinyFor(s.run.seed, s.run.day, search.spotIndex, i),
+      shinyForChance(shinyChance(s.runItems), s.run.seed, s.run.day, search.spotIndex, i),
     ),
     searcherPerception,
   })
