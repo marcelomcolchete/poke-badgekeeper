@@ -50,10 +50,10 @@ no fim).
 
 ### Como ler as adjacências: **por seta, não por nó**
 
-Ler "vizinho por vizinho" (olhar cada círculo e listar quem está ao redor) lê bem as arestas
-**curtas dentro de um bloco**, mas é **cego para as arestas longas que ligam blocos** — as que
-atravessam ponte/água/prédios ou conectam círculos não-vizinhos. Esses foram os erros reais
-(ex.: `N–O` ligando a 2ª fila ao campo; `AC–AN` descendo pela ponte). Faça assim:
+Ler "vizinho por vizinho" (olhar cada círculo e listar quem está ao redor) tem **dois pontos
+cegos**: (a) as arestas **longas que ligam blocos** (atravessam ponte/água/prédios ou conectam
+círculos não-vizinhos — ex.: `N–O`, `AC–AN`); e (b) as **verticais/horizontais redundantes** no
+meio de um "pente" de setas paralelas (ex.: `E–L`, perdida entre `D–K` e `F–M`). Faça assim:
 
 1. **Varredura por seta.** Percorra a imagem em **quadrantes** e, para **cada ponta de seta**,
    rastreie até os **dois** círculos que ela conecta. Consuma **toda** seta — não liste vizinhos
@@ -61,11 +61,20 @@ atravessam ponte/água/prédios ou conectam círculos não-vizinhos. Esses foram
 2. **Passe dedicado de setas longas / entre-blocos.** Depois da varredura local, faça um passe
    só para setas que (a) **atravessam terreno** (ponte, água, prédios) ou (b) ligam círculos
    **não adjacentes**. São as que mais escapam.
-3. **Check de cheiro (antes de apresentar a tabela).** Reexamine — não apresente como fato —
-   todo nó de **grau 1**, toda região alcançável **só por Surf**, e todo cluster visualmente
-   **isolado**. Quase sempre é **aresta longa faltando**, não um beco real. Volte à imagem e
-   procure a seta antes de concluir.
-4. **Confirmação neutra.** Na tabela, pergunte "**rastreei estas setas — faltou alguma?**" em vez
+3. **Regra do grid/pente.** Onde os pontos se alinham em **colunas/fileiras** (duas fileiras de
+   colunas alinhadas), cheque **cada par alinhado** por uma seta — não pare em "duas verticais já
+   bastam". Enumere coluna por coluna; as do **meio**, sem âncora visual, são as que somem.
+4. **Reconciliação por contagem.** Por região, **conte as pontas de seta visíveis** e bata com o
+   nº de arestas que você listou. Vi 3 verticais mas listei 2? Falta uma. Esta é a **única**
+   defesa contra a aresta **redundante** faltando — o check de cheiro (passo 5) não a enxerga.
+5. **Check de cheiro.** Reexamine — não apresente como fato — todo nó de **grau 1**, toda região
+   alcançável **só por Surf**, e todo cluster **isolado**. Quase sempre é aresta faltando, não um
+   beco real. ⚠️ Este check é **unidirecional**: só pega **sub-conexão**. Ele é **cego** a aresta
+   redundante (caminho paralelo) — por isso os passos 3–4 são obrigatórios.
+6. **Conectividade nunca subtrai.** Raciocínio de alcance só pode **adicionar** candidatas
+   (quando algo está inalcançável). **Nunca** use "essa aresta é redundante / desnecessária" para
+   descartar uma seta que você **vê** na imagem. Seta visível = aresta, ponto final.
+7. **Confirmação neutra.** Na tabela, pergunte "**rastreei estas setas — faltou alguma?**" em vez
    de "tal ponto não conecta, certo?" (não induza a resposta à sua hipótese).
 
 **Legenda de palavras → sítio:**
