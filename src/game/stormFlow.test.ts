@@ -200,4 +200,29 @@ describe('stormFlow — aplicação dos raios', () => {
     // (d) paralyzeHold.untilMs === strikeAtMs + PARALYZE_STUN_MS
     expect(s.missions[0]!.paralyzeHold?.untilMs).toBe(strikeAtMs + PARALYZE_STUN_MS)
   })
+
+  it('electirizer: cada raio sofrido acumula 1 carga no Pokémon atingido', () => {
+    const { s, id, pos } = travelingState()
+    s.runItems = ['electirizer']
+    const storm: StormEvent = {
+      startMs: 0,
+      endMs: 30_000,
+      strikes: [{ warnAtMs: 0, strikeAtMs: 5_000, circles: [{ cx: pos.x, cy: pos.y, radius: 0.2 }] }],
+    }
+    s.weather = { ...s.weather, storms: [storm] }
+    processStorms(s, 0, 6_000)
+    expect(s.electirizerCharges[id]).toBe(1)
+  })
+
+  it('sem electirizer, nenhuma carga é criada ao ser atingido', () => {
+    const { s, id, pos } = travelingState()
+    const storm: StormEvent = {
+      startMs: 0,
+      endMs: 30_000,
+      strikes: [{ warnAtMs: 0, strikeAtMs: 5_000, circles: [{ cx: pos.x, cy: pos.y, radius: 0.2 }] }],
+    }
+    s.weather = { ...s.weather, storms: [storm] }
+    processStorms(s, 0, 6_000)
+    expect(s.electirizerCharges[id]).toBeUndefined()
+  })
 })

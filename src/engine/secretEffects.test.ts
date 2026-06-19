@@ -363,3 +363,23 @@ describe('Quick Feet (Jolteon, linha divergente)', () => {
     expect(teamTravelSpeedMultiplier([jolteon, other])).toBeCloseTo(1, 6) // sem bônus em grupo
   })
 })
+
+describe('missionAttrMultiplier — electirizer', () => {
+  it('+50% por carga acumulada no Pokémon despachado', () => {
+    const p = makeMon({ id: 'x' })
+    const ctx: MissionSecretCtx = {
+      team: [p],
+      template: PATRULHA,
+      runtime: {},
+      runItems: [],
+      electirizerBonus: { x: 2 }, // 2 raios → +100%
+    }
+    expect(missionAttrMultiplier(p, ctx)).toBeCloseTo(2) // 1 * (1 + 0.5*2)
+  })
+
+  it('sem carga, multiplicador é 1', () => {
+    const p = makeMon({ id: 'y' })
+    const ctx: MissionSecretCtx = { team: [p], template: PATRULHA, runtime: {}, runItems: [] }
+    expect(missionAttrMultiplier(p, ctx)).toBeCloseTo(1)
+  })
+})

@@ -158,6 +158,16 @@ export const ITEMS: ItemData[] = [
     effect: { kind: 'passive' },
   },
   {
+    id: 'electirizer',
+    name: 'Electirizer',
+    type: 'passive',
+    price: 650,
+    description:
+      'Quando um Pokémon seu é atingido por um raio, ele ganha +50% na próxima missão (acumula a cada raio).',
+    sprite: sprite('electirizer'),
+    effect: { kind: 'passive' },
+  },
+  {
     id: 'dragon-fang',
     name: 'Dragon Fang',
     type: 'passive',
@@ -232,7 +242,7 @@ export const GLOBAL_ITEM_IDS: string[] = [
 export const CITY_ITEM_IDS: Record<number, string[]> = {
   0: ['lagging-tail', 'thick-club', 'fossil-stone'],
   1: ['mystic-water', 'surfboard', 'fresh-water'],
-  2: ['dragon-fang', 'magnet'],
+  2: ['electirizer', 'dragon-fang', 'magnet'],
 }
 
 /** Subconjunto do qual ao menos 1 item SEMPRE aparece no mercado (potion/revive/x_*). */
