@@ -189,13 +189,14 @@ export const ROCKET_XP_MULTIPLIER = 3
 export const DEFENSE_MEDAL_BATTLE = { bronze: 10, silver: 20, gold: 50 } as const
 
 /**
- * Probabilidade da medalha por dia. Cada tier "abre" num dia (MEDAL_UNLOCK_DAY) e a chance
- * (acumulada — "pelo menos esse tier") rampa LINEARMENTE até 100% no dia MEDAL_FULL_DAY,
- * pensando em modos de dias infinitos: do dia 30 em diante todo invasor sai com Ouro.
- * O denominador usa (dia − (abertura − 1)) para já dar chance > 0 no próprio dia de abertura.
+ * Probabilidade da medalha por dia ("piso de 10% na abertura + rampa até 100%"). Cada tier
+ * abre num dia (MEDAL_OPEN_DAY) já com MEDAL_OPEN_CHANCE e a chance ACUMULADA ("pelo menos
+ * esse tier") sobe linearmente até 100% no seu dia de saturação (MEDAL_FULL_DAY). Pensado p/
+ * dias infinitos: do dia 30 em diante todo invasor sai com Ouro. Bronze ≥ Prata ≥ Ouro sempre.
  */
-export const MEDAL_FULL_DAY = 30
-export const MEDAL_UNLOCK_DAY = { bronze: 2, silver: 6, gold: 10 } as const
+export const MEDAL_OPEN_CHANCE = 0.1
+export const MEDAL_OPEN_DAY = { bronze: 2, silver: 3, gold: 4 } as const
+export const MEDAL_FULL_DAY = { bronze: 10, silver: 20, gold: 30 } as const
 
 /**
  * Rivais §4.4: o líder do rival EVOLUI conforme o dia. Cada valor é o dia (inclusive) em que

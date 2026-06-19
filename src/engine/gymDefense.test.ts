@@ -416,34 +416,31 @@ describe('resolveDefense — Paralyze (-50% Batalha)', () => {
   })
 })
 
-describe('medalhas dos invasores', () => {
-  it('respeita os dias de abertura (Bronze d2, Prata d6, Ouro d10) e zero no dia 1', () => {
+describe('medalhas dos invasores (piso de 10% + rampa)', () => {
+  it('dia 1 zera tudo; aberturas: bronze d2, prata d3, ouro d4 (~10%)', () => {
     const d1 = medalChancesForDay(1)
-    expect(d1.bronze).toBe(0)
-    expect(d1.silver).toBe(0)
-    expect(d1.gold).toBe(0)
-    expect(medalChancesForDay(2).bronze).toBeGreaterThan(0)
-    expect(medalChancesForDay(5).silver).toBe(0)
-    expect(medalChancesForDay(6).silver).toBeGreaterThan(0)
-    expect(medalChancesForDay(9).gold).toBe(0)
-    expect(medalChancesForDay(10).gold).toBeGreaterThan(0)
+    expect(d1).toEqual({ bronze: 0, silver: 0, gold: 0 })
+    expect(medalChancesForDay(2).bronze).toBeCloseTo(0.1, 5)
+    expect(medalChancesForDay(2).silver).toBe(0)
+    expect(medalChancesForDay(3).silver).toBeCloseTo(0.1, 5)
+    expect(medalChancesForDay(3).gold).toBe(0)
+    expect(medalChancesForDay(4).gold).toBeCloseTo(0.1, 5)
   })
 
-  it('as chances acumuladas são ordenadas (bronze ≥ prata ≥ ouro) e batem 100% no dia 30', () => {
-    for (let day = 1; day <= 30; day++) {
+  it('acumuladas ordenadas (bronze ≥ prata ≥ ouro) e saturação por tier', () => {
+    for (let day = 1; day <= 35; day++) {
       const { bronze, silver, gold } = medalChancesForDay(day)
       expect(bronze).toBeGreaterThanOrEqual(silver)
       expect(silver).toBeGreaterThanOrEqual(gold)
     }
+    expect(medalChancesForDay(10).bronze).toBeCloseTo(1, 5)
+    expect(medalChancesForDay(20).silver).toBeCloseTo(1, 5)
     const d30 = medalChancesForDay(30)
-    expect(d30.bronze).toBe(1)
-    expect(d30.silver).toBe(1)
-    expect(d30.gold).toBe(1)
-    // Modo infinito: além do dia 30 segura em 100% (todo invasor sai Ouro).
-    expect(medalChancesForDay(45).gold).toBe(1)
+    expect(d30).toEqual({ bronze: 1, silver: 1, gold: 1 })
   })
 
-  it('no dia 1 nunca sorteia medalha; no dia 30 sempre Ouro', () => {
+  it('modo infinito: além do dia 30 segura em 100% (todo invasor Ouro)', () => {
+    expect(medalChancesForDay(45)).toEqual({ bronze: 1, silver: 1, gold: 1 })
     for (let seed = 1; seed <= 50; seed++) {
       expect(rollMedalForDay(createRng(seed), 1)).toBeNull()
       expect(rollMedalForDay(createRng(seed), 30)).toBe('gold')

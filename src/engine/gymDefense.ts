@@ -27,7 +27,8 @@ import {
   GYM_XP_CAP_PER_WIN,
   GYM_XP_PER_BATTLE_POWER,
   MEDAL_FULL_DAY,
-  MEDAL_UNLOCK_DAY,
+  MEDAL_OPEN_CHANCE,
+  MEDAL_OPEN_DAY,
   MOXIE_BATTLE_PER_WIN,
   PARALYZE_BATTLE_MULT,
   PRESSURE_ENEMY_MULT,
@@ -112,18 +113,18 @@ export function gymWinXp(enemyBattle: number): number {
 
 /**
  * Chance ACUMULADA ("pelo menos esse tier") de medalha por dia: cada tier abre no seu dia
- * (MEDAL_UNLOCK_DAY) e rampa linearmente até 100% no dia MEDAL_FULL_DAY. (dia − (abertura − 1))
- * no numerador garante chance > 0 já no dia de abertura. Bronze ≥ Prata ≥ Ouro sempre.
+ * (MEDAL_OPEN_DAY) já com MEDAL_OPEN_CHANCE e rampa linearmente até 100% no seu dia de
+ * saturação (MEDAL_FULL_DAY). Bronze ≥ Prata ≥ Ouro sempre. Vale para qualquer dia.
  */
 export function medalChancesForDay(day: number): { bronze: number; silver: number; gold: number } {
-  const atLeast = (unlock: number): number => {
-    const start = unlock - 1
-    return clamp((day - start) / (MEDAL_FULL_DAY - start), 0, 1)
+  const atLeast = (open: number, full: number): number => {
+    if (day < open) return 0
+    return clamp(MEDAL_OPEN_CHANCE + (1 - MEDAL_OPEN_CHANCE) * ((day - open) / (full - open)), 0, 1)
   }
   return {
-    bronze: atLeast(MEDAL_UNLOCK_DAY.bronze),
-    silver: atLeast(MEDAL_UNLOCK_DAY.silver),
-    gold: atLeast(MEDAL_UNLOCK_DAY.gold),
+    bronze: atLeast(MEDAL_OPEN_DAY.bronze, MEDAL_FULL_DAY.bronze),
+    silver: atLeast(MEDAL_OPEN_DAY.silver, MEDAL_FULL_DAY.silver),
+    gold: atLeast(MEDAL_OPEN_DAY.gold, MEDAL_FULL_DAY.gold),
   }
 }
 
