@@ -124,6 +124,11 @@ export interface MissionInstance {
    */
   weatherHold?: { node: string; untilMs: number }
   /**
+   * Paralyze (Tempestade): congela o sprite numa posição arbitrária por 5s. `pos` é onde o raio
+   * acertou; `untilMs` é quando descongela. Ausente = sem paralisia em curso.
+   */
+  paralyzeHold?: { pos: MapPos; untilMs: number }
+  /**
    * Sub-seed do RNG de evolução, sorteado ao resolver. O XP só é APLICADO na volta ao
    * ginásio (PLAN §4.1, ajuste) — guardar o seed mantém a evolução determinística.
    */
@@ -213,6 +218,11 @@ export interface CaptureSearch {
   reroutePath?: string[]
   /** Clima (poças): parado no ponto antes de uma poça até ela secar (sem rota seca alternativa). */
   weatherHold?: { node: string; untilMs: number }
+  /**
+   * Paralyze (Tempestade): congela o sprite numa posição arbitrária por 5s. `pos` é onde o raio
+   * acertou; `untilMs` é quando descongela. Ausente = sem paralisia em curso.
+   */
+  paralyzeHold?: { pos: MapPos; untilMs: number }
 }
 
 /** Procurador voltando ao ginásio após capturar/dispensar — só fica idle ao chegar (PLAN §4.5). */
@@ -235,6 +245,11 @@ export interface CaptureReturn {
   reroutePath?: string[]
   /** Clima (poças): parado no ponto antes de uma poça até ela secar (sem rota seca alternativa). */
   weatherHold?: { node: string; untilMs: number }
+  /**
+   * Paralyze (Tempestade): congela o sprite numa posição arbitrária por 5s. `pos` é onde o raio
+   * acertou; `untilMs` é quando descongela. Ausente = sem paralisia em curso.
+   */
+  paralyzeHold?: { pos: MapPos; untilMs: number }
 }
 
 /** Encontro pronto: 3 candidatos para o jogador decidir (capturar / voltar / seguir) — PLAN §4.5. */
@@ -366,6 +381,8 @@ export interface DayTally {
   shopOffer: string[]
   /** Itens (ids) já comprados HOJE — viram "VENDIDO" no mercado (1 compra por slot/dia). */
   purchasedItems: string[]
+  /** Pokémon (ids) com -50% de Batalha pelo resto do dia (Paralyze da Tempestade). */
+  paralyzedBattleIds: string[]
 }
 
 export interface DayLog {
@@ -472,6 +489,7 @@ export function emptyTally(): DayTally {
     digTunnels: [],
     shopOffer: [],
     purchasedItems: [],
+    paralyzedBattleIds: [],
   }
 }
 

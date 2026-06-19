@@ -17,10 +17,11 @@ import type {
 import { getCity, markerPos } from '../../data/cities.ts'
 import { getMissionTemplate, missionReward } from '../../data/missionTemplates.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
-import { graphWithTunnels, pointAlongPath } from '../../engine/pathfinding.ts'
+import { graphWithTunnels } from '../../engine/pathfinding.ts'
 import { activePuddlesAt } from '../../engine/weather.ts'
 import { teamIsSpeedy } from '../../engine/secretEffects.ts'
 import { clamp } from '../../engine/math.ts'
+import { missionTravelerPos, searchTravelerPos, returnTravelerPos } from '../../engine/travelerPositions.ts'
 import styles from './CityMap.module.css'
 
 /** Missões que aparecem no mapa: disponíveis e as já aceitas (em trânsito/ação/volta) — #4. */
@@ -66,11 +67,6 @@ function ringStyle(fraction: number, color = 'var(--c-hud-accent)'): { backgroun
 /** Fração [0,1] do tempo RESTANTE entre dois instantes (esvazia até 0 no fim). */
 function remainingFraction(now: number, start: number, end: number): number {
   return end > start ? clamp((end - now) / (end - start), 0, 1) : 0
-}
-
-/** Fração [0,1] do tempo decorrido entre dois instantes (start→end). */
-function elapsedFraction(now: number, start: number, end: number): number {
-  return end > start ? clamp((now - start) / (end - start), 0, 1) : 1
 }
 
 export function CityMap({ state, onMission, onDefense, onSpot }: Props) {
@@ -194,29 +190,6 @@ function PuddleOverlay({
   )
 }
 
-/**
- * Posição atual do time de uma missão em deslocamento (ida/volta), ou null. Ao CHEGAR
- * na missão ('inProgress') o time some do mapa; reaparece só na volta ('returning') — #3.
- */
-function missionTravelerPos(graph: CityGraph, m: MissionInstance, now: number): MapPos | null {
-  if (m.path.length === 0) return null
-  // Esperando uma poça secar: fica parado no ponto anterior (clima).
-  if (m.weatherHold && now < m.weatherHold.untilMs) {
-    const held = graph.nodes[m.weatherHold.node]
-    if (held) return { ...held }
-  }
-  if (m.status === 'traveling' && m.acceptedAtMs !== null && m.arriveAtMs !== null) {
-    const out = m.reroutePath ?? m.path
-    return pointAlongPath(graph, out, elapsedFraction(now, m.acceptedAtMs, m.arriveAtMs))
-  }
-  if (m.status === 'returning' && m.resolveAtMs !== null && m.returnEndsAtMs !== null) {
-    // Volta pela rota própria (respeita mão única); saves antigos caem no reverso da ida.
-    const back = m.reroutePath ?? m.returnPath ?? [...m.path].reverse()
-    return pointAlongPath(graph, back, elapsedFraction(now, m.resolveAtMs, m.returnEndsAtMs))
-  }
-  return null
-}
-
 /** Sprites do time/procurador se movendo pelo mapa (ponto a ponto), ida e volta. */
 function MapTravelers({ state, graph, now }: { state: GameState; graph: CityGraph; now: number }) {
   return (
@@ -242,22 +215,14 @@ function MapTravelers({ state, graph, now }: { state: GameState; graph: CityGrap
         )
       })}
       {state.captureSearches.map((c) => {
-        // Ao chegar no local, o procurador some (entra na grama); reaparece só na volta — #3.
-        if (c.phase !== 'traveling') return null
-        const out = c.reroutePath ?? c.path
-        // Esperando uma poça secar: fica parado no ponto anterior (clima).
-        const held = c.weatherHold && now < c.weatherHold.untilMs ? graph.nodes[c.weatherHold.node] : undefined
-        const pos = held ? { ...held } : pointAlongPath(graph, out, elapsedFraction(now, c.departAtMs, c.arriveAtMs))
+        const pos = searchTravelerPos(graph, c, now)
+        if (!pos) return null
         return (
           <TravelerGroup key={`s-${c.searcherId}`} pos={pos} ids={[c.searcherId]} roster={state.roster} flying={c.flying} surfing={c.surfing} />
         )
       })}
       {state.captureReturns.map((r) => {
-        // r.path agora é ponto→ginásio (volta real). Saves antigos guardavam ginásio→ponto:
-        // detecta a orientação pelo 1º id (== r.node → já é a volta; senão inverte).
-        const back = r.reroutePath ?? (r.path[0] === r.node ? r.path : [...r.path].reverse())
-        const held = r.weatherHold && now < r.weatherHold.untilMs ? graph.nodes[r.weatherHold.node] : undefined
-        const pos = held ? { ...held } : pointAlongPath(graph, back, elapsedFraction(now, r.departAtMs, r.arriveAtMs))
+        const pos = returnTravelerPos(graph, r, now)
         return (
           <TravelerGroup key={`r-${r.searcherId}`} pos={pos} ids={[r.searcherId]} roster={state.roster} flying={r.flying} surfing={r.surfing} />
         )
