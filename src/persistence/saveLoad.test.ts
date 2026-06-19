@@ -73,6 +73,15 @@ describe('saveLoad (PLAN §5)', () => {
     expect(loaded!.today.paralyzedBattleIds).toEqual([])
   })
 
+  it('migra v33 → v34: save sem shiny/candidateShiny segue válido (passthrough)', () => {
+    const base = autoSeedRun(42) as unknown as Record<string, unknown>
+    const v33 = { version: 33, savedAtMs: 0, state: base }
+    localStorage.setItem(SAVE_KEY, JSON.stringify(v33))
+    const loaded = loadGame()
+    expect(loaded).not.toBeNull()
+    expect(loaded!.roster[0]!.shiny).toBeUndefined()
+  })
+
   it('clearSave remove o save', () => {
     saveGame(autoSeedRun(1), 0)
     clearSave()

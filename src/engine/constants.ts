@@ -216,6 +216,8 @@ export const DRAFT_CHOICES = 3
  * v33: efeito Tempestade. WeatherSchedule ganha `storms` e a previsão ganha
  * stormChancePercent/potentialStormCount; today ganha paralyzedBattleIds; missões/buscas
  * ganham paralyzeHold opcional. A migração inicia storms vazio, previsão de tempestade
- * zerada e paralyzedBattleIds vazio (recalculados no próximo setupDay). */
-export const SAVE_VERSION = 33
+ * zerada e paralyzedBattleIds vazio (recalculados no próximo setupDay).
+ * v34: sistema de shiny. pokemon.shiny? e CaptureEncounter.candidateShiny? são opcionais
+ * (ausente = não-shiny); nada a preencher — passthrough. */
+export const SAVE_VERSION = 34
 export const SAVE_KEY = 'poke-badgekeeper:save'
