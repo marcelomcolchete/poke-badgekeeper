@@ -142,7 +142,7 @@ export const PARALYZE_STUN_MS = 5_000
 export const PARALYZE_BATTLE_MULT = 0.5
 ```
 
-- [ ] **Step 6: Adicionar o salt e o bump de versão em `constants.ts`**
+- [ ] **Step 6: Adicionar o salt em `constants.ts`**
 
 Em `src/engine/constants.ts`, após `WEATHER_SEED_SALT`:
 
@@ -151,20 +151,7 @@ Em `src/engine/constants.ts`, após `WEATHER_SEED_SALT`:
 export const STORM_SEED_SALT = 0x53746f72 // 'Stor'
 ```
 
-E trocar a versão do save (a migração entra na Task 8 — o número já sobe aqui):
-
-```ts
-export const SAVE_VERSION = 33
-```
-
-Adicionar ao bloco de comentário do histórico de versões, logo antes de `export const SAVE_VERSION`:
-
-```ts
- * v33: efeito Tempestade. WeatherSchedule ganha `storms` e a previsão ganha
- * stormChancePercent/potentialStormCount; today ganha paralyzedBattleIds; missões/buscas
- * ganham paralyzeHold opcional. A migração inicia storms vazio, previsão de tempestade
- * zerada e paralyzedBattleIds vazio (recalculados no próximo setupDay). */
-```
+> **NÃO** mexer em `SAVE_VERSION` nesta tarefa. O bump (32 → 33) + comentário de histórico + a migração andam JUNTOS na Task 8 — bumpar aqui deixaria a suíte de save vermelha (sem caminho de migração v32→v33) até a Task 8.
 
 - [ ] **Step 7: Commit**
 
@@ -1449,6 +1436,7 @@ git commit -m "feat: raios aplicam dano + Paralyze no tick do dia (processStorms
 **Files:**
 - Modify: `src/game/setup.ts` (usar `buildDayWeather`)
 - Modify: `src/components/screens/DayForecastPanel.tsx` (usar `buildDayWeather` + chance de tempestade)
+- Modify: `src/engine/constants.ts` (bump `SAVE_VERSION` 32 → 33 + comentário — adiado da Task 1)
 - Modify: `src/persistence/saveLoad.ts` (migração v32 → v33)
 - Test: `src/game/cloudNineSetup.test.ts` (ajustar se comparar weather) e `src/persistence/saveLoad.test.ts` (adicionar caso v32→v33)
 
@@ -1523,9 +1511,24 @@ it('migra v32 → v33: adiciona storms, previsão de tempestade e paralyzedBattl
 Run: `npx vitest run src/persistence/saveLoad.test.ts`
 Expected: FAIL — sem a migração, `storms`/`paralyzedBattleIds` ficam ausentes.
 
-- [ ] **Step 5: Implementar a migração v32 → v33**
+- [ ] **Step 5: Bumpar a versão do save + implementar a migração v32 → v33**
 
-Em `src/persistence/saveLoad.ts`, antes da linha `if (version !== SAVE_VERSION) return null`, adicionar:
+Primeiro, em `src/engine/constants.ts`, trocar a versão e documentar (o bump foi adiado da Task 1 para cá, junto com a migração):
+
+```ts
+export const SAVE_VERSION = 33
+```
+
+Adicionar ao bloco de comentário do histórico de versões, logo antes de `export const SAVE_VERSION`:
+
+```ts
+ * v33: efeito Tempestade. WeatherSchedule ganha `storms` e a previsão ganha
+ * stormChancePercent/potentialStormCount; today ganha paralyzedBattleIds; missões/buscas
+ * ganham paralyzeHold opcional. A migração inicia storms vazio, previsão de tempestade
+ * zerada e paralyzedBattleIds vazio (recalculados no próximo setupDay). */
+```
+
+Depois, em `src/persistence/saveLoad.ts`, antes da linha `if (version !== SAVE_VERSION) return null`, adicionar:
 
 ```ts
   // v32 → v33: efeito Tempestade. weather ganha storms + previsão de tempestade; today ganha

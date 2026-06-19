@@ -309,9 +309,10 @@ describe('predicados de chuva (Swift Swim / Cloud Nine)', () => {
 describe('teamIsSpeedy (aura de velocidade ao vivo)', () => {
   const rainNow = {
     rain: [{ startMs: 0, endMs: 100_000, puddles: [] }],
-    forecast: { rainChancePercent: 100, rainMmPerHour: 30, potentialRainCount: 1 },
+    storms: [],
+    forecast: { rainChancePercent: 100, rainMmPerHour: 30, potentialRainCount: 1, stormChancePercent: 0, potentialStormCount: 0 },
   }
-  const dry = { rain: [], forecast: { rainChancePercent: 0, rainMmPerHour: 0, potentialRainCount: 0 } }
+  const dry = { rain: [], storms: [], forecast: { rainChancePercent: 0, rainMmPerHour: 0, potentialRainCount: 0, stormChancePercent: 0, potentialStormCount: 0 } }
 
   it('Swift Swim acende a aura SÓ enquanto chove', () => {
     const swimmer = makeMon({ speciesId: 138, secretCount: 1 })

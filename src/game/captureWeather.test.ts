@@ -19,7 +19,8 @@ const GYM = CERULEAN.siteNodes.gym
 function puddleOn(node: string, eventEndMs = 20_000, endMs = 25_000): WeatherSchedule {
   return {
     rain: [{ startMs: 0, endMs: eventEndMs, puddles: [{ node, startMs: 0, eventEndMs, endMs }] }],
-    forecast: { rainChancePercent: 40, rainMmPerHour: 24, potentialRainCount: 2 },
+    storms: [],
+    forecast: { rainChancePercent: 40, rainMmPerHour: 24, potentialRainCount: 2, stormChancePercent: 0, potentialStormCount: 0 },
   }
 }
 
