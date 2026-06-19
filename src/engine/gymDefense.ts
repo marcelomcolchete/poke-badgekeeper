@@ -214,7 +214,7 @@ export function trainerSquadSpecies(
  * Inimigos efêmeros da defesa a partir do elenco de um treinador (PLAN §4.4). Cada invasor
  * tem o SEU poder de Batalha: a Batalha-base da espécie ±10 (E..S, como os IVs do jogador) —
  * então dois invasores da mesma espécie ainda diferem. O dia controla QUANTOS Pokémon o
- * treinador traz (enemySquadSizeForDay) e a chance/raridade das MEDALHAS: cada invasor sorteia
+ * treinador traz (squadSizeRange/rollSquadSize) e a chance/raridade das MEDALHAS: cada invasor sorteia
  * Bronze (+10), Prata (+20) ou Ouro (+50) — o bônus sobe acima do teto normal de Batalha.
  */
 export function generateDefenseEnemies(
