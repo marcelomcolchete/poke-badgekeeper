@@ -48,6 +48,26 @@ no fim).
   - **Sítio de 1 nó** (`center/mart/gym`): o grafo guarda só 1 letra — escolher 1 ponto de
     parada e **destacar na tabela** pro usuário confirmar qual.
 
+### Como ler as adjacências: **por seta, não por nó**
+
+Ler "vizinho por vizinho" (olhar cada círculo e listar quem está ao redor) lê bem as arestas
+**curtas dentro de um bloco**, mas é **cego para as arestas longas que ligam blocos** — as que
+atravessam ponte/água/prédios ou conectam círculos não-vizinhos. Esses foram os erros reais
+(ex.: `N–O` ligando a 2ª fila ao campo; `AC–AN` descendo pela ponte). Faça assim:
+
+1. **Varredura por seta.** Percorra a imagem em **quadrantes** e, para **cada ponta de seta**,
+   rastreie até os **dois** círculos que ela conecta. Consuma **toda** seta — não liste vizinhos
+   de memória.
+2. **Passe dedicado de setas longas / entre-blocos.** Depois da varredura local, faça um passe
+   só para setas que (a) **atravessam terreno** (ponte, água, prédios) ou (b) ligam círculos
+   **não adjacentes**. São as que mais escapam.
+3. **Check de cheiro (antes de apresentar a tabela).** Reexamine — não apresente como fato —
+   todo nó de **grau 1**, toda região alcançável **só por Surf**, e todo cluster visualmente
+   **isolado**. Quase sempre é **aresta longa faltando**, não um beco real. Volte à imagem e
+   procure a seta antes de concluir.
+4. **Confirmação neutra.** Na tabela, pergunte "**rastreei estas setas — faltou alguma?**" em vez
+   de "tal ponto não conecta, certo?" (não induza a resposta à sua hipótese).
+
 **Legenda de palavras → sítio:**
 
 | Pop-up | Cor | Vira | Nó no grafo |
@@ -66,8 +86,9 @@ refináveis com o DEV picker (`CityMap` loga `{x,y}` no clique, em dev).
 
 1. **Step 0** (acima): ler o bloco vivo de Cerulean + `cerulean.test.ts`.
 2. Identificar o índice da cidade pelo nome do arquivo.
-3. Ler a imagem → pontos (letra + cor→surf), arestas (setas cinza/branca), pop-ups (palavra +
-   ponto responsável via seta roxa), coordenadas.
+3. Ler a imagem → pontos (letra + cor→surf), pop-ups (palavra + ponto responsável via seta
+   roxa), coordenadas; e as **arestas pela varredura por seta** (ver acima: quadrantes →
+   passe de setas longas → check de cheiro). Não listar vizinhos de memória.
 4. Aplicar as exceções one-way ditas no chat. **Sem nenhuma declarada ⇒ `_DIRECTED_EDGES = []`**
    (todas as arestas bidirecionais).
 5. **Imprimir a tabela de confirmação e PARAR** — esperar OK/correções (ver formato abaixo).
@@ -93,7 +114,10 @@ Pop-ups:
 ```
 
 Listar TODOS os pontos e pop-ups. Destacar: letras azuis (surf), pop-ups com 2 setas, e
-qualquer one-way recebido no chat. Só seguir para o código após o OK explícito.
+qualquer one-way recebido no chat. Rodar o **check de cheiro** antes de apresentar e marcar o
+que ele apontar (nós de grau 1, regiões só-Surf, clusters isolados) como **"reexaminar — seta
+faltando?"**, não como fato. Fechar com a pergunta **neutra** "rastreei estas setas — faltou
+alguma?". Só seguir para o código após o OK explícito.
 
 ## Gotchas
 
