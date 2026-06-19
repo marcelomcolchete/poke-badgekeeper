@@ -7,6 +7,7 @@ import {
   addXp,
   allocatePoint,
   createPokemon,
+  evolveOneStage,
   evolveToLevel,
   pendingPoints,
   rarityXpRate,
@@ -191,5 +192,27 @@ describe('evolução (PLAN §4.1.1)', () => {
     const ratioAfter = evolved.currentHp / evolved.maxHp
     expect(Math.abs(ratioAfter - ratioBefore)).toBeLessThan(0.5) // proporção aproximada
     expect(evolved.currentHp).toBeGreaterThan(0) // estava vivo, segue vivo
+  })
+})
+
+describe('evolveOneStage (Moon Stone)', () => {
+  it('evolui 1 estágio mantendo o nível, ignorando atLevel', () => {
+    // Bulbasaur (1) → Ivysaur (2). Nível 1, abaixo do atLevel de evolução.
+    const bulba = createPokemon({ id: 'b', speciesId: 1, level: 1, rng: createRng(1) })
+    const evolved = evolveOneStage(bulba, createRng(2))
+    expect(evolved.speciesId).toBe(2)
+    expect(evolved.level).toBe(1)
+  })
+
+  it('espécie final retorna inalterada', () => {
+    // Venusaur (3) não evolui.
+    const venu = createPokemon({ id: 'v', speciesId: 3, level: 5, rng: createRng(1) })
+    expect(evolveOneStage(venu, createRng(2)).speciesId).toBe(3)
+  })
+
+  it('NÃO encadeia: só um estágio por chamada', () => {
+    // Charmander (4) → Charmeleon (5), não Charizard (6).
+    const char = createPokemon({ id: 'c', speciesId: 4, level: 9, rng: createRng(1) })
+    expect(evolveOneStage(char, createRng(2)).speciesId).toBe(5)
   })
 })

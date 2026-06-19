@@ -10,8 +10,10 @@ import { nextBall } from '../data/balls.ts'
 import { canAfford } from '../engine/economy.ts'
 import { LEVEL_MAX } from '../engine/constants.ts'
 import { heal, recomputeMaxHp } from '../engine/attributes.ts'
+import { getSpecies } from '../data/pokemon/index.ts'
 import {
   allocatePoint as engineAllocate,
+  evolveOneStage,
   evolveToLevel,
   pendingPoints,
 } from '../engine/leveling.ts'
@@ -71,6 +73,9 @@ export function buyItem(s: GameState, itemId: string, quantity = 1): void {
     case 'rareCandy':
       // Precisa de um alvo escolhido na compra → tratado por useRareCandy (ação dedicada).
       return
+    case 'moonStone':
+      // Precisa de um alvo escolhido na compra → tratado por useMoonStone (ação dedicada).
+      return
   }
 }
 
@@ -118,6 +123,23 @@ export function useRareCandy(s: GameState, pokemonId: string): void {
   const rng = takeRng(s)
   const leveled = recomputeMaxHp(evolveToLevel({ ...mon, level: mon.level + 1 }, rng))
   replaceMon(s, leveled)
+  markSold(s, item.id)
+}
+
+/**
+ * Moon Stone: evolui o Pokémon escolhido (time OU caixa) um estágio, ignorando o nível (sorteia o
+ * ramo). Sem ouro, alvo inexistente, que não evolui, ou já comprado hoje → no-op (a UI bloqueia).
+ */
+export function useMoonStone(s: GameState, pokemonId: string): void {
+  const item = getItem('moon-stone')
+  if (s.today.purchasedItems.includes(item.id)) return
+  const fromRoster = s.roster.find((p) => p.id === pokemonId)
+  const target = fromRoster ?? s.box.find((p) => p.id === pokemonId)
+  if (!target || getSpecies(target.speciesId).evolvesTo === null || !canAfford(s.gold, item)) return
+  s.gold -= item.price
+  const evolved = evolveOneStage(target, takeRng(s))
+  if (fromRoster) s.roster = s.roster.map((p) => (p.id === pokemonId ? evolved : p))
+  else s.box = s.box.map((p) => (p.id === pokemonId ? evolved : p))
   markSold(s, item.id)
 }
 

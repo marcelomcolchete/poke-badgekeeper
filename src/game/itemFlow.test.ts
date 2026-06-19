@@ -241,3 +241,32 @@ describe('Fast Ball', () => {
     expect(quick.readyAtMs).toBe(quick.arriveAtMs)
   })
 })
+
+describe('Moon Stone (evolui ignorando o nível)', () => {
+  it('evolui um Pokémon do time e cobra 700', () => {
+    let s = createInitialState(SEED)
+    s.gold = 700
+    s.roster = [makeMon({ id: 'a', speciesId: 1, level: 1 })] // Bulbasaur
+    s = reducer(s, { type: 'USE_MOON_STONE', pokemonId: 'a' })
+    expect(s.roster[0]!.speciesId).toBe(2) // Ivysaur
+    expect(s.gold).toBe(0)
+  })
+
+  it('evolui um Pokémon da caixa', () => {
+    let s = createInitialState(SEED)
+    s.gold = 700
+    s.box = [makeMon({ id: 'bx', speciesId: 4, level: 1 })] // Charmander
+    s = reducer(s, { type: 'USE_MOON_STONE', pokemonId: 'bx' })
+    expect(s.box[0]!.speciesId).toBe(5) // Charmeleon
+    expect(s.gold).toBe(0)
+  })
+
+  it('sem ouro é no-op', () => {
+    let s = createInitialState(SEED)
+    s.gold = 100
+    s.roster = [makeMon({ id: 'a', speciesId: 1, level: 1 })]
+    s = reducer(s, { type: 'USE_MOON_STONE', pokemonId: 'a' })
+    expect(s.roster[0]!.speciesId).toBe(1)
+    expect(s.gold).toBe(100)
+  })
+})

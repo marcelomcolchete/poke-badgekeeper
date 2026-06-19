@@ -212,6 +212,15 @@ export const ITEMS: ItemData[] = [
     sprite: sprite('shiny-charm'),
     effect: { kind: 'passive' },
   },
+  {
+    id: 'moon-stone',
+    name: 'Moon Stone',
+    type: 'consumable',
+    price: 700,
+    description: 'Escolha um Pokémon para evoluir na hora, mesmo sem o nível.',
+    sprite: sprite('moon-stone'),
+    effect: { kind: 'moonStone' },
+  },
 ]
 
 const ITEMS_BY_ID: Map<string, ItemData> = new Map(ITEMS.map((i) => [i.id, i]))
@@ -246,6 +255,7 @@ export const GLOBAL_ITEM_IDS: string[] = [
   'love-ball',
   'premier-ball',
   'shiny-charm',
+  'moon-stone',
 ]
 
 /** Itens EXTRAS por cidade (índice de CITIES): Pewter (0), Cerulean (1) e Vermilion (2). */
