@@ -77,6 +77,37 @@ export function evolutionChain(speciesId: number): number[] {
   return chain
 }
 
+/**
+ * Linhas evolutivas Gen1 que tocam algum dos `types` (primário ou secundário de qualquer
+ * estágio): expande cada espécie do tipo pela família inteira, remove lendários e ordena.
+ * Base dos rosters "amplos por tipo" dos treinadores (data/trainers — PLAN §4.4).
+ */
+export function familiesByType(...types: PokemonType[]): number[] {
+  const ids = new Set<number>()
+  for (const type of types) {
+    for (const species of speciesByType(type)) {
+      for (const id of evolutionFamily(species.id)) ids.add(id)
+    }
+  }
+  return [...ids].filter((id) => getSpecies(id).rarity !== 'legend').sort((a, b) => a - b)
+}
+
+/** Formas-base (1ª evolução): espécies SEM pré-evolução, sem lendários, ordenadas. */
+export function baseStageSpecies(): number[] {
+  return allSpecies()
+    .filter((s) => !EVO_PARENT.has(s.id) && s.rarity !== 'legend')
+    .map((s) => s.id)
+    .sort((a, b) => a - b)
+}
+
+/** Pokémon evoluídos (2ª forma ou mais): espécies COM pré-evolução, ordenadas. */
+export function evolvedSpecies(): number[] {
+  return allSpecies()
+    .filter((s) => EVO_PARENT.has(s.id))
+    .map((s) => s.id)
+    .sort((a, b) => a - b)
+}
+
 /** Espécie por id (lança se inexistente — id inválido é erro de programação). */
 export function getSpecies(id: number): Species {
   const species = POKEMON.get(id)

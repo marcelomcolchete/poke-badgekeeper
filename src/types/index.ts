@@ -69,6 +69,48 @@ export const TRAINER_IDS = [
   'PARASOL_LADY',
   'FISHERMAN',
   'POKEFAN',
+  // Vermilion (3) — electric/dragon.
+  'SURGE',
+  'VERMILION_ENGINEER',
+  'VERMILION_ROCKER',
+  'VERMILION_SAILOR',
+  'VERMILION_GENTLEMAN',
+  'VERMILION_POKEMANIAC',
+  // Celadon (4) — grass/bug.
+  'ERIKA',
+  'CELADON_BEAUTY',
+  'CELADON_LASS',
+  'CELADON_PICNICKER',
+  'CELADON_BUGCATCHER',
+  'CELADON_GAMER',
+  // Fuchsia (5) — poison/dragon.
+  'KOGA',
+  'FUCHSIA_JUGGLER',
+  'FUCHSIA_TAMER',
+  'FUCHSIA_DRAGONTAMER',
+  'FUCHSIA_BIRDKEEPER',
+  'FUCHSIA_SWIMMER',
+  // Saffron (6) — psychic/ghost.
+  'SABRINA',
+  'SAFFRON_ACETRAINER',
+  'SAFFRON_SCIENTIST',
+  'SAFFRON_CHANNELER',
+  'SAFFRON_HEXMANIAC',
+  'SAFFRON_BLACKBELT',
+  // Cinnabar (7) — fire/fighting.
+  'BLAINE',
+  'CINNABAR_BURGLAR',
+  'CINNABAR_SUPERNERD',
+  'CINNABAR_BLACKBELT',
+  'CINNABAR_KINDLER',
+  'CINNABAR_SWIMMER',
+  // Viridian (8) — ground/normal.
+  'GIOVANNI',
+  'VIRIDIAN_TAMER',
+  'VIRIDIAN_ACETRAINER',
+  'VIRIDIAN_YOUNGSTER',
+  'VIRIDIAN_CAMPER',
+  'VIRIDIAN_BIKER',
 ] as const
 
 /**
