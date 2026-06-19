@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { TrainerId } from '../types/index.ts'
+import { RIVAL_TRAINER_IDS, ROCKET_TRAINER_IDS } from '../types/index.ts'
+import { getCity } from './cities.ts'
 import { getTrainer } from './trainers.ts'
 
 // Os 36 ids novos (6 líderes + 30 classes) — fonte da verdade para os testes.
@@ -42,4 +44,29 @@ describe('treinadores das cidades 3–8', () => {
       }
     }
   })
+})
+
+describe('listas de treinadores por cidade (3–8)', () => {
+  const EXPECTED: { index: number; name: string; leader: TrainerId }[] = [
+    { index: 2, name: 'Vermilion', leader: 'SURGE' },
+    { index: 3, name: 'Celadon', leader: 'ERIKA' },
+    { index: 4, name: 'Fuchsia', leader: 'KOGA' },
+    { index: 5, name: 'Saffron', leader: 'SABRINA' },
+    { index: 6, name: 'Cinnabar', leader: 'BLAINE' },
+    { index: 7, name: 'Viridian', leader: 'GIOVANNI' },
+  ]
+  const banned = new Set<TrainerId>([...RIVAL_TRAINER_IDS, ...ROCKET_TRAINER_IDS])
+
+  for (const { index, name, leader } of EXPECTED) {
+    it(`${name} tem líder + 5 treinadores, líder primeiro, sem rivais/Rocket`, () => {
+      const city = getCity(index)
+      expect(city.name).toBe(name)
+      expect(city.trainers).toHaveLength(6)
+      expect(city.trainers[0]).toBe(leader)
+      for (const id of city.trainers) {
+        expect(banned.has(id), `${id} não deveria estar na lista local`).toBe(false)
+        expect(() => getTrainer(id)).not.toThrow()
+      }
+    })
+  }
 })

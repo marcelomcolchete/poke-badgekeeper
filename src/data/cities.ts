@@ -24,6 +24,56 @@ const CERULEAN_TRAINERS: TrainerId[] = [
   'POKEFAN',
 ]
 
+// Elencos próprios das cidades 3–8 (líder primeiro; rivais somados no setup).
+const VERMILION_TRAINERS: TrainerId[] = [
+  'SURGE',
+  'VERMILION_ENGINEER',
+  'VERMILION_ROCKER',
+  'VERMILION_SAILOR',
+  'VERMILION_GENTLEMAN',
+  'VERMILION_POKEMANIAC',
+]
+const CELADON_TRAINERS: TrainerId[] = [
+  'ERIKA',
+  'CELADON_BEAUTY',
+  'CELADON_LASS',
+  'CELADON_PICNICKER',
+  'CELADON_BUGCATCHER',
+  'CELADON_GAMER',
+]
+const FUCHSIA_TRAINERS: TrainerId[] = [
+  'KOGA',
+  'FUCHSIA_JUGGLER',
+  'FUCHSIA_TAMER',
+  'FUCHSIA_DRAGONTAMER',
+  'FUCHSIA_BIRDKEEPER',
+  'FUCHSIA_SWIMMER',
+]
+const SAFFRON_TRAINERS: TrainerId[] = [
+  'SABRINA',
+  'SAFFRON_ACETRAINER',
+  'SAFFRON_SCIENTIST',
+  'SAFFRON_CHANNELER',
+  'SAFFRON_HEXMANIAC',
+  'SAFFRON_BLACKBELT',
+]
+const CINNABAR_TRAINERS: TrainerId[] = [
+  'BLAINE',
+  'CINNABAR_BURGLAR',
+  'CINNABAR_SUPERNERD',
+  'CINNABAR_BLACKBELT',
+  'CINNABAR_KINDLER',
+  'CINNABAR_SWIMMER',
+]
+const VIRIDIAN_TRAINERS: TrainerId[] = [
+  'GIOVANNI',
+  'VIRIDIAN_TAMER',
+  'VIRIDIAN_ACETRAINER',
+  'VIRIDIAN_YOUNGSTER',
+  'VIRIDIAN_CAMPER',
+  'VIRIDIAN_BIKER',
+]
+
 // Pewter (1.png): grafo calibrado sobre a arte anotada. 17 pontos (a–q); o ginásio é 'j'.
 // Posições normalizadas (0–1) — estimadas da arte e refináveis com o DEV picker do CityMap.
 const PEWTER_NODES: Record<string, MapPos> = {
@@ -432,6 +482,7 @@ const SEEDS: CitySeed[] = [
     ],
     graph: VERMILION_GRAPH,
     siteNodes: VERMILION_SITE_NODES,
+    trainers: VERMILION_TRAINERS,
   },
   {
     name: 'Celadon',
@@ -441,6 +492,7 @@ const SEEDS: CitySeed[] = [
       { speciesId: 44, level: 3 }, // Gloom
       { speciesId: 1, level: 1 }, // Bulbasaur
     ],
+    trainers: CELADON_TRAINERS,
   },
   {
     name: 'Fuchsia',
@@ -450,6 +502,7 @@ const SEEDS: CitySeed[] = [
       { speciesId: 109, level: 3 }, // Koffing
       { speciesId: 41, level: 1 }, // Zubat
     ],
+    trainers: FUCHSIA_TRAINERS,
   },
   {
     name: 'Saffron',
@@ -459,6 +512,7 @@ const SEEDS: CitySeed[] = [
       { speciesId: 63, level: 3 }, // Abra
       { speciesId: 92, level: 1 }, // Gastly
     ],
+    trainers: SAFFRON_TRAINERS,
   },
   {
     name: 'Cinnabar',
@@ -468,6 +522,7 @@ const SEEDS: CitySeed[] = [
       { speciesId: 58, level: 3 }, // Growlithe
       { speciesId: 147, level: 1 }, // Dratini
     ],
+    trainers: CINNABAR_TRAINERS,
   },
   {
     name: 'Viridian',
@@ -477,6 +532,7 @@ const SEEDS: CitySeed[] = [
       { speciesId: 33, level: 3 }, // Nidorino
       { speciesId: 52, level: 1 }, // Meowth
     ],
+    trainers: VIRIDIAN_TRAINERS,
   },
 ]
 
