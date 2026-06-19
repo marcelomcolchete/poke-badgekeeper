@@ -5,8 +5,9 @@
 //   F: −10 a −8   E: −7 a −5   D: −4 a −2   C: −1 a 1   B: 2 a 4   A: 5 a 7   S: 8 a 10
 
 import { ATTR_KEYS, type Pokemon } from '../types/index.ts'
-import { ATTR_MAX, IV_MAX, IV_MIN } from './constants.ts'
+import { IV_MAX, IV_MIN } from './constants.ts'
 import type { Rng } from './rng.ts'
+import { PERCEPTION_PER_RANK, RANK_GAP_KNOTS, TARGET_RANK_SWAP_ROUNDS } from './balance.ts'
 import { average, clamp } from './math.ts'
 
 /** Ranks do pior (F) ao melhor (S); o índice no array é o "valor" do rank. */
@@ -16,12 +17,6 @@ export type Rank = (typeof RANKS)[number]
 
 /** Tamanho da faixa de IV de um rank (faixas de 3 em 3 sobre [−10, +10]). */
 const IV_PER_RANK = 3
-
-/**
- * Quantos pontos de Percepção valem 1 rank: ATTR_MAX (60) repartido entre F→S (6 saltos) = 10.
- * É só a ESCALA — a Percepção entra contínua (ver `perceptionRankCenter`), então cada ponto conta.
- */
-const PERCEPTION_PER_RANK = ATTR_MAX / (RANKS.length - 1)
 
 /** Dispersão (em ranks) do sorteio em torno do centro: cada eixo cai em centro ± esta faixa. */
 const RANK_SPREAD = 1.5
@@ -33,13 +28,66 @@ export function rankIndexForIv(iv: number): number {
 }
 
 /**
- * Centro CONTÍNUO de rank (0=F … 6=S) que a Percepção do EXPLORADOR mira no encontro: quanto
- * maior a Percepção, melhor o rank que tende a surgir. Diferente da janela em degraus antiga,
- * cada ponto de Percepção conta — centro = percepcao/10, então 11 e 19 já miram ranks diferentes.
- *   perc 0→F(0)  10→E(1)  20→D(2)  30→C(3)  40→B(4)  50→A(5)  60→S(6)  (valores fracionários entre eles).
+ * Peso da curva de janela para um `gap = c − k` (quão abaixo/acima do alcance está o rank k),
+ * interpolando linearmente os knots de `RANK_GAP_KNOTS`. Fora do intervalo coberto pelos knots
+ * o peso é 0 — daí a janela curta abaixo do alcance e a pequena ultrapassagem acima.
  */
-export function perceptionRankCenter(perception: number): number {
-  return clamp(perception / PERCEPTION_PER_RANK, 0, RANKS.length - 1)
+function gapWeight(gap: number): number {
+  const knots = RANK_GAP_KNOTS
+  const first = knots[0]!
+  const last = knots[knots.length - 1]!
+  if (gap <= first[0] || gap >= last[0]) return 0
+  for (let i = 0; i < knots.length - 1; i++) {
+    const [g0, w0] = knots[i]!
+    const [g1, w1] = knots[i + 1]!
+    if (gap >= g0 && gap <= g1) return w0 + ((gap - g0) / (g1 - g0)) * (w1 - w0)
+  }
+  return 0
+}
+
+/**
+ * Distribuição (probabilidades por rank, índice 0=F … 6=S) do rank-alvo de um encontro pela
+ * Percepção do EXPLORADOR. `c = percepcao / PERCEPTION_PER_RANK` é o alcance contínuo (cada ponto
+ * conta), e cada rank recebe `gapWeight(c − k)` normalizado. Calibrada para perc 60 → 50% S /
+ * 40% A / 10% B e S só possível acima de 50 de Percepção (ver `balance.ts`).
+ */
+export function rankDistribution(perception: number): number[] {
+  const c = clamp(perception / PERCEPTION_PER_RANK, 0, RANKS.length - 1)
+  const weights = RANKS.map((_, k) => gapWeight(c - k))
+  const total = weights.reduce((sum, w) => sum + w, 0)
+  return total > 0 ? weights.map((w) => w / total) : weights
+}
+
+/** Sorteia o índice de rank-alvo (0=F … 6=S) pela distribuição da Percepção. Consome 1 saque. */
+export function sampleTargetRank(rng: Rng, perception: number): number {
+  const dist = rankDistribution(perception)
+  let ticket = rng.next()
+  for (let k = 0; k < dist.length; k++) {
+    ticket -= dist[k] as number
+    if (ticket < 0) return k
+  }
+  return dist.length - 1
+}
+
+/**
+ * 6 índices de rank de eixo cuja SOMA é `6 × target` — logo a média (e o `pokemonRank`, que é o
+ * round da média) fica cravada no rank-alvo. Parte de todos os eixos em `target` e aplica trocas
+ * +1/−1 entre pares (soma preservada, valores em [F, S]) só para dar variedade; alvos extremos
+ * (F/S) não têm para onde variar e saem uniformes. Consome `2 × TARGET_RANK_SWAP_ROUNDS` saques.
+ */
+export function targetRankAxes(rng: Rng, target: number): number[] {
+  const n = ATTR_KEYS.length
+  const top = RANKS.length - 1
+  const axes = new Array<number>(n).fill(clamp(target, 0, top))
+  for (let m = 0; m < TARGET_RANK_SWAP_ROUNDS; m++) {
+    const i = rng.int(0, n - 1)
+    const j = rng.int(0, n - 1)
+    if (i !== j && (axes[i] as number) < top && (axes[j] as number) > 0) {
+      axes[i] = (axes[i] as number) + 1
+      axes[j] = (axes[j] as number) - 1
+    }
+  }
+  return axes
 }
 
 /** IV aleatório cujo rank é exatamente `idx` (0=F … 6=S): faixa de 3 em 3 a partir de IV_MIN. */

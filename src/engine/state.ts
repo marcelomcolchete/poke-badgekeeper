@@ -266,10 +266,11 @@ export interface CaptureEncounter {
   /** Shiny por candidato (paralelo a candidateSpeciesIds). Ausente = todos não-shiny. */
   candidateShiny?: boolean[]
   /**
-   * Centro de rank (0=F … 6=S, contínuo) mirado pela Percepção do explorador: enviesa os
-   * IVs/rank dos candidatos. Ausente em saves antigos → captura/preview sem viés (§4.5).
+   * Percepção efetiva do explorador no encontro: define a distribuição de rank-alvo dos
+   * candidatos (ver `ranking.rankDistribution`). Ausente em saves antigos → captura/preview
+   * sem viés (IVs uniformes), §4.5.
    */
-  rankCenter?: number
+  searcherPerception?: number
 }
 
 export interface ItemStack {

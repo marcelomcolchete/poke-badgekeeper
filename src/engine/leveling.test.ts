@@ -14,7 +14,8 @@ import {
   xpToNext,
 } from './leveling.ts'
 import { makeMon } from './testkit.ts'
-import { pokemonRank } from './ranking.ts'
+import { pokemonRank, rankDistribution, RANKS } from './ranking.ts'
+import { ATTR_KEYS } from '../types/index.ts'
 
 const rng = () => createRng(2024)
 
@@ -57,6 +58,53 @@ describe('createPokemon', () => {
     const a = createPokemon({ id: 'x', speciesId: 7, level: 8, rng: createRng(99) })
     const b = createPokemon({ id: 'x', speciesId: 7, level: 8, rng: createRng(99) })
     expect(a.allocations).toEqual(b.allocations)
+  })
+})
+
+describe('createPokemon — rank pela Percepção do explorador (searcherPerception)', () => {
+  /** Frequência do rank final sobre N seeds para uma Percepção. */
+  function rankFreq(perception: number, n = 20000): number[] {
+    const counts = new Array(RANKS.length).fill(0)
+    for (let seed = 0; seed < n; seed++) {
+      const mon = createPokemon({ id: 'e', speciesId: 19, level: 1, rng: createRng(seed), searcherPerception: perception })
+      counts[RANKS.indexOf(pokemonRank(mon))]++
+    }
+    return counts.map((c) => c / n)
+  }
+
+  it('a distribuição final do rank bate com rankDistribution (perc 60 ≈ 50% S / 40% A / 10% B)', () => {
+    const freq = rankFreq(60)
+    const dist = rankDistribution(60)
+    for (let k = 0; k < RANKS.length; k++) expect(freq[k]).toBeCloseTo(dist[k] as number, 1)
+    expect(freq[RANKS.indexOf('S')]).toBeCloseTo(0.5, 1)
+  })
+
+  it('S nunca aparece com Percepção ≤ 50', () => {
+    for (let seed = 0; seed < 5000; seed++) {
+      const mon = createPokemon({ id: 'e', speciesId: 19, level: 1, rng: createRng(seed), searcherPerception: 50 })
+      expect(pokemonRank(mon)).not.toBe('S')
+    }
+  })
+
+  it('mantém variedade entre eixos num rank intermediário', () => {
+    // procura um Pokémon de rank não-extremo e confere que os IVs não são todos iguais
+    let varied = false
+    for (let seed = 0; seed < 200 && !varied; seed++) {
+      const mon = createPokemon({ id: 'e', speciesId: 19, level: 1, rng: createRng(seed), searcherPerception: 30 })
+      if (new Set(ATTR_KEYS.map((k) => mon.ivs[k])).size > 1) varied = true
+    }
+    expect(varied).toBe(true)
+  })
+
+  it('shiny vence a Percepção: continua sempre rank S', () => {
+    const mon = createPokemon({ id: 'e', speciesId: 19, level: 1, rng: createRng(3), searcherPerception: 0, shiny: true })
+    expect(pokemonRank(mon)).toBe('S')
+  })
+
+  it('é determinístico: mesma seed + Percepção → mesmos IVs (preview == captura)', () => {
+    const a = createPokemon({ id: 'e', speciesId: 19, level: 4, rng: createRng(77), searcherPerception: 45 })
+    const b = createPokemon({ id: 'e', speciesId: 19, level: 4, rng: createRng(77), searcherPerception: 45 })
+    expect(a.ivs).toEqual(b.ivs)
   })
 })
 
