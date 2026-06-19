@@ -240,6 +240,149 @@ const CERULEAN_SITE_NODES: CitySiteNodes = {
   green: ['g31', 'g32', 'g33', 'g34', 'g35', 'm'], // 3.1..3.6 (áreas de exploração/captura; 'm' era a 2ª Rocket)
 }
 
+// ============================ Vermilion (3.png) ============================
+// Grafo calibrado sobre a arte anotada (mapa do chat). 38 pontos de PARADA a–an (sem 'j'/'w')
+// + 5 nós dedicados de exploração g31..g35 (áreas GRASS, sobre os retângulos). O ginásio é
+// 'aj'. Posições normalizadas (0–1) estimadas da arte — refináveis com o DEV picker do CityMap.
+// Sem mãos únicas: todas as adjacências são bidirecionais.
+const VERMILION_NODES: Record<string, MapPos> = {
+  a: { x: 0.487, y: 0.116 },
+  b: { x: 0.126, y: 0.211 }, // água (surf)
+  c: { x: 0.198, y: 0.211 },
+  d: { x: 0.322, y: 0.211 },
+  e: { x: 0.415, y: 0.211 },
+  f: { x: 0.487, y: 0.211 },
+  g: { x: 0.572, y: 0.211 },
+  h: { x: 0.679, y: 0.211 },
+  i: { x: 0.788, y: 0.211 },
+  k: { x: 0.322, y: 0.313 },
+  l: { x: 0.415, y: 0.313 },
+  m: { x: 0.487, y: 0.313 },
+  n: { x: 0.572, y: 0.313 },
+  o: { x: 0.679, y: 0.313 },
+  p: { x: 0.788, y: 0.313 },
+  q: { x: 0.126, y: 0.358 }, // água (surf)
+  r: { x: 0.679, y: 0.418 },
+  s: { x: 0.788, y: 0.418 },
+  t: { x: 0.487, y: 0.451 },
+  u: { x: 0.543, y: 0.451 },
+  v: { x: 0.126, y: 0.606 }, // água (surf)
+  x: { x: 0.266, y: 0.606 },
+  y: { x: 0.399, y: 0.606 },
+  z: { x: 0.487, y: 0.606 },
+  aa: { x: 0.543, y: 0.606 },
+  ab: { x: 0.615, y: 0.606 },
+  ac: { x: 0.76, y: 0.606 },
+  ad: { x: 0.887, y: 0.606 },
+  ae: { x: 0.399, y: 0.699 },
+  af: { x: 0.487, y: 0.699 },
+  ag: { x: 0.539, y: 0.699 },
+  ah: { x: 0.539, y: 0.811 },
+  ai: { x: 0.126, y: 0.888 }, // água (surf)
+  aj: { x: 0.304, y: 0.888 },
+  ak: { x: 0.399, y: 0.888 },
+  al: { x: 0.543, y: 0.888 }, // água (surf)
+  am: { x: 0.543, y: 0.958 },
+  an: { x: 0.76, y: 0.958 },
+  // Áreas de exploração (GRASS): nós dedicados sobre os retângulos, ligados ao(s) ponto(s) de acesso.
+  g31: { x: 0.49, y: 0.045 }, // GRASS topo (acesso 'a')
+  g32: { x: 0.734, y: 0.314 }, // GRASS centro-dir (acesso 'o' e 'p')
+  g33: { x: 0.21, y: 0.358 }, // GRASS esquerda (acesso 'c' e 'q')
+  g34: { x: 0.96, y: 0.605 }, // GRASS direita (acesso 'ad')
+  g35: { x: 0.477, y: 0.958 }, // GRASS baixo (acesso 'am')
+}
+
+// Arestas NÃO-direcionadas (ligam os dois sentidos). Todas bidirecionais (sem mão única).
+const VERMILION_EDGES: [string, string][] = [
+  ['a', 'f'],
+  ['b', 'c'],
+  ['c', 'd'],
+  ['d', 'e'],
+  ['e', 'f'],
+  ['f', 'g'],
+  ['g', 'h'],
+  ['h', 'i'],
+  ['d', 'k'],
+  ['e', 'l'],
+  ['f', 'm'],
+  ['k', 'l'],
+  ['l', 'm'],
+  ['m', 'n'],
+  ['n', 'o'],
+  ['h', 'o'],
+  ['i', 'p'],
+  ['o', 'r'],
+  ['p', 's'],
+  ['r', 's'],
+  ['m', 't'],
+  ['t', 'u'],
+  ['t', 'z'],
+  ['u', 'aa'],
+  ['z', 'af'],
+  ['aa', 'ag'],
+  ['v', 'x'],
+  ['x', 'y'],
+  ['y', 'z'],
+  ['z', 'aa'],
+  ['aa', 'ab'],
+  ['ab', 'ac'],
+  ['ac', 'ad'],
+  ['y', 'ae'],
+  ['ae', 'ak'],
+  ['ae', 'af'],
+  ['af', 'ag'],
+  ['ag', 'ah'],
+  ['b', 'q'],
+  ['q', 'v'],
+  ['v', 'ai'],
+  ['ai', 'aj'],
+  ['aj', 'ak'],
+  ['ak', 'al'],
+  ['ah', 'al'],
+  ['al', 'am'],
+  ['am', 'an'],
+  ['ac', 'an'],
+  // acesso às áreas de exploração (uma aresta por seta roxa do GRASS)
+  ['a', 'g31'],
+  ['o', 'g32'],
+  ['p', 'g32'],
+  ['c', 'g33'],
+  ['q', 'g33'],
+  ['ad', 'g34'],
+  ['am', 'g35'],
+]
+
+// Âncoras de EXIBIÇÃO: o popup aparece SOBRE o retângulo da arte (distinto da letra de parada).
+// Nenhuma letra hospeda mais de um pop-up aqui, então todas as chaves são simples.
+const VERMILION_MARKERS: Record<string, MapPos> = {
+  aj: { x: 0.304, y: 0.723 }, // GYM (sobre o ginásio)
+  d: { x: 0.322, y: 0.04 }, // CP — centro (sobre o P.C)
+  ab: { x: 0.603, y: 0.445 }, // MART (sobre o prédio)
+  x: { x: 0.266, y: 0.445 }, // RKT — Rocket (sobre o prédio)
+  c: { x: 0.21, y: 0.057 }, // HOUSE (topo-esq)
+  e: { x: 0.415, y: 0.057 }, // HOUSE (topo)
+  g: { x: 0.572, y: 0.057 }, // HOUSE (topo)
+  y: { x: 0.415, y: 0.468 }, // HOUSE (meio)
+  ah: { x: 0.603, y: 0.723 }, // HOUSE (baixo)
+}
+
+const VERMILION_GRAPH: CityGraph = {
+  nodes: VERMILION_NODES,
+  adj: buildAdjacency(VERMILION_NODES, VERMILION_EDGES),
+  markers: VERMILION_MARKERS,
+  surfNodes: ['b', 'q', 'v', 'ai', 'al'],
+}
+
+// Sítio → ponto do grafo (pop-ups da arte anotada de Vermilion).
+const VERMILION_SITE_NODES: CitySiteNodes = {
+  gym: 'aj', // GYM
+  center: 'd', // CP
+  mart: 'ab', // MART
+  museum: ['x'], // RKT — ponto Rocket único
+  houses: ['c', 'e', 'g', 'y', 'ah'], // HOUSE ×5
+  green: ['g31', 'g32', 'g33', 'g34', 'g35'], // GRASS ×5 (exploração/captura)
+}
+
 interface CitySeed {
   name: string
   primaryType: CityData['primaryType']
@@ -287,6 +430,8 @@ const SEEDS: CitySeed[] = [
       { speciesId: 25, level: 3 }, // Pikachu
       { speciesId: 81, level: 1 }, // Magnemite
     ],
+    graph: VERMILION_GRAPH,
+    siteNodes: VERMILION_SITE_NODES,
   },
   {
     name: 'Celadon',
