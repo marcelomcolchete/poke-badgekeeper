@@ -111,12 +111,13 @@ export const ENEMY_BASE_BATTLE = 25
 export const ENEMY_BATTLE_PER_DAY = 4
 
 /**
- * Defesa §4.4/§4.8: o esquadrão inimigo cresce com o dia. Âncoras da escala 1→10:
- * dia 1 = no máx. 1 Pokémon; dia 10 = no mín. 6. A partir do dia 5 há +1 de variação.
+ * Defesa §4.4: tamanho do esquadrão invasor por treinador é uma FAIXA [min,max] sorteada,
+ * que cresce com o dia e converge no teto 6. `min` sobe devagar (reta, atinge 6 ~dia 15);
+ * `max` abre rápido (côncavo via raiz, atinge 6 ~dia 9). Pensado para o modo infinito.
  */
-export const ENEMY_SQUAD_DAY1 = 1
-export const ENEMY_SQUAD_DAY10 = 6
-export const ENEMY_SQUAD_JITTER_FROM_DAY = 5
+export const DEFENSE_SQUAD_MAX = 6
+export const DEFENSE_SQUAD_MIN_SLOPE = 5 / 14
+export const DEFENSE_SQUAD_MAX_SQRT_BASE = 9
 
 /**
  * Leveling §4.1: POOL de XP de uma missão bem-sucedida, DIVIDIDO igualmente entre os

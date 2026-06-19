@@ -12,17 +12,18 @@ import type { TrainerDef } from '../data/trainers.ts'
 import {
   ATTR_EFFECTIVE_MIN,
   ATTR_MAX,
-  DEFENSE_SQUAD_BY_DAY,
   HP_LOSS_PER_DEFENSE_LOSS,
   IV_MAX,
   IV_MIN,
   MIN_DEFENSE_SQUAD,
-  TOTAL_DAYS,
   TYPE_ADVANTAGE_MULT,
   TYPE_DISADVANTAGE_MULT,
 } from './constants.ts'
 import {
   DEFENSE_MEDAL_BATTLE,
+  DEFENSE_SQUAD_MAX,
+  DEFENSE_SQUAD_MAX_SQRT_BASE,
+  DEFENSE_SQUAD_MIN_SLOPE,
   GYM_XP_CAP_PER_WIN,
   GYM_XP_PER_BATTLE_POWER,
   MEDAL_FULL_DAY,
@@ -141,13 +142,25 @@ export function rollMedalForDay(rng: Rng, day: number): MedalTier | null {
 }
 
 /**
- * Tamanho do esquadrão invasor por dia (PLAN §4.4): tabela fixa DEFENSE_SQUAD_BY_DAY —
- * 1 (dia 1) crescendo até 6 (dias 8–10). A dificuldade do dia vem daqui (e da quantidade),
- * não da força por Pokémon. Determinístico: depende só do dia.
+ * Faixa [min,max] de Pokémon que um treinador invasor traz no dia (PLAN §4.4). `min` sobe
+ * em reta (teto 6 ~dia 15); `max` abre rápido (côncavo, teto 6 ~dia 9). A dificuldade do dia
+ * vem daqui (e da quantidade de treinadores), não da força por Pokémon. Vale p/ qualquer dia.
  */
-export function enemySquadSizeForDay(day: number): number {
-  const clampedDay = clamp(Math.round(day), 1, TOTAL_DAYS)
-  return DEFENSE_SQUAD_BY_DAY[clampedDay] ?? 1
+export function squadSizeRange(day: number): { min: number; max: number } {
+  const d = Math.max(1, Math.round(day))
+  const min = clamp(Math.round(1 + (d - 1) * DEFENSE_SQUAD_MIN_SLOPE), 1, DEFENSE_SQUAD_MAX)
+  const max = clamp(
+    Math.round(1 + 5 * Math.sqrt((d - 1) / DEFENSE_SQUAD_MAX_SQRT_BASE)),
+    1,
+    DEFENSE_SQUAD_MAX,
+  )
+  return { min, max }
+}
+
+/** Sorteia (inclusive) o tamanho do esquadrão do treinador na faixa do dia. */
+export function rollSquadSize(rng: Rng, day: number): number {
+  const { min, max } = squadSizeRange(day)
+  return rng.int(min, max)
 }
 
 /** Espécie lendária? (raridade 'legend' — Articuno/Zapdos/Moltres/Mewtwo/Mew.) */

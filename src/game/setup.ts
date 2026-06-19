@@ -14,7 +14,7 @@ import { getTrainer, trainerSprites } from '../data/trainers.ts'
 import { buildDaySchedule, type DefenseSlot } from '../engine/timeline.ts'
 import { createMissionInstance } from '../engine/missions.ts'
 import { buildDayWeather } from '../engine/storm.ts'
-import { enemySquadSizeForDay, generateDefenseEnemies } from '../engine/gymDefense.ts'
+import { generateDefenseEnemies, rollSquadSize } from '../engine/gymDefense.ts'
 import { createPokemon } from '../engine/leveling.ts'
 import { hasDig, hasDigPlus, hasCloudNine, hasForewarn } from '../engine/secretEffects.ts'
 import { createRng, deriveSeed } from '../engine/rng.ts'
@@ -136,10 +136,10 @@ function buildDefense(
   trainerId: TrainerId,
 ): DefenseEvent {
   const rng = createRng(slot.seed)
-  const size = enemySquadSizeForDay(s.run.day)
+  // Tamanho do esquadrão sorteado na faixa do dia, depois os inimigos e a arte — tudo do
+  // mesmo rng semeado, então é estável para este evento mas varia entre defesas/dias.
+  const size = rollSquadSize(rng, s.run.day)
   const trainer = getTrainer(trainerId)
-  // Inimigos primeiro (mantém os rolls existentes), depois a arte — sorteada do mesmo rng
-  // semeado, então é estável para este evento mas varia entre defesas/dias.
   const enemies = generateDefenseEnemies(rng, trainer, size, s.run.day)
   return {
     id: takeId(s, 'd'),

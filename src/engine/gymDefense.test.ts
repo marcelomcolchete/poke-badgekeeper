@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { POKEMON_TYPES } from '../types/index.ts'
-import { ATTR_MAX, DEFENSE_SQUAD_BY_DAY } from './constants.ts'
+import { ATTR_MAX } from './constants.ts'
 import { DEFENSE_MEDAL_BATTLE, PARALYZE_BATTLE_MULT } from './balance.ts'
 import { createRng } from './rng.ts'
 import { getTrainer } from '../data/trainers.ts'
@@ -10,12 +10,13 @@ import {
   canDefend,
   duelWinProbability,
   effectiveBattle,
-  enemySquadSizeForDay,
   generateDefenseEnemies,
   gymWinXp,
   medalChancesForDay,
   resolveDefense,
   rollMedalForDay,
+  rollSquadSize,
+  squadSizeRange,
   trainerSquadSpecies,
   typeAdvantageMultiplier,
 } from './gymDefense.ts'
@@ -364,19 +365,31 @@ describe('generateDefenseEnemies', () => {
   })
 })
 
-describe('enemySquadSizeForDay (PLAN §4.4)', () => {
-  it('segue a tabela fixa por dia (1→6)', () => {
-    expect(enemySquadSizeForDay(1)).toBe(1)
-    expect(enemySquadSizeForDay(2)).toBe(2)
-    expect(enemySquadSizeForDay(5)).toBe(4)
-    expect(enemySquadSizeForDay(7)).toBe(5)
-    expect(enemySquadSizeForDay(9)).toBe(6)
-    expect(enemySquadSizeForDay(10)).toBe(6)
+describe('squadSizeRange / rollSquadSize (faixa por dia, teto 6)', () => {
+  it('âncoras: dia 1 = 1/1, dia 6 = 3/5, dia 10 = 4/6, dia 15 = 6/6', () => {
+    expect(squadSizeRange(1)).toEqual({ min: 1, max: 1 })
+    expect(squadSizeRange(6)).toEqual({ min: 3, max: 5 })
+    expect(squadSizeRange(10)).toEqual({ min: 4, max: 6 })
+    expect(squadSizeRange(15)).toEqual({ min: 6, max: 6 })
   })
 
-  it('casa com a constante DEFENSE_SQUAD_BY_DAY', () => {
-    for (let day = 1; day <= 10; day++) {
-      expect(enemySquadSizeForDay(day)).toBe(DEFENSE_SQUAD_BY_DAY[day])
+  it('min ≤ max em todo dia e teto 6 (inclui modo infinito)', () => {
+    for (let day = 1; day <= 60; day++) {
+      const { min, max } = squadSizeRange(day)
+      expect(min).toBeGreaterThanOrEqual(1)
+      expect(min).toBeLessThanOrEqual(max)
+      expect(max).toBeLessThanOrEqual(6)
+    }
+    expect(squadSizeRange(30)).toEqual({ min: 6, max: 6 })
+  })
+
+  it('rollSquadSize sorteia dentro da faixa do dia', () => {
+    for (let seed = 1; seed <= 50; seed++) {
+      const day = 7
+      const { min, max } = squadSizeRange(day)
+      const size = rollSquadSize(createRng(seed), day)
+      expect(size).toBeGreaterThanOrEqual(min)
+      expect(size).toBeLessThanOrEqual(max)
     }
   })
 })
