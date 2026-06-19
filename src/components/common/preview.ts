@@ -17,6 +17,8 @@ export interface PreviewOpts {
   seed?: number
   /** Centro de rank (captura pela Percepção): enviesa os IVs/rank do preview ao do candidato real. */
   rankCenter?: number
+  /** Força o preview a ser shiny (rank S + sprite/flag) — iniciais e candidatos. */
+  shiny?: boolean
 }
 
 export function previewPokemon(speciesId: number, level: number, opts: PreviewOpts = {}): Pokemon {
@@ -29,6 +31,7 @@ export function previewPokemon(speciesId: number, level: number, opts: PreviewOp
       rng: createRng(opts.seed),
       nickname,
       rankCenter: opts.rankCenter,
+      shiny: opts.shiny,
     })
   }
   const species = getSpecies(speciesId)
