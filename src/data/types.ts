@@ -33,6 +33,8 @@ export interface Species extends SpeciesBase {
   evolvesTo: { ids: number[]; atLevel: number } | null
   /** Menor nível em que pode surgir como selvagem (1, ou o nível em que esta forma evolui) — PLAN §4.5. */
   minWildLevel: number
+  /** Caminho da sprite shiny (derivado do id) — exibido quando o indivíduo é shiny. */
+  shinySpritePath: string
 }
 
 /**

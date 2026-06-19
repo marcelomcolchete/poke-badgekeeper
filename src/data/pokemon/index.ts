@@ -21,6 +21,7 @@ function buildSpecies(): Map<number, Species> {
       ...base,
       evolvesTo: evolvesTo.get(base.id) ?? null,
       minWildLevel: MIN_WILD_LEVEL[base.id] ?? 1,
+      shinySpritePath: `/sprites/pokemons/gen1/shiny/${base.id}.png`,
     })
   }
   return map
@@ -142,6 +143,12 @@ export function capturePool(types: readonly PokemonType[]): Species[] {
  */
 export function wildCandidates(type: PokemonType, level: number): Species[] {
   return speciesByType(type).filter((s) => level >= s.minWildLevel)
+}
+
+/** Caminho da sprite a exibir para um indivíduo: shiny usa a sprite própria. */
+export function pokemonSpritePath(p: { speciesId: number; shiny?: boolean }): string {
+  const species = getSpecies(p.speciesId)
+  return p.shiny ? species.shinySpritePath : species.spritePath
 }
 
 export { POKEMON }
