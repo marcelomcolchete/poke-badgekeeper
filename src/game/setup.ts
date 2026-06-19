@@ -18,6 +18,7 @@ import { enemySquadSizeForDay, generateDefenseEnemies } from '../engine/gymDefen
 import { createPokemon } from '../engine/leveling.ts'
 import { hasDig, hasDigPlus, hasCloudNine, hasForewarn } from '../engine/secretEffects.ts'
 import { createRng, deriveSeed } from '../engine/rng.ts'
+import { shinyFor } from '../engine/shiny.ts'
 import {
   CLOUD_NINE_RAIN_CHANCE_BONUS_PP,
   DEFENSE_LIFETIME_MS,
@@ -199,6 +200,7 @@ export function startRun(s: GameState, picks: StarterPick[]): void {
       level: pick.level,
       rng: createRng(pick.seed),
       nickname: cleanNickname(pick.nickname),
+      shiny: shinyFor(pick.seed),
     }),
   )
   s.caughtSpecies = [...new Set(picks.map((pick) => pick.speciesId))]

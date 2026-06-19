@@ -9,6 +9,7 @@ import type { StarterPick } from '../../game/setup.ts'
 import { getCity } from '../../data/cities.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
 import { deriveSeed } from '../../engine/rng.ts'
+import { shinyFor } from '../../engine/shiny.ts'
 import { DRAFT_CHOICES, STARTER_SLOT_SALTS } from '../../engine/constants.ts'
 import { PokemonCard } from '../PokemonCard/PokemonCard.tsx'
 import { Textbox } from '../Textbox/Textbox.tsx'
@@ -42,7 +43,11 @@ export function NewGameScreen({ state, dispatch }: { state: GameState; dispatch:
     if (!starter) return []
     return Array.from({ length: DRAFT_CHOICES }, (_, roll) => {
       const s = rollSeed(seed, stage.slot, roll)
-      return { roll, seed: s, pokemon: previewPokemon(starter.speciesId, starter.level, { seed: s }) }
+      return {
+        roll,
+        seed: s,
+        pokemon: previewPokemon(starter.speciesId, starter.level, { seed: s, shiny: shinyFor(s) }),
+      }
     })
   }, [stage, seed, starters])
 
@@ -133,6 +138,7 @@ export function NewGameScreen({ state, dispatch }: { state: GameState; dispatch:
                 pokemon={previewPokemon(p.speciesId, p.level, {
                   nickname: names[i]?.trim(),
                   seed: p.seed,
+                  shiny: shinyFor(p.seed),
                 })}
               />
             ))}
