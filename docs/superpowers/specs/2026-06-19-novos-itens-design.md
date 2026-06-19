@@ -16,7 +16,7 @@ Vermilion é tematicamente "Elétrico/Dragão" e é a única cidade com Tempesta
 
 ---
 
-## 1. `electirizer` — passivo, 1000g, Vermilion
+## 1. `electirizer` — passivo, 650g, Vermilion
 
 ### Comportamento
 
