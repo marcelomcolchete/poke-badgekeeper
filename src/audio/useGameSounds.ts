@@ -5,11 +5,30 @@
 import { useEffect, useRef } from 'react'
 import type { GameState } from '../engine/state.ts'
 import type { MissionResult } from '../engine/state.ts'
+import type { GamePhase } from '../types/index.ts'
 import { getMissionTemplate } from '../data/missionTemplates.ts'
 import { pendingPoints } from '../engine/leveling.ts'
 import { isRaining } from '../engine/weather.ts'
+import { strikesResolvingBetween } from '../engine/storm.ts'
+import type { StormEvent } from '../engine/storm.ts'
 import { playSound } from './sounds.ts'
 import { startRain, stopRain } from './rainPlayer.ts'
+import { playThunder } from './thunderPlayer.ts'
+
+/**
+ * Deve soar um trovão nesta janela? True quando algum raio impacta em (prevMs, nowMs] na fase
+ * Dia. Puro (testável): a mesma `strikesResolvingBetween` do dano dos raios — o que se ouve é o
+ * que cai. `nowMs <= prevMs` (virada de dia / sem avanço) não soa.
+ */
+export function shouldThunder(
+  storms: readonly StormEvent[],
+  prevMs: number,
+  nowMs: number,
+  phase: GamePhase,
+): boolean {
+  if (phase !== 'DAY' || nowMs <= prevMs) return false
+  return strikesResolvingBetween(storms, prevMs, nowMs).length > 0
+}
 
 /** Faltando este tempo (ms de jogo) para expirar, avisa que o tempo está acabando. */
 const WARNING_MS = 6_000
@@ -22,6 +41,7 @@ export function useGameSounds(state: GameState): void {
   const pendingTotal = useRef(0)
   const warnedIds = useRef<Set<string>>(new Set())
   const raining = useRef(false)
+  const prevStormMs = useRef(0)
 
   useEffect(() => {
     const first = !ready.current
@@ -80,6 +100,13 @@ export function useGameSounds(state: GameState): void {
     if (isRain && !raining.current) startRain()
     else if (!isRain && raining.current) stopRain()
     raining.current = isRain
+
+    // 6) Som de raio: um trovão (thunderN sorteado) por janela em que um raio impacta na fase Dia.
+    //    Mesma janela (prevMs, now] do dano (engine/stormFlow), então o áudio segue o impacto.
+    if (!first && shouldThunder(state.weather.storms, prevStormMs.current, now, state.run.phase)) {
+      playThunder()
+    }
+    prevStormMs.current = now
 
     ready.current = true
   }, [state])
