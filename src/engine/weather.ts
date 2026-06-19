@@ -17,6 +17,7 @@ import { createRng, deriveSeed, type Rng } from './rng.ts'
 import { DAY_LENGTH_MS, TOTAL_DAYS, WEATHER_SEED_SALT } from './constants.ts'
 import { cityHasRain } from '../data/cityWeather.ts'
 import { clamp } from './math.ts'
+import type { StormEvent } from './storm.ts'
 
 // ---- Constantes estruturais da chuva ---------------------------------------------------
 
@@ -75,18 +76,34 @@ export interface WeatherForecast {
   rainMmPerHour: number
   /** Quantas chuvas PODEM cair hoje (0–4). */
   potentialRainCount: number
+  /** Chance de tempestade do dia (0–100). 0 se a cidade não tem tempestade. */
+  stormChancePercent: number
+  /** Quantas tempestades PRÓPRIAS podem cair hoje (0–4). */
+  potentialStormCount: number
 }
 
 /** Agenda climática do dia, pré-computada em setupDay e guardada em s.weather. */
 export interface WeatherSchedule {
   /** Eventos de chuva que de fato ocorrem hoje (ordenados por startMs). Vazio se não chove. */
   rain: RainEvent[]
+  /** Eventos de tempestade do dia (raios), ordenados por startMs. Vazio se não há tempestade. */
+  storms: StormEvent[]
   forecast: WeatherForecast
 }
 
 /** Schedule vazio (dias 1–2, cidades sem clima, estado inicial e migração de save). */
 export function emptyWeatherSchedule(): WeatherSchedule {
-  return { rain: [], forecast: { rainChancePercent: 0, rainMmPerHour: 0, potentialRainCount: 0 } }
+  return {
+    rain: [],
+    storms: [],
+    forecast: {
+      rainChancePercent: 0,
+      rainMmPerHour: 0,
+      potentialRainCount: 0,
+      stormChancePercent: 0,
+      potentialStormCount: 0,
+    },
+  }
 }
 
 // ---- Tabelas determinísticas -----------------------------------------------------------
@@ -184,6 +201,8 @@ export function buildWeatherSchedule(
     rainChancePercent: chance,
     rainMmPerHour: chance === 0 ? 0 : Math.round(20 + (chance / 100) * 10),
     potentialRainCount: maxTimes,
+    stormChancePercent: 0,
+    potentialStormCount: 0,
   }
 
   const rng = createRng(deriveSeed(seed, day, WEATHER_SEED_SALT))
@@ -204,7 +223,7 @@ export function buildWeatherSchedule(
     cursor = end + RAIN_GAP_MS
   }
   rain.sort((a, b) => a.startMs - b.startMs)
-  return { rain, forecast }
+  return { rain, storms: [], forecast }
 }
 
 // ---- Derivações puras (consumidas pela UI e pelo missionFlow) --------------------------

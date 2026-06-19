@@ -10,13 +10,21 @@
 
 import type { MapPos } from '../types/index.ts'
 import type { CityData } from '../data/types.ts'
-import { MAP_ASPECT_W } from './constants.ts'
+import { createRng, deriveSeed, type Rng } from './rng.ts'
+import { DAY_LENGTH_MS, TOTAL_DAYS, STORM_SEED_SALT, MAP_ASPECT_W } from './constants.ts'
+import { clamp, lerp } from './math.ts'
 import { segmentLength } from './pathfinding.ts'
-import { puddleLevelAt, type RainEvent } from './weather.ts'
+import { puddleLevelAt, type RainEvent, WEATHER_FIRST_ELIGIBLE_DAY, maxRainTimes } from './weather.ts'
 import {
   STRIKE_RADIUS,
   STRIKE_RADIUS_ON_WATER,
   STRIKE_SECONDARY_RADIUS,
+  STORM_CHANCE_TOTAL_PERCENT,
+  STORM_EVENT_MIN_MS,
+  STORM_EVENT_MAX_MS,
+  STORM_GAP_MS,
+  STRIKE_WARNING_MS,
+  STRIKE_MIN_PER_STORM,
 } from './balance.ts'
 
 /** Um círculo do efeito do raio: centro (coords normalizadas) + raio (fração da largura). */
@@ -59,6 +67,130 @@ export function waterNodesAt(
   }
   return water
 }
+
+// ---- Agendamento da Tempestade ---------------------------------------------------------
+
+/** Teto de tempestades PRÓPRIAS por dia (espelha a chuva): +1 a cada 2 dias, cap 4. */
+export function maxStormTimes(day: number): number {
+  return maxRainTimes(day) // mesma curva da chuva
+}
+
+/**
+ * Chance própria de tempestade (%) por dia elegível (3–10): pesos sorteados na MESMA stream da
+ * run (estável e variada), normalizados para o orçamento STORM_CHANCE_TOTAL_PERCENT. Dias < 3 → 0.
+ */
+export function stormChanceForDay(seed: number, day: number): number {
+  if (day < WEATHER_FIRST_ELIGIBLE_DAY) return 0
+  const rng = createRng(deriveSeed(seed, STORM_SEED_SALT))
+  const span = TOTAL_DAYS - WEATHER_FIRST_ELIGIBLE_DAY + 1
+  const weights = Array.from({ length: span }, () => 0.5 + rng.next())
+  const sum = weights.reduce((a, b) => a + b, 0)
+  const idx = day - WEATHER_FIRST_ELIGIBLE_DAY
+  const raw = (weights[idx] ?? 0) * (STORM_CHANCE_TOTAL_PERCENT / sum)
+  return clamp(Math.round(raw), 0, 100)
+}
+
+/** Quantos raios numa tempestade: escala com o dia (piso STRIKE_MIN_PER_STORM) até ⌊pool/4⌋. */
+export function strikeCountForDay(day: number, poolSize: number): number {
+  const cap = Math.floor(poolSize / 4)
+  if (cap <= 0) return 0
+  const progress = clamp((day - WEATHER_FIRST_ELIGIBLE_DAY) / (TOTAL_DAYS - WEATHER_FIRST_ELIGIBLE_DAY), 0, 1)
+  return clamp(Math.round(lerp(STRIKE_MIN_PER_STORM, cap, progress)), 0, cap)
+}
+
+/** Pontos onde uma poça pode cair — base do cap de raios (andáveis, exceto ginásio/surf/exploração). */
+function stormPoolSize(city: CityData): number {
+  const surf = new Set(city.graph.surfNodes ?? [])
+  const gym = city.siteNodes.gym
+  return Object.keys(city.graph.nodes).filter(
+    (id) => id !== gym && !surf.has(id) && !/^g\d/.test(id),
+  ).length
+}
+
+/** Cria os raios de UMA tempestade [start, end]: count escala com o dia; cada raio sorteia centro/tempo. */
+function rollStrikes(
+  rng: Rng,
+  city: CityData,
+  rainEvents: readonly RainEvent[],
+  day: number,
+  start: number,
+  end: number,
+): Strike[] {
+  const count = strikeCountForDay(day, stormPoolSize(city))
+  if (count === 0) return []
+  const ids = Object.keys(city.graph.nodes)
+  if (ids.length === 0) return []
+  const strikes: Strike[] = []
+  for (let k = 0; k < count; k++) {
+    const center = rng.pick(ids)
+    const warnAtMs = rng.int(start, end)
+    const strikeAtMs = warnAtMs + STRIKE_WARNING_MS
+    strikes.push({ warnAtMs, strikeAtMs, circles: resolveStrikeCircles(center, strikeAtMs, city, rainEvents) })
+  }
+  strikes.sort((a, b) => a.strikeAtMs - b.strikeAtMs)
+  return strikes
+}
+
+/**
+ * Agenda das tempestades do dia: as PRÓPRIAS (janelas não-sobrepostas, cada uma ocorre por
+ * chance) + uma ACOPLADA dentro da janela de cada evento de chuva (poças → água p/ encadear).
+ * Reprodutível por (seed, day, city, rainEvents). `extraChancePercent` permite testes/ajustes.
+ */
+export function buildStorms(
+  seed: number,
+  day: number,
+  city: CityData,
+  rainEvents: readonly RainEvent[],
+  extraChancePercent = 0,
+): StormEvent[] {
+  if (day < WEATHER_FIRST_ELIGIBLE_DAY) return []
+  const rng = createRng(deriveSeed(seed, day, STORM_SEED_SALT))
+  const chance = clamp(stormChanceForDay(seed, day) + extraChancePercent, 0, 100)
+  const maxTimes = maxStormTimes(day)
+  const storms: StormEvent[] = []
+
+  // Próprias: mesma estrutura de janelas da chuva (duração 15–30s, folga STORM_GAP_MS).
+  let cursor = 0
+  for (let i = 0; i < maxTimes; i++) {
+    const remainingAfter = maxTimes - 1 - i
+    const duration = rng.int(STORM_EVENT_MIN_MS, STORM_EVENT_MAX_MS)
+    const reserve = remainingAfter * (STORM_EVENT_MIN_MS + STORM_GAP_MS)
+    const latestStart = DAY_LENGTH_MS - duration - STORM_GAP_MS - reserve
+    if (latestStart < cursor) break
+    const start = rng.int(cursor, latestStart)
+    const end = start + duration
+    if (rng.bool(chance / 100)) {
+      storms.push({ startMs: start, endMs: end, strikes: rollStrikes(rng, city, rainEvents, day, start, end) })
+    }
+    cursor = end + STORM_GAP_MS
+  }
+
+  // Acopladas: uma tempestade DENTRO da janela de cada chuva (15–30s, encaixada).
+  for (const rain of rainEvents) {
+    const window = rain.endMs - rain.startMs
+    const duration = Math.min(rng.int(STORM_EVENT_MIN_MS, STORM_EVENT_MAX_MS), Math.max(STORM_EVENT_MIN_MS, window))
+    const latestStart = Math.max(rain.startMs, rain.endMs - duration)
+    const start = rng.int(rain.startMs, latestStart)
+    const end = start + duration
+    storms.push({ startMs: start, endMs: end, strikes: rollStrikes(rng, city, rainEvents, day, start, end) })
+  }
+
+  storms.sort((a, b) => a.startMs - b.startMs)
+  return storms
+}
+
+/** Tempestade ATIVA em `nowMs`, ou null. */
+export function activeStormAt(storms: readonly StormEvent[], nowMs: number): StormEvent | null {
+  for (const s of storms) if (nowMs >= s.startMs && nowMs < s.endMs) return s
+  return null
+}
+
+/** Está em tempestade em `nowMs`? (selo/efeitos seguem isto.) */
+export function isStorming(storms: readonly StormEvent[], nowMs: number): boolean {
+  return activeStormAt(storms, nowMs) !== null
+}
+
+// ---- Geometria do raio -----------------------------------------------------------------
 
 /**
  * Círculos de UM raio centrado em `center`, no instante `strikeAtMs`:

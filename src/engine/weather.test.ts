@@ -31,7 +31,7 @@ describe('elegibilidade de clima', () => {
     for (const day of [1, 2]) {
       const s = buildWeatherSchedule(12345, day, CERULEAN)
       expect(s.rain).toEqual([])
-      expect(s.forecast).toEqual({ rainChancePercent: 0, rainMmPerHour: 0, potentialRainCount: 0 })
+      expect(s.forecast).toEqual({ rainChancePercent: 0, rainMmPerHour: 0, potentialRainCount: 0, stormChancePercent: 0, potentialStormCount: 0 })
     }
   })
 
@@ -218,7 +218,8 @@ describe('derivações de bloqueio', () => {
         puddles: [{ node: 'h', startMs: 6_000, eventEndMs: 25_000, endMs: 27_000 }],
       },
     ],
-    forecast: { rainChancePercent: 40, rainMmPerHour: 24, potentialRainCount: 2 },
+    storms: [],
+    forecast: { rainChancePercent: 40, rainMmPerHour: 24, potentialRainCount: 2, stormChancePercent: 0, potentialStormCount: 0 },
   }
 
   it('activeRainEvent/isRaining seguem a janela do evento', () => {
