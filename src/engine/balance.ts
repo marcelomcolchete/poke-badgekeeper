@@ -93,11 +93,11 @@ export const SPECIAL2_SECONDARIES = 1
 export const SPECIAL5_PRINCIPALS = 5
 
 /**
- * Quantidade FIXA de missões/defesas por dia (índice = dia − 1), igual para todas as
- * cidades — sem multiplicador de dificuldade. 10 entradas (dias 1..10).
+ * Quantidade FIXA de missões por dia (índice = dia − 1), igual para todas as cidades —
+ * sem multiplicador de dificuldade. 10 entradas (dias 1..10). As DEFESAS por dia não usam
+ * tabela: vêm da fórmula `defensesForDay` (ceil(dia/2), sem teto — ver timeline.ts).
  */
 export const MISSIONS_PER_DAY = [3, 4, 4, 5, 6, 6, 7, 7, 8, 8] as const
-export const DEFENSES_PER_DAY = [1, 1, 2, 2, 2, 3, 3, 4, 4, 5] as const
 
 /** Janela do dia (fração) em que eventos surgem — deixa tempo para resolvê-los (§4.8). */
 export const SPAWN_WINDOW_FRACTION = 0.85

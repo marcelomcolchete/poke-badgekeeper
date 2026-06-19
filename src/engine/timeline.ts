@@ -12,7 +12,6 @@ import {
   CAPTURE_SPOTS_PER_DAY,
   DAILY_CATEGORY_POOL,
   DAY1_FIRST_MISSION_DELAY_MS,
-  DEFENSES_PER_DAY,
   MISSIONS_PER_DAY,
   NORMAL_CATEGORY_POOL,
   ROCKET_DAY_MAX,
@@ -32,9 +31,9 @@ export function missionsForDay(day: number): number {
   return MISSIONS_PER_DAY[dayIndex(day)] ?? 0
 }
 
-/** Quantidade de defesas (batalhas) do dia — tabela fixa, igual para todas as cidades. */
+/** Quantidade de defesas (batalhas) do dia: ceil(dia/2), sem teto (modo infinito). */
 export function defensesForDay(day: number): number {
-  return DEFENSES_PER_DAY[dayIndex(day)] ?? 0
+  return Math.ceil(Math.max(1, Math.round(day)) / 2)
 }
 
 export interface MissionSlot {
