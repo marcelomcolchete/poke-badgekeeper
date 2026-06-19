@@ -153,7 +153,7 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
  * Sem `shiftStart`, só estica o fim — usado no DESVIO, em que o caminho fica mais longo mas o
  * sprite segue andando (o início da perna continua válido).
  */
-function shiftMissionTimestamps(
+export function shiftMissionTimestamps(
   mission: MissionInstance,
   fromLeg: 'out' | 'back',
   deltaMs: number,
