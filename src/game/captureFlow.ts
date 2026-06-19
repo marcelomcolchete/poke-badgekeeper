@@ -10,7 +10,6 @@ import { rollEncounter, rosterIsFull, searchMs } from '../engine/capture.ts'
 import { HEARTS_MAX, MAX_ROSTER_SIZE } from '../engine/constants.ts'
 import { maxRarityIndexForBall } from '../data/balls.ts'
 import { effectiveAttr } from '../engine/attributes.ts'
-import { perceptionRankCenter } from '../engine/ranking.ts'
 import { createPokemon } from '../engine/leveling.ts'
 import { travelRoute } from '../engine/missions.ts'
 import { graphWithTunnels } from '../engine/pathfinding.ts'
@@ -131,10 +130,10 @@ export function advanceSearch(s: GameState, search: CaptureSearch, nowMs: number
 /** Busca concluída → gera o encontro (candidatos dos tipos do ginásio) — PLAN §4.5. */
 export function readySearch(s: GameState, search: CaptureSearch): void {
   s.captureSearches = s.captureSearches.filter((c) => c !== search)
-  // O nível de bola limita as raridades; a Percepção do explorador mira o centro de rank.
+  // O nível de bola limita as raridades; a Percepção do explorador define a distribuição de rank.
   const searcher = findMon(s, search.searcherId)
   const maxRarityIndex = maxRarityIndexForBall(s.run.ballLevel)
-  const rankCenter = perceptionRankCenter(searcher ? effectiveAttr(searcher, 'percepcao') : 0)
+  const searcherPerception = searcher ? effectiveAttr(searcher, 'percepcao') : 0
   const encounter = rollEncounter(takeRng(s), s.gym.types, s.run.day, maxRarityIndex)
   // Um seed estável por candidato: o card do preview já mostra natureza/IVs/rank reais
   // e a captura recria o MESMO Pokémon a partir desse seed (com o mesmo centro de rank).
@@ -149,7 +148,7 @@ export function readySearch(s: GameState, search: CaptureSearch): void {
     candidateShiny: encounter.candidates.map((_, i) =>
       shinyFor(s.run.seed, s.run.day, search.spotIndex, i),
     ),
-    rankCenter,
+    searcherPerception,
   })
 }
 
@@ -269,7 +268,7 @@ export function capturePick(s: GameState, searcherId: string, candidateIndex: nu
     speciesId,
     level,
     rng: seed !== undefined ? createRng(seed) : takeRng(s),
-    rankCenter: encounter.rankCenter,
+    searcherPerception: encounter.searcherPerception,
     shiny,
   })
   // Love Ball: captura já vem com o máximo de corações.

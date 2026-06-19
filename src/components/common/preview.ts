@@ -15,8 +15,8 @@ export interface PreviewOpts {
   nickname?: string
   /** Seed estável: quando presente, o preview = Pokémon real criado com esse seed. */
   seed?: number
-  /** Centro de rank (captura pela Percepção): enviesa os IVs/rank do preview ao do candidato real. */
-  rankCenter?: number
+  /** Percepção do explorador (captura): enviesa os IVs/rank do preview ao do candidato real. */
+  searcherPerception?: number
   /** Força o preview a ser shiny (rank S + sprite/flag) — iniciais e candidatos. */
   shiny?: boolean
 }
@@ -30,7 +30,7 @@ export function previewPokemon(speciesId: number, level: number, opts: PreviewOp
       level,
       rng: createRng(opts.seed),
       nickname,
-      rankCenter: opts.rankCenter,
+      searcherPerception: opts.searcherPerception,
       shiny: opts.shiny,
     })
   }

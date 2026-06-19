@@ -64,6 +64,29 @@ export const MISSION_TIME_FLOOR = 0.3
 export const BASE_SEARCH_MS = 30_000
 export const KEEN_EYE_SEARCH_FACTOR = 0.5
 
+/**
+ * Captura §4.5 (rank por Percepção): a Percepção do explorador define DIRETAMENTE a distribuição
+ * do rank-alvo (F–S) do encontro. `c = percepcao / PERCEPTION_PER_RANK` é o "alcance" contínuo
+ * (cada 10 de Percepção = +1 rank de alcance), e `RANK_GAP_KNOTS` é a curva de peso por `gap =
+ * c − k` (k = índice do rank): pico no rank no alcance, cauda curta abaixo e pequena ultrapassagem
+ * acima (é ela que destrava o rank logo acima do alcance). Calibrado para perc 60 → 50% S / 40% A /
+ * 10% B e S só possível acima de 50. O array de knots é o knob: alterá-lo reshapeia toda a curva.
+ */
+export const PERCEPTION_PER_RANK = 10
+export const RANK_GAP_KNOTS: readonly (readonly [number, number])[] = [
+  [-1, 0],
+  [0, 1],
+  [1, 0.8],
+  [2, 0.2],
+  [3, 0],
+]
+/**
+ * Captura §4.5: trocas +1/−1 entre pares de eixos ao preencher os IVs do rank-alvo. A soma dos
+ * ranks dos eixos é preservada (= 6 × alvo), então a média — e logo o rank do Pokémon — fica
+ * cravada no alvo; as trocas só dão variedade entre os eixos. Mais rodadas = mais espalhamento.
+ */
+export const TARGET_RANK_SWAP_ROUNDS = 12
+
 /** Economia §4.6: ouro base por defesa de ginásio (ganho mesmo perdendo a batalha). */
 export const GOLD_BASE_PER_DEFENSE = 100
 

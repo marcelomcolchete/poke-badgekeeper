@@ -12,7 +12,7 @@ import { HEARTS_START, HP_MIN, IV_MAX, IV_MIN, LEVEL_MAX, LEVEL_MIN } from './co
 import { heartXpMultiplier } from './hearts.ts'
 import { RARITY_XP_RATE, XP_TO_NEXT_BASE } from './balance.ts'
 import { mapAttrs, maxHpOf, recomputeMaxHp, zeroAttrs } from './attributes.ts'
-import { ivForRankCenter, ivForRankIndex, RANKS } from './ranking.ts'
+import { ivForRankCenter, ivForRankIndex, RANKS, sampleTargetRank, targetRankAxes } from './ranking.ts'
 import { clamp } from './math.ts'
 
 /** XP para subir do nível `level` → `level+1`; Infinity no nível máximo (PLAN §4.1). */
@@ -47,12 +47,25 @@ function randomAllocations(rng: Rng, points: number): Attrs {
 }
 
 /**
- * Variação de encontro por eixo. Sem `rankCenter`: inteiro livre em [−10, +10]. Com `rankCenter`
- * (centro de rank da Percepção do explorador): cada eixo é sorteado em torno desse centro, então a
- * Percepção empurra o rank do Pokémon de forma contínua (PLAN §4.1 / captura).
+ * Variação de encontro por eixo (PLAN §4.1 / captura). Precedência:
+ *   1. `shiny` → todos os eixos na banda S (rank S), vencendo o resto.
+ *   2. `searcherPerception` (captura) → sorteia o rank-alvo pela distribuição da Percepção do
+ *      explorador e preenche os 6 eixos cravando a média nesse alvo (variedade entre eixos).
+ *   3. `rankCenter` (Fossil Stone) → cada eixo em torno do centro dado.
+ *   4. nenhum (iniciais) → inteiro livre em [−10, +10] (uniforme).
  */
-function randomIvs(rng: Rng, rankCenter?: number, shiny?: boolean): Attrs {
+function randomIvs(
+  rng: Rng,
+  rankCenter: number | undefined,
+  shiny: boolean | undefined,
+  searcherPerception: number | undefined,
+): Attrs {
   if (shiny) return mapAttrs(() => ivForRankIndex(rng, RANKS.length - 1))
+  if (searcherPerception !== undefined) {
+    const axes = targetRankAxes(rng, sampleTargetRank(rng, searcherPerception))
+    let i = 0
+    return mapAttrs(() => ivForRankIndex(rng, axes[i++] as number))
+  }
   if (rankCenter === undefined) return mapAttrs(() => rng.int(IV_MIN, IV_MAX))
   return mapAttrs(() => ivForRankCenter(rng, rankCenter))
 }
@@ -67,8 +80,13 @@ export interface NewPokemonSpec {
   nickname?: string | null
   /** Natureza predefinida; omitir para sortear via RNG. */
   nature?: Nature | null
-  /** Centro de rank (0=F … 6=S) que mira os IVs — captura pela Percepção (PLAN §4.5). */
+  /** Centro de rank (0=F … 6=S) que mira os IVs — usado pelo Fossil Stone (PLAN §4.5). */
   rankCenter?: number
+  /**
+   * Percepção do explorador (captura): define a distribuição do rank-alvo e crava a média dos
+   * eixos nele (ver `ranking.rankDistribution`). Tem precedência sobre `rankCenter`.
+   */
+  searcherPerception?: number
   /** Força o Pokémon a nascer shiny: IVs na banda S (rank S) e flag gravada. */
   shiny?: boolean
 }
@@ -87,7 +105,7 @@ export function createPokemon(spec: NewPokemonSpec): Pokemon {
   // Se nature for explicitamente fornecida (incluindo null), usa o valor; senão sorteia.
   const nature = 'nature' in spec ? (spec.nature ?? null) : rollNature(spec.rng)
   // IVs por último: mantém estáveis as sequências de alocação/gênero/natureza já existentes.
-  const ivs = randomIvs(spec.rng, spec.rankCenter, spec.shiny)
+  const ivs = randomIvs(spec.rng, spec.rankCenter, spec.shiny, spec.searcherPerception)
   const draft: Pokemon = {
     id: spec.id,
     speciesId: species.id,
