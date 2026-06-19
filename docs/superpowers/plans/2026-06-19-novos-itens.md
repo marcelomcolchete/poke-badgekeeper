@@ -37,9 +37,9 @@
 
 Em `src/engine/itemEffects.test.ts`, dentro do bloco de testes de `itemBattleMultiplier` (ou crie um novo `describe`), adicione:
 
-```typescript
-import { makeMon } from '../game/testHelpers.ts' // se já houver helper; senão use o padrão local do arquivo
+`makeMon` já está importado no topo do arquivo (`import { makeMon } from './testkit.ts'`) — não adicione import novo.
 
+```typescript
 describe('itemBattleMultiplier — dragon-fang e magnet', () => {
   it('dragon-fang dá +50% só para tipo Dragão', () => {
     const dratini = makeMon({ id: 'd', types: ['dragon'] })
@@ -334,9 +334,9 @@ Em `src/engine/secretEffects.test.ts`, adicione um teste que monta um `MissionSe
 describe('missionAttrMultiplier — electirizer', () => {
   it('+50% por carga acumulada no Pokémon despachado', () => {
     const p = makeMon({ id: 'x' })
-    const ctx = {
+    const ctx: MissionSecretCtx = {
       team: [p],
-      template: getMissionTemplate('patrulha'), // qualquer template normal existente
+      template: PATRULHA, // const já definida no topo do arquivo (template normal)
       runtime: {},
       runItems: [],
       electirizerBonus: { x: 2 }, // 2 raios → +100%
@@ -346,13 +346,13 @@ describe('missionAttrMultiplier — electirizer', () => {
 
   it('sem carga, multiplicador é 1', () => {
     const p = makeMon({ id: 'y' })
-    const ctx = { team: [p], template: getMissionTemplate('patrulha'), runtime: {}, runItems: [] }
+    const ctx: MissionSecretCtx = { team: [p], template: PATRULHA, runtime: {}, runItems: [] }
     expect(missionAttrMultiplier(p, ctx)).toBeCloseTo(1)
   })
 })
 ```
 
-> Ajuste `getMissionTemplate('patrulha')` para um id de template **normal** que exista (confirme em `src/data/missionTemplates.ts`); o multiplicador-base de um template normal sem habilidades é 1.
+> `PATRULHA`, `makeMon`, `missionAttrMultiplier` e `MissionSecretCtx` já estão importados/definidos no topo de `secretEffects.test.ts`.
 
 - [ ] **Step 2: Rodar e ver falhar**
 
