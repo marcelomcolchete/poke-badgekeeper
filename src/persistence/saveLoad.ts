@@ -412,6 +412,11 @@ function migrate(file: Partial<SaveFile>): SaveFile | null {
     version = 32
   }
 
+  // v32 → v33: efeito Tempestade. A migração completa entra na Task 8. Por ora, passthrough.
+  if (version === 32) {
+    version = 33
+  }
+
   if (version !== SAVE_VERSION) return null
   return { version, savedAtMs: (file as SaveFile).savedAtMs, state } as unknown as SaveFile
 }
