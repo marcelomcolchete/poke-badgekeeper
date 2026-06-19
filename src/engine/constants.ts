@@ -65,6 +65,12 @@ export const ROCKET_SEED_SALT = 0x526f636b // 'Rock'
 /** Sub-seed do mercado da manhã: sorteia os 3 itens do dia (por seed+dia+cidade). */
 export const SHOP_SEED_SALT = 0x53686f70 // 'Shop'
 
+/** Chance de um Pokémon nascer shiny (iniciais, captura por candidato, Fossil Stone). */
+export const SHINY_CHANCE = 0.01
+
+/** Sub-seed dedicado da rolagem de shiny — isola-a das demais sequências de RNG. */
+export const SHINY_SEED_SALT = 0x5417
+
 /** Sub-seed dos efeitos climáticos (chuva): agenda do dia + distribuição da chance na run. */
 export const WEATHER_SEED_SALT = 0x57656174 // 'Weat'
 
