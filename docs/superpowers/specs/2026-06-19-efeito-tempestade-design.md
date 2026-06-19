@@ -23,9 +23,10 @@ placeholder de Pewter, o que é aceitável: a cidade ainda não está pronta).
 ## Decisões de design (confirmadas com o usuário)
 
 1. **Status Paralyze:** ao ser atingido, o Pokémon (a) leva 1 de dano, (b) fica
-   *stunado* por 5s — **+5s na missão/viagem em curso** —, e (c) tem **-50% de poder
-   em batalhas pelo resto do dia**. Reaplicar **não empilha** o -50%; **soma** outro
-   stun de 5s.
+   *paralisado* por 5s — **o sprite congela no ponto exato onde está** e a viagem só
+   retoma depois (a missão demora 5s a mais) —, e (c) tem **-50% de poder em batalhas
+   pelo resto do dia**. Reaplicar **não empilha** o -50%; **soma** outros 5s de
+   paralisia (estende o congelamento).
 2. **Alvos do raio:** apenas Pokémon **visíveis no mapa** (viajando/voltando, mais
    procuradores de captura). Quem está parado no ginásio, em missão no local
    (`onMission`), no Centro ou desmaiado **não** é atingido.
@@ -52,9 +53,12 @@ placeholder de Pewter, o que é aceitável: a cidade ainda não está pronta).
   (`puddleNodePool`) como denominador.
 - **Múltiplos pontos de água na área primária:** **um secundário por ponto de água**
   dentro de 0,09, sem encadear adiante.
-- **Stun:** implementado como **+5s nos marcos da perna em curso** (a missão demora
-  5s a mais), reusando `shiftMissionTimestamps`. Não há "congelar no ponto"; o sprite
-  apenas chega 5s mais tarde.
+- **Paralisia (congelamento):** o sprite **congela na posição interpolada atual** por
+  5s (análogo ao `weatherHold`, mas travando numa `MapPos` arbitrária, não num nó do
+  grafo). Internamente: grava um `paralyzeHold = { pos, untilMs }` na missão/busca e
+  desloca a janela da perna em `+5s` (semântica de "espera", `shiftStart = true`,
+  reusando `shiftMissionTimestamps`) para o progresso retomar de onde congelou. Efeito
+  líquido: 5s parado no lugar + missão 5s mais longa.
 - **Duração da tempestade:** 15–30s (`STORM_EVENT_MIN_MS`/`MAX_MS`).
 
 ## Arquitetura
@@ -71,6 +75,14 @@ Camadas mantêm o padrão: `engine/` puro e determinístico, `game/` orquestra o
   união.
 - Vermilion (índice 2): `{ effects: [{ kind: 'rain' }, { kind: 'storm' }] }`.
 - Novo helper `cityHasStorm(cityIndex): boolean` (espelha `cityHasRain`).
+
+**Estado (`engine/state.ts`):**
+- `s.today.paralyzedBattleIds: string[]` — Pokémon com -50% de Batalha pelo resto do
+  dia (limpo na virada).
+- `MissionInstance`, `CaptureSearch` e `CaptureReturn` ganham
+  `paralyzeHold?: { pos: MapPos; untilMs: number }` (espelha o `weatherHold`
+  existente) — congela o sprite numa posição arbitrária por 5s. Ausente = sem
+  paralisia em curso.
 
 ### 2. Constantes — `engine/balance.ts` (e `constants.ts` para o salt)
 
@@ -152,9 +164,10 @@ travelerPositionsAt(s: GameState, now: number): { pokemonId: string; pos: MapPos
 ```
 
 Cobre missões em `traveling`/`returning` (cada membro do time na posição do grupo) e
-`captureSearches`/`captureReturns` em trânsito, honrando `weatherHold`, `reroutePath`
-e mão única — **a mesma matemática que o jogador vê**. `CityMap.tsx` passa a importar
-e usar esse helper (remove a duplicação).
+`captureSearches`/`captureReturns` em trânsito, honrando `paralyzeHold`, `weatherHold`,
+`reroutePath` e mão única — **a mesma matemática que o jogador vê**. `paralyzeHold` tem
+prioridade: enquanto `now < paralyzeHold.untilMs`, devolve `paralyzeHold.pos` (sprite
+congelado). `CityMap.tsx` passa a importar e usar esse helper (remove a duplicação).
 
 ### 5. Orquestração — `game/stormFlow.ts` (NOVO) + `game/dayClock.ts`
 
@@ -163,15 +176,21 @@ e usar esse helper (remove a duplicação).
     - `positions = travelerPositionsAt(s, raio.strikeAtMs)`.
     - Para cada Pokémon cuja `pos` cai **dentro de qualquer** `circle` do raio:
       aplica `STRIKE_DAMAGE` (via caminho de dano existente, com `settleFaintTracked`
-      e Sturdy) e `applyParalyze(s, id, raio.strikeAtMs)`.
+      e Sturdy) e `applyParalyze(s, id, pos, raio.strikeAtMs)` — reaproveitando a `pos`
+      já computada para a detecção de acerto.
 - `dayClock.tick`: guarda `prevMs = s.clock.dayElapsedMs` antes de avançar; após
   `processMissions/Defenses/Searches`, chama `processStorms(s, prevMs, now)` (se a run
   ainda está em `DAY`).
 
-`applyParalyze(s, id, now)`:
+`applyParalyze(s, id, pos, now)`:
 - `-50%`: adiciona `id` a `s.today.paralyzedBattleIds` (idempotente).
-- stun: localiza a missão/busca do Pokémon e soma `PARALYZE_STUN_MS` aos marcos da
-  perna em curso (`shiftMissionTimestamps` / equivalente para `captureSearch`/`Return`).
+- **congelamento de 5s:** localiza a missão/busca do Pokémon e grava
+  `paralyzeHold = { pos, untilMs: now + PARALYZE_STUN_MS }`, deslocando a janela da
+  perna em curso em `+PARALYZE_STUN_MS` com semântica de espera (`shiftStart = true`,
+  como o `weatherHold`). Reaplicar enquanto já congelado **estende** `untilMs` em mais
+  5s e desloca a janela de novo. Atualiza a `pos` para a posição do novo impacto.
+- Pokémon não-visíveis (idle/onMission/Centro) nunca são atingidos, então não há
+  congelamento a aplicar fora de trânsito.
 
 ### 6. Batalha 1v1 — `engine/gymDefense.ts`
 
@@ -190,6 +209,9 @@ Batalha efetiva do seu Pokémon, se `paralyzedIds.has(p.id)` multiplica por
   aspecto do mapa. CSS Modules novo (`CityMap.module.css`), sem libs.
 - **`WeatherBadge.tsx`**: passa a renderizar **todos** os efeitos ativos agora (🌧️ +
   ⛈️). Adiciona ícone/label de `storm` (⛈️ / "Tempestade").
+- **Sprite congelado:** enquanto `paralyzeHold` ativo, o `MapTravelers` renderiza o
+  grupo parado em `paralyzeHold.pos` (vindo do `travelerPositionsAt` compartilhado),
+  com um efeito visual de paralisia (ex.: faíscas ⚡ / tremor leve) por cima.
 - **Selo de paralisado:** Pokémon em `paralyzedBattleIds` recebem indicador ⚡ no card
   (`PokemonCard`) / sidebar, reusando o padrão visual de status existente.
 - **Previsão da manhã:** exibe chance + contagem potencial de tempestades ao lado da
@@ -208,13 +230,16 @@ campos de previsão de tempestade zerados e `today.paralyzedBattleIds = []`.
   janela); `resolveStrikeCircles` — centro-na-água (0,15 sem secundário) vs
   toque-em-água (0,09 + 0,045), sem terciário; distância respeita o aspecto do mapa.
 - **`travelerPositions.test.ts`:** posições batem com a lógica antiga do CityMap
-  (missão ida/volta, captura, `weatherHold`, mão única).
+  (missão ida/volta, captura, `weatherHold`, mão única); `paralyzeHold` tem prioridade
+  e devolve a `pos` congelada enquanto `now < untilMs`.
 - **`stormFlow.test.ts`:** raio acerta só visíveis; aplica 1 dano + Paralyze; desmaio
   → Centro; salto de tempo grande (x3/aba oculta) não perde raios.
 - **`gymDefense.test.ts`:** -50% de Batalha com id paralisado (defesa e Rocket);
   sem id, inalterado.
-- **Paralyze:** stun soma +5s à missão em curso; reaplicar não empilha o -50% mas
-  soma outro stun; `paralyzedBattleIds` limpa na virada do dia.
+- **Paralyze:** atingir congela o sprite na posição por 5s (`paralyzeHold.pos`/`untilMs`)
+  e desloca a janela da perna em +5s (missão 5s mais longa); reaplicar não empilha o
+  -50% mas **estende** o congelamento por mais 5s; `paralyzedBattleIds` limpa na virada
+  do dia.
 
 ## Fora de escopo
 
