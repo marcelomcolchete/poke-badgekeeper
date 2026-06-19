@@ -10,7 +10,12 @@
 //  - `rival`:  um líder fixo + o resto totalmente aleatório, com no máx. 1 lendário no time.
 
 import type { TrainerId } from '../types/index.ts'
-import { evolutionFamily } from './pokemon/index.ts'
+import {
+  baseStageSpecies,
+  evolutionFamily,
+  evolvedSpecies,
+  familiesByType,
+} from './pokemon/index.ts'
 
 export type TrainerPool =
   | { kind: 'roster'; speciesIds: number[] }
@@ -267,6 +272,244 @@ const TRAINER_LIST: TrainerDef[] = [
       evolutionFamily(BULBASAUR),
       evolutionFamily(EEVEE),
     ),
+  },
+  // ===================== Vermilion (3) — electric/dragon =====================
+  {
+    id: 'SURGE',
+    displayName: 'Surge',
+    spritePath: '/sprites/trainers/gen3/ltsurge-gen3.png',
+    pool: roster(familiesByType('electric')),
+  },
+  {
+    id: 'VERMILION_ENGINEER',
+    displayName: 'Engenheiro',
+    spritePath: '/sprites/trainers/gen3/engineer-gen3.png',
+    pool: roster(familiesByType('electric')),
+  },
+  {
+    id: 'VERMILION_ROCKER',
+    displayName: 'Roqueiro',
+    spritePath: '/sprites/trainers/gen3/rocker-gen3.png',
+    pool: roster(familiesByType('electric')),
+  },
+  {
+    id: 'VERMILION_SAILOR',
+    displayName: 'Marinheiro',
+    spritePath: '/sprites/trainers/gen3/sailor-gen3.png',
+    altSprites: ['/sprites/trainers/gen3/sailor-gen3rs.png'],
+    pool: roster(familiesByType('flying', 'water')),
+  },
+  {
+    id: 'VERMILION_GENTLEMAN',
+    displayName: 'Cavalheiro',
+    spritePath: '/sprites/trainers/gen3/gentleman-gen3.png',
+    altSprites: ['/sprites/trainers/gen3/gentleman-gen3rs.png'],
+    pool: roster(familiesByType('electric', 'dragon')),
+  },
+  {
+    id: 'VERMILION_POKEMANIAC',
+    displayName: 'Pokemaníaco',
+    spritePath: '/sprites/trainers/gen3/pokemaniac-gen3.png',
+    altSprites: ['/sprites/trainers/gen3/pokemaniac-gen3rs.png'],
+    pool: roster(familiesByType('ground', 'rock', 'poison')),
+  },
+  // ===================== Celadon (4) — grass/bug =====================
+  {
+    id: 'ERIKA',
+    displayName: 'Erika',
+    spritePath: '/sprites/trainers/gen3/erika-gen3.png',
+    pool: roster(familiesByType('grass')),
+  },
+  {
+    id: 'CELADON_BEAUTY',
+    displayName: 'Beldade',
+    spritePath: '/sprites/trainers/gen3/beauty-gen3.png',
+    altSprites: ['/sprites/trainers/gen3/beauty-gen3rs.png'],
+    pool: roster(familiesByType('grass')),
+  },
+  {
+    id: 'CELADON_LASS',
+    displayName: 'Moça',
+    spritePath: '/sprites/trainers/gen3/lass-gen3.png',
+    altSprites: ['/sprites/trainers/gen3/lass-gen3rs.png'],
+    pool: roster(familiesByType('grass')),
+  },
+  {
+    id: 'CELADON_PICNICKER',
+    displayName: 'Campista',
+    spritePath: '/sprites/trainers/gen3/picnicker-gen3.png',
+    altSprites: ['/sprites/trainers/gen3/picnicker-gen3rs.png'],
+    pool: roster(familiesByType('normal')),
+  },
+  {
+    id: 'CELADON_BUGCATCHER',
+    displayName: 'Caçador de Insetos',
+    spritePath: '/sprites/trainers/gen3/bugcatcher-gen3.png',
+    altSprites: ['/sprites/trainers/gen3/bugcatcher-gen3rs.png'],
+    pool: roster(familiesByType('bug')),
+  },
+  {
+    id: 'CELADON_GAMER',
+    displayName: 'Jogador',
+    spritePath: '/sprites/trainers/gen3/gamer-gen3.png',
+    pool: roster(familiesByType('fighting')),
+  },
+  // ===================== Fuchsia (5) — poison/dragon =====================
+  {
+    id: 'KOGA',
+    displayName: 'Koga',
+    spritePath: '/sprites/trainers/gen3/koga-gen3.png',
+    pool: roster(familiesByType('poison')),
+  },
+  {
+    id: 'FUCHSIA_JUGGLER',
+    displayName: 'Malabarista',
+    spritePath: '/sprites/trainers/gen3/juggler-gen3.png',
+    pool: roster(familiesByType('fire', 'poison')),
+  },
+  {
+    id: 'FUCHSIA_TAMER',
+    displayName: 'Domador',
+    spritePath: '/sprites/trainers/gen3/tamer-gen3.png',
+    pool: roster(familiesByType('poison')),
+  },
+  {
+    id: 'FUCHSIA_DRAGONTAMER',
+    displayName: 'Domador de Dragões',
+    spritePath: '/sprites/trainers/gen3/dragontamer-gen3.png',
+    pool: roster(familiesByType('poison', 'dragon')),
+  },
+  {
+    id: 'FUCHSIA_BIRDKEEPER',
+    displayName: 'Criador de Aves',
+    spritePath: '/sprites/trainers/gen3/birdkeeper-gen3.png',
+    altSprites: ['/sprites/trainers/gen3/birdkeeper-gen3rs.png'],
+    pool: roster(familiesByType('flying', 'dragon')),
+  },
+  {
+    id: 'FUCHSIA_SWIMMER',
+    displayName: 'Nadador',
+    spritePath: '/sprites/trainers/gen3/swimmerm-gen3.png',
+    altSprites: ['/sprites/trainers/gen3/swimmerm-gen3rs.png'],
+    pool: roster(familiesByType('water')),
+  },
+  // ===================== Saffron (6) — psychic/ghost =====================
+  {
+    id: 'SABRINA',
+    displayName: 'Sabrina',
+    spritePath: '/sprites/trainers/gen3/sabrina-gen3.png',
+    pool: roster(familiesByType('psychic')),
+  },
+  {
+    id: 'SAFFRON_ACETRAINER',
+    displayName: 'Treinador de Elite',
+    spritePath: '/sprites/trainers/gen3/acetrainer-gen3.png',
+    altSprites: ['/sprites/trainers/gen3/acetrainer-gen3rs.png'],
+    pool: roster(familiesByType('fire', 'psychic')),
+  },
+  {
+    id: 'SAFFRON_SCIENTIST',
+    displayName: 'Cientista',
+    spritePath: '/sprites/trainers/gen3/scientist-gen3.png',
+    pool: roster(familiesByType('psychic')),
+  },
+  {
+    id: 'SAFFRON_CHANNELER',
+    displayName: 'Médium',
+    spritePath: '/sprites/trainers/gen3/channeler-gen3.png',
+    pool: roster(familiesByType('psychic', 'ghost')),
+  },
+  {
+    id: 'SAFFRON_HEXMANIAC',
+    displayName: 'Bruxa',
+    spritePath: '/sprites/trainers/gen3/hexmaniac-gen3.png',
+    pool: roster(familiesByType('poison', 'ghost')),
+  },
+  {
+    id: 'SAFFRON_BLACKBELT',
+    displayName: 'Faixa-Preta',
+    spritePath: '/sprites/trainers/gen3/blackbelt-gen3.png',
+    altSprites: ['/sprites/trainers/gen3/blackbelt-gen3rs.png'],
+    pool: roster(familiesByType('fighting')),
+  },
+  // ===================== Cinnabar (7) — fire/fighting =====================
+  {
+    id: 'BLAINE',
+    displayName: 'Blaine',
+    spritePath: '/sprites/trainers/gen3/blaine-gen3.png',
+    pool: roster(familiesByType('fire')),
+  },
+  {
+    id: 'CINNABAR_BURGLAR',
+    displayName: 'Ladrão',
+    spritePath: '/sprites/trainers/gen3/burglar-gen3.png',
+    pool: roster(familiesByType('water', 'rock')),
+  },
+  {
+    id: 'CINNABAR_SUPERNERD',
+    displayName: 'Super Nerd',
+    spritePath: '/sprites/trainers/gen3/supernerd-gen3.png',
+    pool: roster(familiesByType('psychic', 'normal')),
+  },
+  {
+    id: 'CINNABAR_BLACKBELT',
+    displayName: 'Faixa-Preta',
+    spritePath: '/sprites/trainers/gen3/blackbelt-gen3.png',
+    altSprites: ['/sprites/trainers/gen3/blackbelt-gen3rs.png'],
+    pool: roster(familiesByType('fighting')),
+  },
+  {
+    id: 'CINNABAR_KINDLER',
+    displayName: 'Incendiário',
+    spritePath: '/sprites/trainers/gen3/kindler-gen3.png',
+    pool: roster(familiesByType('fire')),
+  },
+  {
+    id: 'CINNABAR_SWIMMER',
+    displayName: 'Nadador',
+    spritePath: '/sprites/trainers/gen3/swimmerm-gen3.png',
+    altSprites: ['/sprites/trainers/gen3/swimmerm-gen3rs.png'],
+    pool: roster(familiesByType('water')),
+  },
+  // ===================== Viridian (8) — ground/normal =====================
+  {
+    id: 'GIOVANNI',
+    displayName: 'Giovanni',
+    spritePath: '/sprites/trainers/gen3/giovanni-gen3.png',
+    pool: roster(familiesByType('ground')),
+  },
+  {
+    id: 'VIRIDIAN_TAMER',
+    displayName: 'Domador',
+    spritePath: '/sprites/trainers/gen3/tamer-gen3.png',
+    pool: roster(familiesByType('normal')),
+  },
+  {
+    id: 'VIRIDIAN_ACETRAINER',
+    displayName: 'Treinador de Elite',
+    spritePath: '/sprites/trainers/gen3/acetrainer-gen3.png',
+    altSprites: ['/sprites/trainers/gen3/acetrainer-gen3rs.png'],
+    pool: roster(familiesByType('ground')),
+  },
+  {
+    id: 'VIRIDIAN_YOUNGSTER',
+    displayName: 'Jovem',
+    spritePath: '/sprites/trainers/gen3/youngster-gen3.png',
+    altSprites: ['/sprites/trainers/gen3/youngster-gen3rs.png'],
+    pool: roster(baseStageSpecies()),
+  },
+  {
+    id: 'VIRIDIAN_CAMPER',
+    displayName: 'Acampador',
+    spritePath: '/sprites/trainers/gen3/camper-gen3.png',
+    altSprites: ['/sprites/trainers/gen3/camper-gen3rs.png'],
+    pool: roster(familiesByType('grass', 'rock', 'normal')),
+  },
+  {
+    id: 'VIRIDIAN_BIKER',
+    displayName: 'Motoqueiro',
+    spritePath: '/sprites/trainers/gen3/biker-gen3.png',
+    pool: roster(evolvedSpecies()),
   },
   // Equipe Rocket — NÃO entram no pool de invasores do ginásio (só na missão Rocket Team).
   {
