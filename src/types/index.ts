@@ -180,6 +180,8 @@ export interface Pokemon {
   nickname: string | null
   /** Natureza sorteada na criação; null = sem natureza (saves migrados de v11). */
   nature: import('../data/natures.ts').Nature | null
+  /** Shiny: 1% no encontro/criação. Sempre rank S e com sprite própria. Ausente = não-shiny. */
+  shiny?: boolean
 }
 
 /** Tipos de sítio no mapa da cidade — definem ONDE cada evento/missão pode surgir. */

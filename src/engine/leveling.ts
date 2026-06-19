@@ -12,7 +12,7 @@ import { HEARTS_START, HP_MIN, IV_MAX, IV_MIN, LEVEL_MAX, LEVEL_MIN } from './co
 import { heartXpMultiplier } from './hearts.ts'
 import { RARITY_XP_RATE, XP_TO_NEXT_BASE } from './balance.ts'
 import { mapAttrs, maxHpOf, recomputeMaxHp, zeroAttrs } from './attributes.ts'
-import { ivForRankCenter } from './ranking.ts'
+import { ivForRankCenter, ivForRankIndex, RANKS } from './ranking.ts'
 import { clamp } from './math.ts'
 
 /** XP para subir do nível `level` → `level+1`; Infinity no nível máximo (PLAN §4.1). */
@@ -51,7 +51,8 @@ function randomAllocations(rng: Rng, points: number): Attrs {
  * (centro de rank da Percepção do explorador): cada eixo é sorteado em torno desse centro, então a
  * Percepção empurra o rank do Pokémon de forma contínua (PLAN §4.1 / captura).
  */
-function randomIvs(rng: Rng, rankCenter?: number): Attrs {
+function randomIvs(rng: Rng, rankCenter?: number, shiny?: boolean): Attrs {
+  if (shiny) return mapAttrs(() => ivForRankIndex(rng, RANKS.length - 1))
   if (rankCenter === undefined) return mapAttrs(() => rng.int(IV_MIN, IV_MAX))
   return mapAttrs(() => ivForRankCenter(rng, rankCenter))
 }
@@ -68,6 +69,8 @@ export interface NewPokemonSpec {
   nature?: Nature | null
   /** Centro de rank (0=F … 6=S) que mira os IVs — captura pela Percepção (PLAN §4.5). */
   rankCenter?: number
+  /** Força o Pokémon a nascer shiny: IVs na banda S (rank S) e flag gravada. */
+  shiny?: boolean
 }
 
 /**
@@ -84,7 +87,7 @@ export function createPokemon(spec: NewPokemonSpec): Pokemon {
   // Se nature for explicitamente fornecida (incluindo null), usa o valor; senão sorteia.
   const nature = 'nature' in spec ? (spec.nature ?? null) : rollNature(spec.rng)
   // IVs por último: mantém estáveis as sequências de alocação/gênero/natureza já existentes.
-  const ivs = randomIvs(spec.rng, spec.rankCenter)
+  const ivs = randomIvs(spec.rng, spec.rankCenter, spec.shiny)
   const draft: Pokemon = {
     id: spec.id,
     speciesId: species.id,
@@ -102,6 +105,7 @@ export function createPokemon(spec: NewPokemonSpec): Pokemon {
     gender,
     nickname: spec.nickname ?? null,
     nature,
+    ...(spec.shiny ? { shiny: true } : {}),
   }
   const maxHp = maxHpOf(draft)
   return { ...draft, maxHp, currentHp: maxHp }
