@@ -136,16 +136,12 @@ export const HP_LOSS_PER_DEFENSE_LOSS = 1
 export const MIN_FAILURE_DAMAGE = 1
 
 /**
- * Dano por golpe (batalha e falha de missão) escala com o dia da run: o HP dobrou (2 por
- * 10 de Resistência), então o perigo cresce ao longo dos 10 dias. Indexado pelo dia (1–10);
- * a posição 0 é só preenchimento. 1-3 → 1, 4-6 → 2, 7-9 → 3, 10 → 4.
+ * Dano de 1 golpe no dia dado (batalha/falha de missão): +1 a cada 2 dias, sem teto
+ * (modo infinito). Dia 1-2 → 1, 3-4 → 2, …, 9-10 → 5. Piso no dia 1.
  */
-export const HP_LOSS_BY_DAY = [0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4] as const
-
-/** Dano de 1 golpe no dia dado (batalha/missão), pela tabela HP_LOSS_BY_DAY. */
 export function damageForDay(day: number): number {
-  const d = Math.min(Math.max(Math.round(day), 1), TOTAL_DAYS)
-  return HP_LOSS_BY_DAY[d] ?? 1
+  const d = Math.max(1, Math.round(day))
+  return Math.ceil(d / 2)
 }
 
 /** Captura: 2 candidatos por encontro; nível do selvagem = dia ± 1 (PLAN §4.5). */

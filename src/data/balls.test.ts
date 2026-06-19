@@ -78,11 +78,17 @@ describe('Percepção → centro de rank do encontro', () => {
 })
 
 describe('dano por dia (batalha e falha de missão)', () => {
-  it('1-3 → 1, 4-6 → 2, 7-9 → 3, 10 → 4', () => {
-    expect([1, 2, 3].map(damageForDay)).toEqual([1, 1, 1])
-    expect([4, 5, 6].map(damageForDay)).toEqual([2, 2, 2])
-    expect([7, 8, 9].map(damageForDay)).toEqual([3, 3, 3])
-    expect(damageForDay(10)).toBe(4)
+  it('+1 a cada 2 dias: 1-2→1, 3-4→2, 9-10→5, sem teto', () => {
+    expect([1, 2].map(damageForDay)).toEqual([1, 1])
+    expect([3, 4].map(damageForDay)).toEqual([2, 2])
+    expect([9, 10].map(damageForDay)).toEqual([5, 5])
+    expect(damageForDay(11)).toBe(6)
+    expect(damageForDay(20)).toBe(10)
+  })
+
+  it('dia ≤ 1 tem piso de dano 1', () => {
+    expect(damageForDay(1)).toBe(1)
+    expect(damageForDay(0)).toBe(1)
   })
 })
 
