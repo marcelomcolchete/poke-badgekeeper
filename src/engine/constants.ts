@@ -68,6 +68,9 @@ export const SHOP_SEED_SALT = 0x53686f70 // 'Shop'
 /** Sub-seed dos efeitos climáticos (chuva): agenda do dia + distribuição da chance na run. */
 export const WEATHER_SEED_SALT = 0x57656174 // 'Weat'
 
+/** Sub-seed da Tempestade: agenda própria do dia + distribuição da chance na run (independe da chuva). */
+export const STORM_SEED_SALT = 0x53746f72 // 'Stor'
+
 /**
  * Quantidade de Pokémon do treinador invasor por dia (PLAN §4.4). Indexado pelo dia (1–10);
  * a posição 0 é só preenchimento. Cresce de 1 (dia 1) a 6 (dias 8–10).
@@ -203,6 +206,10 @@ export const DRAFT_CHOICES = 3
  * v30: pontuação em DUAS trilhas (approval.missionStars/battleStars no lugar de stars) e corações
  * por Pokémon (pokemon.hearts, 0–5). Adiciona today.activeIds (participação do dia) e
  * today.missionStarsBefore/battleStarsBefore. A migração duplica a estrela antiga nas duas trilhas,
- * dá 2 corações a todo Pokémon (roster + PC) e inicia activeIds vazio. */
-export const SAVE_VERSION = 32
+ * dá 2 corações a todo Pokémon (roster + PC) e inicia activeIds vazio.
+ * v33: efeito Tempestade. WeatherSchedule ganha `storms` e a previsão ganha
+ * stormChancePercent/potentialStormCount; today ganha paralyzedBattleIds; missões/buscas
+ * ganham paralyzeHold opcional. A migração inicia storms vazio, previsão de tempestade
+ * zerada e paralyzedBattleIds vazio (recalculados no próximo setupDay). */
+export const SAVE_VERSION = 33
 export const SAVE_KEY = 'poke-badgekeeper:save'

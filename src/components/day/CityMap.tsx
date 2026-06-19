@@ -17,10 +17,12 @@ import type {
 import { getCity, markerPos } from '../../data/cities.ts'
 import { getMissionTemplate, missionReward } from '../../data/missionTemplates.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
-import { graphWithTunnels, pointAlongPath } from '../../engine/pathfinding.ts'
+import { graphWithTunnels } from '../../engine/pathfinding.ts'
 import { activePuddlesAt } from '../../engine/weather.ts'
+import { activeStrikeCirclesAt } from '../../engine/storm.ts'
 import { teamIsSpeedy } from '../../engine/secretEffects.ts'
 import { clamp } from '../../engine/math.ts'
+import { missionTravelerPos, searchTravelerPos, returnTravelerPos } from '../../engine/travelerPositions.ts'
 import styles from './CityMap.module.css'
 
 /** Missões que aparecem no mapa: disponíveis e as já aceitas (em trânsito/ação/volta) — #4. */
@@ -68,11 +70,6 @@ function remainingFraction(now: number, start: number, end: number): number {
   return end > start ? clamp((end - now) / (end - start), 0, 1) : 0
 }
 
-/** Fração [0,1] do tempo decorrido entre dois instantes (start→end). */
-function elapsedFraction(now: number, start: number, end: number): number {
-  return end > start ? clamp((now - start) / (end - start), 0, 1) : 1
-}
-
 export function CityMap({ state, onMission, onDefense, onSpot }: Props) {
   const city = getCity(state.run.cityIndex)
   const graph = graphWithTunnels(city.graph, state.today.digTunnels)
@@ -98,6 +95,7 @@ export function CityMap({ state, onMission, onDefense, onSpot }: Props) {
 
         <PuddleOverlay graph={graph} puddles={activePuddlesAt(state.weather, now)} />
 
+        <StormOverlay strikes={activeStrikeCirclesAt(state.weather.storms, now)} />
 
         {activeDefense && (
           <div className={styles.anchor} style={posStyle(markerPos(graph, city.siteNodes.gym, 'gym'))}>
@@ -194,27 +192,36 @@ function PuddleOverlay({
   )
 }
 
-/**
- * Posição atual do time de uma missão em deslocamento (ida/volta), ou null. Ao CHEGAR
- * na missão ('inProgress') o time some do mapa; reaparece só na volta ('returning') — #3.
- */
-function missionTravelerPos(graph: CityGraph, m: MissionInstance, now: number): MapPos | null {
-  if (m.path.length === 0) return null
-  // Esperando uma poça secar: fica parado no ponto anterior (clima).
-  if (m.weatherHold && now < m.weatherHold.untilMs) {
-    const held = graph.nodes[m.weatherHold.node]
-    if (held) return { ...held }
-  }
-  if (m.status === 'traveling' && m.acceptedAtMs !== null && m.arriveAtMs !== null) {
-    const out = m.reroutePath ?? m.path
-    return pointAlongPath(graph, out, elapsedFraction(now, m.acceptedAtMs, m.arriveAtMs))
-  }
-  if (m.status === 'returning' && m.resolveAtMs !== null && m.returnEndsAtMs !== null) {
-    // Volta pela rota própria (respeita mão única); saves antigos caem no reverso da ida.
-    const back = m.reroutePath ?? m.returnPath ?? [...m.path].reverse()
-    return pointAlongPath(graph, back, elapsedFraction(now, m.resolveAtMs, m.returnEndsAtMs))
-  }
-  return null
+/** Círculos dos raios: vermelho pulsante no aviso (5s), amarelo no impacto. Diâmetro = 2·raio. */
+function StormOverlay({
+  strikes,
+}: {
+  strikes: { phase: 'warning' | 'striking'; circles: { cx: number; cy: number; radius: number }[] }[]
+}) {
+  return (
+    <>
+      {strikes.flatMap((s, i) =>
+        s.circles.map((c, j) => {
+          // raio é fração da largura; em % da largura o diâmetro é 2·raio·100. A altura usa o
+          // mesmo valor em px (círculo real), então convertemos via aspect-ratio no width/height.
+          const widthPct = c.radius * 2 * 100
+          return (
+            <div
+              key={`strike-${i}-${j}`}
+              className={`${styles.strike} ${s.phase === 'warning' ? styles.strikeWarn : styles.strikeHit}`}
+              style={{
+                left: `${c.cx * 100}%`,
+                top: `${c.cy * 100}%`,
+                width: `${widthPct}%`,
+                aspectRatio: '1 / 1',
+              }}
+              aria-hidden="true"
+            />
+          )
+        }),
+      )}
+    </>
+  )
 }
 
 /** Sprites do time/procurador se movendo pelo mapa (ponto a ponto), ida e volta. */
@@ -229,6 +236,8 @@ function MapTravelers({ state, graph, now }: { state: GameState; graph: CityGrap
           .map((id) => state.roster.find((p) => p.id === id))
           .filter((p): p is Pokemon => p !== undefined)
         const speedy = teamIsSpeedy(team, state.runItems, state.weather, now)
+        // Paralisia por raio: sprite congelado com tremor elétrico enquanto não expirou.
+        const paralyzed = !!m.paralyzeHold && now < m.paralyzeHold.untilMs
         return (
           <TravelerGroup
             key={`m-${m.id}`}
@@ -238,35 +247,30 @@ function MapTravelers({ state, graph, now }: { state: GameState; graph: CityGrap
             speedy={speedy}
             flying={m.flying}
             surfing={m.surfing}
+            paralyzed={paralyzed}
           />
         )
       })}
       {state.captureSearches.map((c) => {
-        // Ao chegar no local, o procurador some (entra na grama); reaparece só na volta — #3.
-        if (c.phase !== 'traveling') return null
-        const out = c.reroutePath ?? c.path
-        // Esperando uma poça secar: fica parado no ponto anterior (clima).
-        const held = c.weatherHold && now < c.weatherHold.untilMs ? graph.nodes[c.weatherHold.node] : undefined
-        const pos = held ? { ...held } : pointAlongPath(graph, out, elapsedFraction(now, c.departAtMs, c.arriveAtMs))
+        const pos = searchTravelerPos(graph, c, now)
+        if (!pos) return null
+        const paralyzed = !!c.paralyzeHold && now < c.paralyzeHold.untilMs
         return (
-          <TravelerGroup key={`s-${c.searcherId}`} pos={pos} ids={[c.searcherId]} roster={state.roster} flying={c.flying} surfing={c.surfing} />
+          <TravelerGroup key={`s-${c.searcherId}`} pos={pos} ids={[c.searcherId]} roster={state.roster} flying={c.flying} surfing={c.surfing} paralyzed={paralyzed} />
         )
       })}
       {state.captureReturns.map((r) => {
-        // r.path agora é ponto→ginásio (volta real). Saves antigos guardavam ginásio→ponto:
-        // detecta a orientação pelo 1º id (== r.node → já é a volta; senão inverte).
-        const back = r.reroutePath ?? (r.path[0] === r.node ? r.path : [...r.path].reverse())
-        const held = r.weatherHold && now < r.weatherHold.untilMs ? graph.nodes[r.weatherHold.node] : undefined
-        const pos = held ? { ...held } : pointAlongPath(graph, back, elapsedFraction(now, r.departAtMs, r.arriveAtMs))
+        const pos = returnTravelerPos(graph, r, now)
+        const paralyzed = !!r.paralyzeHold && now < r.paralyzeHold.untilMs
         return (
-          <TravelerGroup key={`r-${r.searcherId}`} pos={pos} ids={[r.searcherId]} roster={state.roster} flying={r.flying} surfing={r.surfing} />
+          <TravelerGroup key={`r-${r.searcherId}`} pos={pos} ids={[r.searcherId]} roster={state.roster} flying={r.flying} surfing={r.surfing} paralyzed={paralyzed} />
         )
       })}
     </>
   )
 }
 
-/** Grupo de até 3 sprites agrupados numa posição do mapa (aura de velocidade/voo opcional). */
+/** Grupo de até 3 sprites agrupados numa posição do mapa (aura de velocidade/voo/paralisia opcional). */
 function TravelerGroup({
   pos,
   ids,
@@ -274,6 +278,7 @@ function TravelerGroup({
   speedy = false,
   flying = false,
   surfing = false,
+  paralyzed = false,
 }: {
   pos: MapPos
   ids: string[]
@@ -281,6 +286,7 @@ function TravelerGroup({
   speedy?: boolean
   flying?: boolean
   surfing?: boolean
+  paralyzed?: boolean
 }) {
   const mons = ids
     .map((id) => roster.find((p) => p.id === id))
@@ -289,7 +295,7 @@ function TravelerGroup({
   if (mons.length === 0) return null
   return (
     <div
-      className={`${styles.travelers} ${speedy ? styles.speedy : ''} ${flying ? styles.flying : ''} ${surfing ? styles.surfing : ''}`}
+      className={`${styles.travelers} ${speedy ? styles.speedy : ''} ${flying ? styles.flying : ''} ${surfing ? styles.surfing : ''} ${paralyzed ? styles.paralyzed : ''}`}
       style={posStyle(pos)}
     >
       {speedy && <span className={styles.speedAura} aria-hidden="true" />}

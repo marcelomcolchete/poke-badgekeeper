@@ -82,6 +82,7 @@ export function assignDefense(s: GameState, defenseId: string, squadIds: string[
     sturdyAvailableIds,
     runItems: s.runItems,
     damagePerLoss: damageForDay(s.run.day),
+    paralyzedIds: new Set(s.today.paralyzedBattleIds),
   })
 
   // Registra cada duelo: vitória → desafiante derrotado (MVP/"enfrentados"); derrota → o inimigo

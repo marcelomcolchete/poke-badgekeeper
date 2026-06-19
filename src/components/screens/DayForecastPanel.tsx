@@ -5,14 +5,15 @@
 import type { GameState } from '../../engine/state.ts'
 import { getCity } from '../../data/cities.ts'
 import { getCityWeather, type WeatherEffectKind } from '../../data/cityWeather.ts'
-import { buildWeatherSchedule, rainAtLeastOnceChance } from '../../engine/weather.ts'
+import { rainAtLeastOnceChance } from '../../engine/weather.ts'
+import { buildDayWeather } from '../../engine/storm.ts'
 import { missionsForDay, defensesForDay } from '../../engine/timeline.ts'
 import { hasCloudNine } from '../../engine/secretEffects.ts'
 import { CLOUD_NINE_RAIN_CHANCE_BONUS_PP } from '../../engine/balance.ts'
 import styles from './DayForecastPanel.module.css'
 
-const EFFECT_ICON: Record<WeatherEffectKind, string> = { rain: '🌧️' }
-const EFFECT_NAME: Record<WeatherEffectKind, string> = { rain: 'Chuva' }
+const EFFECT_ICON: Record<WeatherEffectKind, string> = { rain: '🌧️', storm: '⛈️' }
+const EFFECT_NAME: Record<WeatherEffectKind, string> = { rain: 'Chuva', storm: 'Tempestade' }
 
 export function DayForecastPanel({ state }: { state: GameState }) {
   const city = getCity(state.run.cityIndex)
@@ -21,13 +22,14 @@ export function DayForecastPanel({ state }: { state: GameState }) {
   // Previsão = mesma função determinística que arma o dia (setupDay), com o MESMO bônus de Cloud
   // Nine — assim a % "bate com o que vai acontecer".
   const cloudNine = state.roster.filter(hasCloudNine).length
-  const forecast = buildWeatherSchedule(
+  const forecast = buildDayWeather(
     state.run.seed,
     state.run.day,
     city,
     cloudNine * CLOUD_NINE_RAIN_CHANCE_BONUS_PP,
   ).forecast
   const rainChance = rainAtLeastOnceChance(forecast.rainChancePercent, forecast.potentialRainCount)
+  const stormChance = rainAtLeastOnceChance(forecast.stormChancePercent, forecast.potentialStormCount)
 
   const missions = missionsForDay(state.run.day)
   const defenses = defensesForDay(state.run.day)
@@ -39,17 +41,24 @@ export function DayForecastPanel({ state }: { state: GameState }) {
       <div className={styles.weather}>
         <span className={styles.subTitle}>PREVISÃO DO TEMPO</span>
         <div className={styles.effects}>
-          {/* Hoje só há chuva: `rainChance` (combinado) modela ESTE efeito. Ao adicionar um novo
-              WeatherEffectKind, calcular a chance própria dele — não reusar `rainChance` aqui. */}
-          {weather && rainChance > 0 ? (
+          {/* Cada WeatherEffectKind tem a sua própria chance combinada. */}
+          {weather && (rainChance > 0 || stormChance > 0) ? (
             weather.effects.map((effect) =>
-              effect.kind === 'rain' ? (
+              effect.kind === 'rain' && rainChance > 0 ? (
                 <div key="rain" className={styles.effect}>
                   <span className={styles.effectIcon} aria-hidden="true">
                     {EFFECT_ICON.rain}
                   </span>
                   <span className={styles.effectName}>{EFFECT_NAME.rain}</span>
                   <span className={styles.effectChance}>{rainChance}%</span>
+                </div>
+              ) : effect.kind === 'storm' && stormChance > 0 ? (
+                <div key="storm" className={styles.effect}>
+                  <span className={styles.effectIcon} aria-hidden="true">
+                    {EFFECT_ICON.storm}
+                  </span>
+                  <span className={styles.effectName}>{EFFECT_NAME.storm}</span>
+                  <span className={styles.effectChance}>{stormChance}%</span>
                 </div>
               ) : null,
             )

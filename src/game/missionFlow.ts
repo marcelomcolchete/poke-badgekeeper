@@ -153,7 +153,7 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
  * Sem `shiftStart`, só estica o fim — usado no DESVIO, em que o caminho fica mais longo mas o
  * sprite segue andando (o início da perna continua válido).
  */
-function shiftMissionTimestamps(
+export function shiftMissionTimestamps(
   mission: MissionInstance,
   fromLeg: 'out' | 'back',
   deltaMs: number,
@@ -404,6 +404,7 @@ export function resolveRocketBattle(s: GameState, missionId: string): void {
     sturdyAvailableIds,
     runItems: s.runItems,
     damagePerLoss: damageForDay(s.run.day),
+    paralyzedIds: new Set(s.today.paralyzedBattleIds),
   })
   // Registra cada duelo: vitória → desafiante derrotado; derrota → o inimigo que venceu seu
   // Pokémon (Carrasco). `theirs` só avança quando você vence (mesma regra da defesa de ginásio).

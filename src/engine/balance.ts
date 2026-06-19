@@ -266,6 +266,28 @@ export const ANALYTIC_PATROL_MULT = 0.5
 /** Water Absorb: XP ganho quando a rota da missão passa pela água. */
 export const WATER_ABSORB_XP = 10
 
+// ---- Tempestade (raios + Paralyze) — efeito climático de Vermilion -------------------
+/** Orçamento de chance de tempestade somado entre os dias elegíveis (3–10), próprio. */
+export const STORM_CHANCE_TOTAL_PERCENT = 300
+/** Duração de um evento de tempestade (ms de jogo). */
+export const STORM_EVENT_MIN_MS = 15_000
+export const STORM_EVENT_MAX_MS = 30_000
+/** Folga mínima entre tempestades PRÓPRIAS (as acopladas à chuva podem sobrepor). */
+export const STORM_GAP_MS = 4_000
+/** Aviso vermelho antes do impacto do raio. */
+export const STRIKE_WARNING_MS = 5_000
+/** Raio do efeito (fração da largura do mapa): padrão, quando o centro já é água, e secundário. */
+export const STRIKE_RADIUS = 0.09
+export const STRIKE_RADIUS_ON_WATER = 0.15
+export const STRIKE_SECONDARY_RADIUS = 0.045
+/** Dano de um raio. */
+export const STRIKE_DAMAGE = 1
+/** Piso de raios por tempestade (o teto escala com o dia até ⌊pontos/4⌋). */
+export const STRIKE_MIN_PER_STORM = 1
+/** Paralyze: tempo de congelamento do sprite e multiplicador de Batalha em batalhas 1v1. */
+export const PARALYZE_STUN_MS = 5_000
+export const PARALYZE_BATTLE_MULT = 0.5
+
 // ---- Sistema de Itens (PLAN — Itens) ----
 
 /** x_*: quanto cada item de atributo soma a todo o time no dia. */

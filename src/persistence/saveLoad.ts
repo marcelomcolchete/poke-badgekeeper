@@ -412,6 +412,28 @@ function migrate(file: Partial<SaveFile>): SaveFile | null {
     version = 32
   }
 
+  // v32 → v33: efeito Tempestade. weather ganha storms + previsão de tempestade; today ganha
+  // paralyzedBattleIds; missões/buscas ganham paralyzeHold opcional (ausente = sem paralisia).
+  // Tudo é recalculado no próximo setupDay; aqui só garante a estrutura para saves no meio do dia.
+  if (version === 32) {
+    const weather = state.weather as Record<string, unknown> | undefined
+    const forecast = (weather?.forecast as Record<string, unknown> | undefined) ?? {}
+    const today = state.today as Record<string, unknown> | undefined
+    state = {
+      ...state,
+      weather:
+        weather && typeof weather === 'object'
+          ? {
+              ...weather,
+              storms: Array.isArray(weather.storms) ? weather.storms : [],
+              forecast: { stormChancePercent: 0, potentialStormCount: 0, ...forecast },
+            }
+          : weather,
+      today: today && typeof today === 'object' ? { paralyzedBattleIds: [], ...today } : today,
+    } as typeof state
+    version = 33
+  }
+
   if (version !== SAVE_VERSION) return null
   return { version, savedAtMs: (file as SaveFile).savedAtMs, state } as unknown as SaveFile
 }

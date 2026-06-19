@@ -15,7 +15,8 @@ const DIST = 100
 function rainUntil(endMs: number): WeatherSchedule {
   return {
     rain: [{ startMs: 0, endMs, puddles: [] }],
-    forecast: { rainChancePercent: 100, rainMmPerHour: 30, potentialRainCount: 1 },
+    storms: [],
+    forecast: { rainChancePercent: 100, rainMmPerHour: 30, potentialRainCount: 1, stormChancePercent: 0, potentialStormCount: 0 },
   }
 }
 

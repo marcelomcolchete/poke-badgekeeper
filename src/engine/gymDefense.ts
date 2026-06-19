@@ -28,6 +28,7 @@ import {
   MEDAL_FULL_DAY,
   MEDAL_UNLOCK_DAY,
   MOXIE_BATTLE_PER_WIN,
+  PARALYZE_BATTLE_MULT,
   PRESSURE_ENEMY_MULT,
   REGENERATOR_HEAL_PER_WIN,
   RIVAL_EVOLUTION_DAYS,
@@ -247,6 +248,8 @@ export interface ResolveDefenseOpts {
   runItems?: readonly string[]
   /** HP perdido por duelo perdido — o dano do dia (1..4). Omitir = 1 (HP_LOSS_PER_DEFENSE_LOSS). */
   damagePerLoss?: number
+  /** Pokémon (ids) paralisados pela Tempestade: lutam com metade da Batalha (Paralyze). */
+  paralyzedIds?: ReadonlySet<string>
 }
 
 /**
@@ -314,6 +317,8 @@ export function resolveDefense(
     if (hasThickFat(you) && enemy.types.includes('ice')) yourEff *= THICK_FAT_VS_ICE_MULT
     // Moxie: +1 de Batalha por inimigo já derrotado nesta sequência (frontWins).
     if (hasMoxie(you)) yourEff += MOXIE_BATTLE_PER_WIN * frontWins
+    // Paralyze (Tempestade): seu Pokémon paralisado hoje luta com metade da Batalha.
+    if (opts.paralyzedIds?.has(you.id)) yourEff *= PARALYZE_BATTLE_MULT
     // Pressure: reduz a Batalha do oponente enfrentado.
     let enemyEff = enemy.battle * typeAdvantageMultiplier(enemy.types, you.types)
     if (hasPressure(you)) enemyEff *= PRESSURE_ENEMY_MULT
