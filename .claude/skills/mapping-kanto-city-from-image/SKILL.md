@@ -104,7 +104,8 @@ qualquer one-way recebido no chat. Só seguir para o código após o OK explíci
   sem Surf).
 - Um nó de parada igual ao gym dá 0 de viagem (ok para casa; evitar para center/mart).
 - Preencher o seed **existente** — nunca `SEEDS.push`.
-- `green` é **capture-only** — nunca hospeda missão normal nem mapeia `freeArea`.
+- `green` é **capture-only** — não hospeda missão normal (é o sítio de `freeArea`/captura no
+  engine, não um ponto de missão comum).
 - Não esquecer `_DIRECTED_EDGES` para as assimetrias declaradas no chat.
 
 ## Depois da estrutura (fora do escopo desta skill)
