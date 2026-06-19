@@ -15,6 +15,9 @@ import { DAY_LENGTH_MS, TOTAL_DAYS, STORM_SEED_SALT, MAP_ASPECT_W } from './cons
 import { clamp, lerp } from './math.ts'
 import { segmentLength } from './pathfinding.ts'
 import { puddleLevelAt, type RainEvent, WEATHER_FIRST_ELIGIBLE_DAY, maxRainTimes } from './weather.ts'
+import type { WeatherSchedule } from './weather.ts'
+import { buildWeatherSchedule } from './weather.ts'
+import { cityHasStorm } from '../data/cityWeather.ts'
 import {
   STRIKE_RADIUS,
   STRIKE_RADIUS_ON_WATER,
@@ -188,6 +191,71 @@ export function activeStormAt(storms: readonly StormEvent[], nowMs: number): Sto
 /** Está em tempestade em `nowMs`? (selo/efeitos seguem isto.) */
 export function isStorming(storms: readonly StormEvent[], nowMs: number): boolean {
   return activeStormAt(storms, nowMs) !== null
+}
+
+// ---- Derivações de runtime -------------------------------------------------------------
+
+export type StrikePhase = 'warning' | 'striking'
+
+/** Quanto tempo o círculo amarelo do impacto fica visível (animação) após cair. */
+const STRIKE_FLASH_MS = 600
+
+/** Círculos visíveis em `nowMs`: em aviso (vermelho) ou no flash do impacto (amarelo). */
+export function activeStrikeCirclesAt(
+  storms: readonly StormEvent[],
+  nowMs: number,
+): { phase: StrikePhase; circles: StrikeCircle[] }[] {
+  const out: { phase: StrikePhase; circles: StrikeCircle[] }[] = []
+  for (const storm of storms) {
+    for (const strike of storm.strikes) {
+      if (nowMs >= strike.warnAtMs && nowMs < strike.strikeAtMs) {
+        out.push({ phase: 'warning', circles: strike.circles })
+      } else if (nowMs >= strike.strikeAtMs && nowMs < strike.strikeAtMs + STRIKE_FLASH_MS) {
+        out.push({ phase: 'striking', circles: strike.circles })
+      }
+    }
+  }
+  return out
+}
+
+/** Raios cujo impacto cai em (prevMs, nowMs] — robusto a saltos grandes de tempo (x3/aba oculta). */
+export function strikesResolvingBetween(
+  storms: readonly StormEvent[],
+  prevMs: number,
+  nowMs: number,
+): Strike[] {
+  const out: Strike[] = []
+  for (const storm of storms) {
+    for (const strike of storm.strikes) {
+      if (strike.strikeAtMs > prevMs && strike.strikeAtMs <= nowMs) out.push(strike)
+    }
+  }
+  return out
+}
+
+/**
+ * Schedule climático completo do dia (chuva + tempestade), reprodutível por (seed, day, city).
+ * A tempestade só entra se a cidade a tem; os raios usam os eventos de chuva para encadear nas
+ * poças. Substitui chamadas diretas a buildWeatherSchedule no setup/forecast.
+ */
+export function buildDayWeather(
+  seed: number,
+  day: number,
+  city: CityData,
+  extraRainChancePercent = 0,
+): WeatherSchedule {
+  const base = buildWeatherSchedule(seed, day, city, extraRainChancePercent)
+  if (!cityHasStorm(city.index)) return base
+  const storms = buildStorms(seed, day, city, base.rain)
+  return {
+    ...base,
+    storms,
+    forecast: {
+      ...base.forecast,
+      stormChancePercent: stormChanceForDay(seed, day),
+      potentialStormCount: maxStormTimes(day),
+    },
+  }
 }
 
 // ---- Geometria do raio -----------------------------------------------------------------

@@ -8,7 +8,12 @@ import {
   strikeCountForDay,
   activeStormAt,
   isStorming,
+  activeStrikeCirclesAt,
+  strikesResolvingBetween,
+  buildDayWeather,
 } from './storm.ts'
+import { getCity } from '../data/cities.ts'
+import { STRIKE_WARNING_MS } from './balance.ts'
 import type { CityData } from '../data/types.ts'
 import type { RainEvent } from './weather.ts'
 import { STRIKE_RADIUS, STRIKE_RADIUS_ON_WATER, STRIKE_SECONDARY_RADIUS } from './balance.ts'
@@ -120,5 +125,52 @@ describe('storm — geometria', () => {
     // Centro 'a', poça em 'b' (dentro de 0,09): secundário a partir de 'b'.
     const circles = resolveStrikeCircles('a', 5_000, testCity(), rain)
     expect(circles.some((c) => c.radius === STRIKE_SECONDARY_RADIUS && Math.abs(c.cx - 0.15) < 1e-6)).toBe(true)
+  })
+})
+
+describe('storm — runtime e composição', () => {
+  const storms = [
+    {
+      startMs: 0,
+      endMs: 30_000,
+      strikes: [
+        { warnAtMs: 1_000, strikeAtMs: 1_000 + STRIKE_WARNING_MS, circles: [{ cx: 0.5, cy: 0.5, radius: 0.09 }] },
+      ],
+    },
+  ]
+
+  it('fase warning enquanto warnAtMs ≤ now < strikeAtMs', () => {
+    const at = activeStrikeCirclesAt(storms, 2_000)
+    expect(at).toHaveLength(1)
+    expect(at[0]?.phase).toBe('warning')
+  })
+
+  it('fase striking logo após o impacto', () => {
+    const at = activeStrikeCirclesAt(storms, 1_000 + STRIKE_WARNING_MS + 100)
+    expect(at[0]?.phase).toBe('striking')
+  })
+
+  it('strikesResolvingBetween captura o impacto no intervalo (robusto a saltos)', () => {
+    const hit = strikesResolvingBetween(storms, 0, 1_000 + STRIKE_WARNING_MS + 50)
+    expect(hit).toHaveLength(1)
+    const miss = strikesResolvingBetween(storms, 0, 1_000) // antes do impacto
+    expect(miss).toHaveLength(0)
+  })
+
+  it('buildDayWeather compõe chuva + tempestade em Vermilion e é determinístico', () => {
+    const city = getCity(2) // Vermilion
+    const a = buildDayWeather(777, 9, city)
+    const b = buildDayWeather(777, 9, city)
+    expect(a).toEqual(b)
+    expect(a.forecast.stormChancePercent).toBeGreaterThanOrEqual(0)
+    // storms é array (pode ser vazio conforme sorteio, mas o campo existe).
+    expect(Array.isArray(a.storms)).toBe(true)
+  })
+
+  it('buildDayWeather não adiciona tempestade em cidade sem o efeito', () => {
+    const cerulean = getCity(1)
+    const w = buildDayWeather(777, 9, cerulean)
+    expect(w.storms).toEqual([])
+    expect(w.forecast.stormChancePercent).toBe(0)
   })
 })
