@@ -93,11 +93,11 @@ export const SPECIAL2_SECONDARIES = 1
 export const SPECIAL5_PRINCIPALS = 5
 
 /**
- * Quantidade FIXA de missões/defesas por dia (índice = dia − 1), igual para todas as
- * cidades — sem multiplicador de dificuldade. 10 entradas (dias 1..10).
+ * Quantidade FIXA de missões por dia (índice = dia − 1), igual para todas as cidades —
+ * sem multiplicador de dificuldade. 10 entradas (dias 1..10). As DEFESAS por dia não usam
+ * tabela: vêm da fórmula `defensesForDay` (ceil(dia/2), sem teto — ver timeline.ts).
  */
 export const MISSIONS_PER_DAY = [3, 4, 4, 5, 6, 6, 7, 7, 8, 8] as const
-export const DEFENSES_PER_DAY = [1, 1, 2, 2, 2, 3, 3, 4, 4, 5] as const
 
 /** Janela do dia (fração) em que eventos surgem — deixa tempo para resolvê-los (§4.8). */
 export const SPAWN_WINDOW_FRACTION = 0.85
@@ -111,12 +111,13 @@ export const ENEMY_BASE_BATTLE = 25
 export const ENEMY_BATTLE_PER_DAY = 4
 
 /**
- * Defesa §4.4/§4.8: o esquadrão inimigo cresce com o dia. Âncoras da escala 1→10:
- * dia 1 = no máx. 1 Pokémon; dia 10 = no mín. 6. A partir do dia 5 há +1 de variação.
+ * Defesa §4.4: tamanho do esquadrão invasor por treinador é uma FAIXA [min,max] sorteada,
+ * que cresce com o dia e converge no teto 6. `min` sobe devagar (reta, atinge 6 ~dia 15);
+ * `max` abre rápido (côncavo via raiz, atinge 6 ~dia 9). Pensado para o modo infinito.
  */
-export const ENEMY_SQUAD_DAY1 = 1
-export const ENEMY_SQUAD_DAY10 = 6
-export const ENEMY_SQUAD_JITTER_FROM_DAY = 5
+export const DEFENSE_SQUAD_MAX = 6
+export const DEFENSE_SQUAD_MIN_SLOPE = 5 / 14
+export const DEFENSE_SQUAD_MAX_SQRT_BASE = 9
 
 /**
  * Leveling §4.1: POOL de XP de uma missão bem-sucedida, DIVIDIDO igualmente entre os
@@ -188,13 +189,14 @@ export const ROCKET_XP_MULTIPLIER = 3
 export const DEFENSE_MEDAL_BATTLE = { bronze: 10, silver: 20, gold: 50 } as const
 
 /**
- * Probabilidade da medalha por dia. Cada tier "abre" num dia (MEDAL_UNLOCK_DAY) e a chance
- * (acumulada — "pelo menos esse tier") rampa LINEARMENTE até 100% no dia MEDAL_FULL_DAY,
- * pensando em modos de dias infinitos: do dia 30 em diante todo invasor sai com Ouro.
- * O denominador usa (dia − (abertura − 1)) para já dar chance > 0 no próprio dia de abertura.
+ * Probabilidade da medalha por dia ("piso de 10% na abertura + rampa até 100%"). Cada tier
+ * abre num dia (MEDAL_OPEN_DAY) já com MEDAL_OPEN_CHANCE e a chance ACUMULADA ("pelo menos
+ * esse tier") sobe linearmente até 100% no seu dia de saturação (MEDAL_FULL_DAY). Pensado p/
+ * dias infinitos: do dia 30 em diante todo invasor sai com Ouro. Bronze ≥ Prata ≥ Ouro sempre.
  */
-export const MEDAL_FULL_DAY = 30
-export const MEDAL_UNLOCK_DAY = { bronze: 2, silver: 6, gold: 10 } as const
+export const MEDAL_OPEN_CHANCE = 0.1
+export const MEDAL_OPEN_DAY = { bronze: 2, silver: 3, gold: 4 } as const
+export const MEDAL_FULL_DAY = { bronze: 10, silver: 20, gold: 30 } as const
 
 /**
  * Rivais §4.4: o líder do rival EVOLUI conforme o dia. Cada valor é o dia (inclusive) em que

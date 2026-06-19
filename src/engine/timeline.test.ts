@@ -3,7 +3,6 @@ import { DAY_LENGTH_MS, DAY_SEGMENTS, TOTAL_DAYS } from './constants.ts'
 import {
   CAPTURE_SPOTS_PER_DAY,
   DAY1_FIRST_MISSION_DELAY_MS,
-  DEFENSES_PER_DAY,
   MISSIONS_PER_DAY,
   SPAWN_WINDOW_FRACTION,
 } from './balance.ts'
@@ -31,21 +30,28 @@ function countsPerSegment(times: number[]): number[] {
   return counts
 }
 
-describe('missionsForDay/defensesForDay (tabela fixa por dia)', () => {
-  it('lê a tabela fixa, igual para todas as cidades', () => {
+describe('missionsForDay (tabela fixa) e defensesForDay (fórmula ceil(dia/2))', () => {
+  it('missões seguem a tabela fixa, igual para todas as cidades', () => {
     for (let day = 1; day <= TOTAL_DAYS; day++) {
       expect(missionsForDay(day)).toBe(MISSIONS_PER_DAY[day - 1])
-      expect(defensesForDay(day)).toBe(DEFENSES_PER_DAY[day - 1])
     }
     expect(missionsForDay(1)).toBe(3)
-    expect(defensesForDay(1)).toBe(1)
     expect(missionsForDay(10)).toBe(8)
-    expect(defensesForDay(10)).toBe(5)
   })
 
-  it('mais perto do dia 10 = mais missões e mais defesas', () => {
-    expect(missionsForDay(10)).toBeGreaterThan(missionsForDay(1))
-    expect(defensesForDay(10)).toBeGreaterThan(defensesForDay(1))
+  it('defesas = ceil(dia/2): dia 10=5, 20=10, 30=15, sem teto', () => {
+    expect(defensesForDay(1)).toBe(1)
+    expect(defensesForDay(5)).toBe(3)
+    expect(defensesForDay(10)).toBe(5)
+    expect(defensesForDay(20)).toBe(10)
+    expect(defensesForDay(30)).toBe(15)
+  })
+
+  it('defesas crescem monotonicamente com o dia', () => {
+    for (let day = 2; day <= 40; day++) {
+      expect(defensesForDay(day)).toBeGreaterThanOrEqual(defensesForDay(day - 1))
+    }
+    expect(defensesForDay(40)).toBeGreaterThan(defensesForDay(10))
   })
 })
 

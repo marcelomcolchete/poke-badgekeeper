@@ -20,11 +20,7 @@ import {
   SWIFT_SWIM_RAIN_BONUS,
   WATER_ABSORB_XP,
 } from '../engine/balance.ts'
-import {
-  enemySquadSizeForDay,
-  generateDefenseEnemies,
-  resolveDefense,
-} from '../engine/gymDefense.ts'
+import { generateDefenseEnemies, resolveDefense, rollSquadSize } from '../engine/gymDefense.ts'
 import { goldForDefense, goldForMart } from '../engine/economy.ts'
 import {
   executionMs,
@@ -380,8 +376,9 @@ function applyMissionRewards(s: GameState, template: MissionTemplate, team: read
  */
 function setupRocketBattle(s: GameState, mission: MissionInstance, team: readonly Pokemon[]): void {
   const trainerId: TrainerId = takeRng(s).bool(0.5) ? 'ROCKET_TEAM_MALE' : 'ROCKET_TEAM_FEMALE'
-  const size = enemySquadSizeForDay(s.run.day)
-  const enemies = generateDefenseEnemies(takeRng(s), getTrainer(trainerId), size)
+  const rng = takeRng(s)
+  const size = rollSquadSize(rng, s.run.day)
+  const enemies = generateDefenseEnemies(rng, getTrainer(trainerId), size)
   mission.rocket = { trainerId, enemies, resolved: false }
   mission.status = 'battle'
   mission.result = 'success'

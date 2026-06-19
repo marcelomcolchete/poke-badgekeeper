@@ -12,21 +12,23 @@ import type { TrainerDef } from '../data/trainers.ts'
 import {
   ATTR_EFFECTIVE_MIN,
   ATTR_MAX,
-  DEFENSE_SQUAD_BY_DAY,
   HP_LOSS_PER_DEFENSE_LOSS,
   IV_MAX,
   IV_MIN,
   MIN_DEFENSE_SQUAD,
-  TOTAL_DAYS,
   TYPE_ADVANTAGE_MULT,
   TYPE_DISADVANTAGE_MULT,
 } from './constants.ts'
 import {
   DEFENSE_MEDAL_BATTLE,
+  DEFENSE_SQUAD_MAX,
+  DEFENSE_SQUAD_MAX_SQRT_BASE,
+  DEFENSE_SQUAD_MIN_SLOPE,
   GYM_XP_CAP_PER_WIN,
   GYM_XP_PER_BATTLE_POWER,
   MEDAL_FULL_DAY,
-  MEDAL_UNLOCK_DAY,
+  MEDAL_OPEN_CHANCE,
+  MEDAL_OPEN_DAY,
   MOXIE_BATTLE_PER_WIN,
   PARALYZE_BATTLE_MULT,
   PRESSURE_ENEMY_MULT,
@@ -111,18 +113,18 @@ export function gymWinXp(enemyBattle: number): number {
 
 /**
  * Chance ACUMULADA ("pelo menos esse tier") de medalha por dia: cada tier abre no seu dia
- * (MEDAL_UNLOCK_DAY) e rampa linearmente até 100% no dia MEDAL_FULL_DAY. (dia − (abertura − 1))
- * no numerador garante chance > 0 já no dia de abertura. Bronze ≥ Prata ≥ Ouro sempre.
+ * (MEDAL_OPEN_DAY) já com MEDAL_OPEN_CHANCE e rampa linearmente até 100% no seu dia de
+ * saturação (MEDAL_FULL_DAY). Bronze ≥ Prata ≥ Ouro sempre. Vale para qualquer dia.
  */
 export function medalChancesForDay(day: number): { bronze: number; silver: number; gold: number } {
-  const atLeast = (unlock: number): number => {
-    const start = unlock - 1
-    return clamp((day - start) / (MEDAL_FULL_DAY - start), 0, 1)
+  const atLeast = (open: number, full: number): number => {
+    if (day < open) return 0
+    return clamp(MEDAL_OPEN_CHANCE + (1 - MEDAL_OPEN_CHANCE) * ((day - open) / (full - open)), 0, 1)
   }
   return {
-    bronze: atLeast(MEDAL_UNLOCK_DAY.bronze),
-    silver: atLeast(MEDAL_UNLOCK_DAY.silver),
-    gold: atLeast(MEDAL_UNLOCK_DAY.gold),
+    bronze: atLeast(MEDAL_OPEN_DAY.bronze, MEDAL_FULL_DAY.bronze),
+    silver: atLeast(MEDAL_OPEN_DAY.silver, MEDAL_FULL_DAY.silver),
+    gold: atLeast(MEDAL_OPEN_DAY.gold, MEDAL_FULL_DAY.gold),
   }
 }
 
@@ -141,13 +143,25 @@ export function rollMedalForDay(rng: Rng, day: number): MedalTier | null {
 }
 
 /**
- * Tamanho do esquadrão invasor por dia (PLAN §4.4): tabela fixa DEFENSE_SQUAD_BY_DAY —
- * 1 (dia 1) crescendo até 6 (dias 8–10). A dificuldade do dia vem daqui (e da quantidade),
- * não da força por Pokémon. Determinístico: depende só do dia.
+ * Faixa [min,max] de Pokémon que um treinador invasor traz no dia (PLAN §4.4). `min` sobe
+ * em reta (teto 6 ~dia 15); `max` abre rápido (côncavo, teto 6 ~dia 9). A dificuldade do dia
+ * vem daqui (e da quantidade de treinadores), não da força por Pokémon. Vale p/ qualquer dia.
  */
-export function enemySquadSizeForDay(day: number): number {
-  const clampedDay = clamp(Math.round(day), 1, TOTAL_DAYS)
-  return DEFENSE_SQUAD_BY_DAY[clampedDay] ?? 1
+export function squadSizeRange(day: number): { min: number; max: number } {
+  const d = Math.max(1, Math.round(day))
+  const min = clamp(Math.round(1 + (d - 1) * DEFENSE_SQUAD_MIN_SLOPE), 1, DEFENSE_SQUAD_MAX)
+  const max = clamp(
+    Math.round(1 + 5 * Math.sqrt((d - 1) / DEFENSE_SQUAD_MAX_SQRT_BASE)),
+    1,
+    DEFENSE_SQUAD_MAX,
+  )
+  return { min, max }
+}
+
+/** Sorteia (inclusive) o tamanho do esquadrão do treinador na faixa do dia. */
+export function rollSquadSize(rng: Rng, day: number): number {
+  const { min, max } = squadSizeRange(day)
+  return rng.int(min, max)
 }
 
 /** Espécie lendária? (raridade 'legend' — Articuno/Zapdos/Moltres/Mewtwo/Mew.) */
@@ -200,7 +214,7 @@ export function trainerSquadSpecies(
  * Inimigos efêmeros da defesa a partir do elenco de um treinador (PLAN §4.4). Cada invasor
  * tem o SEU poder de Batalha: a Batalha-base da espécie ±10 (E..S, como os IVs do jogador) —
  * então dois invasores da mesma espécie ainda diferem. O dia controla QUANTOS Pokémon o
- * treinador traz (enemySquadSizeForDay) e a chance/raridade das MEDALHAS: cada invasor sorteia
+ * treinador traz (squadSizeRange/rollSquadSize) e a chance/raridade das MEDALHAS: cada invasor sorteia
  * Bronze (+10), Prata (+20) ou Ouro (+50) — o bônus sobe acima do teto normal de Batalha.
  */
 export function generateDefenseEnemies(
