@@ -175,9 +175,11 @@ congelado). `CityMap.tsx` passa a importar e usar esse helper (remove a duplica�
   - Para cada raio em `strikesResolvingBetween(s.weather, prevMs, nowMs)`:
     - `positions = travelerPositionsAt(s, raio.strikeAtMs)`.
     - Para cada Pokémon cuja `pos` cai **dentro de qualquer** `circle` do raio:
-      aplica `STRIKE_DAMAGE` (via caminho de dano existente, com `settleFaintTracked`
-      e Sturdy) e `applyParalyze(s, id, pos, raio.strikeAtMs)` — reaproveitando a `pos`
-      já computada para a detecção de acerto.
+      **reduz 1 de HP preservando o status de trânsito** (`currentHp =
+      max(0, currentHp - STRIKE_DAMAGE)`, sem virar `fainted` no meio da viagem — o
+      desmaio é realizado no `settle` normal da missão/volta, que já conta em
+      `today.faints`) e `applyParalyze(s, id, pos, raio.strikeAtMs)` — reaproveitando a
+      `pos` já computada para a detecção de acerto.
 - `dayClock.tick`: guarda `prevMs = s.clock.dayElapsedMs` antes de avançar; após
   `processMissions/Defenses/Searches`, chama `processStorms(s, prevMs, now)` (se a run
   ainda está em `DAY`).
