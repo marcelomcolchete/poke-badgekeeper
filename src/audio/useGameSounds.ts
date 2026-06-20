@@ -6,7 +6,6 @@ import { useEffect, useRef } from 'react'
 import type { GameState } from '../engine/state.ts'
 import type { MissionResult } from '../engine/state.ts'
 import type { GamePhase } from '../types/index.ts'
-import { getMissionTemplate } from '../data/missionTemplates.ts'
 import { pendingPoints } from '../engine/leveling.ts'
 import { isRaining } from '../engine/weather.ts'
 import { strikesResolvingBetween } from '../engine/storm.ts'
@@ -79,7 +78,7 @@ export function useGameSounds(state: GameState): void {
     if (!first && pending > pendingTotal.current) playSound('levelUp')
     pendingTotal.current = pending
 
-    // 4) Tempo acabando: defesa de ginásio 'active' sem esquadrão E missão Equipe Rocket
+    // 4) Tempo acabando: defesa de ginásio 'active' sem esquadrão E Missão Especial
     //    'available' não despachada — em ambas, deixar o timer zerar é derrota imediata.
     //    Missões normais prestes a expirar não apitam.
     const now = state.clock.dayElapsedMs
@@ -88,7 +87,7 @@ export function useGameSounds(state: GameState): void {
         if (d.status === 'active') warnIfExpiring(d.id, d.expiresAtMs - now, warnedIds.current)
       }
       for (const m of state.missions) {
-        if (m.status === 'available' && getMissionTemplate(m.templateId).isRocket) {
+        if (m.status === 'available' && m.templateId === 'special') {
           warnIfExpiring(m.id, m.expiresAtMs - now, warnedIds.current)
         }
       }

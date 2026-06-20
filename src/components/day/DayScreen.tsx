@@ -20,7 +20,6 @@ import { MemberDetail } from './MemberDetail.tsx'
 import { MissionDispatch } from './MissionDispatch.tsx'
 import { MissionRevealModal } from './MissionRevealModal.tsx'
 import { DefensePanel } from './DefensePanel.tsx'
-import { RocketBattlePanel } from './RocketBattlePanel.tsx'
 import { CapturePanel } from './CapturePanel.tsx'
 import { ItemsBar } from '../common/ItemsBar.tsx'
 import { getMissionTemplate } from '../../data/missionTemplates.ts'
@@ -29,7 +28,6 @@ import styles from './DayScreen.module.css'
 type Selection =
   | { kind: 'mission'; id: string }
   | { kind: 'defense'; id: string }
-  | { kind: 'rocketBattle'; id: string }
   | { kind: 'capture'; spotIndex: number }
   | { kind: 'quit' }
   | null
@@ -41,9 +39,9 @@ type Selection =
  * - center: missão do Centro Pokémon — vermelho claro, símbolo de cura.
  * - mart: missão do Pokémart — azul claro, símbolo de mercadinho.
  * - general: missão normal disponível — estilo padrão, "!" vermelho.
- * - rocket: missão da Equipe Rocket — preto/amarelo, "R" vermelho.
+ * - special: Missão Especial disponível — preto/amarelo, "⭐" dourado.
  */
-export type GuideMsgKind = 'standard' | 'area' | 'center' | 'mart' | 'general' | 'rocket'
+export type GuideMsgKind = 'standard' | 'area' | 'center' | 'mart' | 'general' | 'special'
 
 export interface GuideMessage {
   id: number
@@ -54,8 +52,8 @@ export interface GuideMessage {
 /** Mapeia uma missão recém-disponível para a fala tipada do log (texto + categoria). */
 function missionAnnouncement(templateId: string): { text: string; kind: GuideMsgKind } {
   const tpl = getMissionTemplate(templateId)
-  if (tpl.isRocket)
-    return { kind: 'rocket', text: 'Equipe Rocket à vista! Despache seu time para enfrentá-los.' }
+  if (tpl.id === 'special')
+    return { kind: 'special', text: 'Missão Especial à vista! Despache seu time para cumpri-la.' }
   if (tpl.healOnSuccess)
     return { kind: 'center', text: 'Missão no Centro Pokémon disponível — cura o time no sucesso!' }
   if (tpl.goldOnSuccess)
@@ -148,14 +146,6 @@ export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) 
   const closeReveal = (): void => {
     if (revealId) revealedMissions.current.add(revealId)
     setRevealId(null)
-  }
-  // Rocket cumprida: fecha a revelação e abre a batalha contra o treinador Rocket.
-  const startRocketBattle = (): void => {
-    if (!revealId) return
-    revealedMissions.current.add(revealId)
-    const id = revealId
-    setRevealId(null)
-    setOpen({ kind: 'rocketBattle', id })
   }
   const revealMission = revealId ? state.missions.find((m) => m.id === revealId) : undefined
 
@@ -255,10 +245,7 @@ export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) 
       {open?.kind === 'defense' && (
         <DefensePanel state={state} dispatch={dispatch} defenseId={open.id} onClose={close} />
       )}
-      {open?.kind === 'rocketBattle' && (
-        <RocketBattlePanel state={state} dispatch={dispatch} missionId={open.id} onClose={close} />
-      )}
-      {open?.kind === 'capture' && (
+{open?.kind === 'capture' && (
         <CapturePanel state={state} dispatch={dispatch} spotIndex={open.spotIndex} onClose={close} />
       )}
       {open?.kind === 'quit' && <QuitConfirm onConfirm={onRestart} onClose={close} />}
@@ -277,7 +264,6 @@ export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) 
           state={state}
           mission={revealMission}
           onClose={closeReveal}
-          onBattle={startRocketBattle}
         />
       )}
     </div>

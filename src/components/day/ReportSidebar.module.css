@@ -525,8 +525,8 @@
   font-weight: 700;
 }
 
-/* Equipe Rocket: preto com borda amarela e "R" vermelho. */
-.symRocket {
+/* Missão Especial: preto com borda amarela e ⭐ dourado. */
+.symSpecial {
   background: #161616;
   border-color: var(--c-hud-accent);
   color: #e02020;
@@ -592,11 +592,11 @@
   border-right-color: #57a6dc;
 }
 
-.bubbleRocket {
+.bubbleSpecial {
   background: #161616;
   border-color: var(--c-hud-accent);
   color: var(--c-hud-accent);
 }
-.bubbleRocket::before {
+.bubbleSpecial::before {
   border-right-color: var(--c-hud-accent);
 }

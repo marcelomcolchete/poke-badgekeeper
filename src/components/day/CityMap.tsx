@@ -374,15 +374,15 @@ function missionVisual(mission: MissionInstance, now: number): MissionVisual {
       }
     }
     default: {
-      // Disponível: "!" (ou "R" vermelho da Equipe Rocket) com o anel esvaziando até expirar.
-      const isRocket = getMissionTemplate(mission.templateId).isRocket
+      // Disponível: "!" (ou "⭐" da Missão Especial) com o anel esvaziando até expirar.
+      const isSpecial = mission.templateId === 'special'
       return {
         iconClass: styles.bang,
         ringColor: 'var(--c-hud-accent)',
-        content: isRocket ? 'R' : '!',
+        content: isSpecial ? '⭐' : '!',
         fraction: timerFraction(mission, now),
         pulse: true,
-        ariaLabel: isRocket ? 'Missão da Equipe Rocket disponível' : 'Missão disponível',
+        ariaLabel: isSpecial ? 'Missão Especial disponível' : 'Missão disponível',
       }
     }
   }
