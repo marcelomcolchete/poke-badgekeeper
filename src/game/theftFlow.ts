@@ -171,7 +171,7 @@ export function resolveTheftLoss(s: GameState): void {
 }
 
 /** Entra na batalha de resgate: pausa o relógio (modal) e muda a fase p/ 'battle'. */
-export function enterTheftBattle(s: GameState, _now: number): void {
+export function enterTheftBattle(s: GameState): void {
   const theft = s.theft
   if (!theft || (theft.phase !== 'fleeing' && theft.phase !== 'atFarNode')) return
   s.theft = { ...theft, phase: 'battle' }
@@ -193,7 +193,7 @@ export function processTheft(s: GameState, now: number): void {
   }
   if (theft.phase === 'fleeing') {
     if (theftInterceptorIds(s, now).length > 0) {
-      enterTheftBattle(s, now)
+      enterTheftBattle(s)
       return
     }
     if (now >= theft.arriveAtMs) {
@@ -208,7 +208,7 @@ export function processTheft(s: GameState, now: number): void {
   }
   if (theft.phase === 'atFarNode') {
     if (theftInterceptorIds(s, now).length > 0) {
-      enterTheftBattle(s, now)
+      enterTheftBattle(s)
       return
     }
     if (now >= theft.graceUntilMs) resolveTheftLoss(s)
