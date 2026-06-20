@@ -1,6 +1,6 @@
 ---
 name: mapping-kanto-city-from-image
-description: Use when the user provides (in chat) an annotated top-down Kanto city map — lettered orange/blue point circles, gray/white/purple arrows, worded popups HOUSE/CP/GRASS/RKT/MART/GYM — and asks to build or update that city's STRUCTURE in poke-badgekeeper: its waypoint graph (nodes, edges, Surf-gated water, one-way edges) and site mapping (gym/center/mart/museum/houses/green) plus tests. The repo's public/maps/kanto/<N>.png is the clean game art (gives the city index + coordinate reference), not the annotations. Structure only — NOT trainers/items/weather/unlock.
+description: Use when the user provides (in chat) an annotated top-down Kanto city map — lettered orange/blue point circles, gray/white/purple arrows, worded popups HOUSE/CP/GRASS/SPEC/MART/GYM — and asks to build or update that city's STRUCTURE in poke-badgekeeper: its waypoint graph (nodes, edges, Surf-gated water, one-way edges) and site mapping (gym/center/mart/specialMission/houses/green) plus tests. The repo's public/maps/kanto/<N>.png is the clean game art (gives the city index + coordinate reference), not the annotations. Structure only — NOT trainers/items/weather/unlock.
 ---
 
 # Mapeando a estrutura de uma cidade de Kanto a partir da imagem
@@ -24,7 +24,7 @@ no fim).
 
 > **Step 0 — sempre primeiro:** abrir o bloco vivo de **Cerulean** em `src/data/cities.ts` e
 > `src/data/cerulean.test.ts`. O *shape* está aqui; os *valores e convenções atuais* (markers,
-> museu de ponto único, etc.) estão no código. **Se divergir, o código vence.**
+> specialMission de ponto(s), etc.) estão no código. **Se divergir, o código vence.**
 
 ## Regras de leitura da imagem
 
@@ -91,7 +91,7 @@ meio de um "pente" de setas paralelas (ex.: `E–L`, perdida entre `D–K` e `F�
 | CP | vermelho | `center` | letra única |
 | MART | azul | `mart` | letra única |
 | HOUSE | roxo | `houses[]` | adiciona a letra responsável |
-| RKT | laranja | `museum` (Equipe Rocket) | convenção viva = ponto único |
+| SPEC | retângulo laranja + palavra "SPEC" | `specialMission` | ponto(s) — pode haver mais de um (ex.: Celadon com 2), cada um com seu nó |
 | GRASS | verde | `green[]` | **nó dedicado** `g3x` sobre o retângulo, **capture-only** |
 
 **Coordenadas:** centro normalizado `(0–1)` de cada letra/retângulo. São **estimativas**,
