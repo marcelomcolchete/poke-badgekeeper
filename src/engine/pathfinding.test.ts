@@ -29,7 +29,7 @@ describe('grafo de Pewter', () => {
   it('os pontos de sítio existem no grafo (ginásio = j)', () => {
     const sn = PEWTER.siteNodes
     expect(sn.gym).toBe('j')
-    for (const id of [sn.gym, sn.center, sn.mart, ...sn.museum, ...sn.houses, ...sn.green]) {
+    for (const id of [sn.gym, sn.center, sn.mart, ...sn.specialMission, ...sn.houses, ...sn.green]) {
       expect(GRAPH.nodes[id], id).toBeDefined()
     }
   })

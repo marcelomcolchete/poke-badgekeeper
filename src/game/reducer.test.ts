@@ -38,7 +38,7 @@ function controlledMission(over: Partial<MissionInstance> = {}): MissionInstance
 }
 
 function dayState(over: Partial<GameState> = {}): GameState {
-  return { ...createInitialState(SEED), run: { cityIndex: 0, day: 1, seed: SEED, phase: 'DAY', ballLevel: 0 }, gym: { types: GYM }, ...over }
+  return { ...createInitialState(SEED), run: { cityIndex: 0, day: 1, seed: SEED, phase: 'DAY', ballLevel: 0, specialChances: [] }, gym: { types: GYM }, ...over }
 }
 
 describe('reducer — pureza e determinismo', () => {
@@ -151,17 +151,18 @@ describe('fluxo de missão (PLAN §4.2/§4.3)', () => {
     expect(s.run.phase).toBe('SUMMARY') // sem pendências, o dia fecha
   })
 
-  it('Equipe Rocket como pop-up não causa derrota instantânea ao bater 18h', () => {
-    const rocket = controlledMission({ templateId: 'rocket', expiresAtMs: 250_000 })
-    let s = dayState({ roster: [strong('a')], missions: [rocket] })
+  it('Missão Especial expirada vai para SUMMARY (sem GAMEOVER — Plan A sem Rocket)', () => {
+    const special = controlledMission({ templateId: 'special', expiresAtMs: 250_000 })
+    let s = dayState({ roster: [strong('a')], missions: [special] })
     s = reducer(s, { type: 'TICK', deltaMs: 190_000 }) // passa do fim do dia, antes do timer
-    expect(s.run.phase).toBe('DAY') // NÃO perdeu — ainda dá para batalhar
+    expect(s.run.phase).toBe('DAY') // ainda aguarda o pop-up resolver
     expect(s.missions[0]?.status).toBe('available')
 
-    // Ignorar até o timer da Rocket esgotar mantém a punição (derrota imediata por Rocket).
+    // Timer esgota: missão expira, dia fecha normalmente (SUMMARY, não GAMEOVER).
     s = reducer(s, { type: 'TICK', deltaMs: 100_000 })
-    expect(s.run.phase).toBe('GAMEOVER')
-    expect(s.run.gameOverReason).toBe('rocket')
+    expect(s.missions[0]?.status).toBe('resolved')
+    expect(s.missions[0]?.result).toBe('expired')
+    expect(s.run.phase).toBe('SUMMARY')
   })
 })
 

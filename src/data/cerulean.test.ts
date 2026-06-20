@@ -1,6 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { TOTAL_DAYS } from '../engine/constants.ts'
-import { buildDaySchedule, rocketDays } from '../engine/timeline.ts'
 import { pathDistance, shortestPath } from '../engine/pathfinding.ts'
 import { getCity, nodesForCategory } from './cities.ts'
 
@@ -87,37 +85,13 @@ describe('Cerulean (cidade 2)', () => {
     expect(pathDistance(graph, back)).toBeLessThan(pathDistance(graph, out))
   })
 
-  it('a Rocket tem um ÚNICO ponto (x); as 2 missões da run colapsam nele', () => {
-    const rocketNodes = nodesForCategory(siteNodes, 'special')
-    expect(rocketNodes).toEqual(['x']) // ponto único (5.2)
-
-    for (let seed = 1; seed <= 40; seed++) {
-      const days = rocketDays(seed)
-      expect(days).toHaveLength(2)
-      expect(new Set(days).size).toBe(2) // dias distintos — nunca as duas no mesmo dia
-
-      const first = buildDaySchedule(seed, days[0] as number, CERULEAN).missions.find(
-        (m) => m.category === 'special',
-      )
-      const second = buildDaySchedule(seed, days[1] as number, CERULEAN).missions.find(
-        (m) => m.category === 'special',
-      )
-      expect(rocketNodes[first?.siteIndex ?? -1]).toBe('x') // 1ª → x
-      expect(rocketNodes[second?.siteIndex ?? -1]).toBe('x') // 2ª → x (colapsa no ponto único)
-    }
+  it('a Missão Especial tem um ÚNICO ponto (x)', () => {
+    expect(nodesForCategory(siteNodes, 'special')).toEqual(['x'])
+    expect(siteNodes.specialMission).toEqual(['x'])
   })
 
   it("'m' (antiga 2ª Rocket) virou área de exploração/captura", () => {
     expect(nodesForCategory(siteNodes, 'special')).not.toContain('m')
     expect(siteNodes.green).toContain('m')
-  })
-
-  it('em dias sem Rocket não há missão Rocket', () => {
-    const days = rocketDays(99)
-    const off = [...Array(TOTAL_DAYS).keys()].map((i) => i + 1).find((d) => !days.includes(d))
-    expect(off).toBeDefined()
-    expect(
-      buildDaySchedule(99, off as number, CERULEAN).missions.some((m) => m.category === 'special'),
-    ).toBe(false)
   })
 })

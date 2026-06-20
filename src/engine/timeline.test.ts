@@ -7,18 +7,12 @@ import {
   SPAWN_WINDOW_FRACTION,
 } from './balance.ts'
 import { getCity, nodesForCategory } from '../data/cities.ts'
-import { buildDaySchedule, defensesForDay, missionsForDay, rocketDays } from './timeline.ts'
+import { buildDaySchedule, defensesForDay, missionsForDay } from './timeline.ts'
 
 const PEWTER = getCity(0)
 const SEGMENT_MS = DAY_LENGTH_MS / DAY_SEGMENTS
 /** Maior horário possível de surgimento: início do último momento + janela dele. */
 const LATEST_SPAWN = (DAY_SEGMENTS - 1) * SEGMENT_MS + SEGMENT_MS * SPAWN_WINDOW_FRACTION
-
-/** Nº esperado de missões: base do dia + 1 se hoje for um dos 2 dias da Equipe Rocket. */
-function expectedMissionCount(seed: number, day: number): number {
-  const extra = rocketDays(seed).includes(day) ? 1 : 0
-  return missionsForDay(day) + extra
-}
 
 /** Quantos eventos caem em cada um dos 3 momentos do dia. */
 function countsPerSegment(times: number[]): number[] {
@@ -62,7 +56,7 @@ describe('buildDaySchedule (PLAN §3.1/§4.8)', () => {
 
   it('quantidade casa com missionsForDay/defensesForDay', () => {
     const sched = buildDaySchedule(123, 6, PEWTER)
-    expect(sched.missions).toHaveLength(expectedMissionCount(123, 6))
+    expect(sched.missions).toHaveLength(missionsForDay(6))
     expect(sched.defenses).toHaveLength(defensesForDay(6))
     expect(sched.day).toBe(6)
   })
@@ -139,23 +133,12 @@ describe('buildDaySchedule (PLAN §3.1/§4.8)', () => {
     }
   })
 
-  it('missão da Equipe Rocket surge nos 2 dias semeados (extra), com o template rocket', () => {
-    const days = rocketDays(99)
-    expect(days).toHaveLength(2)
-    expect(new Set(days).size).toBe(2) // dias distintos
-    for (const d of days) {
-      const rocketMissions = buildDaySchedule(99, d, PEWTER).missions.filter(
-        (m) => m.category === 'rocket',
-      )
-      expect(rocketMissions).toHaveLength(1)
-      expect(rocketMissions[0]?.templateId).toBe('rocket')
-    }
-    // Num dia fora da lista, não há missão Rocket.
-    const off = [...Array(TOTAL_DAYS).keys()].map((i) => i + 1).find((d) => !days.includes(d))
-    if (off !== undefined) {
-      expect(
-        buildDaySchedule(99, off, PEWTER).missions.some((m) => m.category === 'rocket'),
-      ).toBe(false)
+  it('buildDaySchedule não injeta especiais (isso é responsabilidade do setupDay)', () => {
+    for (let seed = 1; seed <= 30; seed++) {
+      for (let day = 1; day <= TOTAL_DAYS; day++) {
+        const cats = buildDaySchedule(seed, day, PEWTER).missions.map((m) => m.category)
+        expect(cats).not.toContain('special')
+      }
     }
   })
 
