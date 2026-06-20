@@ -7,16 +7,17 @@ import type { CityData } from '../data/types.ts'
 import type { MissionCategory } from '../types/index.ts'
 import { nodesForCategory } from '../data/cities.ts'
 import { createRng, deriveSeed, type Rng } from './rng.ts'
-import { DAY_LENGTH_MS, DAY_SEGMENTS, ROCKET_SEED_SALT, TOTAL_DAYS } from './constants.ts'
+import { DAY_LENGTH_MS, DAY_SEGMENTS, TOTAL_DAYS } from './constants.ts'
 import {
   CAPTURE_SPOTS_PER_DAY,
   DAILY_CATEGORY_POOL,
   DAY1_FIRST_MISSION_DELAY_MS,
   MISSIONS_PER_DAY,
   NORMAL_CATEGORY_POOL,
-  ROCKET_DAY_MAX,
-  ROCKET_DAY_MIN,
-  ROCKET_MISSIONS_TOTAL,
+  SPECIAL_CHANCE_GROWTH_MAX,
+  SPECIAL_CHANCE_GROWTH_MIN,
+  SPECIAL_CHANCE_MAX,
+  SPECIAL_CHANCE_START,
   SPAWN_WINDOW_FRACTION,
 } from './balance.ts'
 import { clamp } from './math.ts'
@@ -45,7 +46,7 @@ export interface MissionSlot {
   category: MissionCategory
   /** Índice do sítio (dentro da lista da categoria) onde a missão surge. */
   siteIndex: number
-  /** Template fixo (missão Equipe Rocket); ausente = sorteia da categoria. */
+  /** Template fixo (Missão Especial); ausente = sorteia da categoria. */
   templateId?: string
 }
 
@@ -62,19 +63,6 @@ export interface DaySchedule {
   captureSiteIndices: number[]
   /** Horário (ms de jogo) em que cada captura surge — alinhado a captureSiteIndices. */
   captureSpawnsAtMs: number[]
-}
-
-/**
- * Os 2 dias (semeados, DISTINTOS) em que a missão EXTRA da Equipe Rocket surge na run —
- * fora do agendamento normal (PLAN — Rocket Team).
- */
-export function rocketDays(seed: number): number[] {
-  const rng = createRng(deriveSeed(seed, ROCKET_SEED_SALT))
-  const pool = Array.from({ length: ROCKET_DAY_MAX - ROCKET_DAY_MIN + 1 }, (_, i) => ROCKET_DAY_MIN + i)
-  return rng
-    .shuffle(pool)
-    .slice(0, ROCKET_MISSIONS_TOTAL)
-    .sort((a, b) => a - b)
 }
 
 /** Duração de cada um dos 3 momentos (minutos) do dia. */
@@ -162,6 +150,32 @@ function captureSpawns(rng: Rng, day: number, count: number): number[] {
   return Array.from({ length: count }, () => (day === 1 ? 0 : randomTime(rng)))
 }
 
+export interface SpecialRoll {
+  /** Índices (em city.siteNodes.specialMission) que ACERTARAM hoje — uma missão cada. */
+  hits: number[]
+  /** Novas chances correntes por local (reset a START nos hits; crescidas nos misses, cap MAX). */
+  nextChances: number[]
+}
+
+/**
+ * Rola, POR LOCAL e de forma independente, a chance corrente de Missão Especial. Acertou →
+ * o índice entra em `hits` e a chance volta a SPECIAL_CHANCE_START; errou → cresce um inteiro
+ * aleatório em [GROWTH_MIN, GROWTH_MAX] pontos percentuais, com teto SPECIAL_CHANCE_MAX. Puro:
+ * toda aleatoriedade vem do `rng` recebido (o chamador usa takeRng no abrir do dia).
+ */
+export function rollSpecialMissions(rng: Rng, chances: readonly number[]): SpecialRoll {
+  const hits: number[] = []
+  const nextChances = chances.map((chance, i) => {
+    if (rng.bool(chance / 100)) {
+      hits.push(i)
+      return SPECIAL_CHANCE_START
+    }
+    const growth = rng.int(SPECIAL_CHANCE_GROWTH_MIN, SPECIAL_CHANCE_GROWTH_MAX)
+    return Math.min(SPECIAL_CHANCE_MAX, chance + growth)
+  })
+  return { hits, nextChances }
+}
+
 /** Agenda completa do dia, reprodutível pelo seed da run + dia (PLAN §3.1/§4.8). */
 export function buildDaySchedule(seed: number, day: number, city: CityData): DaySchedule {
   const rng = createRng(deriveSeed(seed, day))
@@ -175,28 +189,13 @@ export function buildDaySchedule(seed: number, day: number, city: CityData): Day
     }),
   )
 
-  // 2) Missão EXTRA da Equipe Rocket: 2× na run, em dias sorteados (distintos, nunca no mesmo
-  //    dia). O ponto segue a ORDEM de aparição: a 1ª (dia mais cedo) nasce em museum[0], a 2ª
-  //    em museum[1] — em Cerulean, 5.2 e depois 5.1. Cidades com um só ponto Rocket colapsam
-  //    no índice 0. Entra no rateio dos 3 momentos como as demais (PLAN — Rocket Team).
-  if (rocketDays(seed).includes(day)) {
-    const rocketSites = Math.max(1, nodesForCategory(city.siteNodes, 'rocket').length)
-    const order = rocketDays(seed).indexOf(day)
-    specs.push({
-      seed: rng.int(0, 0x7fffffff),
-      category: 'rocket',
-      siteIndex: Math.min(order, rocketSites - 1),
-      templateId: 'rocket',
-    })
-  }
-
-  // 3) Distribui as missões igualmente entre os 3 momentos e ordena por horário.
+  // 2) Distribui as missões igualmente entre os 3 momentos e ordena por horário.
   const missionTimes = spawnTimesAcrossSegments(rng, specs.length, day)
   const missions = specs
     .map((spec, i) => ({ ...spec, atMs: missionTimes[i] ?? 0 }))
     .sort((a, b) => a.atMs - b.atMs)
 
-  // 4) Defesas: mesma distribuição em 3 momentos, independente das missões.
+  // 3) Defesas: mesma distribuição em 3 momentos, independente das missões.
   const defenses = scheduleDefenses(rng, defensesForDay(day), day)
   const captureSiteIndices = pickCaptureSpots(rng, city.siteNodes.green.length)
   return {
