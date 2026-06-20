@@ -82,11 +82,11 @@ export interface CitySiteNodes {
   /** Poké Mart: missões 'mart' (recompensa em ouro). */
   mart: string
   /**
-   * Pontos onde a missão da Equipe Rocket surge, EM ORDEM de aparição na run (a 1ª missão
-   * Rocket nasce em `museum[0]`, a 2ª em `museum[1]`…). Cidades com um único ponto Rocket
-   * (ex.: Pewter) usam lista de 1 elemento; Cerulean usa `['x', 'm']` (5.2 e depois 5.1).
+   * Pontos onde a Missão Especial pode surgir (um por local especial da cidade, EM ORDEM).
+   * Cidades com um único local usam lista de 1 elemento; Celadon pode ter 2 (['x', 'y']).
+   * `run.specialChances` é indexado pela ordem desta lista.
    */
-  museum: string[]
+  specialMission: string[]
   /** Casas: missões 'house'. */
   houses: string[]
   /** Áreas verdes (exploração 3.x): APENAS os spots de captura do dia — não hospedam missões. */
@@ -117,7 +117,7 @@ export interface CityData {
   mapH: number
   /** Grafo de deslocamento (pontos a–s + adjacência) — PLAN §3.1. */
   graph: CityGraph
-  /** Mapeamento sítio → ponto do grafo (ginásio, centro, mart, museu, casas, verdes). */
+  /** Mapeamento sítio → ponto do grafo (ginásio, centro, mart, missão especial, casas, verdes). */
   siteNodes: CitySiteNodes
   /** Classes de treinador que podem invadir o ginásio nesta cidade (PLAN §4.4). */
   trainers: TrainerId[]

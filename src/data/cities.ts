@@ -598,8 +598,8 @@ export function nodesByKind(siteNodes: CitySiteNodes, kind: SiteKind): string[] 
       return [siteNodes.center]
     case 'mart':
       return [siteNodes.mart]
-    case 'museum':
-      return siteNodes.museum
+    case 'specialMission':
+      return siteNodes.specialMission
     case 'house':
       return siteNodes.houses
     case 'green':
