@@ -190,11 +190,6 @@ export interface MissionTemplate {
   healOnSuccess?: boolean
   /** Recompensa: ouro concedido no sucesso (Pokemart). */
   goldOnSuccess?: number
-  /**
-   * Missão da Equipe Rocket: ao concluir a parte de atributos, o time enfrenta um treinador
-   * Rocket numa batalha (PLAN — Rocket Team). As recompensas (ouro + 3× XP) só vêm na vitória.
-   */
-  isRocket?: boolean
 }
 
 export interface PassiveData {
