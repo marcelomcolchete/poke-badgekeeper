@@ -209,7 +209,7 @@ export function resolveMission(
 
 /**
  * Fator de tempo de viagem pela Agilidade total do time (PLAN §4.3): −1%/ponto, soma capada
- * em 100 → piso de 0,1 (10 → 0,90; 90 → 0,10, redução máx. 90%). Run Away reduz mais; Fly zera
+ * em 100 → piso de 0,3 (10 → 0,90; 70 → 0,30, redução máx. 70%). Run Away reduz mais; Fly zera
  * (tratado em graphTravelMs). Devolve o multiplicador a aplicar sobre o tempo-base de deslocamento.
  */
 export function agilityTravelFactor(team: readonly Pokemon[]): number {
@@ -266,7 +266,7 @@ export function travelRoute(
 
 /**
  * Tempo de execução parado no local pela Inteligência total do time (PLAN §4.3): −1%/ponto,
- * soma capada em 100 → piso de 0,1 (90 de Inteligência reduz 90% do tempo de execução).
+ * soma capada em 100 → piso de 0,3 (70 de Inteligência reduz 70% do tempo de execução).
  */
 export function executionMs(team: readonly Pokemon[], baseExecutionMs: number): number {
   const intelligence = teamAxisSum(team, 'inteligencia') // 0–100 (já capado em TEAM_ATTR_MAX)
