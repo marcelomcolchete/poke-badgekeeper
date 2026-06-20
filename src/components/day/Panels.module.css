@@ -51,6 +51,60 @@
   color: var(--c-grass-dark);
 }
 
+/* Lista de efeitos ativos da missão (habilidades/itens) — ganho verde, perda vermelha. */
+.effectList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.effectRow {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: var(--radius-pixel);
+  border-left: 4px solid transparent;
+  font-family: var(--font-text);
+  font-size: 13px;
+  background: var(--c-panel);
+}
+
+.effectGain {
+  border-left-color: #2f8f3f;
+}
+
+.effectLoss {
+  border-left-color: #e05050;
+}
+
+.effectInfo {
+  border-left-color: var(--c-panel-border);
+}
+
+.effectName {
+  font-weight: bold;
+  color: var(--c-ink);
+}
+
+.effectGain .effectValue {
+  color: #2f8f3f;
+  font-weight: bold;
+}
+
+.effectLoss .effectValue {
+  color: #e05050;
+  font-weight: bold;
+}
+
+.effectReason {
+  color: var(--c-ink-muted);
+  font-size: 12px;
+}
+
 .selectedTeam {
   display: flex;
   flex-direction: column;
