@@ -9,7 +9,7 @@ import { draft } from './runtime.ts'
 import { tick } from './dayClock.ts'
 import { startRun } from './setup.ts'
 import { advancePhase, setSpeed } from './phaseFlow.ts'
-import { acceptMission, completeRocketBattle, resolveRocketBattle } from './missionFlow.ts'
+import { acceptMission } from './missionFlow.ts'
 import { assignDefense, completeDefense } from './defenseFlow.ts'
 import {
   capturePick,
@@ -53,12 +53,6 @@ export function reducer(state: GameState, action: GameAction): GameState {
       break
     case 'COMPLETE_DEFENSE':
       completeDefense(s, action.defenseId)
-      break
-    case 'RESOLVE_ROCKET_BATTLE':
-      resolveRocketBattle(s, action.missionId)
-      break
-    case 'COMPLETE_ROCKET_BATTLE':
-      completeRocketBattle(s, action.missionId)
       break
     case 'START_SEARCH':
       startSearch(s, action.searcherId, action.spotIndex)
