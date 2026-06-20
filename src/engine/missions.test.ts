@@ -62,11 +62,11 @@ describe('missionSuccessProbability (PLAN §4.2)', () => {
     )
   })
 
-  it('soma do time é capada no teto do time (70) por eixo', () => {
+  it('soma do time é capada no teto do time (100) por eixo', () => {
     const big = makeMon({ baseAttrs: makeAttrs({ agilidade: 50 }), allocations: undefined })
-    const team = [big, big, big] // 3×50 = 150 → cap 70
+    const team = [big, big, big] // 3×50 = 150 → cap 100
     const req = makeAttrs({ agilidade: 100 }, 10)
-    // Com a soma capada em 70, o eixo agilidade cobre 70 da exigência (min = 70).
+    // Com a soma capada em 100, o eixo agilidade cobre 100 da exigência (min = 100).
     expect(missionSuccessProbability(team, req)).toBeGreaterThan(0)
   })
 })
@@ -115,7 +115,7 @@ describe('generateRequirement (rebalanceamento)', () => {
     expect(a).toEqual(b)
   })
 
-  it('todo eixo fica em [0, 70]', () => {
+  it('todo eixo fica em [0, 100]', () => {
     for (let seed = 1; seed <= 20; seed++) {
       const { requirement } = generateRequirement(createRng(seed), 7, patrulha)
       for (const key of ATTR_KEYS) {
@@ -142,26 +142,45 @@ describe('generateRequirement (rebalanceamento)', () => {
     expect(day9).toBeGreaterThan(day1)
   })
 
-  it('mega: secundário sorteado igual ao principal concentra tudo num eixo (~70)', () => {
-    // Varre seeds até cair no caso mega (secondaryAttr === principal).
+  it('resto evolui com o dia: abaixo de 5–20 cedo, na faixa-base no dia 6, sobe devagar', () => {
+    // Seed não-mega (secundário ≠ principal) → sobram eixos "resto" limpos p/ inspecionar.
+    let seed = 1
+    while (generateRequirement(createRng(seed), 6, patrulha).secondaryAttr === 'batalha') seed++
+    const secondary = generateRequirement(createRng(seed), 6, patrulha).secondaryAttr
+    const day1 = generateRequirement(createRng(seed), 1, patrulha).requirement
+    const day6 = generateRequirement(createRng(seed), 6, patrulha).requirement
+    const day15 = generateRequirement(createRng(seed), 15, patrulha).requirement
+    const restAxes = ATTR_KEYS.filter((k) => k !== 'batalha' && k !== secondary)
+    expect(restAxes.length).toBeGreaterThan(0)
+    for (const r of restAxes) {
+      // No dia 6 o termo é zero → cai exatamente na faixa-base 5–20.
+      expect(day6[r]).toBeGreaterThanOrEqual(5)
+      expect(day6[r]).toBeLessThanOrEqual(20)
+      expect(day1[r]).toBeLessThan(day6[r]) // primeiros dias abaixo da faixa-base
+      expect(day15[r]).toBeGreaterThan(day6[r]) // evolução lenta e contínua depois
+    }
+  })
+
+  it('mega: secundário sorteado igual ao principal concentra tudo num eixo (~100)', () => {
+    // Varre seeds até cair no caso mega (secondaryAttr === principal). No dia 20 o
+    // principal + secundário satura no teto do time (100).
     let mega: ReturnType<typeof generateRequirement> | null = null
     for (let seed = 1; seed <= 200 && !mega; seed++) {
-      const g = generateRequirement(createRng(seed), 8, patrulha)
+      const g = generateRequirement(createRng(seed), 20, patrulha)
       if (g.secondaryAttr === 'batalha') mega = g
     }
     expect(mega).not.toBeNull()
-    expect(mega?.requirement.batalha).toBe(TEAM_ATTR_MAX) // principal + secundário no dia 8 satura em 70
+    expect(mega?.requirement.batalha).toBe(TEAM_ATTR_MAX) // principal + secundário no dia 20 satura em 100
   })
 
-  it('special5 (Equipe Rocket): 5 eixos principais + 1 resto e ao menos um no máximo (70)', () => {
+  it('special5 (Equipe Rocket): 3 principais + 2 secundários + 1 resto, nada forçado ao teto', () => {
     for (let seed = 1; seed <= 20; seed++) {
       const { requirement, secondaryAttr } = generateRequirement(createRng(seed), 3, ROCKET_TEAM_TEMPLATE)
       expect(secondaryAttr).toBeNull()
-      // Principal (dia≥1) sempre > 20; resto sempre ≤ 20 → contagem separa os dois grupos.
-      const principals = ATTR_KEYS.filter((k) => requirement[k] > 20).length
-      expect(principals).toBe(5)
-      // Regra Rocket: pelo menos um dos 5 principais obrigatoriamente no teto.
-      expect(ATTR_KEYS.some((k) => requirement[k] === TEAM_ATTR_MAX)).toBe(true)
+      // Dia 3: principais (≥30) e secundários (≥20) reforçados; resto ≤18 → 5 reforçados + 1 resto.
+      expect(ATTR_KEYS.filter((k) => requirement[k] >= 20).length).toBe(5)
+      // Sem o forçado-ao-máximo: no dia 3 nenhum eixo chega ao teto do time.
+      expect(ATTR_KEYS.every((k) => requirement[k] < TEAM_ATTR_MAX)).toBe(true)
     }
   })
 
@@ -179,11 +198,11 @@ describe('tempos de viagem/execução (PLAN §4.3)', () => {
     expect(graphTravelMs(10, fast)).toBeLessThan(graphTravelMs(10, slow))
   })
 
-  it('Agilidade reduz 1%/ponto: 10 → 0,90; soma capada no teto (70) → piso 0,30', () => {
+  it('Agilidade reduz 1%/ponto: 10 → 0,90; soma capada no teto (100) → piso 0,10', () => {
     const agi10 = [makeMon({ baseAttrs: makeAttrs({ agilidade: 10 }) })]
     expect(agilityTravelFactor(agi10)).toBeCloseTo(0.9, 5)
     const fifty = makeMon({ baseAttrs: makeAttrs({ agilidade: 50 }) })
-    expect(agilityTravelFactor([fifty, fifty])).toBeCloseTo(0.3, 5) // soma 100 → cap 70 → −70%
+    expect(agilityTravelFactor([fifty, fifty])).toBeCloseTo(0.1, 5) // soma 100 → −100% → piso 0,10
   })
 
   it('Fly (sozinho) voa em linha reta: caminho mais curto que o do grafo, mas não-zero', () => {
@@ -232,6 +251,11 @@ describe('tempos de viagem/execução (PLAN §4.3)', () => {
     const dumb = [makeMon({ baseAttrs: makeAttrs({ inteligencia: 10 }) })]
     const smart = [makeMon({ baseAttrs: makeAttrs({ inteligencia: 50 }) })]
     expect(executionMs(smart, 30_000)).toBeLessThan(executionMs(dumb, 30_000))
+  })
+
+  it('Inteligência reduz até −90% (piso 0,10) com a soma no teto', () => {
+    const fifty = makeMon({ baseAttrs: makeAttrs({ inteligencia: 50 }) })
+    expect(executionMs([fifty, fifty], 30_000)).toBeCloseTo(3_000, 5) // soma 100 → −100% → piso 0,10
   })
 
   it('duração = ida + volta (deslocamento) + execução', () => {

@@ -85,8 +85,8 @@ export function effectiveAttrs(p: Pokemon): Attrs {
 }
 
 /**
- * Soma do time num eixo, capada em TEAM_ATTR_MAX (70) — o máximo da missão (PLAN §4.2).
- * Como cada Pokémon vai no máx. 60, só com 2+ Pokémon dá pra chegar a 70 num eixo.
+ * Soma do time num eixo, capada em TEAM_ATTR_MAX (100) — o máximo da missão (PLAN §4.2).
+ * Como cada Pokémon vai no máx. 60, só com 2+ Pokémon dá pra chegar a 100 num eixo.
  */
 export function teamAxisSum(team: readonly Pokemon[], key: AttrKey): number {
   const total = team.reduce((sum, p) => sum + effectiveAttr(p, key), 0)

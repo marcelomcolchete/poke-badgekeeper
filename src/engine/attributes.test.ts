@@ -74,11 +74,11 @@ describe('effectiveAttr', () => {
 })
 
 describe('teamAxisSum / teamSum', () => {
-  it('soma por eixo, capada no teto do time (70)', () => {
+  it('soma por eixo, capada no teto do time (100)', () => {
     const a = makeMon({ baseAttrs: makeAttrs({ agilidade: 50 }) })
     const b = makeMon({ baseAttrs: makeAttrs({ agilidade: 50 }) })
     const c = makeMon({ baseAttrs: makeAttrs({ agilidade: 50 }) })
-    expect(teamAxisSum([a, b], 'agilidade')).toBe(TEAM_ATTR_MAX) // 100 → cap no teto do time
+    expect(teamAxisSum([a, b], 'agilidade')).toBe(TEAM_ATTR_MAX) // 100 → no teto do time
     expect(teamAxisSum([a, b, c], 'agilidade')).toBe(TEAM_ATTR_MAX) // 150 → cap no teto do time
   })
 

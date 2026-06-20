@@ -46,19 +46,19 @@ export const RETURN_SPEED_BONUS_ON_SUCCESS = 1.5
 
 /**
  * Missões §4.3: a Agilidade total do time reduz o tempo de viagem em 1% por ponto
- * (10 → −10%, 70 → −70%). Como a soma do time é capada em 70 (TEAM_ATTR_MAX), a redução
- * máxima é 70% — daí o piso MISSION_TIME_FLOOR.
+ * (10 → −10%, 90 → −90%). Como a soma do time é capada em 100 (TEAM_ATTR_MAX), a redução
+ * máxima é 90% — daí o piso MISSION_TIME_FLOOR.
  */
 export const AGILITY_TIME_REDUCTION_PER_POINT = 0.01
 
 /**
  * Missões §4.3: a Inteligência total do time reduz o tempo de EXECUÇÃO no local em 1% por
- * ponto (70 → −70%). Mesma curva da Agilidade, com o mesmo piso de 0,3 (−70% no máximo).
+ * ponto (90 → −90%). Mesma curva da Agilidade, com o mesmo piso de 0,1 (−90% no máximo).
  */
 export const INT_TIME_REDUCTION_PER_POINT = 0.01
 
-/** Piso do fator de tempo de viagem/execução: redução máxima de 70% (Agilidade/Inteligência 70). */
-export const MISSION_TIME_FLOOR = 0.3
+/** Piso do fator de tempo de viagem/execução: redução máxima de 90% (Agilidade/Inteligência 90). */
+export const MISSION_TIME_FLOOR = 0.1
 
 /** Captura §4.5: tempo-base de busca (reduzido pela Inteligência) e fator da passiva Keen Eye. */
 export const BASE_SEARCH_MS = 30_000
@@ -98,7 +98,7 @@ export const MISSION_GOAL_FRACTION = 0.5
 
 /**
  * Geração da EXIGÊNCIA das missões (rebalanceamento). Cada eixo é sorteado numa faixa-base
- * e somado ao termo do dia: base + DAY_SCALE · dia / DAY_DIVISOR, com teto ATTR_MAX (60).
+ * e somado ao termo do dia: base + DAY_SCALE · dia / DAY_DIVISOR, com teto TEAM_ATTR_MAX (100).
  * Principal = mais exigido; secundário = 2º mais; resto = os demais eixos.
  */
 export const MISSION_PRINCIPAL_MIN = 20
@@ -110,10 +110,18 @@ export const MISSION_REST_MAX = 20
 /** Termo do dia: DAY_SCALE × dia ÷ DAY_DIVISOR somado à faixa-base (principal e secundário). */
 export const MISSION_DAY_SCALE = 10
 export const MISSION_DAY_DIVISOR = 3
+/**
+ * Termo do dia do RESTO (evolução muito suave): SLOPE × (dia − PIVOT). Ancorado no PIVOT,
+ * o resto começa ABAIXO da faixa-base 5–20 nos primeiros dias, cai exatamente na faixa-base
+ * no dia 6 e sobe devagar depois (~0,8/dia vs. ~3,3/dia do principal).
+ */
+export const MISSION_REST_DAY_SLOPE = 0.8
+export const MISSION_REST_DAY_PIVOT = 6
 /** Quantos eixos principais/secundários cada modo especial gera. */
 export const SPECIAL2_PRINCIPALS = 2
 export const SPECIAL2_SECONDARIES = 1
-export const SPECIAL5_PRINCIPALS = 5
+export const SPECIAL5_PRINCIPALS = 3
+export const SPECIAL5_SECONDARIES = 2
 
 /**
  * Quantidade FIXA de missões por dia (índice = dia − 1), igual para todas as cidades —
