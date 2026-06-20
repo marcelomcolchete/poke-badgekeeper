@@ -33,8 +33,14 @@ export interface RunInfo {
    * uma raridade a mais nos encontros da exploração. Sobe ao comprar a próxima bola no mercado.
    */
   ballLevel: number
+  /**
+   * Chance corrente (%) de Missão Especial por LOCAL, indexada pela ordem de
+   * `city.siteNodes.specialMission`. Inicia em SPECIAL_CHANCE_START quando a cidade começa;
+   * rolada e mutada no abrir de cada dia (setupDay). Vazio antes de a cidade ser preparada.
+   */
+  specialChances: number[]
   /** Motivo da derrota quando phase === 'GAMEOVER' (mensagem da tela de fim de jogo). */
-  gameOverReason?: 'gym' | 'stars' | 'rocket' | 'fainted'
+  gameOverReason?: 'gym' | 'stars' | 'fainted'
 }
 
 export interface ClockState {
@@ -53,7 +59,6 @@ export type MissionStatus =
   | 'available' // popup no mapa, aceitável até expirar
   | 'traveling' // time a caminho da missão (ida) — PLAN §4.3
   | 'inProgress' // executando no local
-  | 'battle' // Rocket Team: parte de atributos concluída, aguardando a batalha do jogador
   | 'returning' // desfecho aplicado; time voltando ao ginásio
   | 'resolved' // concluída e time já em casa (ver result)
 
@@ -144,30 +149,6 @@ export interface MissionInstance {
    * tela de finalização. Ausente em falha/missões antigas (cai no fallback 0).
    */
   xpAwards?: Record<string, number>
-  /**
-   * Batalha da Equipe Rocket: presente só nas missões Rocket que CUMPRIRAM a parte de
-   * atributos. O time enfrenta o treinador na ordem em que foi despachado; as recompensas
-   * (ouro-bônus + 3× XP) só são aplicadas ao VENCER (PLAN — Rocket Team).
-   */
-  rocket?: RocketBattle
-}
-
-/** Batalha da missão Equipe Rocket (anexada à instância após cumprir a parte de atributos). */
-export interface RocketBattle {
-  /** Treinador Rocket sorteado (define o elenco e a arte). */
-  trainerId: TrainerId
-  /** Esquadrão inimigo (mesma quantidade por dia que a defesa de ginásio), com medalhas do dia. */
-  enemies: EnemyUnit[]
-  /** Log da cadeia de duelos, preenchido ao resolver a batalha. */
-  duels?: DuelLog[]
-  /** Venceu a batalha? (definido ao resolver). */
-  won?: boolean
-  /** Batalha já resolvida (HP/ouro aplicados)? Evita resolver duas vezes ao reabrir. */
-  resolved?: boolean
-  /** XP/recompensas já aplicados ao concluir a animação? (idempotência). */
-  rewardApplied?: boolean
-  /** Sub-seed de evolução do XP por vitória, sorteado ao resolver. */
-  xpSeed?: number
 }
 
 export type DefenseStatus =
@@ -526,7 +507,7 @@ export function emptyLifetime(): LifetimeStats {
 /** Estado inicial de uma nova run (antes da escolha do inicial e dos tipos do ginásio). */
 export function createInitialState(seed: number): GameState {
   return {
-    run: { cityIndex: 0, day: 1, seed, phase: 'MORNING', ballLevel: 0 },
+    run: { cityIndex: 0, day: 1, seed, phase: 'MORNING', ballLevel: 0, specialChances: [] },
     clock: { dayElapsedMs: 0, dayLengthMs: DAY_LENGTH_MS, speed: 0 },
     gym: { types: [] },
     roster: [],
