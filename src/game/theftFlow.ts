@@ -152,14 +152,14 @@ function releaseChasers(s: GameState): void {
   s.theft = { ...s.theft!, chaserIds: [], chaserArriveAtMs: [], chaserStartAtMs: [] }
 }
 
-/** Tira 0,5 coração de TODO o roster (desfecho de falha — B7). */
+/** Tira 1 coração de TODO o roster (desfecho de falha — B7). */
 function allRosterMinusOneHeart(s: GameState): void {
-  s.roster = s.roster.map((p) => ({ ...p, hearts: applyHeartDelta(p.hearts, -0.5) }))
+  s.roster = s.roster.map((p) => ({ ...p, hearts: applyHeartDelta(p.hearts, -1) }))
 }
 
 /**
  * Desfecho de FALHA (perda da batalha OU fuga na janela de graça — B7): remove o Pokémon roubado
- * do roster e tira 0,5 coração de todo o resto. Reseta a perseguição e marca 'resolved'.
+ * do roster e tira 1 coração de todo o resto. Reseta a perseguição e marca 'resolved'.
  */
 export function resolveTheftLoss(s: GameState): void {
   const theft = s.theft
@@ -298,19 +298,25 @@ export function resolveTheftBattle(s: GameState): void {
       xpSeed: takeRng(s).int(0, 0x7fffffff),
     }
   } else {
-    // Derrota: grava o log de duelos antes de resolver a perda (a animação mostra a batalha).
-    s.theft = { ...theft, duels: resolution.duels, won: false }
-    resolveTheftLoss(s)
+    // Derrota: grava o log de duelos e marca resolved=true, mas MANTÉM fase 'battle' para a UI
+    // animar a batalha. A finalização (remoção do mon + corações) ocorre em completeTheftBattle.
+    s.theft = { ...theft, phase: 'battle', duels: resolution.duels, won: false, resolved: true }
   }
 }
 
 /**
- * Conclui a batalha de resgate ao fim da animação (só na vitória): aplica 3× o XP de uma batalha de
- * ginásio por duelo vencido, libera os perseguidores e marca 'resolved'. Idempotente.
+ * Conclui a batalha de resgate ao fim da animação: vitória → aplica 3× XP por duelo vencido,
+ * libera perseguidores e marca 'resolved'; derrota → chama resolveTheftLoss (remove mon + −1 coração
+ * + resolved). Simétrico: tanto vitória quanto derrota finalizam aqui, após a UI animar. Idempotente.
  */
 export function completeTheftBattle(s: GameState): void {
   const theft = s.theft
   if (!theft || theft.phase === 'resolved') return
+  if (theft.won === false && theft.resolved) {
+    // Derrota confirmada: finaliza a perda agora (após animação da batalha).
+    resolveTheftLoss(s)
+    return
+  }
   if (theft.won && theft.duels) {
     const xpById = new Map<string, number>()
     let theirs = 0

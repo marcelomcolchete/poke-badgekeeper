@@ -119,7 +119,7 @@ describe('processTheft — fuga e chegada', () => {
     processTheft(s, grace + 1)
     expect(s.theft!.phase).toBe('resolved')
     expect(s.roster.find((p) => p.id === 'p1')).toBeUndefined() // removido
-    expect(heartsOf(s.roster.find((p) => p.id === 'p2')!.hearts)).toBe(heartsBefore - 0.5)
+    expect(heartsOf(s.roster.find((p) => p.id === 'p2')!.hearts)).toBe(heartsBefore - 1) // −1 coração (B7)
   })
 })
 
@@ -163,7 +163,27 @@ describe('resolveTheftBattle', () => {
     expect(recovered.currentHp).toBe(3) // mesmo HP
   })
 
-  it('derrota perde o Pokémon e tira 1 coração de todo o roster', () => {
+  it('derrota: resolveTheftBattle não finaliza ainda (mon presente, fase battle)', () => {
+    const s = dayState()
+    s.run.theftChance = 100
+    rollTheftAtDayOpen(s)
+    s.roster = [
+      makeMon({ id: 'p1', status: 'idle' }),
+      makeMon({ id: 'c1', status: 'idle', baseAttrs: { ...zero, batalha: 1 } }),
+    ]
+    spawnTheft(s, 0)
+    s.theft!.enemies = [{ battle: 60, types: ['normal'] }] // c1 perde
+    dispatchTheftChasers(s, ['c1'])
+    s.theft!.phase = 'battle'
+    resolveTheftBattle(s)
+    // Após resolveTheftBattle isolado: derrota gravada mas mon ainda presente (UI anima a batalha).
+    expect(s.theft!.won).toBe(false)
+    expect(s.theft!.resolved).toBe(true)
+    expect(s.theft!.phase).toBe('battle') // ainda na fase battle (não resolved)
+    expect(s.roster.find((p) => p.id === 'p1')).toBeDefined() // mon ainda presente
+  })
+
+  it('derrota: completeTheftBattle finaliza — remove mon e tira 1 coração do roster', () => {
     const s = dayState()
     s.run.theftChance = 100
     rollTheftAtDayOpen(s)
@@ -177,14 +197,16 @@ describe('resolveTheftBattle', () => {
     s.theft!.phase = 'battle'
     const before = heartsOf(s.roster.find((p) => p.id === 'c1')!.hearts)
     resolveTheftBattle(s)
+    completeTheftBattle(s) // finaliza a perda após animação
     expect(s.theft!.won).toBe(false)
-    expect(s.roster.find((p) => p.id === 'p1')).toBeUndefined()
-    expect(heartsOf(s.roster.find((p) => p.id === 'c1')!.hearts)).toBe(before - 0.5)
+    expect(s.theft!.phase).toBe('resolved')
+    expect(s.roster.find((p) => p.id === 'p1')).toBeUndefined() // removido
+    expect(heartsOf(s.roster.find((p) => p.id === 'c1')!.hearts)).toBe(before - 1) // −1 coração (B7)
   })
 })
 
 describe('resolveTheftLoss', () => {
-  it('remove o Pokémon roubado e tira 0,5 coração dos restantes, fase resolved', () => {
+  it('remove o Pokémon roubado e tira 1 coração dos restantes, fase resolved', () => {
     const s = dayState()
     s.run.theftChance = 100
     rollTheftAtDayOpen(s)
@@ -194,7 +216,7 @@ describe('resolveTheftLoss', () => {
     resolveTheftLoss(s)
     expect(s.theft!.phase).toBe('resolved')
     expect(s.roster.find((p) => p.id === 'p1')).toBeUndefined()
-    expect(heartsOf(s.roster.find((p) => p.id === 'p2')!.hearts)).toBe(before - 0.5)
+    expect(heartsOf(s.roster.find((p) => p.id === 'p2')!.hearts)).toBe(before - 1) // −1 coração (B7)
   })
 })
 
