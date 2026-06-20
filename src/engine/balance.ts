@@ -343,3 +343,29 @@ export const FOSSIL_STONE_BATTLE_MULT = 1.5
 export const ELECTIRIZER_MISSION_BONUS = 0.5
 /** Exp Share: fração da XP de um Pokémon repassada ao resto do time. */
 export const EXP_SHARE_RATE = 0.05
+
+// ---- Evento de Roubo Rocket 🚨 (Feature B) ------------------------------------------------
+/** Chance-base (%) de o roubo ARMAR no dia; dobra a cada dia sem disparar (1→2→4→…→100). */
+export const THEFT_CHANCE_START = 1
+/** Teto da chance de roubo (%) — a duplicação satura aqui. */
+export const THEFT_CHANCE_MAX = 100
+/** Máximo de perseguidores idle que podem ir atrás da Rocket. */
+export const THEFT_CHASERS_MAX = 3
+/**
+ * Agilidade EFETIVA da Rocket na fuga: o tempo de viagem dela usa a MESMA curva de um time
+ * com 10 de agilidade (agilityTravelFactor → fator 0,90). Lenta o bastante para Pokémon
+ * rápidos alcançarem, rápida o bastante para os lentos não.
+ */
+export const THEFT_FLEE_AGILITY = 10
+/** Janela (ms de jogo) parada no nó mais distante antes de a Rocket escapar de vez. */
+export const THEFT_GRACE_MS = 5_000
+/** Recompensa: a batalha de resgate rende 3× o XP de uma batalha de ginásio (só na vitória). */
+export const THEFT_XP_MULTIPLIER = 3
+/**
+ * Limiar de proximidade (em coordenadas normalizadas 0–1, métrica 16:9 de segmentLength) para um
+ * perseguidor INTERCEPTAR a Rocket. 0,03 ≈ 3% da largura do mapa: maior que o passo típico de um
+ * tick a x3 (`graphTravelMs` dá pernas de vários segundos → << 0,03 por frame), evitando que a
+ * interceptação "pule por cima" da Rocket entre dois ticks, e pequeno o bastante para exigir
+ * encostar de fato. Ajustável na Fase 5.
+ */
+export const THEFT_INTERCEPT_DISTANCE = 0.03
