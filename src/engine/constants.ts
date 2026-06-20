@@ -59,9 +59,6 @@ export const DIG_SEED_SALT = 0xd16
 /** Sub-seed do sorteio de treinadores do dia (defesa): ordena quais classes invadem hoje. */
 export const TRAINER_SEED_SALT = 0x713a
 
-/** Sub-seed que sorteia os 2 dias da missão Equipe Rocket na run (extra, fora da agenda). */
-export const ROCKET_SEED_SALT = 0x526f636b // 'Rock'
-
 /** Sub-seed do mercado da manhã: sorteia os 3 itens do dia (por seed+dia+cidade). */
 export const SHOP_SEED_SALT = 0x53686f70 // 'Shop'
 

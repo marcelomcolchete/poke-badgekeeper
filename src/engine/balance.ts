@@ -200,18 +200,16 @@ export const CAPTURE_SPOTS_PER_DAY = 1
 export const DAY1_FIRST_MISSION_DELAY_MS = 15_000
 
 /**
- * Equipe Rocket: a missão EXTRA aparece 2× na run, em dias DISTINTOS sorteados nesta faixa
- * (evita os extremos do calendário). Não entra no agendamento normal — é um evento à parte.
+ * Missão Especial da Cidade (⭐): cada local tem uma CHANCE corrente (%) que começa em
+ * SPECIAL_CHANCE_START e é rolada no início de cada dia. Acertou → agenda a missão e a chance
+ * volta a START; errou → cresce um inteiro aleatório em [GROWTH_MIN, GROWTH_MAX] pontos
+ * percentuais, com teto SPECIAL_CHANCE_MAX. A conclusão paga SPECIAL_XP_MULTIPLIER× o pool de XP.
  */
-export const ROCKET_DAY_MIN = 3
-export const ROCKET_DAY_MAX = 8
-export const ROCKET_MISSIONS_TOTAL = 2
-
-/** Rocket §recompensa: ouro-bônus por VENCER a batalha (além do ouro de batalha padrão). */
-export const ROCKET_GOLD_BONUS = 300
-
-/** Rocket §recompensa: a missão Rocket rende 3× o pool de XP normal (só na vitória). */
-export const ROCKET_XP_MULTIPLIER = 3
+export const SPECIAL_CHANCE_START = 1
+export const SPECIAL_CHANCE_GROWTH_MIN = 5
+export const SPECIAL_CHANCE_GROWTH_MAX = 15
+export const SPECIAL_CHANCE_MAX = 100
+export const SPECIAL_XP_MULTIPLIER = 5
 
 /**
  * Defesa/Rocket §medalhas: cada invasor pode sair com uma medalha que soma Batalha (acima do
