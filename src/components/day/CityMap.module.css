@@ -448,3 +448,28 @@
     transform: translateX(1px);
   }
 }
+
+/* Marcador da Equipe Rocket no roubo: "R" vermelho pulsante. */
+.rocket {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #c0223a;
+  color: #fff;
+  font-family: var(--font-pixel);
+  font-size: 14px;
+  font-weight: bold;
+  border: 2px solid #fff;
+  box-shadow: 0 0 8px rgba(192, 34, 58, 0.9);
+  z-index: 6;
+  pointer-events: none;
+  animation: rocketPulse 0.8s ease-in-out infinite;
+}
+@keyframes rocketPulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.12); }
+}

@@ -23,7 +23,7 @@ import { activePuddlesAt } from '../../engine/weather.ts'
 import { activeStrikeCirclesAt } from '../../engine/storm.ts'
 import { teamIsSpeedy } from '../../engine/secretEffects.ts'
 import { clamp } from '../../engine/math.ts'
-import { missionTravelerPos, searchTravelerPos, returnTravelerPos } from '../../engine/travelerPositions.ts'
+import { missionTravelerPos, searchTravelerPos, returnTravelerPos, theftPos, chaserPositionsAt } from '../../engine/travelerPositions.ts'
 import styles from './CityMap.module.css'
 
 /** Missões que aparecem no mapa: disponíveis e as já aceitas (em trânsito/ação/volta) — #4. */
@@ -268,6 +268,21 @@ function MapTravelers({ state, graph, now }: { state: GameState; graph: CityGrap
           <TravelerGroup key={`r-${r.searcherId}`} pos={pos} ids={[r.searcherId]} roster={state.roster} flying={r.flying} surfing={r.surfing} paralyzed={paralyzed} />
         )
       })}
+      {state.theft && (() => {
+        const rocketPos = theftPos(graph, state.theft, now)
+        return (
+          <>
+            {rocketPos && (
+              <div className={styles.rocket} style={posStyle(rocketPos)} aria-label="Equipe Rocket">
+                R
+              </div>
+            )}
+            {chaserPositionsAt(state, now).map(({ id, pos }) => (
+              <TravelerGroup key={`chaser-${id}`} pos={pos} ids={[id]} roster={state.roster} />
+            ))}
+          </>
+        )
+      })()}
     </>
   )
 }
