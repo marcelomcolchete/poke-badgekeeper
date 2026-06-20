@@ -33,12 +33,12 @@ export const SPECIES_BASE_MAX = 50
 export const ATTR_PER_POINT = 10
 
 /**
- * Teto da SOMA do time por eixo e da EXIGÊNCIA das missões: 70. Como cada Pokémon vai
- * no máx. 60 (ATTR_MAX), só com 2+ Pokémon dá pra cobrir um eixo em 70 — por isso as
- * missões mega/de fim de dia (exigência até 70) ficam mais difíceis. O radar das missões
+ * Teto da SOMA do time por eixo e da EXIGÊNCIA das missões: 100. Como cada Pokémon vai
+ * no máx. 60 (ATTR_MAX), só com 2+ Pokémon dá pra cobrir um eixo em 100 — por isso as
+ * missões mega/de fim de dia (exigência até 100) ficam mais difíceis. O radar das missões
  * usa esta escala; a carta de UM Pokémon continua na escala 60.
  */
-export const TEAM_ATTR_MAX = 70
+export const TEAM_ATTR_MAX = 100
 
 /** Piso do atributo EFETIVO: 0, pois a variação de encontro (IV) pode zerar um eixo. */
 export const ATTR_EFFECTIVE_MIN = 0

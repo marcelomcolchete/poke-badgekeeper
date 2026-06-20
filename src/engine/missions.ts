@@ -23,6 +23,8 @@ import {
   MISSION_TIME_FLOOR,
   MISSION_PRINCIPAL_MAX,
   MISSION_PRINCIPAL_MIN,
+  MISSION_REST_DAY_PIVOT,
+  MISSION_REST_DAY_SLOPE,
   MISSION_REST_MAX,
   MISSION_REST_MIN,
   MISSION_SECONDARY_MAX,
@@ -31,6 +33,7 @@ import {
   SPECIAL2_PRINCIPALS,
   SPECIAL2_SECONDARIES,
   SPECIAL5_PRINCIPALS,
+  SPECIAL5_SECONDARIES,
   TRAVEL_MS_PER_DISTANCE,
 } from './balance.ts'
 import {
@@ -58,7 +61,7 @@ function dayTerm(day: number): number {
   return (MISSION_DAY_SCALE * day) / MISSION_DAY_DIVISOR
 }
 
-/** Valor de um eixo principal: rand(20..30) + termo do dia, com teto TEAM_ATTR_MAX (70). */
+/** Valor de um eixo principal: rand(20..30) + termo do dia, com teto TEAM_ATTR_MAX (100). */
 function principalValue(rng: Rng, day: number): number {
   return clamp(
     Math.round(rng.int(MISSION_PRINCIPAL_MIN, MISSION_PRINCIPAL_MAX) + dayTerm(day)),
@@ -67,7 +70,7 @@ function principalValue(rng: Rng, day: number): number {
   )
 }
 
-/** Valor de um eixo secundário: rand(10..20) + termo do dia, com teto TEAM_ATTR_MAX (70). */
+/** Valor de um eixo secundário: rand(10..20) + termo do dia, com teto TEAM_ATTR_MAX (100). */
 function secondaryValue(rng: Rng, day: number): number {
   return clamp(
     Math.round(rng.int(MISSION_SECONDARY_MIN, MISSION_SECONDARY_MAX) + dayTerm(day)),
@@ -76,9 +79,22 @@ function secondaryValue(rng: Rng, day: number): number {
   )
 }
 
-/** Valor de um eixo "resto" (nem principal, nem secundário): rand(5..20). */
-function restValue(rng: Rng): number {
-  return clamp(rng.int(MISSION_REST_MIN, MISSION_REST_MAX), 0, TEAM_ATTR_MAX)
+/** Termo do dia do resto: SLOPE · (dia − PIVOT). Negativo antes do pivô, ~0 no pivô. */
+function restDayTerm(day: number): number {
+  return MISSION_REST_DAY_SLOPE * (day - MISSION_REST_DAY_PIVOT)
+}
+
+/**
+ * Valor de um eixo "resto" (nem principal, nem secundário): rand(5..20) + termo do dia do
+ * resto, com teto TEAM_ATTR_MAX (100). Evolui muito devagar: abaixo de 5–20 nos primeiros
+ * dias, na faixa-base no dia 6, subindo de leve depois.
+ */
+function restValue(rng: Rng, day: number): number {
+  return clamp(
+    Math.round(rng.int(MISSION_REST_MIN, MISSION_REST_MAX) + restDayTerm(day)),
+    0,
+    TEAM_ATTR_MAX,
+  )
 }
 
 export interface GeneratedRequirement {
@@ -91,7 +107,7 @@ export interface GeneratedRequirement {
  * Gera a exigência da missão escalando com o dia (rebalanceamento). Todo eixo começa em
  * "resto" (5..20) e os escolhidos recebem principal/secundário. Normais: principal no
  * primaryAttr + 1 secundário sorteado (se coincidir, vira "mega" = principal+secundário).
- * Especiais: eixos sorteados (special2 = 2 princ + 1 sec; special5 = 5 princ).
+ * Especiais: eixos sorteados (special2 = 2 princ + 1 sec; special5 = 3 princ + 2 sec).
  */
 export function generateRequirement(
   rng: Rng,
@@ -99,13 +115,13 @@ export function generateRequirement(
   template: MissionTemplate,
 ): GeneratedRequirement {
   const out = zeroAttrs()
-  for (const key of ATTR_KEYS) out[key] = restValue(rng)
+  for (const key of ATTR_KEYS) out[key] = restValue(rng, day)
 
   if (template.gen === 'normal') {
     const primary = template.primaryAttr as AttrKey
     const secondary = rng.pick(ATTR_KEYS)
     if (secondary === primary) {
-      // "Mega": o eixo soma principal + secundário (com teto TEAM_ATTR_MAX → ~70).
+      // "Mega": o eixo soma principal + secundário (com teto TEAM_ATTR_MAX → ~100).
       out[primary] = clamp(principalValue(rng, day) + secondaryValue(rng, day), 0, TEAM_ATTR_MAX)
     } else {
       out[primary] = principalValue(rng, day)
@@ -114,17 +130,13 @@ export function generateRequirement(
     return { requirement: out, secondaryAttr: secondary }
   }
 
-  // Especiais: sorteia os eixos principais/secundários sem repetição.
+  // Especiais: sorteia os eixos principais/secundários sem repetição (sem nenhum forçado).
   const principals = template.gen === 'special5' ? SPECIAL5_PRINCIPALS : SPECIAL2_PRINCIPALS
-  const secondaries = template.gen === 'special5' ? 0 : SPECIAL2_SECONDARIES
+  const secondaries = template.gen === 'special5' ? SPECIAL5_SECONDARIES : SPECIAL2_SECONDARIES
   const axes = rng.shuffle(ATTR_KEYS)
   let i = 0
   for (let k = 0; k < principals; k++, i++) out[axes[i] as AttrKey] = principalValue(rng, day)
   for (let k = 0; k < secondaries; k++, i++) out[axes[i] as AttrKey] = secondaryValue(rng, day)
-  if (template.gen === 'special5') {
-    // Museu (#5): pelo menos UM dos 5 eixos principais obrigatoriamente no máximo (70).
-    out[axes[rng.int(0, principals - 1)] as AttrKey] = TEAM_ATTR_MAX
-  }
   return { requirement: out, secondaryAttr: null }
 }
 
@@ -197,11 +209,11 @@ export function resolveMission(
 
 /**
  * Fator de tempo de viagem pela Agilidade total do time (PLAN §4.3): −1%/ponto, soma capada
- * em 70 → piso de 0,3 (10 → 0,90; 70 → 0,30, redução máx. 70%). Run Away reduz mais; Fly zera
+ * em 100 → piso de 0,1 (10 → 0,90; 90 → 0,10, redução máx. 90%). Run Away reduz mais; Fly zera
  * (tratado em graphTravelMs). Devolve o multiplicador a aplicar sobre o tempo-base de deslocamento.
  */
 export function agilityTravelFactor(team: readonly Pokemon[]): number {
-  const agility = teamAxisSum(team, 'agilidade') // 0–70 (já capado em TEAM_ATTR_MAX)
+  const agility = teamAxisSum(team, 'agilidade') // 0–100 (já capado em TEAM_ATTR_MAX)
   let factor = clamp(1 - agility * AGILITY_TIME_REDUCTION_PER_POINT, MISSION_TIME_FLOOR, 1)
   if (team.some((p) => p.passives.includes('run-away'))) factor *= RUN_AWAY_TRAVEL_FACTOR
   return factor
@@ -254,10 +266,10 @@ export function travelRoute(
 
 /**
  * Tempo de execução parado no local pela Inteligência total do time (PLAN §4.3): −1%/ponto,
- * soma capada em 70 → piso de 0,3 (70 de Inteligência reduz 70% do tempo de execução).
+ * soma capada em 100 → piso de 0,1 (90 de Inteligência reduz 90% do tempo de execução).
  */
 export function executionMs(team: readonly Pokemon[], baseExecutionMs: number): number {
-  const intelligence = teamAxisSum(team, 'inteligencia') // 0–70 (já capado em TEAM_ATTR_MAX)
+  const intelligence = teamAxisSum(team, 'inteligencia') // 0–100 (já capado em TEAM_ATTR_MAX)
   const factor = clamp(1 - intelligence * INT_TIME_REDUCTION_PER_POINT, MISSION_TIME_FLOOR, 1)
   return baseExecutionMs * factor
 }
