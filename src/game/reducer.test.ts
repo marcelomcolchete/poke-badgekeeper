@@ -8,6 +8,7 @@ import { MISSION_XP_POOL } from '../engine/balance.ts'
 import { gymWinXp } from '../engine/gymDefense.ts'
 import { reducer } from './reducer.ts'
 import { autoSeedRun } from './setup.ts'
+import { rollTheftAtDayOpen, spawnTheft } from './theftFlow.ts'
 
 const SEED = 777
 const GYM: PokemonType[] = ['rock', 'water', 'grass']
@@ -547,5 +548,20 @@ describe('fim do dia por retorno (PLAN §3, ajuste)', () => {
     s = reducer(s, { type: 'TICK', deltaMs: 20_000 }) // 205s: retorno concluído
     expect(s.roster[0]?.status).toBe('idle')
     expect(s.run.phase).toBe('SUMMARY')
+  })
+})
+
+describe('fluxo de roubo Rocket (Feature B)', () => {
+  it('DISPATCH_THEFT_CHASERS adiciona perseguidores ao evento (sem mutar a entrada)', () => {
+    // seed=3: rollTheftAtDayOpen arma o roubo; spawnTheft rouba 'c1' → 'p1' fica idle como perseguidor.
+    const base = autoSeedRun(3)
+    base.run.phase = 'DAY'
+    base.run.theftChance = 100
+    rollTheftAtDayOpen(base)
+    base.roster = [makeMon({ id: 'p1', status: 'idle' }), makeMon({ id: 'c1', status: 'idle' })]
+    spawnTheft(base, 0)
+    const next = reducer(base, { type: 'DISPATCH_THEFT_CHASERS', chaserIds: ['p1'] })
+    expect(next.theft!.chaserIds).toContain('p1')
+    expect(base.theft!.chaserIds).not.toContain('p1') // entrada intacta
   })
 })

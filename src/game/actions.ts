@@ -53,3 +53,9 @@ export type GameAction =
   | { type: 'USE_MOON_STONE'; pokemonId: string }
   /** Aloca o ponto de um level-up no atributo escolhido (modal) — PLAN §4.1. */
   | { type: 'ALLOCATE_POINT'; pokemonId: string; attr: AttrKey }
+  /** Despacha até 3 Pokémon idle atrás da Rocket no Evento de Roubo (Feature B). */
+  | { type: 'DISPATCH_THEFT_CHASERS'; chaserIds: string[] }
+  /** Resolve a batalha de resgate (cadeia de duelos) — Feature B. */
+  | { type: 'RESOLVE_THEFT_BATTLE' }
+  /** Conclui a batalha de resgate (após a animação): aplica 3× XP na vitória — Feature B. */
+  | { type: 'COMPLETE_THEFT_BATTLE' }
