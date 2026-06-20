@@ -41,6 +41,7 @@ export function useGameSounds(state: GameState): void {
   const warnedIds = useRef<Set<string>>(new Set())
   const raining = useRef(false)
   const prevStormMs = useRef(0)
+  const theftWarned = useRef(false)
 
   useEffect(() => {
     const first = !ready.current
@@ -106,6 +107,16 @@ export function useGameSounds(state: GameState): void {
       playThunder()
     }
     prevStormMs.current = now
+
+    // 7) Roubo Rocket chegou ao nó mais distante: toca o alerta (mesmo da defesa acabando) uma vez.
+    if (!first && state.theft?.phase === 'atFarNode' && !theftWarned.current) {
+      theftWarned.current = true
+      playSound('timeWarning')
+    }
+    // Rearma o aviso quando não há evento em janela final (próximo dia/evento).
+    if (!state.theft || (state.theft.phase !== 'atFarNode' && state.theft.phase !== 'battle')) {
+      theftWarned.current = false
+    }
 
     ready.current = true
   }, [state])
