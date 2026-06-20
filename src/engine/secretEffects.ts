@@ -211,11 +211,6 @@ export function missionAttrMultiplier(p: Pokemon, ctx: MissionSecretCtx): number
   return mult
 }
 
-/** Algum Pokémon do time tem efeito de atributo ativo nesta missão? (radar indica a passiva). */
-export function teamHasAttrBoost(ctx: MissionSecretCtx): boolean {
-  return ctx.team.some((p) => missionAttrMultiplier(p, ctx) !== 1)
-}
-
 /** Soma do time num eixo COM os multiplicadores de habilidade, capada em TEAM_ATTR_MAX (100). */
 export function teamSecretAxisSum(key: AttrKey, ctx: MissionSecretCtx): number {
   const total = ctx.team.reduce(

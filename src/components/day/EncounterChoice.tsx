@@ -95,7 +95,7 @@ export function EncounterChoice({ encounter, full, onPick, onDismiss }: Props) {
                   return (
                     <span key={k} className={styles.encStat}>
                       <span className={styles.encStatLbl}>{ATTR_SHORT_PT[k]}</span>
-                      <b className={cls}>{effectiveAttr(mon, k)}</b>
+                      <b className={cls || undefined}>{effectiveAttr(mon, k)}</b>
                     </span>
                   )
                 })}
