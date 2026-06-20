@@ -469,6 +469,23 @@
   color: var(--c-ink);
 }
 
+.encStatUp {
+  color: #2f8f3f;
+}
+
+.encStatDown {
+  color: #e05050;
+}
+
+/* Célula do total — ocupa destaque na grade de 3 colunas. */
+.encStatTotal {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.encStatTotal b {
+  color: var(--c-ink);
+}
+
 .encBtn {
   margin-top: 2px;
   width: 100%;
