@@ -40,6 +40,7 @@ type Tab = 'stats' | 'team' | 'items'
 const LOSS_MESSAGE: Record<NonNullable<RunInfo['gameOverReason']>, string> = {
   gym: 'O ginásio ficou indefeso! Você não enfrentou o ataque a tempo e foi demitido na hora.',
   stars: 'Sua reputação chegou a zero. Sem estrelas e sem bater a meta, a liga encerrou seu período de testes.',
+  theft: 'A Equipe Rocket roubou um Pokémon do seu ginásio e fugiu! Seu período de testes foi encerrado.', // Feature B (reservado)
   fainted: 'Todo o seu time foi derrotado! Sem ninguém em condições de lutar, seu período de testes foi encerrado.',
 }
 

@@ -468,6 +468,16 @@ function migrate(file: Partial<SaveFile>): SaveFile | null {
     version = 35
   }
 
+  if (version === 35) {
+    // v36: inicia theftChance=1; theft (evento em voo) NÃO é recriado.
+    const run = state.run as Record<string, unknown> | undefined
+    state = {
+      ...state,
+      run: run && typeof run === 'object' ? { theftChance: 1, ...run } : run,
+    } as typeof state
+    version = 36
+  }
+
   if (version !== SAVE_VERSION) return null
   return { version, savedAtMs: (file as SaveFile).savedAtMs, state } as unknown as SaveFile
 }

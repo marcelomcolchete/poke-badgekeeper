@@ -138,6 +138,7 @@ export type PokemonStatus =
   | 'returning' // voltando ao ginásio (só fica 'idle' ao chegar)
   | 'fainted'
   | 'atCenter'
+  | 'stolen' // roubado pela Equipe Rocket (fora do roster jogável até o desfecho) — Feature B
 
 /** Sexo do Pokémon — sorteado na criação pela taxa da espécie (jogo original). */
 export type Gender = 'male' | 'female' | 'genderless'

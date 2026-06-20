@@ -77,6 +77,9 @@ export const WEATHER_SEED_SALT = 0x57656174 // 'Weat'
 /** Sub-seed da Tempestade: agenda própria do dia + distribuição da chance na run (independe da chuva). */
 export const STORM_SEED_SALT = 0x53746f72 // 'Stor'
 
+/** Sub-seed do Evento de Roubo Rocket: rolagem da chance/alvo/nós/esquadrão por dia. */
+export const THEFT_SEED_SALT = 0x54686566 // 'Thef'
+
 /** Natureza: modificadores do valor por ponto alocado (+15 favorecido, +5 penalizado). */
 export const NATURE_BOOSTED_PER_POINT = 15
 export const NATURE_REDUCED_PER_POINT = 5
@@ -212,6 +215,10 @@ export const DRAFT_CHOICES = 3
  * v35: Missões Especiais da Cidade. run.specialChances (chance por local) inicia vazio
  * (setupDay redimensiona); remove a missão Rocket (templateId 'rocket', status 'battle',
  * mission.rocket) e a batalha pós-missão — a especial paga 5× XP direto. A migração descarta
- * missões Rocket antigas e libera Pokémon presos. */
-export const SAVE_VERSION = 35
+ * missões Rocket antigas e libera Pokémon presos.
+ * v36: Evento de Roubo Rocket. run.theftChance (1%, dobra por dia sem disparar) e
+ * GameState.theft (TheftEvent opcional: fase/alvo/nós/timers/esquadrão). PokemonStatus ganha
+ * 'stolen'. A migração inicia theftChance=1 e NÃO cria theft (eventos em voo não persistem;
+ * recalculados no próximo dia-aberto). */
+export const SAVE_VERSION = 36
 export const SAVE_KEY = 'poke-badgekeeper:save'

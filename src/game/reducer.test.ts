@@ -38,7 +38,7 @@ function controlledMission(over: Partial<MissionInstance> = {}): MissionInstance
 }
 
 function dayState(over: Partial<GameState> = {}): GameState {
-  return { ...createInitialState(SEED), run: { cityIndex: 0, day: 1, seed: SEED, phase: 'DAY', ballLevel: 0, specialChances: [] }, gym: { types: GYM }, ...over }
+  return { ...createInitialState(SEED), run: { cityIndex: 0, day: 1, seed: SEED, phase: 'DAY', ballLevel: 0, theftChance: 1, specialChances: [] }, gym: { types: GYM }, ...over }
 }
 
 describe('reducer — pureza e determinismo', () => {
