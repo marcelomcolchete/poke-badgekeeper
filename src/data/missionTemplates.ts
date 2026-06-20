@@ -1,5 +1,5 @@
 // Tipos de missão (rebalanceamento). São 6 tipos normais — cada um amarrado a um
-// atributo principal — e 3 especiais (Pokecenter/Pokemart/Equipe Rocket). A EXIGÊNCIA por eixo
+// atributo principal — e 3 especiais (Pokecenter/Pokemart/Missão Especial). A EXIGÊNCIA por eixo
 // não mora aqui: é gerada e gravada na instância no spawn, escalando com o dia (ver
 // engine/missions.ts → generateRequirement). O template descreve só o tipo, o perigo,
 // o tempo de execução e as recompensas.
@@ -67,7 +67,7 @@ export const NORMAL_TEMPLATES: MissionTemplate[] = [
   },
 ]
 
-/** 3 especiais: amarradas ao sítio (Centro/Mart/Museu) e com recompensa própria. */
+/** 3 especiais: amarradas ao sítio (Centro/Mart/Missão Especial) e com recompensa própria. */
 export const POKECENTER_TEMPLATE: MissionTemplate = {
   id: 'pokecenter',
   name: 'Pokecenter',
@@ -89,25 +89,24 @@ export const POKEMART_TEMPLATE: MissionTemplate = {
 }
 
 /**
- * Equipe Rocket: missão EXTRA (fora do agendamento normal) que aparece 2× na run em dias
- * sorteados. A parte de atributos é como o antigo museu (5 principais, um fixo em 70); ao
- * concluir, o time BATALHA contra um treinador Rocket e só então recebe ouro + 3× XP.
+ * Missão Especial da Cidade: aparição estocástica e escalonante por local (ver engine/timeline
+ * → rollSpecialMissions e game/setup). Difícil como o antigo museu/Rocket (5 principais), rende
+ * 5× o XP de uma missão normal e NÃO tem batalha pós-missão — a recompensa vem na conclusão.
  */
-export const ROCKET_TEAM_TEMPLATE: MissionTemplate = {
-  id: 'rocket',
-  name: 'Equipe Rocket',
-  themeIcon: 'R',
+export const SPECIAL_TEMPLATE: MissionTemplate = {
+  id: 'special',
+  name: 'Missão Especial',
+  themeIcon: '⭐',
   gen: 'special5',
   baseExecutionMs: 55 * SEC,
   danger: 3,
-  isRocket: true,
 }
 
 export const MISSION_TEMPLATES: MissionTemplate[] = [
   ...NORMAL_TEMPLATES,
   POKECENTER_TEMPLATE,
   POKEMART_TEMPLATE,
-  ROCKET_TEAM_TEMPLATE,
+  SPECIAL_TEMPLATE,
 ]
 
 export function getMissionTemplate(id: string): MissionTemplate {
@@ -126,8 +125,8 @@ export function templatesForCategory(category: MissionCategory): MissionTemplate
       return [POKECENTER_TEMPLATE]
     case 'mart':
       return [POKEMART_TEMPLATE]
-    case 'rocket':
-      return [ROCKET_TEAM_TEMPLATE]
+    case 'special':
+      return [SPECIAL_TEMPLATE]
     default:
       // 'house' (e o legado 'freeArea') → tipos normais.
       return NORMAL_TEMPLATES
@@ -138,6 +137,5 @@ export function templatesForCategory(category: MissionCategory): MissionTemplate
 export function missionReward(template: MissionTemplate): { icon: string; label: string } | null {
   if (template.healOnSuccess) return { icon: '💚', label: 'Cura o time no sucesso' }
   if (template.goldOnSuccess) return { icon: '💰', label: `+${template.goldOnSuccess} de ouro no sucesso` }
-  if (template.isRocket) return { icon: '⚔️', label: 'Batalha Rocket: ouro + 3× XP na vitória' }
   return null
 }

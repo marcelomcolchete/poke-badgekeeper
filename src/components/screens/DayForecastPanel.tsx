@@ -10,6 +10,7 @@ import { buildDayWeather } from '../../engine/storm.ts'
 import { missionsForDay, defensesForDay } from '../../engine/timeline.ts'
 import { hasCloudNine } from '../../engine/secretEffects.ts'
 import { CLOUD_NINE_RAIN_CHANCE_BONUS_PP } from '../../engine/balance.ts'
+import { theftChanceLabel } from '../../engine/theft.ts'
 import styles from './DayForecastPanel.module.css'
 
 const EFFECT_ICON: Record<WeatherEffectKind, string> = { rain: '🌧️', storm: '⛈️' }
@@ -33,6 +34,7 @@ export function DayForecastPanel({ state }: { state: GameState }) {
 
   const missions = missionsForDay(state.run.day)
   const defenses = defensesForDay(state.run.day)
+  const theft = theftChanceLabel(state.run.theftChance)
 
   return (
     <section className={styles.panel}>
@@ -85,14 +87,15 @@ export function DayForecastPanel({ state }: { state: GameState }) {
           <span className={styles.countLabel}>Batalhas</span>
         </div>
         <div className={styles.count}>
-          <span className={`${styles.countIcon} ${styles.rocketIcon}`} aria-hidden="true">R</span>
+          <span className={`${styles.countIcon} ${styles.rocketIcon}`} aria-hidden="true">🚨</span>
           <span
             className={`${styles.countValue} ${styles.rocketValue}`}
-            title="A previsão não revela os dias da Equipe Rocket"
+            style={{ color: theft.color }}
+            title={`Chance de roubo hoje: ${state.run.theftChance}%`}
           >
-            ???
+            {theft.label}
           </span>
-          <span className={styles.countLabel}>Rocket</span>
+          <span className={styles.countLabel}>Chance de Rocket</span>
         </div>
       </div>
     </section>

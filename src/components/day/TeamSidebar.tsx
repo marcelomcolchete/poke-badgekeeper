@@ -41,6 +41,9 @@ const ACTIVITY_COLOR = {
 /** Cor da faixa de Pokémon derrotado (vermelho-escuro acinzentado, com caveira). */
 const FAINTED_COLOR = '#8a3a3a'
 
+/** Cor do banner de Pokémon roubado pela Rocket (roxo Rocket). */
+const STOLEN_COLOR = '#6b3d6e'
+
 /**
  * O que o Pokémon está fazendo agora: rótulo contextual + cor da faixa. Cada atividade
  * tem cor própria (missão amarelo, a caminho roxo, explorando verde, etc.).
@@ -137,15 +140,17 @@ export function TeamSidebar({ state, onSelect }: Props) {
           const atMax = mon.level >= LEVEL_MAX
           const xpNeeded = xpToNext(mon.level)
           const xpPct = atMax ? 100 : Math.min(100, (mon.xp / xpNeeded) * 100)
-          // Ocupado = não está livre e não está desmaiado: ganha a faixa diagonal
+          const stolen = mon.status === 'stolen'
+          // Ocupado = não está livre e não está desmaiado e não foi roubado: ganha a faixa diagonal
           // dizendo o que faz e quando volta a ficar disponível.
-          const busy = !isAvailable(mon) && !fainted
+          const busy = !isAvailable(mon) && !fainted && !stolen
           const etaS = busy ? availableInSeconds(state, mon) : null
           const activity = busy ? activityInfo(state, mon) : null
           const memberClass = [
             styles.member,
             fainted ? styles.faintedMember : '',
             busy ? styles.busyMember : '',
+            stolen ? styles.busyMember : '',
             willLevelUp ? styles.willLevelUp : '',
           ]
             .filter(Boolean)
@@ -263,7 +268,19 @@ export function TeamSidebar({ state, onSelect }: Props) {
                   })}
                 </dl>
 
-                {fainted ? (
+                {stolen ? (
+                  <span className={styles.busyOverlay}>
+                    <span
+                      className={styles.busyBanner}
+                      style={{
+                        background: `linear-gradient(180deg, ${STOLEN_COLOR}, color-mix(in srgb, ${STOLEN_COLOR} 65%, #000))`,
+                      }}
+                    >
+                      <span className={styles.busyText}>🚨 Roubado</span>
+                      <span className={styles.busyEta}>Em posse da Equipe Rocket</span>
+                    </span>
+                  </span>
+                ) : fainted ? (
                   <span className={styles.busyOverlay}>
                     <span
                       className={styles.busyBanner}

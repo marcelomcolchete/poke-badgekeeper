@@ -19,6 +19,7 @@ import type { DuelLog } from './gymDefense.ts'
 import type { WeatherSchedule } from './weather.ts'
 import { emptyWeatherSchedule } from './weather.ts'
 import { DAY_LENGTH_MS, STARS_START, STARTING_GOLD } from './constants.ts'
+import { THEFT_CHANCE_START } from './balance.ts'
 
 export interface RunInfo {
   /** Índice da cidade atual de Kanto (0..7). */
@@ -33,8 +34,16 @@ export interface RunInfo {
    * uma raridade a mais nos encontros da exploração. Sobe ao comprar a próxima bola no mercado.
    */
   ballLevel: number
+  /** Chance corrente (%) de o roubo ARMAR no dia. Inicia em 1; dobra a cada dia sem disparar. */
+  theftChance: number
+  /**
+   * Chance corrente (%) de Missão Especial por LOCAL, indexada pela ordem de
+   * `city.siteNodes.specialMission`. Inicia em SPECIAL_CHANCE_START quando a cidade começa;
+   * rolada e mutada no abrir de cada dia (setupDay). Vazio antes de a cidade ser preparada.
+   */
+  specialChances: number[]
   /** Motivo da derrota quando phase === 'GAMEOVER' (mensagem da tela de fim de jogo). */
-  gameOverReason?: 'gym' | 'stars' | 'rocket' | 'fainted'
+  gameOverReason?: 'gym' | 'stars' | 'theft' | 'fainted'
 }
 
 export interface ClockState {
@@ -53,7 +62,6 @@ export type MissionStatus =
   | 'available' // popup no mapa, aceitável até expirar
   | 'traveling' // time a caminho da missão (ida) — PLAN §4.3
   | 'inProgress' // executando no local
-  | 'battle' // Rocket Team: parte de atributos concluída, aguardando a batalha do jogador
   | 'returning' // desfecho aplicado; time voltando ao ginásio
   | 'resolved' // concluída e time já em casa (ver result)
 
@@ -144,30 +152,6 @@ export interface MissionInstance {
    * tela de finalização. Ausente em falha/missões antigas (cai no fallback 0).
    */
   xpAwards?: Record<string, number>
-  /**
-   * Batalha da Equipe Rocket: presente só nas missões Rocket que CUMPRIRAM a parte de
-   * atributos. O time enfrenta o treinador na ordem em que foi despachado; as recompensas
-   * (ouro-bônus + 3× XP) só são aplicadas ao VENCER (PLAN — Rocket Team).
-   */
-  rocket?: RocketBattle
-}
-
-/** Batalha da missão Equipe Rocket (anexada à instância após cumprir a parte de atributos). */
-export interface RocketBattle {
-  /** Treinador Rocket sorteado (define o elenco e a arte). */
-  trainerId: TrainerId
-  /** Esquadrão inimigo (mesma quantidade por dia que a defesa de ginásio), com medalhas do dia. */
-  enemies: EnemyUnit[]
-  /** Log da cadeia de duelos, preenchido ao resolver a batalha. */
-  duels?: DuelLog[]
-  /** Venceu a batalha? (definido ao resolver). */
-  won?: boolean
-  /** Batalha já resolvida (HP/ouro aplicados)? Evita resolver duas vezes ao reabrir. */
-  resolved?: boolean
-  /** XP/recompensas já aplicados ao concluir a animação? (idempotência). */
-  rewardApplied?: boolean
-  /** Sub-seed de evolução do XP por vitória, sorteado ao resolver. */
-  xpSeed?: number
 }
 
 export type DefenseStatus =
@@ -197,6 +181,53 @@ export interface DefenseEvent {
   xpSeed?: number
   /** XP por vitórias já aplicado (ao concluir a batalha)? Evita aplicar duas vezes ao reabrir. */
   xpApplied?: boolean
+}
+
+/** Fase do Evento de Roubo Rocket (Feature B). */
+export type TheftPhase =
+  | 'armed' // rolado e armado; aguardando um alvo elegível no ginásio (disparo adiado)
+  | 'fleeing' // alvo roubado; Rocket fugindo do nó adjacente ao nó mais distante
+  | 'atFarNode' // chegou ao nó mais distante; janela de graça antes de escapar
+  | 'battle' // perseguidor interceptou; batalha de resgate aberta (relógio pausado)
+  | 'resolved' // desfecho aplicado (vitória/derrota/fuga); chance já resetada p/ 1%
+
+/**
+ * Evento de Roubo Rocket do dia (no máx. 1×/dia). Nasce 'armed' (sem alvo) e dispara ('fleeing')
+ * quando há um Pokémon elegível no ginásio. Tudo é determinístico (seed do dia). Persistência: o
+ * evento em voo NÃO é salvo (a migração não o recria) — só o run.theftChance persiste.
+ */
+export interface TheftEvent {
+  phase: TheftPhase
+  /** Pokémon roubado (status 'stolen'); null enquanto 'armed' sem alvo. */
+  stolenId: string | null
+  /** Nó adjacente ao ginásio onde a Rocket surge (origem da fuga). Vazio enquanto 'armed'. */
+  fromNode: string
+  /** Nó mais distante do ginásio (destino da fuga). Vazio enquanto 'armed'. */
+  targetNode: string
+  /** Início da fuga (ms de jogo) — base da interpolação. -1 enquanto 'armed'. */
+  startedAtMs: number
+  /** Chegada ao nó mais distante (ms de jogo). -1 enquanto 'armed'. */
+  arriveAtMs: number
+  /** Fim da janela de graça no nó final (= arriveAtMs + THEFT_GRACE_MS). -1 enquanto 'armed'. */
+  graceUntilMs: number
+  /** Perseguidores despachados (ids do roster). Vazio = ninguém perseguindo. */
+  chaserIds: string[]
+  /** Chegada estimada (ms de jogo) de cada perseguidor ao destino — paralelo a chaserIds. */
+  chaserArriveAtMs: number[]
+  /** Início (ms de jogo) da perseguição de cada perseguidor — paralelo a chaserIds. */
+  chaserStartAtMs: number[]
+  /** Treinador Rocket sorteado (arte da batalha de resgate). */
+  trainerId: TrainerId
+  /** Esquadrão inimigo (dimensionado pelo dia, como a defesa de ginásio). */
+  enemies: EnemyUnit[]
+  /** Log de duelos da batalha de resgate, preenchido ao resolver. */
+  duels?: DuelLog[]
+  /** Venceu a batalha de resgate? (definido ao resolver). */
+  won?: boolean
+  /** Batalha já resolvida (HP/recuperação aplicados)? Idempotência. */
+  resolved?: boolean
+  /** Sub-seed de evolução do XP da vitória, sorteado ao resolver. */
+  xpSeed?: number
 }
 
 /** Busca de captura em andamento: um Pokémon viaja até o spot e procura até gerar encontro (PLAN §4.5). */
@@ -467,6 +498,8 @@ export interface GameState {
   lifetime: LifetimeStats
   /** Agenda climática do dia (eventos de chuva + poças + previsão), pré-computada em setupDay. */
   weather: WeatherSchedule
+  /** Evento de Roubo Rocket do dia (Feature B), se houver. Não persiste entre saves. */
+  theft?: TheftEvent
   history: DayLog[]
   /** Contador determinístico de ids de entidades (eventos/Pokémon). */
   nextId: number
@@ -526,7 +559,7 @@ export function emptyLifetime(): LifetimeStats {
 /** Estado inicial de uma nova run (antes da escolha do inicial e dos tipos do ginásio). */
 export function createInitialState(seed: number): GameState {
   return {
-    run: { cityIndex: 0, day: 1, seed, phase: 'MORNING', ballLevel: 0 },
+    run: { cityIndex: 0, day: 1, seed, phase: 'MORNING', ballLevel: 0, theftChance: THEFT_CHANCE_START, specialChances: [] },
     clock: { dayElapsedMs: 0, dayLengthMs: DAY_LENGTH_MS, speed: 0 },
     gym: { types: [] },
     roster: [],

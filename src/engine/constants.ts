@@ -59,9 +59,6 @@ export const DIG_SEED_SALT = 0xd16
 /** Sub-seed do sorteio de treinadores do dia (defesa): ordena quais classes invadem hoje. */
 export const TRAINER_SEED_SALT = 0x713a
 
-/** Sub-seed que sorteia os 2 dias da missão Equipe Rocket na run (extra, fora da agenda). */
-export const ROCKET_SEED_SALT = 0x526f636b // 'Rock'
-
 /** Sub-seed do mercado da manhã: sorteia os 3 itens do dia (por seed+dia+cidade). */
 export const SHOP_SEED_SALT = 0x53686f70 // 'Shop'
 
@@ -79,6 +76,9 @@ export const WEATHER_SEED_SALT = 0x57656174 // 'Weat'
 
 /** Sub-seed da Tempestade: agenda própria do dia + distribuição da chance na run (independe da chuva). */
 export const STORM_SEED_SALT = 0x53746f72 // 'Stor'
+
+/** Sub-seed do Evento de Roubo Rocket: rolagem da chance/alvo/nós/esquadrão por dia. */
+export const THEFT_SEED_SALT = 0x54686566 // 'Thef'
 
 /** Natureza: modificadores do valor por ponto alocado (+15 favorecido, +5 penalizado). */
 export const NATURE_BOOSTED_PER_POINT = 15
@@ -211,6 +211,14 @@ export const DRAFT_CHOICES = 3
  * ganham paralyzeHold opcional. A migração inicia storms vazio, previsão de tempestade
  * zerada e paralyzedBattleIds vazio (recalculados no próximo setupDay).
  * v34: sistema de shiny. pokemon.shiny? e CaptureEncounter.candidateShiny? são opcionais
- * (ausente = não-shiny); nada a preencher — passthrough. */
-export const SAVE_VERSION = 34
+ * (ausente = não-shiny); nada a preencher — passthrough.
+ * v35: Missões Especiais da Cidade. run.specialChances (chance por local) inicia vazio
+ * (setupDay redimensiona); remove a missão Rocket (templateId 'rocket', status 'battle',
+ * mission.rocket) e a batalha pós-missão — a especial paga 5× XP direto. A migração descarta
+ * missões Rocket antigas e libera Pokémon presos.
+ * v36: Evento de Roubo Rocket. run.theftChance (1%, dobra por dia sem disparar) e
+ * GameState.theft (TheftEvent opcional: fase/alvo/nós/timers/esquadrão). PokemonStatus ganha
+ * 'stolen'. A migração inicia theftChance=1 e NÃO cria theft (eventos em voo não persistem;
+ * recalculados no próximo dia-aberto). */
+export const SAVE_VERSION = 36
 export const SAVE_KEY = 'poke-badgekeeper:save'

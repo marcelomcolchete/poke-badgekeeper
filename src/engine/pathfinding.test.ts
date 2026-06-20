@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest'
+import type { CityGraph } from '../data/types.ts'
 import { getCity } from '../data/cities.ts'
-import { graphWithoutNodes, pathDistance, pointAlongPath, shortestPath } from './pathfinding.ts'
+import {
+  farthestNodeFrom,
+  graphWithoutNodes,
+  nodeDistancesFrom,
+  pathDistance,
+  pointAlongPath,
+  shortestPath,
+} from './pathfinding.ts'
 
 const PEWTER = getCity(0)
 const GRAPH = PEWTER.graph
@@ -29,7 +37,7 @@ describe('grafo de Pewter', () => {
   it('os pontos de sítio existem no grafo (ginásio = j)', () => {
     const sn = PEWTER.siteNodes
     expect(sn.gym).toBe('j')
-    for (const id of [sn.gym, sn.center, sn.mart, ...sn.museum, ...sn.houses, ...sn.green]) {
+    for (const id of [sn.gym, sn.center, sn.mart, ...sn.specialMission, ...sn.houses, ...sn.green]) {
       expect(GRAPH.nodes[id], id).toBeDefined()
     }
   })
@@ -80,6 +88,50 @@ describe('pointAlongPath', () => {
 
   it('caminho de 1 ponto → sempre nele', () => {
     expect(pointAlongPath(GRAPH, ['j'], 0.7)).toEqual({ ...GRAPH.nodes.j })
+  })
+})
+
+describe('farthestNodeFrom', () => {
+  // Linha: a — b — c — d (b,c,d à direita de a)
+  const line: CityGraph = {
+    nodes: { a: { x: 0, y: 0 }, b: { x: 0.25, y: 0 }, c: { x: 0.5, y: 0 }, d: { x: 0.75, y: 0 } },
+    adj: { a: ['b'], b: ['a', 'c'], c: ['b', 'd'], d: ['c'] },
+    markers: {},
+  }
+
+  it('nodeDistancesFrom cresce monotonicamente na linha', () => {
+    const dist = nodeDistancesFrom(line, 'a')
+    expect(dist.a).toBe(0)
+    expect(dist.d).toBeGreaterThan(dist.c as number)
+    expect(dist.c).toBeGreaterThan(dist.b as number)
+  })
+
+  it('escolhe o nó com MAIOR distância de caminho (não a euclidiana)', () => {
+    expect(farthestNodeFrom(line, 'a')).toBe('d')
+  })
+
+  it('restringe aos candidatos quando informados', () => {
+    expect(farthestNodeFrom(line, 'a', ['b', 'c'])).toBe('c')
+  })
+
+  it('ignora inalcançáveis e devolve null quando não há candidato', () => {
+    const isolated: CityGraph = {
+      nodes: { a: { x: 0, y: 0 }, z: { x: 1, y: 1 } },
+      adj: { a: [], z: [] },
+      markers: {},
+    }
+    expect(farthestNodeFrom(isolated, 'a')).toBeNull()
+  })
+
+  it('desempata alfabeticamente entre distâncias iguais', () => {
+    // a no centro; b e c equidistantes (mesma distância de caminho).
+    // Usamos deslocamento horizontal puro para evitar drift de ponto flutuante.
+    const star: CityGraph = {
+      nodes: { a: { x: 0.5, y: 0.5 }, b: { x: 0.0, y: 0.5 }, c: { x: 1.0, y: 0.5 } },
+      adj: { a: ['b', 'c'], b: ['a'], c: ['a'] },
+      markers: {},
+    }
+    expect(farthestNodeFrom(star, 'a')).toBe('b')
   })
 })
 

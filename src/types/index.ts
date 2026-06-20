@@ -138,6 +138,7 @@ export type PokemonStatus =
   | 'returning' // voltando ao ginásio (só fica 'idle' ao chegar)
   | 'fainted'
   | 'atCenter'
+  | 'stolen' // roubado pela Equipe Rocket (fora do roster jogável até o desfecho) — Feature B
 
 /** Sexo do Pokémon — sorteado na criação pela taxa da espécie (jogo original). */
 export type Gender = 'male' | 'female' | 'genderless'
@@ -185,7 +186,7 @@ export interface Pokemon {
 }
 
 /** Tipos de sítio no mapa da cidade — definem ONDE cada evento/missão pode surgir. */
-export const SITE_KINDS = ['gym', 'center', 'mart', 'museum', 'house', 'green'] as const
+export const SITE_KINDS = ['gym', 'center', 'mart', 'specialMission', 'house', 'green'] as const
 
 export type SiteKind = (typeof SITE_KINDS)[number]
 
@@ -194,17 +195,17 @@ export type SiteKind = (typeof SITE_KINDS)[number]
  * LEGADO (áreas verdes hoje são só captura) — mantida para compatibilidade de saves antigos,
  * mas não é mais sorteada no agendamento do dia (ver DAILY_CATEGORY_POOL).
  */
-export const MISSION_CATEGORIES = ['center', 'mart', 'house', 'freeArea', 'rocket'] as const
+export const MISSION_CATEGORIES = ['center', 'mart', 'house', 'freeArea', 'special'] as const
 
 export type MissionCategory = (typeof MISSION_CATEGORIES)[number]
 
-/** Sítio onde cada categoria de missão surge no mapa (Rocket nasce no antigo ponto do museu). */
+/** Sítio onde cada categoria de missão surge no mapa (a Missão Especial nasce no ponto specialMission). */
 export const CATEGORY_SITE: Record<MissionCategory, SiteKind> = {
   center: 'center',
   mart: 'mart',
   house: 'house',
   freeArea: 'green',
-  rocket: 'museum',
+  special: 'specialMission',
 }
 
 /** Fase do dia (PLAN §3 / §5). GAMEOVER = derrota imediata (ex.: ginásio indefeso). */

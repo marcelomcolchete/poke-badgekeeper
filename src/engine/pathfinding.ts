@@ -189,6 +189,50 @@ export function pathDistance(graph: CityGraph, path: readonly string[]): number 
 }
 
 /**
+ * Distância de CAMINHO (não euclidiana) de `from` a cada nó alcançável, reusando shortestPath +
+ * pathDistance (com o custo de túnel do Dig já embutido). Nós inalcançáveis ficam de fora.
+ */
+export function nodeDistancesFrom(graph: CityGraph, from: string): Record<string, number> {
+  const out: Record<string, number> = {}
+  if (!graph.nodes[from]) return out
+  for (const id of Object.keys(graph.nodes)) {
+    if (id === from) {
+      out[id] = 0
+      continue
+    }
+    const path = shortestPath(graph, from, id)
+    if (path.length > 0) out[id] = pathDistance(graph, path)
+  }
+  return out
+}
+
+/**
+ * Nó com MAIOR distância de caminho a partir de `from` (destino da fuga da Rocket — Feature B).
+ * Restrito a `candidates` quando informado (default = todos os nós, exceto `from`). Ignora
+ * inalcançáveis; desempate alfabético. Null se não há candidato alcançável.
+ */
+export function farthestNodeFrom(
+  graph: CityGraph,
+  from: string,
+  candidates?: readonly string[],
+): string | null {
+  const dist = nodeDistancesFrom(graph, from)
+  const pool = candidates ?? Object.keys(graph.nodes)
+  let best: string | null = null
+  let bestDist = -1
+  for (const id of pool) {
+    if (id === from) continue
+    const d = dist[id]
+    if (d === undefined) continue // inalcançável
+    if (d > bestDist || (d === bestDist && best !== null && id < best)) {
+      bestDist = d
+      best = id
+    }
+  }
+  return best
+}
+
+/**
  * Posição a `frac∈[0,1]` do comprimento total do caminho (0 = origem, 1 = destino).
  * Velocidade constante: o tempo é distribuído proporcionalmente ao tamanho de cada trecho.
  */

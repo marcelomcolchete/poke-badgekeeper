@@ -32,7 +32,7 @@ const MSG_META: Record<
   center: { symbol: '✚', symClass: styles.symCenter, bubbleClass: styles.bubbleCenter },
   mart: { symbol: '🛒', symClass: styles.symMart, bubbleClass: styles.bubbleMart },
   general: { symbol: '!', symClass: styles.symGeneral, bubbleClass: '' },
-  rocket: { symbol: 'R', symClass: styles.symRocket, bubbleClass: styles.bubbleRocket },
+  special: { symbol: '⭐', symClass: styles.symSpecial, bubbleClass: styles.bubbleSpecial },
 }
 
 export function ReportSidebar({ state, messages }: Props) {

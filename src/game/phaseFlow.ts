@@ -6,7 +6,7 @@
 import type { GameSpeed } from '../types/index.ts'
 import type { GameState } from '../engine/state.ts'
 import { emptyTally } from '../engine/state.ts'
-import { STARS_MIN, TOTAL_DAYS } from '../engine/constants.ts'
+import { STARS_MIN, STARS_STEP, TOTAL_DAYS } from '../engine/constants.ts'
 import { ALL_DEFENSES_WON_BONUS } from '../engine/balance.ts'
 import {
   applyDomainStars,
@@ -21,16 +21,16 @@ import { buildDaySummary, toDayLog } from '../engine/daySummary.ts'
 import { foldDayIntoLifetime } from '../engine/lifetime.ts'
 import { secretCountOf, secretLineFor, SECRET_MAX } from '../data/secretAbilities.ts'
 import { recomputeMaxHp } from '../engine/attributes.ts'
-import {
-  completeRocketBattle,
-  expireMission,
-  freeOnReturn,
-  resolveMissionNow,
-  resolveRocketBattle,
-} from './missionFlow.ts'
+import { expireMission, freeOnReturn, resolveMissionNow } from './missionFlow.ts'
 import { expireDefense } from './defenseFlow.ts'
 import { setupDay, setupMorningShop } from './setup.ts'
 import { findMon, replaceMon } from './runtime.ts'
+import {
+  rollTheftAtDayOpen,
+  resolveTheftBattle,
+  completeTheftBattle,
+  resolveTheftLoss,
+} from './theftFlow.ts'
 
 export function setSpeed(s: GameState, speed: GameSpeed): void {
   s.clock.speed = speed
@@ -42,6 +42,7 @@ export function advancePhase(s: GameState): void {
     case 'MORNING':
       s.run.phase = 'DAY'
       setupDay(s)
+      rollTheftAtDayOpen(s) // B1: uma rolagem por dia (arma ou dobra a chance)
       return
     case 'DAY':
       finalizeDay(s)
@@ -63,9 +64,10 @@ export function finalizeDay(s: GameState): void {
   const battleBefore = s.approval.battleStars
   s.today.missionStarsBefore = missionBefore
   s.today.battleStarsBefore = battleBefore
+  const normalResults = s.today.missionResults.filter((r) => r.templateId !== 'special')
   const progress: DailyProgress = {
-    missionsCompleted: s.today.missionResults.filter((r) => r.success).length,
-    missionsTotal: s.today.missionResults.length,
+    missionsCompleted: normalResults.filter((r) => r.success).length,
+    missionsTotal: normalResults.length,
     battlesWon: s.today.defensesWon,
     battlesTotal: s.today.defensesTotal,
   }
@@ -88,10 +90,21 @@ export function finalizeDay(s: GameState): void {
   s.approval.battleStars = battleAfter
   s.approval.dailyGoalMet = dailyGoalMet(progress)
 
+  // Penalidades da Missão Especial (A3) — aplicadas DEPOIS do desempenho normal, com piso 0 e
+  // SEM game over. Não despachada (expired, time vazio) zera; despachada e falha tira 1 cheia.
+  const specials = s.today.missionResults.filter((r) => r.templateId === 'special')
+  const expiredSpecial = specials.some((r) => r.teamIds.length === 0 && !r.success)
+  const failedSpecial = specials.some((r) => r.teamIds.length > 0 && !r.success)
+  if (expiredSpecial) {
+    s.approval.missionStars = STARS_MIN
+  } else if (failedSpecial) {
+    s.approval.missionStars = applyDomainStars(s.approval.missionStars, -STARS_STEP * 2)
+  }
+
   const summary = buildDaySummary({
     day: s.run.day,
     missionStarsBefore: missionBefore,
-    missionStarsAfter: missionAfter,
+    missionStarsAfter: s.approval.missionStars,
     battleStarsBefore: battleBefore,
     battleStarsAfter: battleAfter,
     missionResults: s.today.missionResults,
@@ -168,19 +181,10 @@ function resolveLeftovers(s: GameState): void {
     if (mission.status === 'scheduled' || mission.status === 'available') {
       expireMission(s, mission)
     } else if (mission.status === 'traveling' || mission.status === 'inProgress') {
-      resolveMissionNow(s, mission) // aplica o desfecho… (pode virar 'battle' p/ Rocket)
-      // Rocket bem-sucedida no fechamento: resolve a batalha automaticamente; senão, volta.
-      if ((mission.status as string) === 'battle') {
-        resolveRocketBattle(s, mission.id)
-        completeRocketBattle(s, mission.id)
-      } else {
-        freeOnReturn(s, mission) // …e traz o time de volta (fim do dia)
-      }
+      resolveMissionNow(s, mission)
+      freeOnReturn(s, mission)
     } else if (mission.status === 'returning') {
       freeOnReturn(s, mission)
-    } else if (mission.status === 'battle') {
-      resolveRocketBattle(s, mission.id)
-      completeRocketBattle(s, mission.id)
     }
   }
   for (const defense of s.defenses) expireDefense(defense)
@@ -191,6 +195,19 @@ function resolveLeftovers(s: GameState): void {
   s.captureSearches = []
   s.captureReturns = []
   s.encounters = []
+
+  // Evento de Roubo Rocket pendente no fechamento: armado sem disparar fica como estava (a chance
+  // segue dobrando amanhã); em fuga/graça vira perda; em batalha resolve automaticamente.
+  const theft = s.theft
+  if (theft) {
+    if (theft.phase === 'fleeing' || theft.phase === 'atFarNode') {
+      resolveTheftLoss(s)
+    } else if (theft.phase === 'battle') {
+      resolveTheftBattle(s)
+      completeTheftBattle(s)
+    }
+    // 'armed' (sem alvo) e 'resolved' não exigem ação.
+  }
 }
 
 /** Inicia o próximo dia (cura no Centro Pokémon, limpa eventos) ou encerra a run no dia 10. */
@@ -208,6 +225,7 @@ function startNextDay(s: GameState): void {
   s.captureSearches = []
   s.captureReturns = []
   s.encounters = []
+  s.theft = undefined
   s.today = emptyTally()
   setupMorningShop(s)
   s.clock.dayElapsedMs = 0

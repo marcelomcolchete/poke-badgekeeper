@@ -3,7 +3,7 @@ import { ATTR_KEYS } from '../types/index.ts'
 import type { CityGraph, MissionTemplate } from '../data/types.ts'
 import { TEAM_ATTR_MAX } from './constants.ts'
 import { createRng } from './rng.ts'
-import { NORMAL_TEMPLATES, POKECENTER_TEMPLATE, ROCKET_TEAM_TEMPLATE } from '../data/missionTemplates.ts'
+import { NORMAL_TEMPLATES, POKECENTER_TEMPLATE, SPECIAL_TEMPLATE } from '../data/missionTemplates.ts'
 import {
   agilityTravelFactor,
   createMissionInstance,
@@ -173,9 +173,9 @@ describe('generateRequirement (rebalanceamento)', () => {
     expect(mega?.requirement.batalha).toBe(TEAM_ATTR_MAX) // principal + secundário no dia 20 satura em 100
   })
 
-  it('special5 (Equipe Rocket): 3 principais + 2 secundários + 1 resto, nada forçado ao teto', () => {
+  it('special5 (Missão Especial): 3 principais + 2 secundários + 1 resto, nada forçado ao teto', () => {
     for (let seed = 1; seed <= 20; seed++) {
-      const { requirement, secondaryAttr } = generateRequirement(createRng(seed), 3, ROCKET_TEAM_TEMPLATE)
+      const { requirement, secondaryAttr } = generateRequirement(createRng(seed), 3, SPECIAL_TEMPLATE)
       expect(secondaryAttr).toBeNull()
       // Dia 3: principais (≥30) e secundários (≥20) reforçados; resto ≤18 → 5 reforçados + 1 resto.
       expect(ATTR_KEYS.filter((k) => requirement[k] >= 20).length).toBe(5)
@@ -289,18 +289,18 @@ describe('createMissionInstance (PLAN §3.1)', () => {
     expect(inst.teamIds).toEqual([])
   })
 
-  it('usa templateId fixo quando informado (missão Equipe Rocket)', () => {
+  it('usa templateId fixo quando informado (Missão Especial)', () => {
     const inst = createMissionInstance({
       id: 'm2',
       rng: createRng(1),
       day: 5,
-      category: 'rocket',
+      category: 'special',
       node: 'd',
       spawnAtMs: 0,
       lifetimeMs: 20_000,
-      templateId: 'rocket',
+      templateId: 'special',
     })
-    expect(inst.templateId).toBe('rocket')
+    expect(inst.templateId).toBe('special')
   })
 })
 

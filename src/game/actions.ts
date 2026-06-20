@@ -29,10 +29,6 @@ export type GameAction =
   | { type: 'ASSIGN_DEFENSE'; defenseId: string; squadIds: string[] }
   /** Conclui a batalha de defesa (após a animação): aplica o XP/level-up das vitórias — §4.4. */
   | { type: 'COMPLETE_DEFENSE'; defenseId: string }
-  /** Resolve a batalha da missão Equipe Rocket (cadeia de duelos com o time despachado). */
-  | { type: 'RESOLVE_ROCKET_BATTLE'; missionId: string }
-  /** Conclui a batalha Rocket (após a animação): na vitória, ouro-bônus + 3× XP — Rocket Team. */
-  | { type: 'COMPLETE_ROCKET_BATTLE'; missionId: string }
   /** Manda um Pokémon explorar uma área de captura — PLAN §4.5. */
   | { type: 'START_SEARCH'; searcherId: string; spotIndex: number }
   /** No encontro: captura o candidato (por índice); com o time cheio, ele vai pro Computador (PC) — §4.5. */
@@ -57,3 +53,9 @@ export type GameAction =
   | { type: 'USE_MOON_STONE'; pokemonId: string }
   /** Aloca o ponto de um level-up no atributo escolhido (modal) — PLAN §4.1. */
   | { type: 'ALLOCATE_POINT'; pokemonId: string; attr: AttrKey }
+  /** Despacha até 3 Pokémon idle atrás da Rocket no Evento de Roubo (Feature B). */
+  | { type: 'DISPATCH_THEFT_CHASERS'; chaserIds: string[] }
+  /** Resolve a batalha de resgate (cadeia de duelos) — Feature B. */
+  | { type: 'RESOLVE_THEFT_BATTLE' }
+  /** Conclui a batalha de resgate (após a animação): aplica 3× XP na vitória — Feature B. */
+  | { type: 'COMPLETE_THEFT_BATTLE' }

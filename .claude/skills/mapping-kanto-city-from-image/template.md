@@ -11,12 +11,12 @@ Para cada ponto (letra) lido da imagem:
 2. **Arestas** — para cada seta cinza/branca entre dois pontos: aresta **não-direcionada** em
    `_EDGES` (uma vez). One-way (declarado no chat) ⇒ `_DIRECTED_EDGES` como `[de, para]`.
 3. **Pop-ups** — pela legenda: GYM→`gym`, CP→`center`, MART→`mart` (letra única cada);
-   HOUSE→adicionar letra a `houses`; RKT→`museum` (convenção viva — hoje ponto único);
+   HOUSE→adicionar letra a `houses`; SPEC→`specialMission` (um nó por local; pode haver >1);
    GRASS→um nó dedicado `g3X` posicionado sobre o retângulo, capture-only, mais aresta(s)
    `[letra, g3X]` (uma por seta roxa).
 4. **Markers** — onde uma letra hospeda mais de um pop-up, chave composta `"<letra>:<kind>"` →
    posição do retângulo. Nós `g3X` dedicados não precisam de marker (caem na posição do nó).
-   `kind` ∈ `gym | center | mart | museum | house | green`.
+   `kind` ∈ `gym | center | mart | specialMission | house | green`.
 
 ## Skeleton (grafo + sítios)
 
@@ -44,7 +44,7 @@ const CITY_GRAPH: CityGraph = {
 }
 const CITY_SITE_NODES: CitySiteNodes = {
   gym: '<GYM>', center: '<CP>', mart: '<MART>',
-  museum: [/* ponto(s) RKT — convenção viva */],
+  specialMission: [/* ponto(s) SPEC */],
   houses: [/* letras HOUSE */],
   green: [/* nós dedicados GRASS: 'g31', ... */],
 }
@@ -70,10 +70,10 @@ Não tocar em `starters`/tipos a menos que o brief peça.
 - [ ] todo alvo de adjacência existe como nó
 - [ ] arestas simétricas, exceto as one-way declaradas (forward presente, reverse ausente)
 - [ ] `surfNodes` = exatamente as letras azuis
-- [ ] todos os sítios (gym/center/mart/museum/houses/green) existem no grafo
+- [ ] todos os sítios (gym/center/mart/specialMission/houses/green) existem no grafo
 - [ ] todo sítio é alcançável **do gym e de volta** (ciente de direção)
 - [ ] um desvio one-way: rota de volta ≠ inverso do ida, e é o caminho mínimo real
-- [ ] Rocket: `nodesForCategory(siteNodes, 'rocket')` bate com o `museum` vivo
+- [ ] Missão Especial: `nodesForCategory(siteNodes, 'special')` bate com o `specialMission` vivo
 - [ ] se houver sítio atrás de água: `[]` para time sem Surf, alcançável com Surf/`surfboard`
 
 ## Passo final

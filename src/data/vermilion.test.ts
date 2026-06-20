@@ -1,6 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { TOTAL_DAYS } from '../engine/constants.ts'
-import { buildDaySchedule, rocketDays } from '../engine/timeline.ts'
 import { shortestPath } from '../engine/pathfinding.ts'
 import { getCity, nodesForCategory } from './cities.ts'
 
@@ -41,7 +39,7 @@ describe('Vermilion (cidade 3)', () => {
 
   it('todos os sítios de missão existem no grafo', () => {
     const sn = siteNodes
-    for (const id of [sn.gym, sn.center, sn.mart, ...sn.museum, ...sn.houses, ...sn.green]) {
+    for (const id of [sn.gym, sn.center, sn.mart, ...sn.specialMission, ...sn.houses, ...sn.green]) {
       expect(graph.nodes[id], `sítio ${id} fora do grafo`).toBeDefined()
     }
   })
@@ -50,7 +48,7 @@ describe('Vermilion (cidade 3)', () => {
     const sites = [
       siteNodes.center,
       siteNodes.mart,
-      ...siteNodes.museum,
+      ...siteNodes.specialMission,
       ...siteNodes.houses,
       ...siteNodes.green,
     ]
@@ -67,37 +65,13 @@ describe('Vermilion (cidade 3)', () => {
     expect(graph.adj['q']).toContain('g33')
   })
 
-  it('a Rocket tem um ÚNICO ponto (x); as 2 missões da run colapsam nele', () => {
-    const rocketNodes = nodesForCategory(siteNodes, 'rocket')
-    expect(rocketNodes).toEqual(['x'])
-
-    for (let seed = 1; seed <= 40; seed++) {
-      const days = rocketDays(seed)
-      expect(days).toHaveLength(2)
-      expect(new Set(days).size).toBe(2) // dias distintos
-
-      const first = buildDaySchedule(seed, days[0] as number, VERMILION).missions.find(
-        (m) => m.category === 'rocket',
-      )
-      const second = buildDaySchedule(seed, days[1] as number, VERMILION).missions.find(
-        (m) => m.category === 'rocket',
-      )
-      expect(rocketNodes[first?.siteIndex ?? -1]).toBe('x')
-      expect(rocketNodes[second?.siteIndex ?? -1]).toBe('x')
-    }
+  it('a Missão Especial tem um ÚNICO ponto (x)', () => {
+    expect(nodesForCategory(siteNodes, 'special')).toEqual(['x'])
+    expect(siteNodes.specialMission).toEqual(['x'])
   })
 
-  it('as áreas verdes são de exploração/captura (não hospedam Rocket)', () => {
-    const rocket = nodesForCategory(siteNodes, 'rocket')
-    for (const g of siteNodes.green) expect(rocket).not.toContain(g)
-  })
-
-  it('em dias sem Rocket não há missão Rocket', () => {
-    const days = rocketDays(99)
-    const off = [...Array(TOTAL_DAYS).keys()].map((i) => i + 1).find((d) => !days.includes(d))
-    expect(off).toBeDefined()
-    expect(
-      buildDaySchedule(99, off as number, VERMILION).missions.some((m) => m.category === 'rocket'),
-    ).toBe(false)
+  it('as áreas verdes são de exploração/captura (não hospedam Missão Especial)', () => {
+    const special = nodesForCategory(siteNodes, 'special')
+    for (const g of siteNodes.green) expect(special).not.toContain(g)
   })
 })

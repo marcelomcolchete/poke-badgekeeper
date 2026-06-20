@@ -28,6 +28,7 @@ export const STATUS_LABEL_PT: Record<PokemonStatus, string> = {
   returning: 'Voltando',
   fainted: 'Desmaiado',
   atCenter: 'No Centro',
+  stolen: 'Roubado', // Feature B
 }
 
 /** Cor do "led" de status (verde = livre, amarelo = ocupado, vermelho = indisponível). */
@@ -39,6 +40,7 @@ export const STATUS_COLOR: Record<PokemonStatus, string> = {
   returning: '#57a6dc',
   fainted: '#e84040',
   atCenter: '#a05fd0',
+  stolen: '#c0392b', // Feature B
 }
 
 export const TYPE_LABEL_PT: Record<PokemonType, string> = {

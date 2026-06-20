@@ -174,7 +174,7 @@ const PEWTER_SITE_NODES: CitySiteNodes = {
   gym: 'j', // 1 (ginásio)
   center: 'p', // 2 (centro)
   mart: 'l', // 4 (mart)
-  museum: ['d'], // 5 (museu / Rocket Team) — ponto único
+  specialMission: ['d'], // 5 (ponto único da Missão Especial)
   houses: ['a', 'g'], // 6.1, 6.2
   green: ['c', 'b', 'g', 'm', 'n'], // 3.1, 3.2, 3.3, 3.4, 3.5
 }
@@ -285,7 +285,7 @@ const CERULEAN_SITE_NODES: CitySiteNodes = {
   gym: 'u', // 1 (ginásio)
   center: 'p', // 2 (centro) — acessível de 'p' e 't'; paramos em 'p'
   mart: 't', // 4 (mart) — acessível de 't' e 'u'; paramos em 't'
-  museum: ['x'], // 5.2 — ponto Rocket ÚNICO (as 2 missões da run colapsam aqui, como Pewter)
+  specialMission: ['x'], // 5.2 — ponto especial ÚNICO
   houses: ['h', 'i', 'c', 'g', 'p', 't', 'u'], // 6.1..6.7
   green: ['g31', 'g32', 'g33', 'g34', 'g35', 'm'], // 3.1..3.6 (áreas de exploração/captura; 'm' era a 2ª Rocket)
 }
@@ -428,7 +428,7 @@ const VERMILION_SITE_NODES: CitySiteNodes = {
   gym: 'aj', // GYM
   center: 'd', // CP
   mart: 'ab', // MART
-  museum: ['x'], // RKT — ponto Rocket único
+  specialMission: ['x'], // SPEC — ponto especial único
   houses: ['c', 'e', 'g', 'y', 'ah'], // HOUSE ×5
   green: ['g31', 'g32', 'g33', 'g34', 'g35'], // GRASS ×5 (exploração/captura)
 }
@@ -598,8 +598,8 @@ export function nodesByKind(siteNodes: CitySiteNodes, kind: SiteKind): string[] 
       return [siteNodes.center]
     case 'mart':
       return [siteNodes.mart]
-    case 'museum':
-      return siteNodes.museum
+    case 'specialMission':
+      return siteNodes.specialMission
     case 'house':
       return siteNodes.houses
     case 'green':

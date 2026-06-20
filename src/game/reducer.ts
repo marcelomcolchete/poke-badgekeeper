@@ -9,7 +9,7 @@ import { draft } from './runtime.ts'
 import { tick } from './dayClock.ts'
 import { startRun } from './setup.ts'
 import { advancePhase, setSpeed } from './phaseFlow.ts'
-import { acceptMission, completeRocketBattle, resolveRocketBattle } from './missionFlow.ts'
+import { acceptMission } from './missionFlow.ts'
 import { assignDefense, completeDefense } from './defenseFlow.ts'
 import {
   capturePick,
@@ -20,6 +20,7 @@ import {
   withdrawPokemon,
 } from './captureFlow.ts'
 import { allocatePoint, applyItem, buyBall, buyItem, useMoonStone, useRareCandy } from './marketFlow.ts'
+import { dispatchTheftChasers, resolveTheftBattle, completeTheftBattle } from './theftFlow.ts'
 
 export function reducer(state: GameState, action: GameAction): GameState {
   // Reinício total numa nova cidade: descarta o estado atual (não dobra no draft) — começo limpo.
@@ -53,12 +54,6 @@ export function reducer(state: GameState, action: GameAction): GameState {
       break
     case 'COMPLETE_DEFENSE':
       completeDefense(s, action.defenseId)
-      break
-    case 'RESOLVE_ROCKET_BATTLE':
-      resolveRocketBattle(s, action.missionId)
-      break
-    case 'COMPLETE_ROCKET_BATTLE':
-      completeRocketBattle(s, action.missionId)
       break
     case 'START_SEARCH':
       startSearch(s, action.searcherId, action.spotIndex)
@@ -95,6 +90,15 @@ export function reducer(state: GameState, action: GameAction): GameState {
       break
     case 'ALLOCATE_POINT':
       allocatePoint(s, action.pokemonId, action.attr)
+      break
+    case 'DISPATCH_THEFT_CHASERS':
+      dispatchTheftChasers(s, action.chaserIds)
+      break
+    case 'RESOLVE_THEFT_BATTLE':
+      resolveTheftBattle(s)
+      break
+    case 'COMPLETE_THEFT_BATTLE':
+      completeTheftBattle(s)
       break
   }
   return s

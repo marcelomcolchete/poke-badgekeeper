@@ -8,6 +8,7 @@ import { MISSION_XP_POOL } from '../engine/balance.ts'
 import { gymWinXp } from '../engine/gymDefense.ts'
 import { reducer } from './reducer.ts'
 import { autoSeedRun } from './setup.ts'
+import { rollTheftAtDayOpen, spawnTheft } from './theftFlow.ts'
 
 const SEED = 777
 const GYM: PokemonType[] = ['rock', 'water', 'grass']
@@ -38,7 +39,7 @@ function controlledMission(over: Partial<MissionInstance> = {}): MissionInstance
 }
 
 function dayState(over: Partial<GameState> = {}): GameState {
-  return { ...createInitialState(SEED), run: { cityIndex: 0, day: 1, seed: SEED, phase: 'DAY', ballLevel: 0 }, gym: { types: GYM }, ...over }
+  return { ...createInitialState(SEED), run: { cityIndex: 0, day: 1, seed: SEED, phase: 'DAY', ballLevel: 0, theftChance: 1, specialChances: [] }, gym: { types: GYM }, ...over }
 }
 
 describe('reducer — pureza e determinismo', () => {
@@ -151,17 +152,18 @@ describe('fluxo de missão (PLAN §4.2/§4.3)', () => {
     expect(s.run.phase).toBe('SUMMARY') // sem pendências, o dia fecha
   })
 
-  it('Equipe Rocket como pop-up não causa derrota instantânea ao bater 18h', () => {
-    const rocket = controlledMission({ templateId: 'rocket', expiresAtMs: 250_000 })
-    let s = dayState({ roster: [strong('a')], missions: [rocket] })
+  it('Missão Especial expirada vai para SUMMARY (sem GAMEOVER — Plan A sem Rocket)', () => {
+    const special = controlledMission({ templateId: 'special', expiresAtMs: 250_000 })
+    let s = dayState({ roster: [strong('a')], missions: [special] })
     s = reducer(s, { type: 'TICK', deltaMs: 190_000 }) // passa do fim do dia, antes do timer
-    expect(s.run.phase).toBe('DAY') // NÃO perdeu — ainda dá para batalhar
+    expect(s.run.phase).toBe('DAY') // ainda aguarda o pop-up resolver
     expect(s.missions[0]?.status).toBe('available')
 
-    // Ignorar até o timer da Rocket esgotar mantém a punição (derrota imediata por Rocket).
+    // Timer esgota: missão expira, dia fecha normalmente (SUMMARY, não GAMEOVER).
     s = reducer(s, { type: 'TICK', deltaMs: 100_000 })
-    expect(s.run.phase).toBe('GAMEOVER')
-    expect(s.run.gameOverReason).toBe('rocket')
+    expect(s.missions[0]?.status).toBe('resolved')
+    expect(s.missions[0]?.result).toBe('expired')
+    expect(s.run.phase).toBe('SUMMARY')
   })
 })
 
@@ -546,5 +548,20 @@ describe('fim do dia por retorno (PLAN §3, ajuste)', () => {
     s = reducer(s, { type: 'TICK', deltaMs: 20_000 }) // 205s: retorno concluído
     expect(s.roster[0]?.status).toBe('idle')
     expect(s.run.phase).toBe('SUMMARY')
+  })
+})
+
+describe('fluxo de roubo Rocket (Feature B)', () => {
+  it('DISPATCH_THEFT_CHASERS adiciona perseguidores ao evento (sem mutar a entrada)', () => {
+    // seed=3: rollTheftAtDayOpen arma o roubo; spawnTheft rouba 'c1' → 'p1' fica idle como perseguidor.
+    const base = autoSeedRun(3)
+    base.run.phase = 'DAY'
+    base.run.theftChance = 100
+    rollTheftAtDayOpen(base)
+    base.roster = [makeMon({ id: 'p1', status: 'idle' }), makeMon({ id: 'c1', status: 'idle' })]
+    spawnTheft(base, 0)
+    const next = reducer(base, { type: 'DISPATCH_THEFT_CHASERS', chaserIds: ['p1'] })
+    expect(next.theft!.chaserIds).toContain('p1')
+    expect(base.theft!.chaserIds).not.toContain('p1') // entrada intacta
   })
 })

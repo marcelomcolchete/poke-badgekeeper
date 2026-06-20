@@ -6,12 +6,12 @@
 import type { Pokemon } from '../types/index.ts'
 import type { GameState } from '../engine/state.ts'
 import { isFainted } from '../engine/attributes.ts'
-import { getMissionTemplate } from '../data/missionTemplates.ts'
-import { advanceMission, expireMission, loseRunByRocket, promoteMission } from './missionFlow.ts'
+import { advanceMission, expireMission, promoteMission } from './missionFlow.ts'
 import { expireDefense, loseRunByUndefendedGym, spawnDefense } from './defenseFlow.ts'
 import { advanceCaptureReturn, advanceSearch } from './captureFlow.ts'
 import { finalizeDay } from './phaseFlow.ts'
 import { processStorms } from './stormFlow.ts'
+import { processTheft } from './theftFlow.ts'
 
 /** Status de Pokémon que ainda estão "fora" do ginásio (impedem o fim do dia). */
 const AWAY_STATUSES: Pokemon['status'][] = ['traveling', 'onMission', 'returning', 'defending']
@@ -31,6 +31,7 @@ export function tick(s: GameState, deltaMs: number): void {
   if (s.run.phase !== 'DAY') return // derrota por ginásio indefeso encerrou a run
   processSearches(s, now)
 
+  processTheft(s, now)
   processStorms(s, prevMs, now)
 
   // Time inteiro desmaiado no dia = derrota imediata (sem ninguém para lutar/agir).
@@ -50,10 +51,6 @@ function checkTeamWipeout(s: GameState): void {
 
 function processMissions(s: GameState, now: number, overtime: boolean): void {
   for (const mission of s.missions) {
-    // Rocket disponível ANTES deste tick: deixar o timer zerar sem despachar = derrota
-    // imediata. Surgir e expirar no mesmo salto de tempo (aba oculta) apenas a descarta.
-    const wasAvailableRocket =
-      mission.status === 'available' && getMissionTemplate(mission.templateId).isRocket
     // Encerramento (18h): apenas missões que AINDA não surgiram são descartadas. As que já
     // estão como pop-up na tela ('available') continuam até o PRÓPRIO timer acabar — sumir no
     // 18h faria o jogador perder na hora se fosse batalha/Rocket (PLAN §3.1, ajuste).
@@ -65,11 +62,10 @@ function processMissions(s: GameState, now: number, overtime: boolean): void {
     } else {
       promoteMission(s, mission, now)
     }
-    // Pop-up ignorado até o fim do tempo dele expira (e Rocket não despachada = derrota) — vale
-    // tanto no horário normal quanto no encerramento, dando ao jogador a janela inteira.
+    // Pop-up ignorado até o fim do tempo dele expira — a penalidade de estrela por uma
+    // missão especial ignorada é aplicada no encerramento do dia (finalizeDay, Task 11).
     if (mission.status === 'available' && now >= mission.expiresAtMs) {
       expireMission(s, mission)
-      if (wasAvailableRocket) loseRunByRocket(s)
       continue
     }
     if (

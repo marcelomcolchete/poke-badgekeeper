@@ -11,7 +11,7 @@ import { RIVAL_TRAINER_IDS } from '../types/index.ts'
 import { getCity, nodePos, nodesForCategory } from '../data/cities.ts'
 import { getDailyShop } from '../data/items.ts'
 import { getTrainer, trainerSprites } from '../data/trainers.ts'
-import { buildDaySchedule, type DefenseSlot } from '../engine/timeline.ts'
+import { buildDaySchedule, rollSpecialMissions, spawnTimesAcrossSegments, type DefenseSlot } from '../engine/timeline.ts'
 import { createMissionInstance } from '../engine/missions.ts'
 import { buildDayWeather } from '../engine/storm.ts'
 import { generateDefenseEnemies, rollSquadSize } from '../engine/gymDefense.ts'
@@ -24,9 +24,10 @@ import {
   DEFENSE_LIFETIME_MS,
   DIG_HOLES_PER_TUNNEL,
   MISSION_LIFETIME_MS,
+  SPECIAL_CHANCE_START,
 } from '../engine/balance.ts'
 import { DIG_SEED_SALT, TRAINER_SEED_SALT } from '../engine/constants.ts'
-import { takeId } from './runtime.ts'
+import { takeId, takeRng } from './runtime.ts'
 
 /**
  * Define a oferta do mercado da manhã (3 itens) — fixada ao entrar na manhã para não
@@ -40,12 +41,22 @@ export function setupMorningShop(s: GameState): void {
 /** Instancia a agenda do dia (missões/defesas 'scheduled') e arma o relógio (PLAN §4.8). */
 export function setupDay(s: GameState): void {
   const city = getCity(s.run.cityIndex)
+
+  // Garante uma chance corrente por local especial da cidade (inicia em START; preserva as
+  // existentes ao trocar de dia, perde tamanho só se a cidade mudou o nº de locais).
+  const specialCount = city.siteNodes.specialMission.length
+  if (s.run.specialChances.length !== specialCount) {
+    s.run.specialChances = Array.from(
+      { length: specialCount },
+      (_, i) => s.run.specialChances[i] ?? SPECIAL_CHANCE_START,
+    )
+  }
+
   const schedule = buildDaySchedule(s.run.seed, s.run.day, city)
   s.missions = schedule.missions.map((slot) => {
     const nodes = nodesForCategory(city.siteNodes, slot.category)
     const node = nodes[slot.siteIndex % nodes.length] ?? city.siteNodes.gym
-    // A missão Rocket dura igual a uma defesa de ginásio (timer mais longo); demais, o normal.
-    const lifetimeMs = slot.templateId === 'rocket' ? DEFENSE_LIFETIME_MS : MISSION_LIFETIME_MS
+    const lifetimeMs = MISSION_LIFETIME_MS
     return createMissionInstance({
       id: takeId(s, 'm'),
       rng: createRng(slot.seed),
@@ -57,6 +68,32 @@ export function setupDay(s: GameState): void {
       templateId: slot.templateId,
     })
   })
+
+  // Missões Especiais (⭐): rolagem ESTOCÁSTICA por local no abrir do dia (muta a chance persistida).
+  // Determinístico via takeRng (cursor da run). Hits viram instâncias 'special' com timer longo,
+  // distribuídas nos 3 momentos como as demais (não aparecem na previsão — surpresa).
+  const specialRng = takeRng(s)
+  const roll = rollSpecialMissions(specialRng, s.run.specialChances)
+  s.run.specialChances = roll.nextChances
+  if (roll.hits.length > 0) {
+    const times = spawnTimesAcrossSegments(specialRng, roll.hits.length, s.run.day)
+    roll.hits.forEach((siteIndex, k) => {
+      const nodes = city.siteNodes.specialMission
+      const node = nodes[siteIndex] ?? city.siteNodes.gym
+      s.missions.push(
+        createMissionInstance({
+          id: takeId(s, 'm'),
+          rng: createRng(deriveSeed(s.run.seed, s.run.day * 1000 + siteIndex)),
+          day: s.run.day,
+          category: 'special',
+          node,
+          spawnAtMs: times[k] ?? 0,
+          lifetimeMs: DEFENSE_LIFETIME_MS,
+          templateId: 'special',
+        }),
+      )
+    })
+  }
   // Treinadores do dia: sorteados SEM repetição (um treinador não invade duas vezes no
   // mesmo dia — se já veio hoje, só pode voltar amanhã). PLAN §4.4. Os rivais entram no
   // pool de TODA cidade, além da lista local (dedup caso a cidade já os liste).
@@ -93,7 +130,7 @@ export function setupDay(s: GameState): void {
 function applyForewarn(s: GameState): void {
   const count = s.roster.filter(hasForewarn).length
   if (count === 0) return
-  const movable = s.missions.filter((m) => m.templateId !== 'rocket' && m.spawnAtMs > 0)
+  const movable = s.missions.filter((m) => m.templateId !== 'special' && m.spawnAtMs > 0)
   for (const mission of movable.slice(0, count)) {
     const lifetime = mission.expiresAtMs - mission.spawnAtMs
     mission.spawnAtMs = 0

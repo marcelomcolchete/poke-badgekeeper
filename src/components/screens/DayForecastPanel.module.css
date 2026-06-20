@@ -88,12 +88,10 @@
   line-height: 1;
 }
 
-/* "R" da Equipe Rocket no mesmo estilo do marcador do mapa. */
+/* Ícone 🚨 da Chance de Rocket — emoji, sem font-pixel. */
 .rocketIcon {
-  font-family: var(--font-pixel);
-  font-weight: 700;
-  font-size: 18px;
-  color: var(--c-dialog-cursor);
+  font-size: 22px;
+  line-height: 1;
 }
 
 .countValue {
@@ -103,9 +101,12 @@
   color: var(--c-ink);
 }
 
+/* Cor definida via style inline (theftChanceLabel) — sem cor fixa aqui. */
 .rocketValue {
-  color: var(--c-hp-low);
-  letter-spacing: 2px;
+  font-size: 11px;
+  line-height: 1.1;
+  text-align: center;
+  letter-spacing: 0;
 }
 
 .countLabel {

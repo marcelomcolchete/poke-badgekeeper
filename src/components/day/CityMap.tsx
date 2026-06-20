@@ -23,7 +23,7 @@ import { activePuddlesAt } from '../../engine/weather.ts'
 import { activeStrikeCirclesAt } from '../../engine/storm.ts'
 import { teamIsSpeedy } from '../../engine/secretEffects.ts'
 import { clamp } from '../../engine/math.ts'
-import { missionTravelerPos, searchTravelerPos, returnTravelerPos } from '../../engine/travelerPositions.ts'
+import { missionTravelerPos, searchTravelerPos, returnTravelerPos, theftPos, chaserPositionsAt } from '../../engine/travelerPositions.ts'
 import styles from './CityMap.module.css'
 
 /** Missões que aparecem no mapa: disponíveis e as já aceitas (em trânsito/ação/volta) — #4. */
@@ -268,6 +268,21 @@ function MapTravelers({ state, graph, now }: { state: GameState; graph: CityGrap
           <TravelerGroup key={`r-${r.searcherId}`} pos={pos} ids={[r.searcherId]} roster={state.roster} flying={r.flying} surfing={r.surfing} paralyzed={paralyzed} />
         )
       })}
+      {state.theft && (() => {
+        const rocketPos = theftPos(graph, state.theft, now)
+        return (
+          <>
+            {rocketPos && (
+              <div className={styles.rocket} style={posStyle(rocketPos)} aria-label="Equipe Rocket">
+                R
+              </div>
+            )}
+            {chaserPositionsAt(state, now).map(({ id, pos }) => (
+              <TravelerGroup key={`chaser-${id}`} pos={pos} ids={[id]} roster={state.roster} />
+            ))}
+          </>
+        )
+      })()}
     </>
   )
 }
@@ -374,15 +389,15 @@ function missionVisual(mission: MissionInstance, now: number): MissionVisual {
       }
     }
     default: {
-      // Disponível: "!" (ou "R" vermelho da Equipe Rocket) com o anel esvaziando até expirar.
-      const isRocket = getMissionTemplate(mission.templateId).isRocket
+      // Disponível: "!" (ou "⭐" da Missão Especial) com o anel esvaziando até expirar.
+      const isSpecial = mission.templateId === 'special'
       return {
         iconClass: styles.bang,
         ringColor: 'var(--c-hud-accent)',
-        content: isRocket ? 'R' : '!',
+        content: isSpecial ? '⭐' : '!',
         fraction: timerFraction(mission, now),
         pulse: true,
-        ariaLabel: isRocket ? 'Missão da Equipe Rocket disponível' : 'Missão disponível',
+        ariaLabel: isSpecial ? 'Missão Especial disponível' : 'Missão disponível',
       }
     }
   }

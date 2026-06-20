@@ -152,7 +152,7 @@ describe('cidades, itens, missões, passivas', () => {
         }
       }
       const sn = c.siteNodes
-      for (const id of [sn.gym, sn.center, sn.mart, ...sn.museum, ...sn.houses, ...sn.green]) {
+      for (const id of [sn.gym, sn.center, sn.mart, ...sn.specialMission, ...sn.houses, ...sn.green]) {
         expect(nodes[id], `sítio ${id} fora do grafo`).toBeDefined()
       }
     }

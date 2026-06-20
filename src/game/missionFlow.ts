@@ -3,25 +3,22 @@
 // returning (volta ao ginásio) → resolved (success/failure/expired).
 // O desfecho é aplicado ao TERMINAR a execução; o time só fica 'idle' ao VOLTAR.
 
-import type { Pokemon, TrainerId } from '../types/index.ts'
+import type { Pokemon } from '../types/index.ts'
 import type { MissionTemplate } from '../data/types.ts'
 import type { GameState, MissionInstance, MissionStatus } from '../engine/state.ts'
 import { markActive } from '../engine/state.ts'
 import { getCity } from '../data/cities.ts'
 import { getMissionTemplate } from '../data/missionTemplates.ts'
-import { getTrainer } from '../data/trainers.ts'
 import { damageForDay, MAX_DISPATCH, MIN_DISPATCH } from '../engine/constants.ts'
 import {
   MISSION_XP_POOL,
   NATURAL_CURE_MISSION_HEAL,
   RETURN_SPEED_BONUS_ON_SUCCESS,
-  ROCKET_GOLD_BONUS,
-  ROCKET_XP_MULTIPLIER,
+  SPECIAL_XP_MULTIPLIER,
   SWIFT_SWIM_RAIN_BONUS,
   WATER_ABSORB_XP,
 } from '../engine/balance.ts'
-import { generateDefenseEnemies, resolveDefense, rollSquadSize } from '../engine/gymDefense.ts'
-import { goldForDefense, goldForMart } from '../engine/economy.ts'
+import { goldForMart } from '../engine/economy.ts'
 import {
   executionMs,
   missionSuccessProbabilityCtx,
@@ -42,7 +39,6 @@ import { isRaining } from '../engine/weather.ts'
 import { graphWithTunnels, pathUsesSurf } from '../engine/pathfinding.ts'
 import { planWeatherLeg } from '../engine/weatherTravel.ts'
 import { createRng } from '../engine/rng.ts'
-import { applyBattleSecretRuntime } from './defenseFlow.ts'
 import { applyXpGains } from './itemFlow.ts'
 import { findMon, replaceMon, settleFaintTracked, takeRng } from './runtime.ts'
 
@@ -287,14 +283,6 @@ export function resolveMissionNow(s: GameState, mission: MissionInstance): void 
   // Habilidades Secretas: consome o Battle Armor pendente (valeu para esta missão).
   applyMissionSecretRuntime(s, team)
 
-  // Equipe Rocket: cumprir a parte de atributos NÃO dá recompensa — o time fica no local
-  // para BATALHAR (status 'battle'). Recompensas só na vitória (PLAN — Rocket Team). Falhar
-  // a parte de atributos cai no caminho normal de derrota (sem batalha).
-  if (template.isRocket && outcome.success) {
-    setupRocketBattle(s, mission, team)
-    return
-  }
-
   // Aplica só o dano (HP) agora; XP/cura/evolução são adiados para freeOnReturn.
   // Sturdy: salva do desmaio em missão (1×/dia) — fica com 1 de vida.
   const sturdyIds = new Set(
@@ -311,8 +299,9 @@ export function resolveMissionNow(s: GameState, mission: MissionInstance): void 
   // Seed de evolução sorteado AGORA (mantém o cursor do RNG estável); usado só na volta.
   mission.xpSeed = takeRng(s).int(0, 0x7fffffff)
   if (outcome.success) {
-    // Pool de XP da missão dividido igualmente entre os participantes (aplicado na volta).
-    const share = team.length > 0 ? Math.floor(MISSION_XP_POOL / team.length) : 0
+    // Pool de XP dividido entre os participantes; a Missão Especial paga SPECIAL_XP_MULTIPLIER×.
+    const pool = template.id === 'special' ? MISSION_XP_POOL * SPECIAL_XP_MULTIPLIER : MISSION_XP_POOL
+    const share = team.length > 0 ? Math.floor(pool / team.length) : 0
     mission.xpAwards = Object.fromEntries(team.map((p) => [p.id, share]))
     applyMissionRewards(s, template, team)
   }
@@ -379,113 +368,3 @@ function applyMissionRewards(s: GameState, template: MissionTemplate, team: read
   }
 }
 
-// ---- Equipe Rocket (batalha após a parte de atributos) — PLAN — Rocket Team ----
-
-/**
- * Monta a batalha da Equipe Rocket após cumprir a parte de atributos: sorteia o treinador
- * (masculino/feminino) e o esquadrão inimigo (mesma quantidade por dia que a defesa de
- * ginásio, com um desafiante em destaque). O time fica 'onMission' aguardando o jogador
- * clicar em "Batalhar" — sem recompensa ainda, só na vitória.
- */
-function setupRocketBattle(s: GameState, mission: MissionInstance, team: readonly Pokemon[]): void {
-  const trainerId: TrainerId = takeRng(s).bool(0.5) ? 'ROCKET_TEAM_MALE' : 'ROCKET_TEAM_FEMALE'
-  const rng = takeRng(s)
-  const size = rollSquadSize(rng, s.run.day)
-  const enemies = generateDefenseEnemies(rng, getTrainer(trainerId), size)
-  mission.rocket = { trainerId, enemies, resolved: false }
-  mission.status = 'battle'
-  mission.result = 'success'
-  for (const p of team) replaceMon(s, { ...p, status: 'onMission' })
-}
-
-/**
- * Resolve a batalha da Equipe Rocket (cadeia de duelos 1v1, time na ORDEM em que foi
- * despachado): aplica HP/desmaio e registra o log. Ouro e 3× XP ficam para
- * completeRocketBattle — só vêm na vitória. Idempotente (rocket.resolved).
- */
-export function resolveRocketBattle(s: GameState, missionId: string): void {
-  const mission = s.missions.find((m) => m.id === missionId)
-  if (!mission?.rocket || mission.rocket.resolved) return
-  const team = teamOf(s, mission.teamIds) // ordem do despacho preservada
-  const sturdyAvailableIds = new Set(
-    team.filter((p) => sturdyAvailable(p, s.today.secretRuntime)).map((p) => p.id),
-  )
-  const resolution = resolveDefense(takeRng(s), team, mission.rocket.enemies, {
-    sturdyAvailableIds,
-    runItems: s.runItems,
-    damagePerLoss: damageForDay(s.run.day),
-    paralyzedIds: new Set(s.today.paralyzedBattleIds),
-  })
-  // Registra cada duelo: vitória → desafiante derrotado; derrota → o inimigo que venceu seu
-  // Pokémon (Carrasco). `theirs` só avança quando você vence (mesma regra da defesa de ginásio).
-  let theirs = 0
-  for (const duel of resolution.duels) {
-    const enemy = mission.rocket.enemies[theirs]
-    if (duel.youWon) {
-      s.today.defenseKills.push({
-        defeaterId: duel.yourId,
-        speciesId: enemy?.speciesId,
-        enemyBattle: enemy?.battle,
-        enemyMedal: enemy?.medal,
-        enemyTypes: enemy?.types,
-      })
-      theirs += 1
-    } else {
-      s.today.defenseLosses.push({
-        victimId: duel.yourId,
-        speciesId: enemy?.speciesId,
-        enemyBattle: enemy?.battle,
-        enemyMedal: enemy?.medal,
-        enemyTypes: enemy?.types,
-      })
-    }
-  }
-  for (const member of resolution.squad) replaceMon(s, settleFaintTracked(s, member))
-  // Habilidades Secretas de batalha (Battle Armor/Weak Armor/Shell Armor/Sturdy) — a missão
-  // Rocket conta como batalha para o Battle Armor.
-  applyBattleSecretRuntime(s, team, resolution)
-  mission.rocket.duels = resolution.duels
-  mission.rocket.won = resolution.won
-  mission.rocket.resolved = true
-  mission.rocket.xpSeed = takeRng(s).int(0, 0x7fffffff)
-}
-
-/**
- * Conclui a batalha Rocket ao fim da animação: na VITÓRIA aplica ouro-bônus + 3× o pool de
- * XP normal (pode subir nível/evoluir) e marca a missão como sucesso; na derrota, sem
- * recompensa. Em ambos os casos a missão é resolvida e o resultado entra no relatório.
- * Idempotente (rocket.rewardApplied).
- */
-export function completeRocketBattle(s: GameState, missionId: string): void {
-  const mission = s.missions.find((m) => m.id === missionId)
-  if (!mission?.rocket || mission.rocket.rewardApplied) return
-  const won = mission.rocket.won === true
-  const team = teamOf(s, mission.teamIds)
-  if (won) {
-    const pool = MISSION_XP_POOL * ROCKET_XP_MULTIPLIER
-    const share = team.length > 0 ? Math.floor(pool / team.length) : 0
-    mission.xpAwards = Object.fromEntries(team.map((p) => [p.id, share]))
-    const evoRng = createRng(mission.rocket.xpSeed ?? 0)
-    const gains = new Map(team.map((p) => [p.id, share]))
-    applyXpGains(s, gains, evoRng)
-    s.today.xpEarned += share * team.length
-    const gold = goldForDefense(team) + ROCKET_GOLD_BONUS
-    s.gold += gold
-    s.today.goldEarned += gold
-  }
-  mission.result = won ? 'success' : 'failure'
-  mission.status = 'resolved'
-  mission.rocket.rewardApplied = true
-  s.today.missionResults.push({
-    templateId: mission.templateId,
-    success: won,
-    teamIds: mission.teamIds,
-  })
-}
-
-/** Não despachar ninguém para a missão Rocket encerra a run na hora (como ginásio indefeso). */
-export function loseRunByRocket(s: GameState): void {
-  s.run.phase = 'GAMEOVER'
-  s.run.gameOverReason = 'rocket'
-  s.clock.speed = 0
-}
