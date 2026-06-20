@@ -39,6 +39,7 @@ interface Props {
   onMission: (id: string) => void
   onDefense: (id: string) => void
   onSpot: (spotIndex: number) => void
+  onTheft: () => void
 }
 
 function posStyle(p: MapPos): { left: string; top: string } {
@@ -71,7 +72,7 @@ function remainingFraction(now: number, start: number, end: number): number {
   return end > start ? clamp((end - now) / (end - start), 0, 1) : 0
 }
 
-export function CityMap({ state, onMission, onDefense, onSpot }: Props) {
+export function CityMap({ state, onMission, onDefense, onSpot, onTheft }: Props) {
   const city = getCity(state.run.cityIndex)
   const graph = graphWithTunnels(city.graph, state.today.digTunnels)
   const now = state.clock.dayElapsedMs
@@ -136,7 +137,7 @@ export function CityMap({ state, onMission, onDefense, onSpot }: Props) {
           </div>
         ))}
 
-        <MapTravelers state={state} graph={graph} now={now} />
+        <MapTravelers state={state} graph={graph} now={now} onTheft={onTheft} />
       </div>
     </div>
   )
@@ -227,7 +228,7 @@ function StormOverlay({
 }
 
 /** Sprites do time/procurador se movendo pelo mapa (ponto a ponto), ida e volta. */
-function MapTravelers({ state, graph, now }: { state: GameState; graph: CityGraph; now: number }) {
+function MapTravelers({ state, graph, now, onTheft }: { state: GameState; graph: CityGraph; now: number; onTheft: () => void }) {
   return (
     <>
       {state.missions.map((m) => {
@@ -273,9 +274,15 @@ function MapTravelers({ state, graph, now }: { state: GameState; graph: CityGrap
         return (
           <>
             {rocketPos && (
-              <div className={styles.rocket} style={posStyle(rocketPos)} aria-label="Equipe Rocket">
+              <button
+                type="button"
+                className={styles.rocket}
+                style={posStyle(rocketPos)}
+                onClick={onTheft}
+                aria-label="Equipe Rocket — perseguir"
+              >
                 R
-              </div>
+              </button>
             )}
             {chaserPositionsAt(state, now).map(({ id, pos }) => (
               <TravelerGroup key={`chaser-${id}`} pos={pos} ids={[id]} roster={state.roster} />

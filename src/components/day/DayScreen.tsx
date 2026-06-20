@@ -78,7 +78,7 @@ export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) 
   const [open, setOpen] = useState<Selection>(null)
   // Membro do time aberto em detalhe (coluna esquerda → modal).
   const [memberId, setMemberId] = useState<string | null>(null)
-  // Painel de perseguição da Rocket (Feature B): abre via botão flutuante.
+  // Painel de perseguição da Rocket (Feature B): abre clicando no pop-up "R" do mapa.
   const [chaseOpen, setChaseOpen] = useState(false)
   // Falas do guia (antigo líder): cada uma vive ~10s e some sozinha (chat efêmero).
   const [messages, setMessages] = useState<GuideMessage[]>([])
@@ -119,11 +119,12 @@ export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) 
   const close = (): void => setOpen(null)
   const setSpeed = (speed: GameSpeed): void => dispatch({ type: 'SET_SPEED', speed })
 
-  // Abrir qualquer painel/detalhe OU revelar uma missão pausa o tempo; fechar retoma.
+  // Abrir qualquer painel/detalhe OU revelar uma missão pausa o tempo; fechar retoma. O menu
+  // de perseguição da Rocket (chaseOpen) também pausa — é como escolher o time de uma missão.
   useEffect(() => {
-    onPauseChange(open !== null || memberId !== null || revealId !== null)
+    onPauseChange(open !== null || memberId !== null || revealId !== null || chaseOpen)
     return () => onPauseChange(false)
-  }, [open, memberId, revealId, onPauseChange])
+  }, [open, memberId, revealId, chaseOpen, onPauseChange])
 
   // Conclusão de missão (#2): ao resolver, abre o modal de revelação (uma vez por missão).
   useEffect(() => {
@@ -211,6 +212,7 @@ export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) 
           onMission={(id) => setOpen({ kind: 'mission', id })}
           onDefense={(id) => setOpen({ kind: 'defense', id })}
           onSpot={(spotIndex) => setOpen({ kind: 'capture', spotIndex })}
+          onTheft={() => setChaseOpen(true)}
         />
 
         {/* Selos climáticos empilhados verticalmente: Chuva e/ou Tempestade. */}
@@ -240,12 +242,6 @@ export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) 
           <ItemsBar state={state} dispatch={dispatch} />
         </div>
 
-        {/* Botão flutuante de perseguição Rocket (Feature B): visível enquanto a Rocket está em fuga. */}
-        {(state.theft?.phase === 'fleeing' || state.theft?.phase === 'atFarNode') && (
-          <button type="button" className={styles.theftAlert} onClick={() => setChaseOpen(true)}>
-            🚨 Perseguir a Rocket
-          </button>
-        )}
       </div>
 
       <ReportSidebar state={state} messages={messages} />
