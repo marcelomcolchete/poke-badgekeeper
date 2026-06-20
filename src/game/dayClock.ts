@@ -11,6 +11,7 @@ import { expireDefense, loseRunByUndefendedGym, spawnDefense } from './defenseFl
 import { advanceCaptureReturn, advanceSearch } from './captureFlow.ts'
 import { finalizeDay } from './phaseFlow.ts'
 import { processStorms } from './stormFlow.ts'
+import { processTheft } from './theftFlow.ts'
 
 /** Status de Pokémon que ainda estão "fora" do ginásio (impedem o fim do dia). */
 const AWAY_STATUSES: Pokemon['status'][] = ['traveling', 'onMission', 'returning', 'defending']
@@ -30,6 +31,7 @@ export function tick(s: GameState, deltaMs: number): void {
   if (s.run.phase !== 'DAY') return // derrota por ginásio indefeso encerrou a run
   processSearches(s, now)
 
+  processTheft(s, now)
   processStorms(s, prevMs, now)
 
   // Time inteiro desmaiado no dia = derrota imediata (sem ninguém para lutar/agir).

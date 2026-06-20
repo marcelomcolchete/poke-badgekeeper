@@ -25,6 +25,12 @@ import { expireMission, freeOnReturn, resolveMissionNow } from './missionFlow.ts
 import { expireDefense } from './defenseFlow.ts'
 import { setupDay, setupMorningShop } from './setup.ts'
 import { findMon, replaceMon } from './runtime.ts'
+import {
+  rollTheftAtDayOpen,
+  resolveTheftBattle,
+  completeTheftBattle,
+  resolveTheftLoss,
+} from './theftFlow.ts'
 
 export function setSpeed(s: GameState, speed: GameSpeed): void {
   s.clock.speed = speed
@@ -36,6 +42,7 @@ export function advancePhase(s: GameState): void {
     case 'MORNING':
       s.run.phase = 'DAY'
       setupDay(s)
+      rollTheftAtDayOpen(s) // B1: uma rolagem por dia (arma ou dobra a chance)
       return
     case 'DAY':
       finalizeDay(s)
@@ -188,6 +195,19 @@ function resolveLeftovers(s: GameState): void {
   s.captureSearches = []
   s.captureReturns = []
   s.encounters = []
+
+  // Evento de Roubo Rocket pendente no fechamento: armado sem disparar fica como estava (a chance
+  // segue dobrando amanhã); em fuga/graça vira perda; em batalha resolve automaticamente.
+  const theft = s.theft
+  if (theft) {
+    if (theft.phase === 'fleeing' || theft.phase === 'atFarNode') {
+      resolveTheftLoss(s)
+    } else if (theft.phase === 'battle') {
+      resolveTheftBattle(s)
+      completeTheftBattle(s)
+    }
+    // 'armed' (sem alvo) e 'resolved' não exigem ação.
+  }
 }
 
 /** Inicia o próximo dia (cura no Centro Pokémon, limpa eventos) ou encerra a run no dia 10. */
@@ -205,6 +225,7 @@ function startNextDay(s: GameState): void {
   s.captureSearches = []
   s.captureReturns = []
   s.encounters = []
+  s.theft = undefined
   s.today = emptyTally()
   setupMorningShop(s)
   s.clock.dayElapsedMs = 0
