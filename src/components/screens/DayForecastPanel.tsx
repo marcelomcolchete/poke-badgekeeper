@@ -73,20 +73,28 @@ export function DayForecastPanel({ state }: { state: GameState }) {
         </div>
       </div>
 
-      <dl className={styles.counts}>
+      <div className={styles.counts}>
         <div className={styles.count}>
-          <dt>Quantidade de Missões</dt>
-          <dd>{missions}</dd>
+          <span className={styles.countIcon} aria-hidden="true">🎯</span>
+          <span className={styles.countValue}>{missions}</span>
+          <span className={styles.countLabel}>Missões</span>
         </div>
         <div className={styles.count}>
-          <dt>Quantidade de Batalhas</dt>
-          <dd>{defenses}</dd>
+          <span className={styles.countIcon} aria-hidden="true">⚔️</span>
+          <span className={styles.countValue}>{defenses}</span>
+          <span className={styles.countLabel}>Batalhas</span>
         </div>
-        <div className={`${styles.count} ${styles.rocket}`}>
-          <dt>Quantidade de Missões Rocket</dt>
-          <dd title="A previsão não revela os dias da Equipe Rocket">???</dd>
+        <div className={styles.count}>
+          <span className={`${styles.countIcon} ${styles.rocketIcon}`} aria-hidden="true">R</span>
+          <span
+            className={`${styles.countValue} ${styles.rocketValue}`}
+            title="A previsão não revela os dias da Equipe Rocket"
+          >
+            ???
+          </span>
+          <span className={styles.countLabel}>Rocket</span>
         </div>
-      </dl>
+      </div>
     </section>
   )
 }
