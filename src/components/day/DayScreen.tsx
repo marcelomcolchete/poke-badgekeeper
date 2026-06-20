@@ -21,6 +21,8 @@ import { MissionDispatch } from './MissionDispatch.tsx'
 import { MissionRevealModal } from './MissionRevealModal.tsx'
 import { DefensePanel } from './DefensePanel.tsx'
 import { CapturePanel } from './CapturePanel.tsx'
+import { TheftBattlePanel } from './TheftBattlePanel.tsx'
+import { TheftChasePanel } from './TheftChasePanel.tsx'
 import { ItemsBar } from '../common/ItemsBar.tsx'
 import { getMissionTemplate } from '../../data/missionTemplates.ts'
 import styles from './DayScreen.module.css'
@@ -76,6 +78,8 @@ export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) 
   const [open, setOpen] = useState<Selection>(null)
   // Membro do time aberto em detalhe (coluna esquerda → modal).
   const [memberId, setMemberId] = useState<string | null>(null)
+  // Painel de perseguição da Rocket (Feature B): abre via botão flutuante.
+  const [chaseOpen, setChaseOpen] = useState(false)
   // Falas do guia (antigo líder): cada uma vive ~10s e some sozinha (chat efêmero).
   const [messages, setMessages] = useState<GuideMessage[]>([])
   const msgCounter = useRef(0)
@@ -235,6 +239,13 @@ export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) 
         <div className={styles.itemsFloat}>
           <ItemsBar state={state} dispatch={dispatch} />
         </div>
+
+        {/* Botão flutuante de perseguição Rocket (Feature B): visível enquanto a Rocket está em fuga. */}
+        {(state.theft?.phase === 'fleeing' || state.theft?.phase === 'atFarNode') && (
+          <button type="button" className={styles.theftAlert} onClick={() => setChaseOpen(true)}>
+            🚨 Perseguir a Rocket
+          </button>
+        )}
       </div>
 
       <ReportSidebar state={state} messages={messages} />
@@ -249,6 +260,16 @@ export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) 
         <CapturePanel state={state} dispatch={dispatch} spotIndex={open.spotIndex} onClose={close} />
       )}
       {open?.kind === 'quit' && <QuitConfirm onConfirm={onRestart} onClose={close} />}
+
+      {/* Painel de batalha de resgate (Feature B): abre automaticamente quando a fase vira 'battle'. */}
+      {state.theft?.phase === 'battle' && (
+        <TheftBattlePanel state={state} dispatch={dispatch} onClose={() => { /* nada: fase vira 'resolved' */ }} />
+      )}
+
+      {/* Painel de despacho de perseguidores (Feature B): abre via botão flutuante. */}
+      {chaseOpen && (
+        <TheftChasePanel state={state} dispatch={dispatch} onClose={() => setChaseOpen(false)} />
+      )}
 
       {memberId && (
         <MemberDetail

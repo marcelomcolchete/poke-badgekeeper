@@ -78,3 +78,25 @@
   color: var(--c-ink);
   background: var(--c-hud-accent);
 }
+
+/* Botão flutuante de alerta de roubo Rocket — canto inferior direito do mapa. */
+.theftAlert {
+  position: absolute;
+  bottom: 52px;
+  right: 10px;
+  z-index: 4;
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: #fff;
+  background: #b01010;
+  border: 3px solid #6a0000;
+  border-radius: var(--radius-pixel);
+  padding: 8px 12px;
+  cursor: pointer;
+  animation: theftPulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes theftPulse {
+  from { opacity: 1; }
+  to   { opacity: 0.72; }
+}
