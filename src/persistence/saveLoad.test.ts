@@ -120,6 +120,19 @@ describe('saveLoad (PLAN §5)', () => {
     expect(r2.status).toBe('idle')
   })
 
+  it('migra v35 → v36: inicia run.theftChance=1 e não cria theft', () => {
+    const base = autoSeedRun(42) as unknown as Record<string, unknown>
+    // Simula save v35: run sem theftChance (campo novo na v36).
+    const run = { ...base.run as Record<string, unknown> }
+    delete run.theftChance
+    const v35 = { version: 35, savedAtMs: 0, state: { ...base, run } }
+    localStorage.setItem(SAVE_KEY, JSON.stringify(v35))
+    const loaded = loadGame()
+    expect(loaded).not.toBeNull()
+    expect(loaded!.run.theftChance).toBe(1)
+    expect(loaded!.theft).toBeUndefined()
+  })
+
   it('clearSave remove o save', () => {
     saveGame(autoSeedRun(1), 0)
     clearSave()
