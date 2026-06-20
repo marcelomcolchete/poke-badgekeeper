@@ -100,7 +100,7 @@ function spawnTimeInSegment(rng: Rng, segment: number, day: number): number {
 }
 
 /** Um horário por evento, já distribuídos igualmente entre os 3 momentos do dia. */
-function spawnTimesAcrossSegments(rng: Rng, count: number, day: number): number[] {
+export function spawnTimesAcrossSegments(rng: Rng, count: number, day: number): number[] {
   const times: number[] = []
   segmentCounts(rng, count).forEach((n, segment) => {
     for (let k = 0; k < n; k++) times.push(spawnTimeInSegment(rng, segment, day))
