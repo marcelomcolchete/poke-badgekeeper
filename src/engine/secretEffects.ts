@@ -385,12 +385,17 @@ export function missionEffectBreakdown(ctx: MissionSecretCtx): MissionEffectEntr
   }
 
   // --- Atributos: habilidades ---
-  const rivalryActive = team.some(
-    (p) => hasRivalry(p) && team.some((o) => o.id !== p.id && o.gender === p.gender),
+  const rivalryBonus = Math.max(
+    0,
+    ...team.map((p) =>
+      hasRivalry(p)
+        ? RIVALRY_ATTR_PER_ALLY * team.filter((o) => o.id !== p.id && o.gender === p.gender).length
+        : 0,
+    ),
   )
-  if (rivalryActive) {
+  if (rivalryBonus > 0) {
     push({ id: 'rivalry', source: 'ability', label: 'Rivalry', kind: 'attr', direction: 'gain',
-      value: fmtAdd(RIVALRY_ATTR_PER_ALLY), reason: 'por aliado do mesmo gênero' })
+      value: fmtAdd(rivalryBonus), reason: 'por aliados do mesmo gênero' })
   }
   if (team.some((p) => hasSecret(p, 'sa-rock-head'))) {
     if (template.id === 'escolta') {
