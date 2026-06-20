@@ -198,11 +198,11 @@ describe('tempos de viagem/execução (PLAN §4.3)', () => {
     expect(graphTravelMs(10, fast)).toBeLessThan(graphTravelMs(10, slow))
   })
 
-  it('Agilidade reduz 1%/ponto: 10 → 0,90; soma capada no teto (100) → piso 0,10', () => {
+  it('Agilidade reduz 1%/ponto: 10 → 0,90; soma capada no teto (100) → piso 0,30', () => {
     const agi10 = [makeMon({ baseAttrs: makeAttrs({ agilidade: 10 }) })]
     expect(agilityTravelFactor(agi10)).toBeCloseTo(0.9, 5)
     const fifty = makeMon({ baseAttrs: makeAttrs({ agilidade: 50 }) })
-    expect(agilityTravelFactor([fifty, fifty])).toBeCloseTo(0.1, 5) // soma 100 → −100% → piso 0,10
+    expect(agilityTravelFactor([fifty, fifty])).toBeCloseTo(0.3, 5) // soma 100 → piso 0,30 (−70%)
   })
 
   it('Fly (sozinho) voa em linha reta: caminho mais curto que o do grafo, mas não-zero', () => {
@@ -253,9 +253,9 @@ describe('tempos de viagem/execução (PLAN §4.3)', () => {
     expect(executionMs(smart, 30_000)).toBeLessThan(executionMs(dumb, 30_000))
   })
 
-  it('Inteligência reduz até −90% (piso 0,10) com a soma no teto', () => {
+  it('Inteligência reduz até −70% (piso 0,30) com a soma no teto', () => {
     const fifty = makeMon({ baseAttrs: makeAttrs({ inteligencia: 50 }) })
-    expect(executionMs([fifty, fifty], 30_000)).toBeCloseTo(3_000, 5) // soma 100 → −100% → piso 0,10
+    expect(executionMs([fifty, fifty], 30_000)).toBeCloseTo(9_000, 5) // soma 100 → piso 0,30 (−70%)
   })
 
   it('duração = ida + volta (deslocamento) + execução', () => {

@@ -46,19 +46,19 @@ export const RETURN_SPEED_BONUS_ON_SUCCESS = 1.5
 
 /**
  * Missões §4.3: a Agilidade total do time reduz o tempo de viagem em 1% por ponto
- * (10 → −10%, 90 → −90%). Como a soma do time é capada em 100 (TEAM_ATTR_MAX), a redução
- * máxima é 90% — daí o piso MISSION_TIME_FLOOR.
+ * (10 → −10%, 70 → −70%). A soma do time é capada em 100 (TEAM_ATTR_MAX), mas o piso
+ * MISSION_TIME_FLOOR limita a redução máxima a 70% (atingida com 70 pontos).
  */
 export const AGILITY_TIME_REDUCTION_PER_POINT = 0.01
 
 /**
  * Missões §4.3: a Inteligência total do time reduz o tempo de EXECUÇÃO no local em 1% por
- * ponto (90 → −90%). Mesma curva da Agilidade, com o mesmo piso de 0,1 (−90% no máximo).
+ * ponto (70 → −70%). Mesma curva da Agilidade, com o mesmo piso de 0,3 (−70% no máximo).
  */
 export const INT_TIME_REDUCTION_PER_POINT = 0.01
 
-/** Piso do fator de tempo de viagem/execução: redução máxima de 90% (Agilidade/Inteligência 90). */
-export const MISSION_TIME_FLOOR = 0.1
+/** Piso do fator de tempo de viagem/execução: redução máxima de 70% (Agilidade/Inteligência 70). */
+export const MISSION_TIME_FLOOR = 0.3
 
 /** Captura §4.5: tempo-base de busca (reduzido pela Inteligência) e fator da passiva Keen Eye. */
 export const BASE_SEARCH_MS = 30_000

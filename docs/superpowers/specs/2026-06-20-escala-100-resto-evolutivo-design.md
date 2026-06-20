@@ -45,17 +45,16 @@ Implementação: `restValue(rng, day)` passa a receber o `day` e aplicar o termo
 constantes em `balance.ts` no mesmo padrão das outras (ex.: `MISSION_REST_DAY_SLOPE = 0.8`,
 `MISSION_REST_DAY_PIVOT = 6`).
 
-### 3. Piso de tempo
+### 3. Piso de tempo (mantido)
 
-`MISSION_TIME_FLOOR: 0.3 → 0.1` em `src/engine/balance.ts`.
+`MISSION_TIME_FLOOR` **permanece em 0.3** — a redução de tempo de Agilidade (deslocamento)
+e Inteligência (execução) continua a −1%/ponto, com teto de redução de **−70%**. Com a
+escala agora em 100, esse teto é atingido com 70 pontos no eixo (71–100 ficam travados no
+piso 0,3). Em termos de jogo o comportamento dos tempos fica igual ao anterior.
 
-A redução de tempo de Agilidade (deslocamento) e Inteligência (execução) continua a
-−1%/ponto, mas o teto de redução vai de **−70% para −90%** — atingido com 90 pontos no
-eixo (91–100 ficam travados no piso 0,1).
-
-Interação com Run Away (mantida, sem tratamento especial): o fator de Run Away (×0,5)
-é aplicado **depois** do piso, então Run Away + 90 de Agilidade chega a `0,1 × 0,5 = 0,05`
-(−95% de deslocamento). É comportamento aceito.
+Interação com Run Away (sem tratamento especial): o fator de Run Away (×0,5) é aplicado
+**depois** do piso, então Run Away + ≥70 de Agilidade chega a `0,3 × 0,5 = 0,15`
+(−85% de deslocamento) — como já era antes.
 
 ### 4. special5
 
@@ -72,7 +71,7 @@ De **5 principais + 1 forçado ao máximo** para **3 principais + 2 secundários
 - Termo do dia (`10 × dia / 3`) e faixas-base de principal (`20..30`) e secundário
   (`10..20`).
 - Fórmula de chance de sucesso (interseção/área), dano em falha, Vital Spirit, tempos
-  de viagem/execução (exceto o piso).
+  de viagem/execução e o piso de tempo (0,3).
 - Quantidade de missões por dia, categorias, special2, caso "mega" (principal+secundário
   no mesmo eixo, agora capado em 100).
 
@@ -125,4 +124,4 @@ De **5 principais + 1 forçado ao máximo** para **3 principais + 2 secundários
 - `npm run build` (tsc -b) sem erros.
 - Suite de testes verde após os ajustes.
 - Exigências e cobertura respeitando o teto 100; resto seguindo a tabela; special5 com
-  3+2+1 sem forçado; piso de tempo permitindo −90%.
+  3+2+1 sem forçado; piso de tempo mantido em 0,3 (−70%).
