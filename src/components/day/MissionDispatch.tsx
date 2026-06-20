@@ -13,7 +13,7 @@ import { getMissionTemplate, missionReward } from '../../data/missionTemplates.t
 import { getSpecies, pokemonSpritePath } from '../../data/pokemon/index.ts'
 import { missionDurationMs, missionSuccessProbabilityCtx, travelRoute } from '../../engine/missions.ts'
 import {
-  teamHasAttrBoost,
+  missionEffectBreakdown,
   teamSecretSum,
   teamSnipes,
   teamTravelSpeedMultiplier,
@@ -75,7 +75,7 @@ export function MissionDispatch({ state, dispatch, missionId, onClose }: Props) 
   const { flying, surfing, path, distance } = travelRoute(graph, city.siteNodes.gym, mission.node, team)
   const speedMult = teamTravelSpeedMultiplier(team, state.runItems)
   const durationS = Math.round(missionDurationMs(team, distance, template, speedMult) / 1000)
-  const boosted = teamHasAttrBoost(ctx)
+  const effects = missionEffectBreakdown(ctx)
   const sniping = teamSnipes(team)
   // Inalcançável: a rota só chega cruzando a água e o time não consegue surfar (ex.: Rocket 5.1).
   const reachable = flying || sniping || path.length > 0
@@ -111,10 +111,25 @@ export function MissionDispatch({ state, dispatch, missionId, onClose }: Props) 
             </p>
           )}
           <HexRadar requirement={mission.requirement} teamSum={teamSecretSum(ctx)} axisMax={TEAM_ATTR_MAX} />
-          {boosted && (
-            <p className={styles.missionReward}>
-              <span aria-hidden="true">✦</span> Habilidade Secreta ativa nesta missão
-            </p>
+          {effects.length > 0 && (
+            <ul className={styles.effectList}>
+              {effects.map((e) => (
+                <li
+                  key={`${e.id}-${e.kind}`}
+                  className={`${styles.effectRow} ${
+                    e.direction === 'gain'
+                      ? styles.effectGain
+                      : e.direction === 'loss'
+                        ? styles.effectLoss
+                        : styles.effectInfo
+                  }`}
+                >
+                  <span className={styles.effectName}>{e.label}</span>
+                  {e.value && <span className={styles.effectValue}>{e.value}</span>}
+                  <span className={styles.effectReason}>{e.reason}</span>
+                </li>
+              ))}
+            </ul>
           )}
           {flying && (
             <p className={styles.missionReward}>

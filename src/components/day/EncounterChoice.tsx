@@ -85,12 +85,24 @@ export function EncounterChoice({ encounter, full, onPick, onDismiss }: Props) {
                 </span>
               )}
               <span className={styles.encStats}>
-                {ATTR_KEYS.map((k) => (
-                  <span key={k} className={styles.encStat}>
-                    <span className={styles.encStatLbl}>{ATTR_SHORT_PT[k]}</span>
-                    <b>{effectiveAttr(mon, k)}</b>
-                  </span>
-                ))}
+                {ATTR_KEYS.map((k) => {
+                  const cls =
+                    nature?.boosted === k
+                      ? styles.encStatUp
+                      : nature?.reduced === k
+                        ? styles.encStatDown
+                        : ''
+                  return (
+                    <span key={k} className={styles.encStat}>
+                      <span className={styles.encStatLbl}>{ATTR_SHORT_PT[k]}</span>
+                      <b className={cls || undefined}>{effectiveAttr(mon, k)}</b>
+                    </span>
+                  )
+                })}
+                <span className={`${styles.encStat} ${styles.encStatTotal}`}>
+                  <span className={styles.encStatLbl}>TOT</span>
+                  <b>{ATTR_KEYS.reduce((sum, k) => sum + effectiveAttr(mon, k), 0)}</b>
+                </span>
               </span>
               <button
                 type="button"

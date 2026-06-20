@@ -28,10 +28,12 @@ export function expireDefense(defense: DefenseEvent): void {
 /**
  * Derrota imediata: deixar o timer de uma defesa ATIVA zerar sem nem lutar encerra a
  * run na hora, independente do dia e da reputação. Congela o relógio e vai a GAMEOVER.
+ * Zera as estrelas de batalha (ginásio abandonado).
  */
 export function loseRunByUndefendedGym(s: GameState): void {
   s.run.phase = 'GAMEOVER'
   s.run.gameOverReason = 'gym'
+  s.approval.battleStars = 0
   s.clock.speed = 0
 }
 

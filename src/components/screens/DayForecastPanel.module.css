@@ -63,35 +63,53 @@
   color: var(--c-ink-muted);
 }
 
-/* Contagens do dia. */
+/* Contagens do dia — caixa neutra (igual aos demais painéis), 3 mini-células. */
 .counts {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
   margin: 0;
+  background: var(--c-panel);
+  border: 3px solid var(--c-panel-border);
+  border-radius: var(--radius-pixel);
+  padding: 12px 14px;
 }
 
 .count {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-  font-family: var(--font-text);
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
 }
 
-.count dt {
-  font-size: 15px;
-  color: var(--c-ink-muted);
+.countIcon {
+  font-size: 22px;
+  line-height: 1;
 }
 
-.count dd {
-  margin: 0;
+/* "R" da Equipe Rocket no mesmo estilo do marcador do mapa. */
+.rocketIcon {
+  font-family: var(--font-pixel);
+  font-weight: 700;
   font-size: 18px;
+  color: var(--c-dialog-cursor);
+}
+
+.countValue {
+  font-family: var(--font-text);
+  font-size: 20px;
   font-weight: bold;
   color: var(--c-ink);
 }
 
-.rocket dd {
+.rocketValue {
   color: var(--c-hp-low);
   letter-spacing: 2px;
+}
+
+.countLabel {
+  font-family: var(--font-text);
+  font-size: 13px;
+  color: var(--c-ink-muted);
 }

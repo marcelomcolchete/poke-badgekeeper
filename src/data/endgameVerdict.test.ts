@@ -30,12 +30,23 @@ describe('starBucket', () => {
 })
 
 describe('gymLeaderFor', () => {
-  it('Pewter → Brock, Cerulean → Misty', () => {
+  it('mapeia cada cidade de Kanto ao seu líder', () => {
     expect(gymLeaderFor(0).name).toBe('Brock')
     expect(gymLeaderFor(1).name).toBe('Misty')
+    expect(gymLeaderFor(2).name).toBe('Lt. Surge')
+    expect(gymLeaderFor(3).name).toBe('Erika')
+    expect(gymLeaderFor(4).name).toBe('Koga')
+    expect(gymLeaderFor(5).name).toBe('Sabrina')
+    expect(gymLeaderFor(6).name).toBe('Blaine')
+    expect(gymLeaderFor(7).name).toBe('Giovanni')
   })
-  it('cidade sem líder próprio cai no fallback', () => {
-    expect(gymLeaderFor(7).name).toBe('Líder do Ginásio')
+  it('cada líder tem um sprite gen3', () => {
+    for (let i = 0; i < 8; i++) {
+      expect(gymLeaderFor(i).sprite).toMatch(/\/sprites\/trainers\/gen3\/.+\.png$/)
+    }
+  })
+  it('índice fora da faixa cai no fallback genérico', () => {
+    expect(gymLeaderFor(99).name).toBe('Líder do Ginásio')
   })
 })
 

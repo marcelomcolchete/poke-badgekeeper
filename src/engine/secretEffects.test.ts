@@ -21,6 +21,7 @@ import {
   hasWeakArmor,
   hustleBattleBonus,
   missionAttrMultiplier,
+  missionEffectBreakdown,
   rivalryBattleBonus,
   rolloutBonusPerWin,
   sturdyAvailable,
@@ -381,5 +382,65 @@ describe('missionAttrMultiplier — electirizer', () => {
     const p = makeMon({ id: 'y' })
     const ctx: MissionSecretCtx = { team: [p], template: PATRULHA, runtime: {}, runItems: [] }
     expect(missionAttrMultiplier(p, ctx)).toBeCloseTo(1)
+  })
+})
+
+describe('missionEffectBreakdown', () => {
+  const baseCtx = (over: Partial<MissionSecretCtx>): MissionSecretCtx => ({
+    team: [],
+    template: getMissionTemplate('patrulha'),
+    runtime: {},
+    runItems: [],
+    ...over,
+  })
+
+  it('time sem efeitos → lista vazia', () => {
+    const mon = makeMon({ id: 'p1', speciesId: 1, secretCount: 0 })
+    expect(missionEffectBreakdown(baseCtx({ team: [mon] }))).toEqual([])
+  })
+
+  it('Hustle aparece como perda de atributo', () => {
+    const mon = makeMon({ id: 'p1', speciesId: 29, secretCount: 2 }) // Nidoran♀ #2 = Hustle
+    const entries = missionEffectBreakdown(baseCtx({ team: [mon] }))
+    expect(entries).toContainEqual(
+      expect.objectContaining({ id: 'hustle', direction: 'loss', value: '−10%', kind: 'attr' }),
+    )
+  })
+
+  it('Lagging Tail gera ganho de atributo e perda de velocidade', () => {
+    const mon = makeMon({ id: 'p1', speciesId: 1, secretCount: 0 })
+    const entries = missionEffectBreakdown(baseCtx({ team: [mon], runItems: ['lagging-tail'] }))
+    const attr = entries.find((e) => e.id === 'lagging-tail' && e.kind === 'attr')
+    const speed = entries.find((e) => e.id === 'lagging-tail' && e.kind === 'speed')
+    expect(attr).toMatchObject({ direction: 'gain', value: '+50%', source: 'item' })
+    expect(speed).toMatchObject({ direction: 'loss', value: '−50%' })
+  })
+
+  it('Weak Armor com HP faltante vira ganho de velocidade proporcional', () => {
+    // Onix #1 = Weak Armor; 2 de HP faltante × 20% = +40%.
+    const mon = makeMon({ id: 'p1', speciesId: 95, secretCount: 1, maxHp: 5, currentHp: 3 })
+    const entries = missionEffectBreakdown(baseCtx({ team: [mon] }))
+    expect(entries).toContainEqual(
+      expect.objectContaining({ id: 'weak-armor', kind: 'speed', direction: 'gain', value: '+40%' }),
+    )
+  })
+
+  it('Rivalry com dois aliados do mesmo gênero mostra +20% (bônus agregado)', () => {
+    // Nidoran♀ (29) posição 1 = Rivalry; precisa de aliados femininos para ativar.
+    const nido = makeMon({ id: 'n1', speciesId: 29, secretCount: 1, gender: 'female' })
+    const ally1 = makeMon({ id: 'a1', gender: 'female' })
+    const ally2 = makeMon({ id: 'a2', gender: 'female' })
+    const entries = missionEffectBreakdown(baseCtx({ team: [nido, ally1, ally2] }))
+    expect(entries).toContainEqual(
+      expect.objectContaining({ id: 'rivalry', kind: 'attr', direction: 'gain', value: '+20%' }),
+    )
+  })
+
+  it('Clear Body SEM perda de atributo no time: entrada não aparece', () => {
+    // Tentacool (72) posição 1 = Clear Body (sem habilidade que cause perda a si mesmo).
+    // Missão patrulha: nenhum Analytic ou Rock Head presente, logo nenhuma perda de atributo.
+    const tentacool = makeMon({ id: 't1', speciesId: 72, secretCount: 1 })
+    const entries = missionEffectBreakdown(baseCtx({ team: [tentacool] }))
+    expect(entries.find((e) => e.id === 'clear-body')).toBeUndefined()
   })
 })
