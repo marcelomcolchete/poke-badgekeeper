@@ -10,10 +10,19 @@ import { ROCKET_TRAINER_IDS } from '../types/index.ts'
 import { getCity } from '../data/cities.ts'
 import { getTrainer } from '../data/trainers.ts'
 import { graphWithTunnels, shortestPath, pathDistance, farthestNodeFrom } from '../engine/pathfinding.ts'
-import { generateDefenseEnemies, rollSquadSize } from '../engine/gymDefense.ts'
+import { generateDefenseEnemies, rollSquadSize, resolveDefense, gymWinXp, canDefend } from '../engine/gymDefense.ts'
+import { applyBattleSecretRuntime } from './defenseFlow.ts'
+import { sturdyAvailable } from '../engine/secretEffects.ts'
+import { applyXpGains } from './itemFlow.ts'
+import { applyHeartDelta } from '../engine/hearts.ts'
+import { settleFaintTracked, findMon, replaceMon, takeRng } from './runtime.ts'
+import { createRng } from '../engine/rng.ts'
+import { damageForDay } from '../engine/constants.ts'
+import { graphTravelMs } from '../engine/missions.ts'
+import { theftInterceptorIds } from '../engine/travelerPositions.ts'
+import { THEFT_CHASERS_MAX, THEFT_XP_MULTIPLIER, THEFT_CHANCE_START, THEFT_GRACE_MS } from '../engine/balance.ts'
+import { markActive } from '../engine/state.ts'
 import { rollNextTheftChance, theftFleeMs } from '../engine/theft.ts'
-import { THEFT_CHANCE_START, THEFT_GRACE_MS } from '../engine/balance.ts'
-import { replaceMon, takeRng } from './runtime.ts'
 
 /** Status que põem o Pokémon FORA do ginásio (não roubável). Espelha AWAY_STATUSES do dayClock. */
 export const AWAY_FROM_GYM_STATUSES: ReadonlySet<Pokemon['status']> = new Set([
@@ -128,4 +137,195 @@ export function spawnTheft(s: GameState, now: number): void {
   }
   // A chance só zera quando o roubo DISPARA (B1).
   s.run.theftChance = THEFT_CHANCE_START
+}
+
+// ─── Parte 2: tick, dispatch e resolução da batalha de resgate (Task 7) ───────
+
+/** Libera os perseguidores (voltam a idle) e zera a lista — fim da perseguição. */
+function releaseChasers(s: GameState): void {
+  const theft = s.theft
+  if (!theft) return
+  for (const id of theft.chaserIds) {
+    const mon = findMon(s, id)
+    if (mon && mon.status === 'defending') replaceMon(s, { ...mon, status: 'idle' })
+  }
+  s.theft = { ...s.theft!, chaserIds: [], chaserArriveAtMs: [], chaserStartAtMs: [] }
+}
+
+/** Tira 0,5 coração de TODO o roster (desfecho de falha — B7). */
+function allRosterMinusOneHeart(s: GameState): void {
+  s.roster = s.roster.map((p) => ({ ...p, hearts: applyHeartDelta(p.hearts, -0.5) }))
+}
+
+/**
+ * Desfecho de FALHA (perda da batalha OU fuga na janela de graça — B7): remove o Pokémon roubado
+ * do roster e tira 0,5 coração de todo o resto. Reseta a perseguição e marca 'resolved'.
+ */
+export function resolveTheftLoss(s: GameState): void {
+  const theft = s.theft
+  if (!theft || theft.phase === 'resolved') return
+  releaseChasers(s)
+  if (theft.stolenId) s.roster = s.roster.filter((p) => p.id !== theft.stolenId)
+  allRosterMinusOneHeart(s)
+  s.theft = { ...s.theft!, phase: 'resolved', won: false, resolved: true }
+}
+
+/** Entra na batalha de resgate: pausa o relógio (modal) e muda a fase p/ 'battle'. */
+export function enterTheftBattle(s: GameState, _now: number): void {
+  const theft = s.theft
+  if (!theft || (theft.phase !== 'fleeing' && theft.phase !== 'atFarNode')) return
+  s.theft = { ...theft, phase: 'battle' }
+  s.clock.speed = 0
+}
+
+/**
+ * Avança o evento de roubo no tick (concorrente com o dia):
+ * - 'armed': tenta disparar (spawnTheft) — disparo adiado até haver alvo.
+ * - 'fleeing': se um perseguidor interceptou → batalha; senão, ao chegar ao destino → 'atFarNode'.
+ * - 'atFarNode': interceptou na graça → batalha; graça expirou → perda.
+ */
+export function processTheft(s: GameState, now: number): void {
+  const theft = s.theft
+  if (!theft) return
+  if (theft.phase === 'armed') {
+    spawnTheft(s, now)
+    return
+  }
+  if (theft.phase === 'fleeing') {
+    if (theftInterceptorIds(s, now).length > 0) {
+      enterTheftBattle(s, now)
+      return
+    }
+    if (now >= theft.arriveAtMs) {
+      s.theft = { ...theft, phase: 'atFarNode' }
+      // Cascata: se a graça também já expirou neste mesmo tick, resolve logo.
+      if (now >= theft.graceUntilMs) {
+        resolveTheftLoss(s)
+        return
+      }
+    }
+    return
+  }
+  if (theft.phase === 'atFarNode') {
+    if (theftInterceptorIds(s, now).length > 0) {
+      enterTheftBattle(s, now)
+      return
+    }
+    if (now >= theft.graceUntilMs) resolveTheftLoss(s)
+  }
+}
+
+/**
+ * Despacha até THEFT_CHASERS_MAX Pokémon idle atrás da Rocket (B4). Cada perseguidor recebe o seu
+ * tempo de chegada ao destino (pela própria velocidade via graphTravelMs), gravado em paralelo a
+ * chaserIds. Sai do ginásio como 'defending' (ocupado) e conta como participante do dia.
+ */
+export function dispatchTheftChasers(s: GameState, chaserIds: readonly string[]): void {
+  const theft = s.theft
+  if (!theft || (theft.phase !== 'fleeing' && theft.phase !== 'atFarNode')) return
+  const now = s.clock.dayElapsedMs
+  const city = getCity(s.run.cityIndex)
+  const graph = graphWithTunnels(city.graph, s.today.digTunnels)
+  const gym = city.siteNodes.gym
+  const distance = pathDistance(graph, shortestPath(graph, gym, theft.targetNode))
+
+  const picked: string[] = []
+  const arriveAt: number[] = []
+  const startAt: number[] = []
+  for (const id of chaserIds) {
+    if (picked.length >= THEFT_CHASERS_MAX) break
+    if (theft.chaserIds.includes(id)) continue
+    const mon = findMon(s, id)
+    if (!mon || mon.status !== 'idle') continue
+    const travel = graphTravelMs(distance, [mon], 1)
+    picked.push(id)
+    startAt.push(now)
+    arriveAt.push(now + Math.max(1, Math.round(travel)))
+    replaceMon(s, { ...mon, status: 'defending' })
+    markActive(s.today, id)
+  }
+  if (picked.length === 0) return
+  s.theft = {
+    ...theft,
+    chaserIds: [...theft.chaserIds, ...picked],
+    chaserArriveAtMs: [...theft.chaserArriveAtMs, ...arriveAt],
+    chaserStartAtMs: [...theft.chaserStartAtMs, ...startAt],
+  }
+}
+
+/**
+ * Resolve a batalha de resgate (cadeia de duelos 1v1; reusa resolveDefense — perseguidores tomam
+ * dano/desmaiam). Vitória: recupera o Pokémon roubado (idle, MESMO HP); derrota: resolveTheftLoss.
+ * Idempotente (não resolve duas vezes). O XP é APLICADO em completeTheftBattle.
+ */
+export function resolveTheftBattle(s: GameState): void {
+  const theft = s.theft
+  if (!theft || theft.phase !== 'battle' || theft.resolved) return
+  const squad = theft.chaserIds
+    .map((id) => findMon(s, id))
+    .filter((p): p is Pokemon => p !== undefined)
+  // Sem perseguidor disponível: trata como derrota (ninguém para lutar).
+  if (!canDefend(squad)) {
+    resolveTheftLoss(s)
+    return
+  }
+  for (const p of squad) markActive(s.today, p.id)
+  const sturdyAvailableIds = new Set(
+    squad.filter((p) => sturdyAvailable(p, s.today.secretRuntime)).map((p) => p.id),
+  )
+  const resolution = resolveDefense(takeRng(s), squad, theft.enemies, {
+    sturdyAvailableIds,
+    runItems: s.runItems,
+    damagePerLoss: damageForDay(s.run.day),
+    paralyzedIds: new Set(s.today.paralyzedBattleIds),
+  })
+  for (const member of resolution.squad) replaceMon(s, settleFaintTracked(s, member))
+  applyBattleSecretRuntime(s, squad, resolution)
+
+  if (resolution.won) {
+    // Recupera o Pokémon roubado: volta a idle mantendo o HP que tinha (desmaiado continua KO).
+    const stolenId = theft.stolenId
+    const stolen = stolenId ? s.roster.find((p) => p.id === stolenId) : undefined
+    if (stolen) {
+      replaceMon(s, { ...stolen, status: stolen.currentHp > 0 ? 'idle' : 'fainted' })
+    }
+    s.theft = {
+      ...theft,
+      phase: 'battle',
+      duels: resolution.duels,
+      won: true,
+      resolved: true,
+      xpSeed: takeRng(s).int(0, 0x7fffffff),
+    }
+  } else {
+    // Derrota: grava o log de duelos antes de resolver a perda (a animação mostra a batalha).
+    s.theft = { ...theft, duels: resolution.duels, won: false }
+    resolveTheftLoss(s)
+  }
+}
+
+/**
+ * Conclui a batalha de resgate ao fim da animação (só na vitória): aplica 3× o XP de uma batalha de
+ * ginásio por duelo vencido, libera os perseguidores e marca 'resolved'. Idempotente.
+ */
+export function completeTheftBattle(s: GameState): void {
+  const theft = s.theft
+  if (!theft || theft.phase === 'resolved') return
+  if (theft.won && theft.duels) {
+    const xpById = new Map<string, number>()
+    let theirs = 0
+    for (const duel of theft.duels) {
+      if (!duel.youWon) continue
+      const enemy = theft.enemies[theirs]
+      if (enemy) {
+        const base = gymWinXp(enemy.battle) * THEFT_XP_MULTIPLIER
+        xpById.set(duel.yourId, (xpById.get(duel.yourId) ?? 0) + base)
+      }
+      theirs += 1
+    }
+    applyXpGains(s, xpById, createRng(theft.xpSeed ?? 0))
+    for (const xp of xpById.values()) s.today.xpEarned += xp
+  }
+  releaseChasers(s)
+  s.theft = { ...s.theft!, phase: 'resolved', resolved: true }
 }

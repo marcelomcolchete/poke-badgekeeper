@@ -1,9 +1,22 @@
 import { describe, expect, it } from 'vitest'
 import { autoSeedRun } from './setup.ts'
-import { eligibleTheftTargets, rollTheftAtDayOpen, spawnTheft } from './theftFlow.ts'
+import {
+  eligibleTheftTargets,
+  rollTheftAtDayOpen,
+  spawnTheft,
+  dispatchTheftChasers,
+  processTheft,
+  resolveTheftBattle,
+  completeTheftBattle,
+  resolveTheftLoss,
+} from './theftFlow.ts'
+import { heartsOf } from '../engine/hearts.ts'
 import { THEFT_CHANCE_START } from '../engine/balance.ts'
 import { makeMon } from '../engine/testkit.ts'
+import { zeroAttrs } from '../engine/attributes.ts'
 import type { GameState } from '../engine/state.ts'
+
+const zero = zeroAttrs()
 
 function dayState(seed = 1): GameState {
   const s = autoSeedRun(seed)
@@ -80,5 +93,128 @@ describe('spawnTheft', () => {
     spawnTheft(s, 0)
     expect(s.theft!.phase).toBe('armed')
     expect(s.run.theftChance).toBe(100)
+  })
+})
+
+describe('processTheft — fuga e chegada', () => {
+  it("fleeing → atFarNode quando now ≥ arriveAtMs", () => {
+    const s = dayState()
+    s.run.theftChance = 100
+    rollTheftAtDayOpen(s)
+    s.roster = [makeMon({ id: 'p1', status: 'idle' })]
+    spawnTheft(s, 0)
+    const arrive = s.theft!.arriveAtMs
+    processTheft(s, arrive + 1)
+    expect(s.theft!.phase).toBe('atFarNode')
+  })
+
+  it("atFarNode → resolved (perda) quando a graça expira sem interceptação", () => {
+    const s = dayState()
+    s.run.theftChance = 100
+    rollTheftAtDayOpen(s)
+    s.roster = [makeMon({ id: 'p1', status: 'idle' }), makeMon({ id: 'p2', status: 'idle' })]
+    spawnTheft(s, 0)
+    const grace = s.theft!.graceUntilMs
+    const heartsBefore = heartsOf(s.roster.find((p) => p.id === 'p2')!.hearts)
+    processTheft(s, grace + 1)
+    expect(s.theft!.phase).toBe('resolved')
+    expect(s.roster.find((p) => p.id === 'p1')).toBeUndefined() // removido
+    expect(heartsOf(s.roster.find((p) => p.id === 'p2')!.hearts)).toBe(heartsBefore - 0.5)
+  })
+})
+
+describe('dispatchTheftChasers', () => {
+  it('despacha no máx. 3 idle e marca defending', () => {
+    const s = dayState()
+    s.run.theftChance = 100
+    rollTheftAtDayOpen(s)
+    s.roster = [
+      makeMon({ id: 'p1', status: 'idle' }), // será o alvo
+      makeMon({ id: 'c1', status: 'idle' }),
+      makeMon({ id: 'c2', status: 'idle' }),
+      makeMon({ id: 'c3', status: 'idle' }),
+      makeMon({ id: 'c4', status: 'idle' }),
+    ]
+    spawnTheft(s, 0)
+    dispatchTheftChasers(s, ['c1', 'c2', 'c3', 'c4'])
+    expect(s.theft!.chaserIds.length).toBe(3)
+    expect(s.roster.find((p) => p.id === 'c1')!.status).toBe('defending')
+  })
+})
+
+describe('resolveTheftBattle', () => {
+  it('vitória recupera o Pokémon (idle, mesmo HP) e reseta a perseguição', () => {
+    const s = dayState()
+    s.run.day = 1
+    s.run.theftChance = 100
+    rollTheftAtDayOpen(s)
+    s.roster = [
+      makeMon({ id: 'p1', status: 'idle', currentHp: 3, maxHp: 3 }), // alvo (HP 3)
+      makeMon({ id: 'c1', status: 'idle', baseAttrs: { ...zero, batalha: 60 } }),
+    ]
+    spawnTheft(s, 0)
+    s.theft!.enemies = [{ battle: 1, types: ['normal'] }] // garante vitória do c1
+    dispatchTheftChasers(s, ['c1'])
+    s.theft!.phase = 'battle'
+    resolveTheftBattle(s)
+    expect(s.theft!.won).toBe(true)
+    const recovered = s.roster.find((p) => p.id === 'p1')!
+    expect(recovered.status).toBe('idle')
+    expect(recovered.currentHp).toBe(3) // mesmo HP
+  })
+
+  it('derrota perde o Pokémon e tira 1 coração de todo o roster', () => {
+    const s = dayState()
+    s.run.theftChance = 100
+    rollTheftAtDayOpen(s)
+    s.roster = [
+      makeMon({ id: 'p1', status: 'idle' }),
+      makeMon({ id: 'c1', status: 'idle', baseAttrs: { ...zero, batalha: 1 } }),
+    ]
+    spawnTheft(s, 0)
+    s.theft!.enemies = [{ battle: 60, types: ['normal'] }] // c1 perde
+    dispatchTheftChasers(s, ['c1'])
+    s.theft!.phase = 'battle'
+    const before = heartsOf(s.roster.find((p) => p.id === 'c1')!.hearts)
+    resolveTheftBattle(s)
+    expect(s.theft!.won).toBe(false)
+    expect(s.roster.find((p) => p.id === 'p1')).toBeUndefined()
+    expect(heartsOf(s.roster.find((p) => p.id === 'c1')!.hearts)).toBe(before - 0.5)
+  })
+})
+
+describe('resolveTheftLoss', () => {
+  it('remove o Pokémon roubado e tira 0,5 coração dos restantes, fase resolved', () => {
+    const s = dayState()
+    s.run.theftChance = 100
+    rollTheftAtDayOpen(s)
+    s.roster = [makeMon({ id: 'p1', status: 'idle' }), makeMon({ id: 'p2', status: 'idle' })]
+    spawnTheft(s, 0)
+    const before = heartsOf(s.roster.find((p) => p.id === 'p2')!.hearts)
+    resolveTheftLoss(s)
+    expect(s.theft!.phase).toBe('resolved')
+    expect(s.roster.find((p) => p.id === 'p1')).toBeUndefined()
+    expect(heartsOf(s.roster.find((p) => p.id === 'p2')!.hearts)).toBe(before - 0.5)
+  })
+})
+
+describe('completeTheftBattle', () => {
+  it('após vitória: aplica XP e marca resolved', () => {
+    const s = dayState()
+    s.run.day = 1
+    s.run.theftChance = 100
+    rollTheftAtDayOpen(s)
+    s.roster = [
+      makeMon({ id: 'p1', status: 'idle', currentHp: 3, maxHp: 3 }),
+      makeMon({ id: 'c1', status: 'idle', baseAttrs: { ...zero, batalha: 60 } }),
+    ]
+    spawnTheft(s, 0)
+    s.theft!.enemies = [{ battle: 1, types: ['normal'] }]
+    dispatchTheftChasers(s, ['c1'])
+    s.theft!.phase = 'battle'
+    resolveTheftBattle(s)
+    expect(s.theft!.won).toBe(true) // pré-condição
+    completeTheftBattle(s)
+    expect(s.theft!.phase).toBe('resolved')
   })
 })
