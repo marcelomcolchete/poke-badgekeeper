@@ -303,7 +303,7 @@
 .tilePct {
   font-family: var(--font-pixel);
   font-size: 9px;
-  color: var(--c-hud-accent);
+  color: var(--c-panel-border);
 }
 
 .tileLabel {
@@ -363,7 +363,7 @@
 .panelTitle {
   font-family: var(--font-pixel);
   font-size: 10px;
-  color: var(--c-hud-accent);
+  color: var(--c-ink);
   letter-spacing: 0.5px;
 }
 
