@@ -5,10 +5,12 @@
 
 import type { MapPos } from '../types/index.ts'
 import type { CityGraph } from '../data/types.ts'
-import type { CaptureReturn, CaptureSearch, GameState, MissionInstance } from './state.ts'
+import type { CaptureReturn, CaptureSearch, GameState, MissionInstance, TheftEvent } from './state.ts'
 import { getCity } from '../data/cities.ts'
-import { graphWithTunnels, pointAlongPath } from './pathfinding.ts'
+import { graphWithTunnels, pointAlongPath, segmentLength, shortestPath } from './pathfinding.ts'
 import { clamp } from './math.ts'
+import { THEFT_INTERCEPT_DISTANCE } from './balance.ts'
+import { MAP_ASPECT_W } from './constants.ts'
 
 /** Fração [0,1] do tempo decorrido entre dois instantes (start→end). */
 export function elapsedFraction(now: number, start: number, end: number): number {
@@ -66,6 +68,62 @@ export function returnTravelerPos(graph: CityGraph, r: CaptureReturn, now: numbe
   }
   const back = r.reroutePath ?? (r.path[0] === r.node ? r.path : [...r.path].reverse())
   return pointAlongPath(graph, back, elapsedFraction(now, r.departAtMs, r.arriveAtMs))
+}
+
+/**
+ * Posição da Rocket em `now` (Feature B): interpola fromNode→targetNode pelo menor caminho
+ * enquanto foge; trava no targetNode na janela de graça. Null fora da fuga (armada/batalha/feito).
+ */
+export function theftPos(graph: CityGraph, theft: TheftEvent, now: number): MapPos | null {
+  if (theft.phase === 'fleeing') {
+    const path = shortestPath(graph, theft.fromNode, theft.targetNode)
+    if (path.length === 0) return null
+    return pointAlongPath(graph, path, elapsedFraction(now, theft.startedAtMs, theft.arriveAtMs))
+  }
+  if (theft.phase === 'atFarNode') {
+    const node = graph.nodes[theft.targetNode]
+    return node ? { ...node } : null
+  }
+  return null
+}
+
+/**
+ * Posições dos perseguidores em `now`: cada um segue o menor caminho do GINÁSIO ao targetNode
+ * (destino conhecido da Rocket), avançando pela fração de tempo da SUA perna (chaserStartAtMs →
+ * chaserArriveAtMs). Modelo persistível por timers (não por posição). Lista vazia sem perseguição.
+ */
+export function chaserPositionsAt(s: GameState, now: number): { id: string; pos: MapPos }[] {
+  const theft = s.theft
+  if (!theft || theft.chaserIds.length === 0) return []
+  if (theft.phase !== 'fleeing' && theft.phase !== 'atFarNode') return []
+  const city = getCity(s.run.cityIndex)
+  const graph = graphWithTunnels(city.graph, s.today.digTunnels)
+  const gym = city.siteNodes.gym
+  const path = shortestPath(graph, gym, theft.targetNode)
+  if (path.length === 0) return []
+  const out: { id: string; pos: MapPos }[] = []
+  for (let i = 0; i < theft.chaserIds.length; i++) {
+    const id = theft.chaserIds[i] as string
+    const start = theft.chaserStartAtMs[i] ?? theft.startedAtMs
+    const arrive = theft.chaserArriveAtMs[i] ?? theft.arriveAtMs
+    out.push({ id, pos: pointAlongPath(graph, path, elapsedFraction(now, start, arrive)) })
+  }
+  return out
+}
+
+/** Perseguidores cuja posição está a < THEFT_INTERCEPT_DISTANCE da Rocket em `now`. */
+export function theftInterceptorIds(s: GameState, now: number): string[] {
+  const theft = s.theft
+  if (!theft) return []
+  const city = getCity(s.run.cityIndex)
+  const graph = graphWithTunnels(city.graph, s.today.digTunnels)
+  const rocket = theftPos(graph, theft, now)
+  if (!rocket) return []
+  const hit: string[] = []
+  for (const { id, pos } of chaserPositionsAt(s, now)) {
+    if (segmentLength(rocket, pos) < THEFT_INTERCEPT_DISTANCE * MAP_ASPECT_W) hit.push(id)
+  }
+  return hit
 }
 
 /** Posições de TODOS os Pokémon visíveis no mapa em `now` (um item por Pokémon). */

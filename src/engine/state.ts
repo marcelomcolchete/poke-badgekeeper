@@ -212,6 +212,10 @@ export interface TheftEvent {
   graceUntilMs: number
   /** Perseguidores despachados (ids do roster). Vazio = ninguém perseguindo. */
   chaserIds: string[]
+  /** Chegada estimada (ms de jogo) de cada perseguidor ao destino — paralelo a chaserIds. */
+  chaserArriveAtMs: number[]
+  /** Início (ms de jogo) da perseguição de cada perseguidor — paralelo a chaserIds. */
+  chaserStartAtMs: number[]
   /** Treinador Rocket sorteado (arte da batalha de resgate). */
   trainerId: TrainerId
   /** Esquadrão inimigo (dimensionado pelo dia, como a defesa de ginásio). */
