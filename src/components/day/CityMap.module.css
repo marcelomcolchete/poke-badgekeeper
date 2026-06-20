@@ -466,7 +466,9 @@
   border: 2px solid #fff;
   box-shadow: 0 0 8px rgba(192, 34, 58, 0.9);
   z-index: 6;
-  pointer-events: none;
+  /* Clicável: abre a perseguição (Feature B), preservando o visual do "R" vermelho. */
+  cursor: pointer;
+  padding: 0;
   animation: rocketPulse 0.8s ease-in-out infinite;
 }
 @keyframes rocketPulse {
