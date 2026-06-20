@@ -43,12 +43,17 @@ export interface DaySummary {
   mvpMissions: number
   /** Quantos desafiantes o destaque derrotou em defesas (0 se não houver). */
   mvpDefeats: number
+  /** Missões especiais tentadas (despachadas ou expiradas) — exibição. */
+  specialAttempted: number
+  /** Missões especiais concluídas — exibição. */
+  specialCompleted: number
 }
 
 /** Agrega o resumo do dia a partir dos resultados e do roster final. */
 export function buildDaySummary(input: DaySummaryInput): DaySummary {
   const missionsCompleted = input.missionResults.filter((m) => m.success).length
   const fainted = input.roster.filter(isFainted).length
+  const special = input.missionResults.filter((m) => m.templateId === 'special')
   return {
     day: input.day,
     missionStarsBefore: input.missionStarsBefore,
@@ -64,6 +69,8 @@ export function buildDaySummary(input: DaySummaryInput): DaySummary {
     captured: input.capturedIds.length,
     fainted,
     available: input.roster.length - fainted,
+    specialAttempted: special.length,
+    specialCompleted: special.filter((m) => m.success).length,
     ...computeMvp(input.missionResults, input.defenseKills),
   }
 }
