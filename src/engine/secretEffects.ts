@@ -14,10 +14,13 @@ import {
   ANALYTIC_STUDY_MULT,
   BATTLE_ARMOR_MISSION_MULT,
   ELECTIRIZER_MISSION_BONUS,
+  EVIOLITE_MISSION_MULT,
   EXPLOSION_SELF_DAMAGE_FRACTION,
   FLY_SPEED_BONUS,
   HUSTLE_BATTLE_BONUS,
   HUSTLE_MISSION_MULT,
+  LAGGING_TAIL_MISSION_MULT,
+  LAGGING_TAIL_TRAVEL_MULT,
   RIVALRY_ATTR_PER_ALLY,
   RIVALRY_BATTLE_BONUS,
   ROCK_HEAD_ESCORT_MULT,
@@ -30,7 +33,7 @@ import {
   WEAK_ARMOR_SPEED_PER_MISSING_HP,
 } from './balance.ts'
 import { effectiveAttr, mapAttrs } from './attributes.ts'
-import { itemMissionMultiplier, itemTravelSpeedMultiplier } from './itemEffects.ts'
+import { itemMissionMultiplier, itemTravelSpeedMultiplier, notFinalEvolution } from './itemEffects.ts'
 import { isRaining, type WeatherSchedule } from './weather.ts'
 
 export type SecretRuntimeMap = Record<string, SecretRuntime>
@@ -331,4 +334,116 @@ export function damageTaken(p: Pokemon, raw: number): number {
   if (hasShellArmor(p)) return SHELL_ARMOR_DAMAGE
   if (hasWeakArmor(p)) return raw * WEAK_ARMOR_DAMAGE_MULT
   return raw
+}
+
+// ---- Breakdown legível dos efeitos da missão (UI) ----
+
+/** Uma contribuição de habilidade/item exibida no despacho (já formatada). */
+export interface MissionEffectEntry {
+  id: string
+  source: 'ability' | 'item'
+  label: string
+  kind: 'attr' | 'speed'
+  direction: 'gain' | 'loss' | 'info'
+  value: string
+  reason: string
+}
+
+/** Formata um multiplicador (1.1 → '+10%', 0.9 → '−10%'). */
+function fmtMult(mult: number): string {
+  const p = Math.round((mult - 1) * 100)
+  return `${p >= 0 ? '+' : '−'}${Math.abs(p)}%`
+}
+
+/** Formata um acréscimo fracionário (0.4 → '+40%'). */
+function fmtAdd(frac: number): string {
+  return `+${Math.round(frac * 100)}%`
+}
+
+/**
+ * Lista os efeitos ATIVOS de habilidades/itens sobre ATRIBUTOS e VELOCIDADE (não-roteamento)
+ * do time selecionado, já formatados para exibição. Fly/Surf/Sniper têm linhas próprias na UI
+ * e não entram aqui. Apenas leitura — não muda nada.
+ */
+export function missionEffectBreakdown(ctx: MissionSecretCtx): MissionEffectEntry[] {
+  const { team, template, runtime, runItems } = ctx
+  const out: MissionEffectEntry[] = []
+  let hasAttrLoss = false
+  const push = (e: MissionEffectEntry): void => {
+    if (e.kind === 'attr' && e.direction === 'loss') hasAttrLoss = true
+    out.push(e)
+  }
+
+  // --- Atributos: itens passivos ---
+  if (runItems.includes('eviolite') && team.some(notFinalEvolution)) {
+    push({ id: 'eviolite', source: 'item', label: 'Eviolite', kind: 'attr', direction: 'gain',
+      value: fmtMult(EVIOLITE_MISSION_MULT), reason: 'Pokémon que ainda evolui' })
+  }
+  if (runItems.includes('lagging-tail')) {
+    push({ id: 'lagging-tail', source: 'item', label: 'Lagging Tail', kind: 'attr', direction: 'gain',
+      value: fmtMult(LAGGING_TAIL_MISSION_MULT), reason: 'todos os atributos' })
+  }
+
+  // --- Atributos: habilidades ---
+  const rivalryActive = team.some(
+    (p) => hasRivalry(p) && team.some((o) => o.id !== p.id && o.gender === p.gender),
+  )
+  if (rivalryActive) {
+    push({ id: 'rivalry', source: 'ability', label: 'Rivalry', kind: 'attr', direction: 'gain',
+      value: fmtAdd(RIVALRY_ATTR_PER_ALLY), reason: 'por aliado do mesmo gênero' })
+  }
+  if (team.some((p) => hasSecret(p, 'sa-rock-head'))) {
+    if (template.id === 'escolta') {
+      push({ id: 'rock-head', source: 'ability', label: 'Rock Head', kind: 'attr', direction: 'gain',
+        value: fmtMult(ROCK_HEAD_ESCORT_MULT), reason: 'em Escolta' })
+    } else if (template.id === 'ensino') {
+      push({ id: 'rock-head', source: 'ability', label: 'Rock Head', kind: 'attr', direction: 'loss',
+        value: fmtMult(ROCK_HEAD_STUDY_MULT), reason: 'em Ensino' })
+    }
+  }
+  if (team.some(hasAnalytic)) {
+    if (template.id === 'ensino') {
+      push({ id: 'analytic', source: 'ability', label: 'Analytic', kind: 'attr', direction: 'gain',
+        value: fmtMult(ANALYTIC_STUDY_MULT), reason: 'em Ensino' })
+    } else if (template.id === 'patrulha') {
+      push({ id: 'analytic', source: 'ability', label: 'Analytic', kind: 'attr', direction: 'loss',
+        value: fmtMult(ANALYTIC_PATROL_MULT), reason: 'em Patrulha' })
+    }
+  }
+  if (team.some((p) => hasTorrent(p) && team.some((o) => o.id !== p.id && o.types.includes('water')))) {
+    push({ id: 'torrent', source: 'ability', label: 'Torrent', kind: 'attr', direction: 'gain',
+      value: fmtMult(TORRENT_MISSION_MULT), reason: 'com aliado do tipo Água' })
+  }
+  if (team.some((p) => hasBattleArmor(p) && runtime[p.id]?.battleArmorPending)) {
+    push({ id: 'battle-armor', source: 'ability', label: 'Battle Armor', kind: 'attr', direction: 'gain',
+      value: fmtMult(BATTLE_ARMOR_MISSION_MULT), reason: 'após batalhar na defesa' })
+  }
+  if (team.some(hasHustle)) {
+    push({ id: 'hustle', source: 'ability', label: 'Hustle', kind: 'attr', direction: 'loss',
+      value: fmtMult(HUSTLE_MISSION_MULT), reason: 'troca atributo por poder de batalha' })
+  }
+  if (hasAttrLoss && team.some(hasClearBody)) {
+    push({ id: 'clear-body', source: 'ability', label: 'Clear Body', kind: 'attr', direction: 'info',
+      value: '', reason: 'anula reduções de atributo do time' })
+  }
+
+  // --- Velocidade (não-roteamento) ---
+  const missingHp = team.reduce(
+    (sum, p) => (hasWeakArmor(p) ? sum + Math.max(0, p.maxHp - p.currentHp) : sum),
+    0,
+  )
+  if (missingHp > 0) {
+    push({ id: 'weak-armor', source: 'ability', label: 'Weak Armor', kind: 'speed', direction: 'gain',
+      value: fmtAdd(WEAK_ARMOR_SPEED_PER_MISSING_HP * missingHp), reason: 'por HP faltante' })
+  }
+  if (teamHasQuickFeet(team)) {
+    push({ id: 'quick-feet', source: 'ability', label: 'Quick Feet', kind: 'speed', direction: 'gain',
+      value: fmtAdd(QUICK_FEET_SPEED_BONUS), reason: 'despachado sozinho' })
+  }
+  if (runItems.includes('lagging-tail')) {
+    push({ id: 'lagging-tail', source: 'item', label: 'Lagging Tail', kind: 'speed', direction: 'loss',
+      value: fmtMult(LAGGING_TAIL_TRAVEL_MULT), reason: 'viagem mais lenta' })
+  }
+
+  return out
 }

@@ -21,6 +21,7 @@ import {
   hasWeakArmor,
   hustleBattleBonus,
   missionAttrMultiplier,
+  missionEffectBreakdown,
   rivalryBattleBonus,
   rolloutBonusPerWin,
   sturdyAvailable,
@@ -381,5 +382,46 @@ describe('missionAttrMultiplier — electirizer', () => {
     const p = makeMon({ id: 'y' })
     const ctx: MissionSecretCtx = { team: [p], template: PATRULHA, runtime: {}, runItems: [] }
     expect(missionAttrMultiplier(p, ctx)).toBeCloseTo(1)
+  })
+})
+
+describe('missionEffectBreakdown', () => {
+  const baseCtx = (over: Partial<MissionSecretCtx>): MissionSecretCtx => ({
+    team: [],
+    template: getMissionTemplate('patrulha'),
+    runtime: {},
+    runItems: [],
+    ...over,
+  })
+
+  it('time sem efeitos → lista vazia', () => {
+    const mon = makeMon({ id: 'p1', speciesId: 1, secretCount: 0 })
+    expect(missionEffectBreakdown(baseCtx({ team: [mon] }))).toEqual([])
+  })
+
+  it('Hustle aparece como perda de atributo', () => {
+    const mon = makeMon({ id: 'p1', speciesId: 29, secretCount: 2 }) // Nidoran♀ #2 = Hustle
+    const entries = missionEffectBreakdown(baseCtx({ team: [mon] }))
+    expect(entries).toContainEqual(
+      expect.objectContaining({ id: 'hustle', direction: 'loss', value: '−10%', kind: 'attr' }),
+    )
+  })
+
+  it('Lagging Tail gera ganho de atributo e perda de velocidade', () => {
+    const mon = makeMon({ id: 'p1', speciesId: 1, secretCount: 0 })
+    const entries = missionEffectBreakdown(baseCtx({ team: [mon], runItems: ['lagging-tail'] }))
+    const attr = entries.find((e) => e.id === 'lagging-tail' && e.kind === 'attr')
+    const speed = entries.find((e) => e.id === 'lagging-tail' && e.kind === 'speed')
+    expect(attr).toMatchObject({ direction: 'gain', value: '+50%', source: 'item' })
+    expect(speed).toMatchObject({ direction: 'loss', value: '−50%' })
+  })
+
+  it('Weak Armor com HP faltante vira ganho de velocidade proporcional', () => {
+    // Onix #1 = Weak Armor; 2 de HP faltante × 20% = +40%.
+    const mon = makeMon({ id: 'p1', speciesId: 95, secretCount: 1, maxHp: 5, currentHp: 3 })
+    const entries = missionEffectBreakdown(baseCtx({ team: [mon] }))
+    expect(entries).toContainEqual(
+      expect.objectContaining({ id: 'weak-armor', kind: 'speed', direction: 'gain', value: '+40%' }),
+    )
   })
 })
