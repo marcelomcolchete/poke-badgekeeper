@@ -208,6 +208,10 @@ export const DRAFT_CHOICES = 3
  * ganham paralyzeHold opcional. A migração inicia storms vazio, previsão de tempestade
  * zerada e paralyzedBattleIds vazio (recalculados no próximo setupDay).
  * v34: sistema de shiny. pokemon.shiny? e CaptureEncounter.candidateShiny? são opcionais
- * (ausente = não-shiny); nada a preencher — passthrough. */
-export const SAVE_VERSION = 34
+ * (ausente = não-shiny); nada a preencher — passthrough.
+ * v35: Missões Especiais da Cidade. run.specialChances (chance por local) inicia vazio
+ * (setupDay redimensiona); remove a missão Rocket (templateId 'rocket', status 'battle',
+ * mission.rocket) e a batalha pós-missão — a especial paga 5× XP direto. A migração descarta
+ * missões Rocket antigas e libera Pokémon presos. */
+export const SAVE_VERSION = 35
 export const SAVE_KEY = 'poke-badgekeeper:save'

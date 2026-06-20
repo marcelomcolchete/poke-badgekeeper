@@ -82,6 +82,44 @@ describe('saveLoad (PLAN §5)', () => {
     expect(loaded!.roster[0]!.shiny).toBeUndefined()
   })
 
+  it('migra v34 → v35: inicia specialChances vazio, descarta missões Rocket e libera Pokémon presos', () => {
+    const base = autoSeedRun(42) as unknown as Record<string, unknown>
+    // Monta roster sintético com 3 Pokémon para testar a liberação de presos.
+    const rosterBase = base.roster as Array<Record<string, unknown>>
+    const proto = rosterBase[0]! // template com todos os campos obrigatórios do Pokémon
+    const mon0 = { ...proto, id: 'p-test-0', status: 'mission' } // preso na missão Rocket
+    const mon1 = { ...proto, id: 'p-test-1', status: 'mission' } // preso na missão battle
+    const mon2 = { ...proto, id: 'p-test-2', status: 'idle' }    // na missão normal (não afetado)
+    const missions = [
+      { templateId: 'rocket', status: 'traveling', teamIds: [mon0.id], category: 'rocket' },
+      { templateId: 'patrol', status: 'battle',   teamIds: [mon1.id], category: 'patrol' },
+      { templateId: 'patrol', status: 'traveling', teamIds: [mon2.id], category: 'patrol' },
+    ]
+    const run = { ...base.run as Record<string, unknown> }
+    delete run.specialChances
+    const v34 = {
+      version: 34,
+      savedAtMs: 0,
+      state: { ...base, roster: [mon0, mon1, mon2], missions, run },
+    }
+    localStorage.setItem(SAVE_KEY, JSON.stringify(v34))
+    const loaded = loadGame()
+    expect(loaded).not.toBeNull()
+    // specialChances inicializado vazio
+    expect(loaded!.run.specialChances).toEqual([])
+    // apenas a missão normal sobrevive
+    expect(loaded!.missions).toHaveLength(1)
+    expect((loaded!.missions[0] as unknown as Record<string, unknown>).templateId).toBe('patrol')
+    expect((loaded!.missions[0] as unknown as Record<string, unknown>).status).toBe('traveling')
+    // mon0 e mon1 libertos (idle); mon2 não afetado
+    const r0 = loaded!.roster.find((p) => p.id === mon0.id)!
+    const r1 = loaded!.roster.find((p) => p.id === mon1.id)!
+    const r2 = loaded!.roster.find((p) => p.id === mon2.id)!
+    expect(r0.status).toBe('idle')
+    expect(r1.status).toBe('idle')
+    expect(r2.status).toBe('idle')
+  })
+
   it('clearSave remove o save', () => {
     saveGame(autoSeedRun(1), 0)
     clearSave()

@@ -439,6 +439,35 @@ function migrate(file: Partial<SaveFile>): SaveFile | null {
     version = 34
   }
 
+  // v34 → v35: Missões Especiais da Cidade substituem a missão Rocket. Inicia run.specialChances
+  // vazio (setupDay redimensiona ao entrar no dia); descarta missões antigas de Rocket (templateId
+  // 'rocket' / status 'battle' / com mission.rocket), liberando Pokémon presos nelas.
+  if (version === 34) {
+    const run = state.run as Record<string, unknown> | undefined
+    const missions = state.missions as Array<Record<string, unknown>> | undefined
+    const stranded = Array.isArray(missions)
+      ? new Set(
+          missions
+            .filter((m) => m.templateId === 'rocket' || m.status === 'battle' || m.rocket)
+            .flatMap((m) => (m.teamIds as string[] | undefined) ?? []),
+        )
+      : new Set<string>()
+    const roster = state.roster as Array<Record<string, unknown>> | undefined
+    state = {
+      ...state,
+      run: run && typeof run === 'object' ? { specialChances: [], ...run } : run,
+      missions: Array.isArray(missions)
+        ? missions.filter((m) => !(m.templateId === 'rocket' || m.status === 'battle' || m.rocket))
+        : missions,
+      roster: Array.isArray(roster)
+        ? roster.map((p) =>
+            stranded.has(p.id as string) && p.status !== 'fainted' ? { ...p, status: 'idle' } : p,
+          )
+        : roster,
+    } as typeof state
+    version = 35
+  }
+
   if (version !== SAVE_VERSION) return null
   return { version, savedAtMs: (file as SaveFile).savedAtMs, state } as unknown as SaveFile
 }
