@@ -53,10 +53,16 @@ export interface GymLeader {
   sprite: string
 }
 
-/** Líder por cidade (só Pewter/Cerulean jogáveis hoje); demais usam o fallback genérico. */
+/** Líder de cada cidade de Kanto (índices 0–7). Fallback genérico só para índices fora da faixa. */
 const GYM_LEADERS: Partial<Record<number, GymLeader>> = {
   0: { name: 'Brock', sprite: '/sprites/trainers/gen3/brock-gen3.png' },
   1: { name: 'Misty', sprite: '/sprites/trainers/gen3/misty-gen3.png' },
+  2: { name: 'Lt. Surge', sprite: '/sprites/trainers/gen3/ltsurge-gen3.png' },
+  3: { name: 'Erika', sprite: '/sprites/trainers/gen3/erika-gen3.png' },
+  4: { name: 'Koga', sprite: '/sprites/trainers/gen3/koga-gen3.png' },
+  5: { name: 'Sabrina', sprite: '/sprites/trainers/gen3/sabrina-gen3.png' },
+  6: { name: 'Blaine', sprite: '/sprites/trainers/gen3/blaine-gen3.png' },
+  7: { name: 'Giovanni', sprite: '/sprites/trainers/gen3/giovanni-gen3.png' },
 }
 
 const FALLBACK_LEADER: GymLeader = {
