@@ -409,6 +409,11 @@ export interface DayTally {
    * ('widen'). Modelo secretPicks — substitui o antigo secretCount/secretId/index.
    */
   secretUnlock: { pokemonId: string; slot: 0 | 1; level: 1 | 2; choice: 'first' | 'deepen' | 'widen' } | null
+  /**
+   * Escolha de Habilidade Secreta PENDENTE do Destaque do Dia (resolvida pelo jogador na tela de
+   * resumo via CHOOSE_SECRET). null = nenhuma escolha pendente. Ao resolver, vira `secretUnlock`.
+   */
+  secretChoice: { pokemonId: string } | null
   /** Corações que o Destaque do Dia ganhou no fechamento (delta já capado em [0,5]) — resumo. */
   mvpHeartsGained: number
   /** Estado por-Pokémon das Habilidades Secretas hoje (stacks/flags), por id de Pokémon. */
@@ -532,6 +537,7 @@ export function emptyTally(): DayTally {
     defenseLosses: [],
     faints: 0,
     secretUnlock: null,
+    secretChoice: null,
     mvpHeartsGained: 0,
     secretRuntime: {},
     digTunnels: [],
