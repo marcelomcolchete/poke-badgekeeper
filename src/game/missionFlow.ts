@@ -14,9 +14,9 @@ import {
   MISSION_XP_POOL,
   NATURAL_CURE_MISSION_HEAL,
   RETURN_SPEED_BONUS_ON_SUCCESS,
+  SNIPER_TIME_MULT_L1,
   SPECIAL_XP_MULTIPLIER,
   SWIFT_SWIM_RAIN_BONUS,
-  WATER_ABSORB_XP,
 } from '../engine/balance.ts'
 import { goldForMart } from '../engine/economy.ts'
 import {
@@ -27,6 +27,7 @@ import {
 } from '../engine/missions.ts'
 import {
   hasNaturalCure,
+  hasSniper,
   hasWaterAbsorb,
   sturdyAvailable,
   teamHasSwiftSwim,
@@ -34,6 +35,7 @@ import {
   teamTravelSpeedMultiplier,
   type MissionSecretCtx,
 } from '../engine/secretEffects.ts'
+import { secretLevelOf } from '../data/secretAbilities.ts'
 import { rainTravelMs } from '../engine/rainSpeed.ts'
 import { isRaining } from '../engine/weather.ts'
 import { graphWithTunnels, pathUsesSurf } from '../engine/pathfinding.ts'
@@ -111,7 +113,10 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
   if (outbound.path.length === 0) return
   const inbound = travelRoute(graph, mission.node, city.siteNodes.gym, team, s.runItems)
   const outMs = rainTravelMs(s.weather, now, outbound.distance, team, s.runItems)
-  const execution = executionMs(team, template.baseExecutionMs)
+  // Sniper L1: dobra a duração de execução (atua do ginásio, mas demora mais). L2 normal.
+  const baseExecution = executionMs(team, template.baseExecutionMs)
+  const sniperL1 = team.length === 1 && hasSniper(team[0]!) && secretLevelOf(team[0]!, 'sa-sniper') === 1
+  const execution = sniperL1 ? baseExecution * SNIPER_TIME_MULT_L1 : baseExecution
   const ctx: MissionSecretCtx = {
     team,
     template,
@@ -134,19 +139,22 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
   mission.returnEndsAtMs =
     mission.resolveAtMs + rainTravelMs(s.weather, mission.resolveAtMs, inbound.distance, team, s.runItems)
   mission.pSuccess = missionSuccessProbabilityCtx(ctx, mission.requirement)
-  // Natural Cure: recupera vida ao sair em missão (cap em maxHp); demais só viajam.
+  // Natural Cure: recupera vida ao sair em missão (L1 +2; L2 cura total); demais só viajam.
   for (const p of team) {
-    const healed = hasNaturalCure(p)
-      ? Math.min(p.maxHp, p.currentHp + NATURAL_CURE_MISSION_HEAL)
-      : p.currentHp
+    let healed = p.currentHp
+    if (hasNaturalCure(p)) {
+      const lvl = secretLevelOf(p, 'sa-natural-cure')
+      healed = lvl === 2 ? p.maxHp : Math.min(p.maxHp, p.currentHp + NATURAL_CURE_MISSION_HEAL)
+    }
     replaceMon(s, { ...p, currentHp: healed, status: 'traveling' })
   }
-  // Water Absorb: a rota passa pela água → cada portador ganha XP na hora.
+  // Water Absorb: a rota passa pela água → marca pending para bônus na PRÓXIMA missão.
+  // (Espelha battleArmorPending: setado aqui, consumido em applyMissionSecretRuntime ao resolver.)
   if (pathUsesSurf(graph, outbound.path)) {
-    const gains = new Map(
-      team.filter(hasWaterAbsorb).map((p) => [p.id, WATER_ABSORB_XP] as const),
-    )
-    if (gains.size > 0) applyXpGains(s, gains, takeRng(s))
+    for (const p of team.filter(hasWaterAbsorb)) {
+      const lvl = secretLevelOf(p, 'sa-water-absorb') as 1 | 2
+      ;(s.today.secretRuntime[p.id] ??= {}).waterAbsorbPending = lvl
+    }
   }
 }
 
@@ -349,13 +357,15 @@ export function freeOnReturn(s: GameState, mission: MissionInstance): void {
 
 /**
  * Atualiza o estado diário das Habilidades Secretas após resolver a missão: consome o Battle
- * Armor pendente (o bônus de atributos valeu para ESTA missão). Weak Armor deriva a velocidade do
- * HP faltante e Shell Armor não tem debuff de velocidade — nada a re-armar aqui.
+ * Armor pendente e o Water Absorb pendente (o bônus de atributos valeu para ESTA missão).
+ * Weak Armor deriva a velocidade do HP faltante e Shell Armor não tem debuff de velocidade
+ * — nada a re-armar aqui.
  */
 function applyMissionSecretRuntime(s: GameState, before: readonly Pokemon[]): void {
   for (const p of before) {
     const rt = s.today.secretRuntime[p.id]
     if (rt?.battleArmorPending) rt.battleArmorPending = false
+    if (rt?.waterAbsorbPending) rt.waterAbsorbPending = undefined
   }
 }
 

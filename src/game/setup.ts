@@ -16,7 +16,8 @@ import { createMissionInstance } from '../engine/missions.ts'
 import { buildDayWeather } from '../engine/storm.ts'
 import { generateDefenseEnemies, rollSquadSize } from '../engine/gymDefense.ts'
 import { createPokemon } from '../engine/leveling.ts'
-import { hasDig, hasDigPlus, hasCloudNine, hasForewarn } from '../engine/secretEffects.ts'
+import { hasDig, hasDigPlus, hasCloudNine } from '../engine/secretEffects.ts'
+import { secretLevelOf } from '../data/secretAbilities.ts'
 import { createRng, deriveSeed } from '../engine/rng.ts'
 import { shinyFor } from '../engine/shiny.ts'
 import {
@@ -124,11 +125,11 @@ export function setupDay(s: GameState): void {
 }
 
 /**
- * Forewarn: cada Pokémon do roster com a habilidade antecipa UMA missão não-Rocket do dia para o
- * início do dia (spawnAtMs = 0, preservando a duração). N portadores antecipam N missões.
+ * Forewarn: cada portador antecipa missões não-special iguais ao seu NÍVEL (L1 = 1, L2 = 2).
+ * O total é a SOMA dos níveis de todos os portadores. Antecipa spawnAtMs=0 (preserva a duração).
  */
 function applyForewarn(s: GameState): void {
-  const count = s.roster.filter(hasForewarn).length
+  const count = s.roster.reduce((sum, p) => sum + secretLevelOf(p, 'sa-forewarn'), 0)
   if (count === 0) return
   const movable = s.missions.filter((m) => m.templateId !== 'special' && m.spawnAtMs > 0)
   for (const mission of movable.slice(0, count)) {

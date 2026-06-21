@@ -317,8 +317,13 @@ export const ANALYTIC_STUDY_MULT_L1 = 1.4
 export const ANALYTIC_STUDY_MULT_L2 = 1.8
 export const ANALYTIC_PATROL_MULT_L1 = 0.6
 export const ANALYTIC_PATROL_MULT_L2 = 0.2
-/** Water Absorb: XP ganho quando a rota da missão passa pela água. */
+/** Water Absorb: XP ganho quando a rota da missão passa pela água (REMOVIDO — mantido para compatibilidade). */
 export const WATER_ABSORB_XP = 10
+/** Water Absorb: multiplicador de atributos na PRÓXIMA missão após cruzar água, por nível. */
+export const WATER_ABSORB_MISSION_MULT_L1 = 1.3
+export const WATER_ABSORB_MISSION_MULT_L2 = 1.5
+/** Sniper L1: multiplicador da duração de execução (dobra o tempo de execução). */
+export const SNIPER_TIME_MULT_L1 = 2
 
 // ---- Tempestade (raios + Paralyze) — efeito climático de Vermilion -------------------
 /** Orçamento de chance de tempestade somado entre os dias elegíveis (3–10), próprio. */

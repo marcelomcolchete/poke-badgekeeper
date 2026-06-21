@@ -44,6 +44,8 @@ import {
   SHELL_ARMOR_DIVISOR_L2,
   TORRENT_MISSION_MULT_L1,
   TORRENT_MISSION_MULT_L2,
+  WATER_ABSORB_MISSION_MULT_L1,
+  WATER_ABSORB_MISSION_MULT_L2,
   WEAK_ARMOR_SPEED_PER_MISSING_HP_L1,
   WEAK_ARMOR_SPEED_PER_MISSING_HP_L2,
 } from './balance.ts'
@@ -246,6 +248,11 @@ export function missionAttrMultiplier(p: Pokemon, ctx: MissionSecretCtx): number
   if (hasBattleArmor(p) && ctx.runtime[p.id]?.battleArmorPending) {
     const lvl = secretLevelOf(p, 'sa-battle-armor')
     mult *= lvl === 2 ? BATTLE_ARMOR_MISSION_MULT_L2 : BATTLE_ARMOR_MISSION_MULT_L1
+  }
+  // Water Absorb: rota anterior cruzou água → bônus nos atributos desta missão (consome ao resolver).
+  if (hasWaterAbsorb(p) && ctx.runtime[p.id]?.waterAbsorbPending) {
+    const pending = ctx.runtime[p.id]!.waterAbsorbPending
+    mult *= pending === 2 ? WATER_ABSORB_MISSION_MULT_L2 : WATER_ABSORB_MISSION_MULT_L1
   }
   if (hasHustle(p)) {
     const lvl = secretLevelOf(p, 'sa-hustle')

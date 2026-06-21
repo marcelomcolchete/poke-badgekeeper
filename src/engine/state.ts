@@ -335,6 +335,8 @@ export interface SecretRuntime {
   battleArmorPending?: boolean
   /** Sturdy: já usou o "não desmaia" hoje (1×/dia). */
   sturdyUsed?: boolean
+  /** Water Absorb: rota da missão anterior cruzou água → bônus nos atributos da PRÓXIMA missão (consome ao resolver). */
+  waterAbsorbPending?: 1 | 2
 }
 
 /** Um inimigo derrotado numa defesa do dia: quem derrotou + espécie (sprite no relatório). */
