@@ -1,7 +1,7 @@
-// Habilidades Secretas (ajuste): cada LINHA evolutiva tem TRÊS habilidades secretas distintas,
-// que podem ficar ativas ao mesmo tempo. Ser o Destaque do Dia desbloqueia a próxima da lista —
-// a 1ª vez a habilidade 1, a 2ª a habilidade 2, a 3ª a habilidade 3. O progresso fica gravado no
-// INDIVÍDUO (pokemon.secretCount = quantas já desbloqueou) e sobrevive à evolução. Outros Pokémon
+// Habilidades Secretas: cada LINHA evolutiva tem DOIS slots (0 e 1), cada um podendo ser
+// nível 0 (bloqueado), 1 (base) ou 2 ("+"). Ser Destaque do Dia 1× desbloqueia o slot 0
+// no nível 1; uma 2ª vez o eleva ao nível 2 OU desbloqueia o slot 1 no nível 1. O progresso
+// fica gravado no INDIVÍDUO (pokemon.secretPicks) e sobrevive à evolução. Outros Pokémon
 // da mesma linha NÃO ganham nada; cada um precisa virar Destaque.
 //
 // O CONTEÚDO (nome + efeito) é por TIPO de habilidade (uma mesma habilidade aparece em várias
@@ -10,8 +10,6 @@
 import type { Pokemon } from '../types/index.ts'
 import { EVOLUTIONS } from './pokemon/evolutions.generated.ts'
 
-/** Quantas habilidades secretas uma linha tem (máximo desbloqueável por Pokémon). */
-export const SECRET_MAX = 3
 
 /** Ids estáveis de cada TIPO de habilidade secreta (gravados na linha; NÃO mudar). */
 export type SecretId =
@@ -311,115 +309,85 @@ export function lineRootId(speciesId: number): number {
 }
 
 /**
- * As TRÊS habilidades secretas de cada linha, na ORDEM de desbloqueio (1ª, 2ª, 3ª vez Destaque),
- * chaveadas pelo id da forma-base (raiz). Linhas de Pedra/Ground/Fóssil (Pewter).
+ * Os DOIS slots de habilidade secreta de cada linha (slots 0 e 1), chaveados pelo id da
+ * forma-base (raiz).
  */
-export const SECRET_LINES: Record<number, readonly [SecretId, SecretId, SecretId]> = {
-  // ---- Vermilion (Elétrico) ----
-  // Pikachu → Raichu
-  25: ['sa-static', 'sa-dig', 'sa-lightning-rod'],
-  // Magnemite → Magneton
-  81: ['sa-sturdy', 'sa-analytic', 'sa-fly'],
-  // Voltorb → Electrode
-  100: ['sa-explosion', 'sa-rollout', 'sa-static'],
-  // Electabuzz (Volt Absorb fica sem efeito até existir a tempestade)
-  125: ['sa-vital-spirit', 'sa-volt-absorb', 'sa-static'],
-  // Zapdos (ave-trovão lendária)
-  145: ['sa-fly', 'sa-fly-plus', 'sa-pressure'],
-
-  // Sandshrew → Sandslash
-  27: ['sa-rollout', 'sa-dig', 'sa-sand-rush'],
-  // Nidoran♀ → Nidorina → Nidoqueen
-  29: ['sa-rivalry', 'sa-hustle', 'sa-dig'],
-  // Nidoran♂ → Nidorino → Nidoking
-  32: ['sa-rivalry', 'sa-hustle', 'sa-dig'],
-  // Diglett → Dugtrio
-  50: ['sa-dig', 'sa-sand-rush', 'sa-dig-plus'],
-  // Geodude → Graveler → Golem
-  74: ['sa-sturdy', 'sa-explosion', 'sa-rollout'],
-  // Onix
-  95: ['sa-weak-armor', 'sa-sturdy', 'sa-rock-head'],
-  // Cubone → Marowak
-  104: ['sa-rock-head', 'sa-battle-armor', 'sa-lightning-rod'],
-  // Rhyhorn → Rhydon
-  111: ['sa-lightning-rod', 'sa-rock-head', 'sa-reckless'],
-  // Omanyte → Omastar
-  138: ['sa-swift-swim', 'sa-shell-armor', 'sa-weak-armor'],
-  // Kabuto → Kabutops
-  140: ['sa-battle-armor', 'sa-weak-armor', 'sa-swift-swim'],
-  // Aerodactyl
-  142: ['sa-fly', 'sa-rock-head', 'sa-fly-plus'],
-
-  // ---- Dragões ----
-  // Dratini → Dragonair → Dragonite
-  147: ['sa-surf', 'sa-fly', 'sa-fly-plus'],
-
-  // ---- Cerulean (Água/Gelo) ----
-  // Squirtle → Wartortle → Blastoise
-  7: ['sa-surf', 'sa-torrent', 'sa-surf-plus'],
-  // Psyduck → Golduck
-  54: ['sa-surf', 'sa-swift-swim', 'sa-cloud-nine'],
-  // Poliwag → Poliwhirl → Poliwrath
-  60: ['sa-water-absorb', 'sa-surf', 'sa-swift-swim'],
-  // Tentacool → Tentacruel
-  72: ['sa-clear-body', 'sa-surf', 'sa-surf-plus'],
-  // Slowpoke → Slowbro
-  79: ['sa-regenerator', 'sa-own-tempo', 'sa-surf'],
-  // Seel → Dewgong
-  86: ['sa-surf', 'sa-ice-body', 'sa-thick-fat'],
-  // Shellder → Cloyster
-  90: ['sa-shell-armor', 'sa-overcoat', 'sa-surf'],
-  // Krabby → Kingler
-  98: ['sa-dig', 'sa-shell-armor', 'sa-dig-plus'],
-  // Horsea → Seadra
-  116: ['sa-swift-swim', 'sa-surf', 'sa-sniper'],
-  // Goldeen → Seaking
-  118: ['sa-surf', 'sa-swift-swim', 'sa-surf-plus'],
-  // Staryu → Starmie
-  120: ['sa-analytic', 'sa-surf', 'sa-natural-cure'],
-  // Jynx
-  124: ['sa-dry-skin', 'sa-forewarn', 'sa-analytic'],
-  // Magikarp → Gyarados
-  129: ['sa-surf', 'sa-moxie', 'sa-surf-plus'],
-  // Lapras
-  131: ['sa-surf', 'sa-surf-plus', 'sa-shell-armor'],
-  // Articuno
-  144: ['sa-fly', 'sa-fly-plus', 'sa-pressure'],
-  // Omanyte (138) e Kabuto (140) já estão definidos acima (linhas de fóssil) e batem com Cerulean.
+export const SECRET_LINES: Record<number, readonly [SecretId, SecretId]> = {
+  // Vermilion
+  25: ['sa-static', 'sa-dig'],
+  81: ['sa-sturdy', 'sa-analytic'],
+  100: ['sa-explosion', 'sa-rollout'],
+  125: ['sa-vital-spirit', 'sa-volt-absorb'],
+  145: ['sa-fly', 'sa-pressure'],
+  // Pewter / Ground / Fóssil
+  27: ['sa-rollout', 'sa-dig'],
+  29: ['sa-rivalry', 'sa-hustle'],
+  32: ['sa-rivalry', 'sa-hustle'],
+  50: ['sa-dig', 'sa-sand-rush'],
+  74: ['sa-sturdy', 'sa-explosion'],
+  95: ['sa-sturdy', 'sa-weak-armor'],
+  104: ['sa-battle-armor', 'sa-lightning-rod'],
+  111: ['sa-rock-head', 'sa-reckless'],
+  138: ['sa-swift-swim', 'sa-shell-armor'],
+  140: ['sa-battle-armor', 'sa-swift-swim'],
+  142: ['sa-fly', 'sa-rock-head'],
+  // Dragão
+  147: ['sa-surf', 'sa-fly'],
+  // Cerulean
+  7: ['sa-surf', 'sa-torrent'],
+  54: ['sa-surf', 'sa-cloud-nine'],
+  60: ['sa-surf', 'sa-water-absorb'],
+  72: ['sa-clear-body', 'sa-surf'],
+  79: ['sa-regenerator', 'sa-own-tempo'],
+  86: ['sa-surf', 'sa-thick-fat'],
+  90: ['sa-shell-armor', 'sa-overcoat'],
+  98: ['sa-dig', 'sa-shell-armor'],
+  116: ['sa-surf', 'sa-sniper'],
+  118: ['sa-surf', 'sa-swift-swim'],
+  120: ['sa-analytic', 'sa-natural-cure'],
+  124: ['sa-dry-skin', 'sa-forewarn'],
+  129: ['sa-surf', 'sa-moxie'],
+  131: ['sa-surf', 'sa-shell-armor'],
+  144: ['sa-fly', 'sa-pressure'],
 }
 
 /**
  * Override por ESPÉCIE (precede a busca por raiz): para linhas divergentes onde a raiz é
  * compartilhada por evoluções de cidades diferentes. Eevee (133) vira Vaporeon/Jolteon/Flareon,
  * então `lineRootId(134)` colapsaria em 133 e vazaria a linha de água para os outros — aqui
- * Vaporeon recebe a sua própria linha sem afetar os demais eeveelutions.
+ * Vaporeon e Jolteon recebem pares próprios sem afetar os demais eeveelutions.
  */
-const SECRET_LINE_BY_SPECIES: Partial<Record<number, readonly [SecretId, SecretId, SecretId]>> = {
-  // Vaporeon
-  134: ['sa-surf', 'sa-surf-plus', 'sa-water-absorb'],
-  // Jolteon (Volt Absorb fica sem efeito até existir a tempestade)
-  135: ['sa-quick-feet', 'sa-volt-absorb', 'sa-static'],
+const SECRET_LINE_BY_SPECIES: Partial<Record<number, readonly [SecretId, SecretId]>> = {
+  134: ['sa-surf', 'sa-water-absorb'], // Vaporeon
+  135: ['sa-quick-feet', 'sa-volt-absorb'], // Jolteon
 }
 
-/** As três habilidades (ids, em ordem) da linha de uma espécie — null se a linha não tem. */
-export function secretLineFor(speciesId: number): readonly [SecretId, SecretId, SecretId] | null {
+/** As DUAS habilidades (ids, slots 0 e 1) da linha de uma espécie — null se a linha não tem. */
+export function secretLineFor(speciesId: number): readonly [SecretId, SecretId] | null {
   return SECRET_LINE_BY_SPECIES[speciesId] ?? SECRET_LINES[lineRootId(speciesId)] ?? null
 }
 
-/** Quantas habilidades secretas este Pokémon já desbloqueou (0..3), com clamp defensivo. */
-export function secretCountOf(p: Pokemon): number {
-  if (!secretLineFor(p.speciesId)) return 0
-  return Math.min(SECRET_MAX, Math.max(0, p.secretCount ?? 0))
+/** Nível desta habilidade no indivíduo: 0 = não desbloqueada, 1 = base, 2 = "+". */
+export function secretLevelOf(p: Pokemon, id: SecretId): 0 | 1 | 2 {
+  const line = secretLineFor(p.speciesId)
+  if (!line) return 0
+  const slot = line[0] === id ? 0 : line[1] === id ? 1 : -1
+  if (slot < 0) return 0
+  const pick = (p.secretPicks ?? []).find((s) => s.slot === slot)
+  return pick ? pick.level : 0
 }
 
-/** Ids das habilidades secretas ATIVAS (já desbloqueadas) deste Pokémon, na ordem da linha. */
-export function unlockedSecretIds(p: Pokemon): SecretId[] {
+/** Tem a habilidade desbloqueada (nível ≥ 1)? */
+export function hasSecret(p: Pokemon, id: SecretId): boolean {
+  return secretLevelOf(p, id) >= 1
+}
+
+/** Habilidades ativas (id + nível) do indivíduo, na ordem dos slots. */
+export function activeSecrets(p: Pokemon): Array<{ id: SecretId; level: 1 | 2 }> {
   const line = secretLineFor(p.speciesId)
   if (!line) return []
-  return line.slice(0, secretCountOf(p)) as SecretId[]
-}
-
-/** Este Pokémon tem a habilidade secreta `id` desbloqueada? */
-export function hasSecret(p: Pokemon, id: SecretId): boolean {
-  return unlockedSecretIds(p).includes(id)
+  return (p.secretPicks ?? [])
+    .slice()
+    .sort((a, b) => a.slot - b.slot)
+    .map((s) => ({ id: line[s.slot], level: s.level }))
 }
