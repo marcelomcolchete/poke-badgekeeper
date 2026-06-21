@@ -321,25 +321,36 @@ describe('combate: bônus de batalha', () => {
 })
 
 describe('dano recebido (damageTaken)', () => {
-  it('Weak Armor dobra; Shell Armor reduz a 1; Shell tem precedência', () => {
-    // Onix(95): slot1=weak-armor → secretPicks:[{slot:1,level:1}]
-    expect(damageTaken(makeMon({ speciesId: 95, secretPicks: [{ slot: 1, level: 1 }] }), 3)).toBe(6)
-    // Omanyte(138): slot1=shell-armor → secretPicks:[{slot:1,level:1}]
-    expect(damageTaken(makeMon({ speciesId: 138, secretPicks: [{ slot: 1, level: 1 }] }), 3)).toBe(1)
-    // Omanyte slot0(swift-swim L2)+slot1(shell-armor L1): Shell tem precedência → 1
-    expect(damageTaken(makeMon({ speciesId: 138, secretPicks: [{ slot: 0, level: 2 }, { slot: 1, level: 1 }] }), 3)).toBe(1)
+  it('Shell Armor L1: ceil(raw/2); L2: ceil(raw/3); Shell tem precedência; Weak Armor NÃO altera dano', () => {
+    // Omanyte(138): slot1=shell-armor L1 → ceil(raw/2)
+    expect(damageTaken(makeMon({ speciesId: 138, secretPicks: [{ slot: 1, level: 1 }] }), 3)).toBe(2)  // ceil(3/2)=2
+    expect(damageTaken(makeMon({ speciesId: 138, secretPicks: [{ slot: 1, level: 1 }] }), 4)).toBe(2)  // ceil(4/2)=2
+    expect(damageTaken(makeMon({ speciesId: 138, secretPicks: [{ slot: 1, level: 1 }] }), 1)).toBe(1)  // ceil(1/2)=1
+    expect(damageTaken(makeMon({ speciesId: 138, secretPicks: [{ slot: 1, level: 1 }] }), 0)).toBe(0)  // 0 continua 0
+    // Omanyte slot1=shell-armor L2 → ceil(raw/3)
+    expect(damageTaken(makeMon({ speciesId: 138, secretPicks: [{ slot: 1, level: 2 }] }), 3)).toBe(1)  // ceil(3/3)=1
+    expect(damageTaken(makeMon({ speciesId: 138, secretPicks: [{ slot: 1, level: 2 }] }), 4)).toBe(2)  // ceil(4/3)=2
+    expect(damageTaken(makeMon({ speciesId: 138, secretPicks: [{ slot: 1, level: 2 }] }), 6)).toBe(2)  // ceil(6/3)=2
+    // Omanyte slot0(swift-swim L2)+slot1(shell-armor L1): Shell tem precedência → ceil(raw/2)
+    expect(damageTaken(makeMon({ speciesId: 138, secretPicks: [{ slot: 0, level: 2 }, { slot: 1, level: 1 }] }), 3)).toBe(2)
+    // Onix(95): slot1=weak-armor — NÃO mais dobra dano → passa raw igual
+    expect(damageTaken(makeMon({ speciesId: 95, secretPicks: [{ slot: 1, level: 1 }] }), 3)).toBe(3)
+    // sem habilidade → raw
     expect(damageTaken(makeMon({}), 3)).toBe(3)
-    expect(damageTaken(makeMon({ speciesId: 138, secretPicks: [{ slot: 1, level: 1 }] }), 0)).toBe(0) // 0 continua 0
   })
 })
 
 describe('viagem e voo', () => {
-  it('Weak Armor: +20% de velocidade por ponto de HP faltante', () => {
-    // Onix(95): slot1=weak-armor → secretPicks:[{slot:1,level:1}]
-    const onix = makeMon({ id: 'o', speciesId: 95, secretPicks: [{ slot: 1, level: 1 }], maxHp: 10, currentHp: 10 })
-    expect(teamTravelSpeedMultiplier([onix])).toBeCloseTo(1) // cheio: sem bônus
-    const hurt = makeMon({ id: 'o', speciesId: 95, secretPicks: [{ slot: 1, level: 1 }], maxHp: 10, currentHp: 7 })
-    expect(teamTravelSpeedMultiplier([hurt])).toBeCloseTo(1.6) // 3 faltando → +60%
+  it('Weak Armor L1: +15%/ponto; L2: +25%/ponto de HP faltante', () => {
+    // Onix(95): slot1=weak-armor L1
+    const onixFull = makeMon({ id: 'o', speciesId: 95, secretPicks: [{ slot: 1, level: 1 }], maxHp: 10, currentHp: 10 })
+    expect(teamTravelSpeedMultiplier([onixFull])).toBeCloseTo(1) // cheio: sem bônus
+    // L1: 3 faltando → +3×0.15 = +45% → 1.45
+    const hurtL1 = makeMon({ id: 'o', speciesId: 95, secretPicks: [{ slot: 1, level: 1 }], maxHp: 10, currentHp: 7 })
+    expect(teamTravelSpeedMultiplier([hurtL1])).toBeCloseTo(1.45)
+    // L2: 3 faltando → +3×0.25 = +75% → 1.75
+    const hurtL2 = makeMon({ id: 'o2', speciesId: 95, secretPicks: [{ slot: 1, level: 2 }], maxHp: 10, currentHp: 7 })
+    expect(teamTravelSpeedMultiplier([hurtL2])).toBeCloseTo(1.75)
   })
 
   it('teamHasFly: Aerodactyl (sa-fly) ou a passiva Fly do museu', () => {
@@ -543,11 +554,11 @@ describe('missionEffectBreakdown', () => {
   })
 
   it('Weak Armor com HP faltante vira ganho de velocidade proporcional', () => {
-    // Onix(95): slot1=weak-armor; 2 de HP faltante × 20% = +40%.
+    // Onix(95): slot1=weak-armor L1; 2 de HP faltante × 15% = +30%.
     const mon = makeMon({ id: 'p1', speciesId: 95, secretPicks: [{ slot: 1, level: 1 }], maxHp: 5, currentHp: 3 })
     const entries = missionEffectBreakdown(baseCtx({ team: [mon] }))
     expect(entries).toContainEqual(
-      expect.objectContaining({ id: 'weak-armor', kind: 'speed', direction: 'gain', value: '+40%' }),
+      expect.objectContaining({ id: 'weak-armor', kind: 'speed', direction: 'gain', value: '+30%' }),
     )
   })
 

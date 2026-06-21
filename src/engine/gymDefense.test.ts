@@ -221,14 +221,14 @@ describe('resolveDefense — Habilidades Secretas', () => {
     expect(out.won).toBe(false)
   })
 
-  it('Shell Armor reduz o dano de cada derrota a 1', () => {
-    // Omanyte (138) par = ['sa-swift-swim','sa-shell-armor']; Shell Armor no slot 1.
+  it('Shell Armor L1 reduz o dano de cada derrota a ceil(raw/2)', () => {
+    // Omanyte (138) par = ['sa-swift-swim','sa-shell-armor']; Shell Armor no slot 1 L1.
     const oma = makeMon({
       id: 'o', speciesId: 138, secretPicks: [{ slot: 1, level: 1 }], types: ['rock'],
       baseAttrs: makeAttrs({ batalha: 10, resistencia: 100 }),
     })
     const out = resolveDefense(fixedRng(0.999), [oma], oneStrong, { damagePerLoss: 4 })
-    expect(out.squad[0]?.currentHp).toBe(oma.maxHp - 1) // dano 4 vira 1
+    expect(out.squad[0]?.currentHp).toBe(oma.maxHp - 2) // dano 4 → ceil(4/2) = 2
   })
 
   it('Sturdy salva do desmaio (1 HP) quando disponível', () => {

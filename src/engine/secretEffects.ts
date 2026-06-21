@@ -40,11 +40,12 @@ import {
   ROLLOUT_CAP_L2,
   ROLLOUT_START_L1,
   ROLLOUT_START_L2,
-  SHELL_ARMOR_DAMAGE,
+  SHELL_ARMOR_DIVISOR_L1,
+  SHELL_ARMOR_DIVISOR_L2,
   TORRENT_MISSION_MULT_L1,
   TORRENT_MISSION_MULT_L2,
-  WEAK_ARMOR_DAMAGE_MULT,
-  WEAK_ARMOR_SPEED_PER_MISSING_HP,
+  WEAK_ARMOR_SPEED_PER_MISSING_HP_L1,
+  WEAK_ARMOR_SPEED_PER_MISSING_HP_L2,
 } from './balance.ts'
 import { effectiveAttr, mapAttrs } from './attributes.ts'
 import { itemMissionMultiplier, itemTravelSpeedMultiplier, notFinalEvolution } from './itemEffects.ts'
@@ -350,7 +351,11 @@ export function teamTravelSpeedMultiplier(
   for (const p of team) {
     if (hasWeakArmor(p)) {
       const missing = Math.max(0, p.maxHp - p.currentHp)
-      speed += WEAK_ARMOR_SPEED_PER_MISSING_HP * missing
+      const perPoint =
+        secretLevelOf(p, 'sa-weak-armor') === 2
+          ? WEAK_ARMOR_SPEED_PER_MISSING_HP_L2
+          : WEAK_ARMOR_SPEED_PER_MISSING_HP_L1
+      speed += perPoint * missing
     }
   }
   if (teamFlies(team)) speed += FLY_SPEED_BONUS
@@ -364,14 +369,18 @@ export function teamTravelSpeedMultiplier(
 // ---- Combate: dano recebido ----
 
 /**
- * Dano que este Pokémon REALMENTE recebe a partir de um dano bruto: Shell Armor reduz para 1
- * (qualquer dano vira 1), Weak Armor dobra. Shell Armor tem precedência se o Pokémon tiver ambos.
+ * Dano que este Pokémon REALMENTE recebe a partir de um dano bruto: Shell Armor reduz para
+ * ceil(raw/2) (L1) ou ceil(raw/3) (L2). Weak Armor NÃO afeta mais o dano recebido.
+ * Shell Armor tem precedência se o Pokémon tiver ambos.
  * Vale tanto em batalhas quanto no dano de missões fracassadas.
  */
 export function damageTaken(p: Pokemon, raw: number): number {
   if (raw <= 0) return 0
-  if (hasShellArmor(p)) return SHELL_ARMOR_DAMAGE
-  if (hasWeakArmor(p)) return raw * WEAK_ARMOR_DAMAGE_MULT
+  if (hasShellArmor(p)) {
+    const divisor =
+      secretLevelOf(p, 'sa-shell-armor') === 2 ? SHELL_ARMOR_DIVISOR_L2 : SHELL_ARMOR_DIVISOR_L1
+    return Math.ceil(raw / divisor)
+  }
   return raw
 }
 
@@ -479,13 +488,18 @@ export function missionEffectBreakdown(ctx: MissionSecretCtx): MissionEffectEntr
   }
 
   // --- Velocidade (não-roteamento) ---
-  const missingHp = team.reduce(
-    (sum, p) => (hasWeakArmor(p) ? sum + Math.max(0, p.maxHp - p.currentHp) : sum),
-    0,
-  )
-  if (missingHp > 0) {
+  const weakArmorBonus = team.reduce((sum, p) => {
+    if (!hasWeakArmor(p)) return sum
+    const missing = Math.max(0, p.maxHp - p.currentHp)
+    const perPoint =
+      secretLevelOf(p, 'sa-weak-armor') === 2
+        ? WEAK_ARMOR_SPEED_PER_MISSING_HP_L2
+        : WEAK_ARMOR_SPEED_PER_MISSING_HP_L1
+    return sum + perPoint * missing
+  }, 0)
+  if (weakArmorBonus > 0) {
     push({ id: 'weak-armor', source: 'ability', label: 'Weak Armor', kind: 'speed', direction: 'gain',
-      value: fmtAdd(WEAK_ARMOR_SPEED_PER_MISSING_HP * missingHp), reason: 'por HP faltante' })
+      value: fmtAdd(weakArmorBonus), reason: 'por HP faltante' })
   }
   if (teamHasQuickFeet(team)) {
     push({ id: 'quick-feet', source: 'ability', label: 'Quick Feet', kind: 'speed', direction: 'gain',

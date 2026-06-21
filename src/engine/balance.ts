@@ -263,11 +263,12 @@ export const HUSTLE_BATTLE_BONUS_L1 = 0.1
 export const HUSTLE_BATTLE_BONUS_L2 = 0.3
 export const HUSTLE_MISSION_MULT_L1 = 0.9
 export const HUSTLE_MISSION_MULT_L2 = 0.7
-/** Weak Armor: dano recebido dobrado; bônus de velocidade do time POR ponto de HP faltante. */
-export const WEAK_ARMOR_DAMAGE_MULT = 2
-export const WEAK_ARMOR_SPEED_PER_MISSING_HP = 0.2
-/** Shell Armor: todo dano recebido na vida vira este valor (1). */
-export const SHELL_ARMOR_DAMAGE = 1
+/** Weak Armor: bônus de velocidade do time POR ponto de HP faltante, por nível. */
+export const WEAK_ARMOR_SPEED_PER_MISSING_HP_L1 = 0.15
+export const WEAK_ARMOR_SPEED_PER_MISSING_HP_L2 = 0.25
+/** Shell Armor: divisor do dano recebido por nível (ceil(raw/divisor)). */
+export const SHELL_ARMOR_DIVISOR_L1 = 2
+export const SHELL_ARMOR_DIVISOR_L2 = 3
 /** Explosion: ao ser derrotado, perde esta fração da vida máxima e leva o inimigo junto. */
 export const EXPLOSION_SELF_DAMAGE_FRACTION = 0.5
 /** Fly: bônus de velocidade do time ao voar (além do atalho em linha reta). */
