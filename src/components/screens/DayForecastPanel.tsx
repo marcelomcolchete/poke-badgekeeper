@@ -8,8 +8,18 @@ import { getCityWeather, type WeatherEffectKind } from '../../data/cityWeather.t
 import { rainAtLeastOnceChance } from '../../engine/weather.ts'
 import { buildDayWeather } from '../../engine/storm.ts'
 import { missionsForDay, defensesForDay } from '../../engine/timeline.ts'
-import { hasCloudNine } from '../../engine/secretEffects.ts'
-import { CLOUD_NINE_RAIN_CHANCE_BONUS_PP } from '../../engine/balance.ts'
+import { hasOwnTempo } from '../../engine/secretEffects.ts'
+import {
+  CLOUD_NINE_RAIN_PP_L1,
+  CLOUD_NINE_RAIN_PP_L2,
+  CLOUD_NINE_OTHER_PP_L1,
+  CLOUD_NINE_OTHER_PP_L2,
+  OVERCOAT_PP_L1,
+  OVERCOAT_PP_L2,
+  OWN_TEMPO_CAP_L1,
+  OWN_TEMPO_CAP_L2,
+} from '../../engine/balance.ts'
+import { secretLevelOf } from '../../data/secretAbilities.ts'
 import { theftChanceLabel } from '../../engine/theft.ts'
 import styles from './DayForecastPanel.module.css'
 
@@ -20,14 +30,31 @@ export function DayForecastPanel({ state }: { state: GameState }) {
   const city = getCity(state.run.cityIndex)
   const weather = getCityWeather(state.run.cityIndex)
 
-  // Previsão = mesma função determinística que arma o dia (setupDay), com o MESMO bônus de Cloud
-  // Nine — assim a % "bate com o que vai acontecer".
-  const cloudNine = state.roster.filter(hasCloudNine).length
+  // Previsão = mesma função determinística que arma o dia (setupDay), com os MESMOS deltas
+  // de Cloud Nine / Overcoat / Own Tempo — assim a % "bate com o que vai acontecer".
+  let rainDelta = 0
+  let stormDelta = 0
+  for (const p of state.roster) {
+    const cnLevel = secretLevelOf(p, 'sa-cloud-nine')
+    if (cnLevel === 2) { rainDelta += CLOUD_NINE_RAIN_PP_L2; stormDelta -= CLOUD_NINE_OTHER_PP_L2 }
+    else if (cnLevel === 1) { rainDelta += CLOUD_NINE_RAIN_PP_L1; stormDelta -= CLOUD_NINE_OTHER_PP_L1 }
+    const ocLevel = secretLevelOf(p, 'sa-overcoat')
+    if (ocLevel === 2) { rainDelta -= OVERCOAT_PP_L2; stormDelta -= OVERCOAT_PP_L2 }
+    else if (ocLevel === 1) { rainDelta -= OVERCOAT_PP_L1; stormDelta -= OVERCOAT_PP_L1 }
+  }
+  let ownTempoCap = 0
+  if (state.roster.some((p) => hasOwnTempo(p) && secretLevelOf(p, 'sa-own-tempo') === 2)) {
+    ownTempoCap = OWN_TEMPO_CAP_L2
+  } else if (state.roster.some(hasOwnTempo)) {
+    ownTempoCap = OWN_TEMPO_CAP_L1
+  }
   const forecast = buildDayWeather(
     state.run.seed,
     state.run.day,
     city,
-    cloudNine * CLOUD_NINE_RAIN_CHANCE_BONUS_PP,
+    rainDelta,
+    stormDelta,
+    ownTempoCap,
   ).forecast
   const rainChance = rainAtLeastOnceChance(forecast.rainChancePercent, forecast.potentialRainCount)
   const stormChance = rainAtLeastOnceChance(forecast.stormChancePercent, forecast.potentialStormCount)

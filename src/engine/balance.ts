@@ -277,8 +277,26 @@ export const FLY_SPEED_BONUS = 0.5
 export const SWIFT_SWIM_RAIN_BONUS = 2
 /** Swift Swim L2: bônus MULTIPLICATIVO nos atributos de missão enquanto chove (+30%). */
 export const SWIFT_SWIM_MISSION_BONUS_L2 = 0.30
-/** Cloud Nine: pontos percentuais somados à chance de chuva do dia POR portador no roster. */
-export const CLOUD_NINE_RAIN_CHANCE_BONUS_PP = 25
+/**
+ * Cloud Nine: pontos percentuais adicionados à chance de CHUVA e subtraídos da chance de
+ * OUTROS climas (tempestade) por portador no roster. Acumula por portador.
+ */
+export const CLOUD_NINE_RAIN_PP_L1 = 10
+export const CLOUD_NINE_RAIN_PP_L2 = 20
+export const CLOUD_NINE_OTHER_PP_L1 = 10
+export const CLOUD_NINE_OTHER_PP_L2 = 20
+/**
+ * Overcoat: pontos percentuais subtraídos de QUALQUER clima (chuva E tempestade) por portador.
+ * Acumula por portador.
+ */
+export const OVERCOAT_PP_L1 = 10
+export const OVERCOAT_PP_L2 = 20
+/**
+ * Own Tempo: teto de eventos climáticos (chuva + tempestade) no dia. Não acumula: vale o
+ * nível mais alto presente (L2 → 1 evento; L1 → 2 eventos).
+ */
+export const OWN_TEMPO_CAP_L1 = 2
+export const OWN_TEMPO_CAP_L2 = 1
 /** Dig: quantos buracos (pontos) cada túnel liga — sempre 2 (dois pontos). */
 export const DIG_HOLES_PER_TUNNEL = 2
 /** Dig: custo do túnel entre os pontos (distância-do-grafo, bem baixa = atalho). */

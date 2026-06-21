@@ -149,6 +149,12 @@ export function hasForewarn(p: Pokemon): boolean {
 export function hasCloudNine(p: Pokemon): boolean {
   return hasSecret(p, 'sa-cloud-nine')
 }
+export function hasOvercoat(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-overcoat')
+}
+export function hasOwnTempo(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-own-tempo')
+}
 export function hasSniper(p: Pokemon): boolean {
   return hasSecret(p, 'sa-sniper')
 }

@@ -134,6 +134,8 @@ function rollStrikes(
  * Agenda das tempestades do dia: as PRÓPRIAS (janelas não-sobrepostas, cada uma ocorre por
  * chance) + uma ACOPLADA dentro da janela de cada evento de chuva (poças → água p/ encadear).
  * Reprodutível por (seed, day, city, rainEvents). `extraChancePercent` permite testes/ajustes.
+ * `maxTotalStorms` (undefined = sem cap; 0+ = teto do TOTAL de tempestades, próprias + acopladas).
+ * Quando ativo, próprias recebem prioridade; acopladas preenchem o restante do orçamento.
  */
 export function buildStorms(
   seed: number,
@@ -141,17 +143,20 @@ export function buildStorms(
   city: CityData,
   rainEvents: readonly RainEvent[],
   extraChancePercent = 0,
+  maxTotalStorms?: number,
 ): StormEvent[] {
   if (day < WEATHER_FIRST_ELIGIBLE_DAY) return []
+  const hasCap = maxTotalStorms !== undefined
   const rng = createRng(deriveSeed(seed, day, STORM_SEED_SALT))
   const chance = clamp(stormChanceForDay(seed, day) + extraChancePercent, 0, 100)
-  const maxTimes = maxStormTimes(day)
+  // Quando há cap total, as próprias recebem no máximo maxTotalStorms slots.
+  const maxOwnSlots = hasCap ? Math.min(maxStormTimes(day), maxTotalStorms!) : maxStormTimes(day)
   const storms: StormEvent[] = []
 
   // Próprias: mesma estrutura de janelas da chuva (duração 15–30s, folga STORM_GAP_MS).
   let cursor = 0
-  for (let i = 0; i < maxTimes; i++) {
-    const remainingAfter = maxTimes - 1 - i
+  for (let i = 0; i < maxOwnSlots; i++) {
+    const remainingAfter = maxOwnSlots - 1 - i
     const duration = rng.int(STORM_EVENT_MIN_MS, STORM_EVENT_MAX_MS)
     const reserve = remainingAfter * (STORM_EVENT_MIN_MS + STORM_GAP_MS)
     const latestStart = DAY_LENGTH_MS - duration - STORM_GAP_MS - reserve
@@ -165,7 +170,9 @@ export function buildStorms(
   }
 
   // Acopladas: uma tempestade DENTRO da janela de cada chuva (15–30s, encaixada).
+  // Quando há cap total, respeitamos o orçamento restante (próprias têm precedência).
   for (const rain of rainEvents) {
+    if (hasCap && storms.length >= maxTotalStorms!) break
     const window = rain.endMs - rain.startMs
     const duration = Math.min(rng.int(STORM_EVENT_MIN_MS, STORM_EVENT_MAX_MS), window)
     const latestStart = Math.max(rain.startMs, rain.endMs - duration)
@@ -233,22 +240,34 @@ export function strikesResolvingBetween(
  * Schedule climático completo do dia (chuva + tempestade), reprodutível por (seed, day, city).
  * A tempestade só entra se a cidade a tem; os raios usam os eventos de chuva para encadear nas
  * poças. Substitui chamadas diretas a buildWeatherSchedule no setup/forecast.
+ *
+ * @param extraRainChancePercent - pp delta aplicado à chance de chuva (positivo = mais chuva).
+ * @param extraStormChancePercent - pp delta aplicado à chance de tempestade (negativo = menos).
+ * @param maxWeatherEvents - teto de eventos totais (rain + storms próprias). Se informado (>0),
+ *   chuvas são capeadas primeiro até o limite; tempestades próprias usam o restante. Eventos
+ *   acoplados à chuva NUNCA são capeados (são derivados dos rain events, não são autônomos).
  */
 export function buildDayWeather(
   seed: number,
   day: number,
   city: CityData,
   extraRainChancePercent = 0,
+  extraStormChancePercent = 0,
+  maxWeatherEvents = 0,
 ): WeatherSchedule {
-  const base = buildWeatherSchedule(seed, day, city, extraRainChancePercent)
+  // Aplica o cap de Own Tempo: chuvas recebem slots primeiro, tempestades usam o restante.
+  const base = buildWeatherSchedule(seed, day, city, extraRainChancePercent, maxWeatherEvents > 0 ? maxWeatherEvents : 0)
   if (!cityHasStorm(city.index)) return base
-  const storms = buildStorms(seed, day, city, base.rain)
+  // Cap de tempestades = orçamento restante após as chuvas efetivas (undefined = sem cap).
+  const stormCap: number | undefined =
+    maxWeatherEvents > 0 ? Math.max(0, maxWeatherEvents - base.rain.length) : undefined
+  const storms = buildStorms(seed, day, city, base.rain, extraStormChancePercent, stormCap)
   return {
     ...base,
     storms,
     forecast: {
       ...base.forecast,
-      stormChancePercent: stormChanceForDay(seed, day),
+      stormChancePercent: clamp(stormChanceForDay(seed, day) + extraStormChancePercent, 0, 100),
       potentialStormCount: maxStormTimes(day),
     },
   }
