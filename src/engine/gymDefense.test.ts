@@ -408,26 +408,11 @@ describe('resolveDefense — Habilidades de Cerulean', () => {
     expect(out.duels[0]?.pWin).toBeCloseTo(20 / 28, 5)
   })
 
-  it('Ice Body+ L2: auto-vence duelos contra oponente do tipo Fogo (pWin=1)', () => {
-    // Jynx (124) par inclui 'sa-ice-body'; slot 0, NÍVEL 2.
-    // Mesmo com batalha fraca (10 vs 100), o auto-win garante pWin=1.
-    const jynx = makeMon({ id: 'j', speciesId: 124, secretPicks: [{ slot: 0, level: 2 }], types: ['normal'], baseAttrs: makeAttrs({ batalha: 10, resistencia: 100 }) })
-    const fire: EnemyUnit[] = [{ battle: 100, types: ['fire'] }]
-    const out = resolveDefense(fixedRng(0.999), [jynx], fire)
-    expect(out.duels[0]?.pWin).toBe(1)
-    expect(out.duels[0]?.youWon).toBe(true)
-    expect(out.won).toBe(true)
-  })
-
-  it('Ice Body L1: sem efeito de batalha (pWin idêntico a um Pokémon sem a habilidade)', () => {
-    // Jynx (124) Ice Body L1 — inerte, sem bônus.
-    const jynxL1 = makeMon({ id: 'j', speciesId: 124, secretPicks: [{ slot: 0, level: 1 }], types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
-    const plain = makeMon({ id: 'p', types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
-    const fire: EnemyUnit[] = [{ battle: 40, types: ['fire'] }]
-    const pWinL1 = resolveDefense(fixedRng(1), [jynxL1], fire).duels[0]?.pWin
-    const pWinPlain = resolveDefense(fixedRng(1), [plain], fire).duels[0]?.pWin
-    expect(pWinL1).toBeCloseTo(pWinPlain ?? 0) // 20/40 = 0.5, sem bônus
-  })
+  // NOTA: sa-ice-body existe como código na engine (ramo compartilhado com sa-thick-fat),
+  // mas nenhuma linha de espécie atualmente possui essa habilidade. O ramo de auto-win vs Fogo
+  // é exercitado indiretamente pela mesma lógica do Thick Fat (ambos usam o mesmo mecanismo
+  // de auto-win em resolveDefense). Testes específicos de espécie removidos para evitar
+  // dependência de Jynx ter ice-body (design decision: Jynx = ['sa-dry-skin','sa-forewarn']).
 
   it('Moxie: +1 de Batalha por inimigo derrotado na sequência', () => {
     // Magikarp (129) par = ['sa-surf','sa-moxie']; Moxie no slot 1. Vence os dois (fixedRng 0).

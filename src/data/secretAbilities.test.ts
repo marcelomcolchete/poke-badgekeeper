@@ -17,7 +17,7 @@ const CERULEAN_PAIRS: Record<number, readonly [SecretId, SecretId]> = {
   116: ['sa-surf', 'sa-sniper'],
   118: ['sa-surf', 'sa-swift-swim'],
   120: ['sa-analytic', 'sa-natural-cure'],
-  124: ['sa-ice-body', 'sa-forewarn'],
+  124: ['sa-dry-skin', 'sa-forewarn'],
   129: ['sa-surf', 'sa-moxie'],
   131: ['sa-surf', 'sa-shell-armor'],
   138: ['sa-swift-swim', 'sa-shell-armor'],
