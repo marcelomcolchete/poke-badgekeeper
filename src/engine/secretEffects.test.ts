@@ -91,7 +91,7 @@ describe('desbloqueio por secretPicks', () => {
 })
 
 describe('missionAttrMultiplier', () => {
-  it('Rivalidade: +10% por aliado do mesmo gênero', () => {
+  it('Rivalidade: +10% por aliado do mesmo gênero (L1)', () => {
     // Nidoran♀(29): slot0=rivalry → secretPicks:[{slot:0,level:1}]
     const nido = makeMon({ id: 'a', speciesId: 29, gender: 'male', secretPicks: [{ slot: 0, level: 1 }] })
     const allyM = makeMon({ id: 'b', gender: 'male' })
@@ -103,23 +103,23 @@ describe('missionAttrMultiplier', () => {
     expect(missionAttrMultiplier(nido, ctxOf([nido]))).toBe(1)
   })
 
-  it('Rock Head: +50% em escolta, −50% em ensino; nada em patrulha', () => {
+  it('Rock Head: +40% em escolta, −40% em ensino; nada em patrulha (L1)', () => {
     // Rhyhorn(111): slot0=rock-head → secretPicks:[{slot:0,level:1}]
     const rhy = makeMon({ speciesId: 111, secretPicks: [{ slot: 0, level: 1 }] })
-    expect(missionAttrMultiplier(rhy, ctxOf([rhy], ESCOLTA))).toBeCloseTo(1.5)
-    expect(missionAttrMultiplier(rhy, ctxOf([rhy], ENSINO))).toBeCloseTo(0.5)
+    expect(missionAttrMultiplier(rhy, ctxOf([rhy], ESCOLTA))).toBeCloseTo(1.4)
+    expect(missionAttrMultiplier(rhy, ctxOf([rhy], ENSINO))).toBeCloseTo(0.6)
     expect(missionAttrMultiplier(rhy, ctxOf([rhy], PATRULHA))).toBe(1)
   })
 
-  it('Battle Armor: +30% só com o flag pendente', () => {
+  it('Battle Armor: +25% só com o flag pendente (L1)', () => {
     // Cubone(104): slot0=battle-armor → secretPicks:[{slot:0,level:1}]
     const cub = makeMon({ id: 'cu', speciesId: 104, secretPicks: [{ slot: 0, level: 1 }] })
     expect(missionAttrMultiplier(cub, ctxOf([cub]))).toBe(1)
     const ctx = ctxOf([cub], PALESTRA, { cu: { battleArmorPending: true } })
-    expect(missionAttrMultiplier(cub, ctx)).toBeCloseTo(1.3)
+    expect(missionAttrMultiplier(cub, ctx)).toBeCloseTo(1.25)
   })
 
-  it('Hustle: −10% nos atributos em missão', () => {
+  it('Hustle: −10% nos atributos em missão (L1)', () => {
     // Nidoran♀(29): slot1=hustle → secretPicks:[{slot:0,level:1},{slot:1,level:1}]
     const nido = makeMon({ speciesId: 29, secretPicks: [{ slot: 0, level: 1 }, { slot: 1, level: 1 }] })
     // Sozinho (sem aliado do mesmo gênero): Hustle (−10%) e Rivalry (sem aliados = 0%).
@@ -129,7 +129,76 @@ describe('missionAttrMultiplier', () => {
   it('teamSecretAxisSum aplica o multiplicador (e cai no teto)', () => {
     // Rhyhorn(111): slot0=rock-head → secretPicks:[{slot:0,level:1}]
     const rhy = makeMon({ speciesId: 111, secretPicks: [{ slot: 0, level: 1 }] }) // efetivo 20/eixo, Rock Head
-    expect(teamSecretAxisSum('batalha', ctxOf([rhy], ESCOLTA))).toBeCloseTo(30) // 20 × 1.5
+    expect(teamSecretAxisSum('batalha', ctxOf([rhy], ESCOLTA))).toBeCloseTo(28) // 20 × 1.4
+  })
+})
+
+describe('missionAttrMultiplier — multiplicadores por nível (L1 vs L2)', () => {
+  // Slot mapping:
+  // Rhyhorn(111): slot0=rock-head, slot1=reckless
+  // Staryu(120): slot0=analytic, slot1=natural-cure
+  // Squirtle(7): slot0=surf, slot1=torrent
+  // Nidoran♀(29): slot0=rivalry, slot1=hustle
+  // Cubone(104): slot0=battle-armor, slot1=lightning-rod
+
+  it('Rock Head escolta: ×1.4 (L1) / ×1.8 (L2)', () => {
+    const rhyL1 = makeMon({ speciesId: 111, secretPicks: [{ slot: 0, level: 1 }] })
+    const rhyL2 = makeMon({ speciesId: 111, secretPicks: [{ slot: 0, level: 2 }] })
+    expect(missionAttrMultiplier(rhyL1, ctxOf([rhyL1], ESCOLTA))).toBeCloseTo(1.4)
+    expect(missionAttrMultiplier(rhyL2, ctxOf([rhyL2], ESCOLTA))).toBeCloseTo(1.8)
+  })
+
+  it('Rock Head ensino: ×0.6 (L1) / ×0.2 (L2)', () => {
+    const rhyL1 = makeMon({ speciesId: 111, secretPicks: [{ slot: 0, level: 1 }] })
+    const rhyL2 = makeMon({ speciesId: 111, secretPicks: [{ slot: 0, level: 2 }] })
+    expect(missionAttrMultiplier(rhyL1, ctxOf([rhyL1], ENSINO))).toBeCloseTo(0.6)
+    expect(missionAttrMultiplier(rhyL2, ctxOf([rhyL2], ENSINO))).toBeCloseTo(0.2)
+  })
+
+  it('Analytic ensino: ×1.4 (L1) / ×1.8 (L2)', () => {
+    const starL1 = makeMon({ speciesId: 120, secretPicks: [{ slot: 0, level: 1 }] })
+    const starL2 = makeMon({ speciesId: 120, secretPicks: [{ slot: 0, level: 2 }] })
+    expect(missionAttrMultiplier(starL1, ctxOf([starL1], ENSINO))).toBeCloseTo(1.4)
+    expect(missionAttrMultiplier(starL2, ctxOf([starL2], ENSINO))).toBeCloseTo(1.8)
+  })
+
+  it('Analytic patrulha: ×0.6 (L1) / ×0.2 (L2)', () => {
+    const starL1 = makeMon({ speciesId: 120, secretPicks: [{ slot: 0, level: 1 }] })
+    const starL2 = makeMon({ speciesId: 120, secretPicks: [{ slot: 0, level: 2 }] })
+    expect(missionAttrMultiplier(starL1, ctxOf([starL1], PATRULHA))).toBeCloseTo(0.6)
+    expect(missionAttrMultiplier(starL2, ctxOf([starL2], PATRULHA))).toBeCloseTo(0.2)
+  })
+
+  it('Torrent: ×1.25 (L1) / ×1.5 (L2) com aliado Água', () => {
+    const sqL1 = makeMon({ id: 'sq1', speciesId: 7, secretPicks: [{ slot: 1, level: 1 }], types: ['water'] })
+    const sqL2 = makeMon({ id: 'sq2', speciesId: 7, secretPicks: [{ slot: 1, level: 2 }], types: ['water'] })
+    const waterAlly = makeMon({ id: 'w', types: ['water'] })
+    expect(missionAttrMultiplier(sqL1, ctxOf([sqL1, waterAlly]))).toBeCloseTo(1.25)
+    expect(missionAttrMultiplier(sqL2, ctxOf([sqL2, waterAlly]))).toBeCloseTo(1.5)
+  })
+
+  it('Battle Armor: ×1.25 (L1) / ×1.5 (L2) com flag pendente', () => {
+    const cubL1 = makeMon({ id: 'cu1', speciesId: 104, secretPicks: [{ slot: 0, level: 1 }] })
+    const cubL2 = makeMon({ id: 'cu2', speciesId: 104, secretPicks: [{ slot: 0, level: 2 }] })
+    expect(missionAttrMultiplier(cubL1, ctxOf([cubL1], PALESTRA, { cu1: { battleArmorPending: true } }))).toBeCloseTo(1.25)
+    expect(missionAttrMultiplier(cubL2, ctxOf([cubL2], PALESTRA, { cu2: { battleArmorPending: true } }))).toBeCloseTo(1.5)
+  })
+
+  it('Hustle missão: ×0.9 (L1) / ×0.7 (L2)', () => {
+    // Nidoran♀(29) slot1=hustle; usar apenas slot1 para isolar hustle sem rivalry
+    const nidoL1 = makeMon({ speciesId: 29, secretPicks: [{ slot: 1, level: 1 }] })
+    const nidoL2 = makeMon({ speciesId: 29, secretPicks: [{ slot: 1, level: 2 }] })
+    expect(missionAttrMultiplier(nidoL1, ctxOf([nidoL1]))).toBeCloseTo(0.9)
+    expect(missionAttrMultiplier(nidoL2, ctxOf([nidoL2]))).toBeCloseTo(0.7)
+  })
+
+  it('Rivalry: +0.10/aliado (L1) / +0.20/aliado (L2)', () => {
+    // Nidoran♀(29) slot0=rivalry; usar apenas slot0 para isolar rivalry sem hustle
+    const nidoL1 = makeMon({ id: 'n1', speciesId: 29, gender: 'male', secretPicks: [{ slot: 0, level: 1 }] })
+    const nidoL2 = makeMon({ id: 'n2', speciesId: 29, gender: 'male', secretPicks: [{ slot: 0, level: 2 }] })
+    const ally = makeMon({ id: 'al', gender: 'male' })
+    expect(missionAttrMultiplier(nidoL1, ctxOf([nidoL1, ally]))).toBeCloseTo(1.10)
+    expect(missionAttrMultiplier(nidoL2, ctxOf([nidoL2, ally]))).toBeCloseTo(1.20)
   })
 })
 
@@ -172,21 +241,21 @@ describe('Surf / Sniper: predicados de time', () => {
 })
 
 describe('missionAttrMultiplier — habilidades de Cerulean', () => {
-  it('Torrent: +50% com OUTRO aliado do tipo Água', () => {
+  it('Torrent: +25% com OUTRO aliado do tipo Água (L1)', () => {
     // Squirtle(7): slot0=surf, slot1=torrent → secretPicks:[{slot:1,level:1}]
     const sq = makeMon({ id: 'sq', speciesId: 7, secretPicks: [{ slot: 1, level: 1 }], types: ['water'] })
     const waterAlly = makeMon({ id: 'w', types: ['water'] })
     const fireAlly = makeMon({ id: 'f', types: ['fire'] })
-    expect(missionAttrMultiplier(sq, ctxOf([sq, waterAlly]))).toBeCloseTo(1.5)
+    expect(missionAttrMultiplier(sq, ctxOf([sq, waterAlly]))).toBeCloseTo(1.25)
     expect(missionAttrMultiplier(sq, ctxOf([sq, fireAlly]))).toBe(1)
     expect(missionAttrMultiplier(sq, ctxOf([sq]))).toBe(1) // "outro" exclui ele mesmo
   })
 
-  it('Analytic: +50% em Ensino, −50% em Patrulha, nada em Palestra', () => {
+  it('Analytic: +40% em Ensino, −40% em Patrulha, nada em Palestra (L1)', () => {
     // Staryu(120): slot0=analytic → secretPicks:[{slot:0,level:1}]
     const staryu = makeMon({ speciesId: 120, secretPicks: [{ slot: 0, level: 1 }] })
-    expect(missionAttrMultiplier(staryu, ctxOf([staryu], ENSINO))).toBeCloseTo(1.5)
-    expect(missionAttrMultiplier(staryu, ctxOf([staryu], PATRULHA))).toBeCloseTo(0.5)
+    expect(missionAttrMultiplier(staryu, ctxOf([staryu], ENSINO))).toBeCloseTo(1.4)
+    expect(missionAttrMultiplier(staryu, ctxOf([staryu], PATRULHA))).toBeCloseTo(0.6)
     expect(missionAttrMultiplier(staryu, ctxOf([staryu], PALESTRA))).toBe(1)
   })
 
@@ -429,7 +498,7 @@ describe('missionEffectBreakdown', () => {
     expect(missionEffectBreakdown(baseCtx({ team: [mon] }))).toEqual([])
   })
 
-  it('Hustle aparece como perda de atributo', () => {
+  it('Hustle aparece como perda de atributo (L1 = −10%)', () => {
     // Nidoran♀(29): slot1=hustle → secretPicks:[{slot:1,level:1}]
     const mon = makeMon({ id: 'p1', speciesId: 29, secretPicks: [{ slot: 1, level: 1 }] })
     const entries = missionEffectBreakdown(baseCtx({ team: [mon] }))

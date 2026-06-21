@@ -11,25 +11,33 @@ import type { SecretRuntime } from './state.ts'
 import { hasSecret, secretLevelOf } from '../data/secretAbilities.ts'
 import { TEAM_ATTR_MAX } from './constants.ts'
 import {
-  ANALYTIC_PATROL_MULT,
-  ANALYTIC_STUDY_MULT,
-  BATTLE_ARMOR_MISSION_MULT,
+  ANALYTIC_PATROL_MULT_L1,
+  ANALYTIC_PATROL_MULT_L2,
+  ANALYTIC_STUDY_MULT_L1,
+  ANALYTIC_STUDY_MULT_L2,
+  BATTLE_ARMOR_MISSION_MULT_L1,
+  BATTLE_ARMOR_MISSION_MULT_L2,
   ELECTIRIZER_MISSION_BONUS,
   EVIOLITE_MISSION_MULT,
   EXPLOSION_SELF_DAMAGE_FRACTION,
   FLY_SPEED_BONUS,
   HUSTLE_BATTLE_BONUS,
-  HUSTLE_MISSION_MULT,
+  HUSTLE_MISSION_MULT_L1,
+  HUSTLE_MISSION_MULT_L2,
   LAGGING_TAIL_MISSION_MULT,
   LAGGING_TAIL_TRAVEL_MULT,
-  RIVALRY_ATTR_PER_ALLY,
+  RIVALRY_ATTR_PER_ALLY_L1,
+  RIVALRY_ATTR_PER_ALLY_L2,
   RIVALRY_BATTLE_BONUS,
-  ROCK_HEAD_ESCORT_MULT,
-  ROCK_HEAD_STUDY_MULT,
+  ROCK_HEAD_ESCORT_MULT_L1,
+  ROCK_HEAD_ESCORT_MULT_L2,
+  ROCK_HEAD_STUDY_MULT_L1,
+  ROCK_HEAD_STUDY_MULT_L2,
   QUICK_FEET_SPEED_BONUS,
   ROLLOUT_BATTLE_BONUS,
   SHELL_ARMOR_DAMAGE,
-  TORRENT_MISSION_MULT,
+  TORRENT_MISSION_MULT_L1,
+  TORRENT_MISSION_MULT_L2,
   WEAK_ARMOR_DAMAGE_MULT,
   WEAK_ARMOR_SPEED_PER_MISSING_HP,
 } from './balance.ts'
@@ -187,23 +195,38 @@ export function missionAttrMultiplier(p: Pokemon, ctx: MissionSecretCtx): number
   let mult = itemMissionMultiplier(p, ctx.runItems)
   if (hasRivalry(p)) {
     const allies = ctx.team.filter((o) => o.id !== p.id && o.gender === p.gender).length
-    mult *= 1 + RIVALRY_ATTR_PER_ALLY * allies
+    const rivalryPerAlly =
+      secretLevelOf(p, 'sa-rivalry') === 2 ? RIVALRY_ATTR_PER_ALLY_L2 : RIVALRY_ATTR_PER_ALLY_L1
+    mult *= 1 + rivalryPerAlly * allies
   }
   if (hasSecret(p, 'sa-rock-head')) {
-    if (ctx.template.id === 'escolta') mult *= ROCK_HEAD_ESCORT_MULT
-    else if (ctx.template.id === 'ensino') mult *= ROCK_HEAD_STUDY_MULT
+    const lvl = secretLevelOf(p, 'sa-rock-head')
+    if (ctx.template.id === 'escolta')
+      mult *= lvl === 2 ? ROCK_HEAD_ESCORT_MULT_L2 : ROCK_HEAD_ESCORT_MULT_L1
+    else if (ctx.template.id === 'ensino')
+      mult *= lvl === 2 ? ROCK_HEAD_STUDY_MULT_L2 : ROCK_HEAD_STUDY_MULT_L1
   }
   // Analytic: ganha em Ensino e perde em Patrulha (espelha o Rock Head em outros tipos).
   if (hasAnalytic(p)) {
-    if (ctx.template.id === 'ensino') mult *= ANALYTIC_STUDY_MULT
-    else if (ctx.template.id === 'patrulha') mult *= ANALYTIC_PATROL_MULT
+    const lvl = secretLevelOf(p, 'sa-analytic')
+    if (ctx.template.id === 'ensino')
+      mult *= lvl === 2 ? ANALYTIC_STUDY_MULT_L2 : ANALYTIC_STUDY_MULT_L1
+    else if (ctx.template.id === 'patrulha')
+      mult *= lvl === 2 ? ANALYTIC_PATROL_MULT_L2 : ANALYTIC_PATROL_MULT_L1
   }
-  // Torrent: +50% se há OUTRO aliado do tipo Água na missão.
+  // Torrent: +25%/+50% se há OUTRO aliado do tipo Água na missão.
   if (hasTorrent(p) && ctx.team.some((o) => o.id !== p.id && o.types.includes('water'))) {
-    mult *= TORRENT_MISSION_MULT
+    const lvl = secretLevelOf(p, 'sa-torrent')
+    mult *= lvl === 2 ? TORRENT_MISSION_MULT_L2 : TORRENT_MISSION_MULT_L1
   }
-  if (hasBattleArmor(p) && ctx.runtime[p.id]?.battleArmorPending) mult *= BATTLE_ARMOR_MISSION_MULT
-  if (hasHustle(p)) mult *= HUSTLE_MISSION_MULT
+  if (hasBattleArmor(p) && ctx.runtime[p.id]?.battleArmorPending) {
+    const lvl = secretLevelOf(p, 'sa-battle-armor')
+    mult *= lvl === 2 ? BATTLE_ARMOR_MISSION_MULT_L2 : BATTLE_ARMOR_MISSION_MULT_L1
+  }
+  if (hasHustle(p)) {
+    const lvl = secretLevelOf(p, 'sa-hustle')
+    mult *= lvl === 2 ? HUSTLE_MISSION_MULT_L2 : HUSTLE_MISSION_MULT_L1
+  }
   // Clear Body (nível de time): nenhum membro recebe debuff de atributo (multiplicador < 1).
   if (mult < 1 && ctx.team.some(hasClearBody)) mult = 1
   // Electirizer: bônus positivo da "próxima missão" por raio sofrido (não anulado pelo Clear Body).
@@ -383,45 +406,52 @@ export function missionEffectBreakdown(ctx: MissionSecretCtx): MissionEffectEntr
   // --- Atributos: habilidades ---
   const rivalryBonus = Math.max(
     0,
-    ...team.map((p) =>
-      hasRivalry(p)
-        ? RIVALRY_ATTR_PER_ALLY * team.filter((o) => o.id !== p.id && o.gender === p.gender).length
-        : 0,
-    ),
+    ...team.map((p) => {
+      if (!hasRivalry(p)) return 0
+      const perAlly =
+        secretLevelOf(p, 'sa-rivalry') === 2 ? RIVALRY_ATTR_PER_ALLY_L2 : RIVALRY_ATTR_PER_ALLY_L1
+      return perAlly * team.filter((o) => o.id !== p.id && o.gender === p.gender).length
+    }),
   )
   if (rivalryBonus > 0) {
     push({ id: 'rivalry', source: 'ability', label: 'Rivalry', kind: 'attr', direction: 'gain',
       value: fmtAdd(rivalryBonus), reason: 'por aliados do mesmo gênero' })
   }
   if (team.some((p) => hasSecret(p, 'sa-rock-head'))) {
+    // Use the highest level among team members with rock-head for display.
+    const lvl = Math.max(...team.map((p) => secretLevelOf(p, 'sa-rock-head'))) as 0 | 1 | 2
     if (template.id === 'escolta') {
       push({ id: 'rock-head', source: 'ability', label: 'Rock Head', kind: 'attr', direction: 'gain',
-        value: fmtMult(ROCK_HEAD_ESCORT_MULT), reason: 'em Escolta' })
+        value: fmtMult(lvl === 2 ? ROCK_HEAD_ESCORT_MULT_L2 : ROCK_HEAD_ESCORT_MULT_L1), reason: 'em Escolta' })
     } else if (template.id === 'ensino') {
       push({ id: 'rock-head', source: 'ability', label: 'Rock Head', kind: 'attr', direction: 'loss',
-        value: fmtMult(ROCK_HEAD_STUDY_MULT), reason: 'em Ensino' })
+        value: fmtMult(lvl === 2 ? ROCK_HEAD_STUDY_MULT_L2 : ROCK_HEAD_STUDY_MULT_L1), reason: 'em Ensino' })
     }
   }
   if (team.some(hasAnalytic)) {
+    const lvl = Math.max(...team.map((p) => secretLevelOf(p, 'sa-analytic'))) as 0 | 1 | 2
     if (template.id === 'ensino') {
       push({ id: 'analytic', source: 'ability', label: 'Analytic', kind: 'attr', direction: 'gain',
-        value: fmtMult(ANALYTIC_STUDY_MULT), reason: 'em Ensino' })
+        value: fmtMult(lvl === 2 ? ANALYTIC_STUDY_MULT_L2 : ANALYTIC_STUDY_MULT_L1), reason: 'em Ensino' })
     } else if (template.id === 'patrulha') {
       push({ id: 'analytic', source: 'ability', label: 'Analytic', kind: 'attr', direction: 'loss',
-        value: fmtMult(ANALYTIC_PATROL_MULT), reason: 'em Patrulha' })
+        value: fmtMult(lvl === 2 ? ANALYTIC_PATROL_MULT_L2 : ANALYTIC_PATROL_MULT_L1), reason: 'em Patrulha' })
     }
   }
   if (team.some((p) => hasTorrent(p) && team.some((o) => o.id !== p.id && o.types.includes('water')))) {
+    const lvl = Math.max(...team.map((p) => secretLevelOf(p, 'sa-torrent'))) as 0 | 1 | 2
     push({ id: 'torrent', source: 'ability', label: 'Torrent', kind: 'attr', direction: 'gain',
-      value: fmtMult(TORRENT_MISSION_MULT), reason: 'com aliado do tipo Água' })
+      value: fmtMult(lvl === 2 ? TORRENT_MISSION_MULT_L2 : TORRENT_MISSION_MULT_L1), reason: 'com aliado do tipo Água' })
   }
   if (team.some((p) => hasBattleArmor(p) && runtime[p.id]?.battleArmorPending)) {
+    const lvl = Math.max(...team.filter((p) => hasBattleArmor(p) && runtime[p.id]?.battleArmorPending).map((p) => secretLevelOf(p, 'sa-battle-armor'))) as 0 | 1 | 2
     push({ id: 'battle-armor', source: 'ability', label: 'Battle Armor', kind: 'attr', direction: 'gain',
-      value: fmtMult(BATTLE_ARMOR_MISSION_MULT), reason: 'após batalhar na defesa' })
+      value: fmtMult(lvl === 2 ? BATTLE_ARMOR_MISSION_MULT_L2 : BATTLE_ARMOR_MISSION_MULT_L1), reason: 'após batalhar na defesa' })
   }
   if (team.some(hasHustle)) {
+    const lvl = Math.max(...team.map((p) => secretLevelOf(p, 'sa-hustle'))) as 0 | 1 | 2
     push({ id: 'hustle', source: 'ability', label: 'Hustle', kind: 'attr', direction: 'loss',
-      value: fmtMult(HUSTLE_MISSION_MULT), reason: 'troca atributo por poder de batalha' })
+      value: fmtMult(lvl === 2 ? HUSTLE_MISSION_MULT_L2 : HUSTLE_MISSION_MULT_L1), reason: 'troca atributo por poder de batalha' })
   }
   if (hasAttrLoss && team.some(hasClearBody)) {
     push({ id: 'clear-body', source: 'ability', label: 'Clear Body', kind: 'attr', direction: 'info',

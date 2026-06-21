@@ -239,20 +239,25 @@ export const RIVAL_EVOLUTION_DAYS = [3, 6] as const
 // Cada habilidade tem efeito fixo (sem níveis). Várias linhas compartilham a mesma habilidade,
 // e um Pokémon pode ter até três ativas ao mesmo tempo (ver data/secretAbilities.ts).
 
-/** Rivalidade: bônus de atributo na missão POR aliado do mesmo gênero. */
-export const RIVALRY_ATTR_PER_ALLY = 0.1
+/** Rivalidade: bônus de atributo na missão POR aliado do mesmo gênero (por nível). */
+export const RIVALRY_ATTR_PER_ALLY_L1 = 0.1
+export const RIVALRY_ATTR_PER_ALLY_L2 = 0.2
 /** Rivalidade: bônus de batalha contra um oponente do mesmo gênero. */
 export const RIVALRY_BATTLE_BONUS = 0.1
-/** Rock Head: multiplicador de atributos em escolta (ganho) e em ensino (perda). */
-export const ROCK_HEAD_ESCORT_MULT = 1.5
-export const ROCK_HEAD_STUDY_MULT = 0.5
-/** Battle Armor: multiplicador de atributos na próxima missão após batalhar. */
-export const BATTLE_ARMOR_MISSION_MULT = 1.3
+/** Rock Head: multiplicador de atributos em escolta (ganho) e em ensino (perda), por nível. */
+export const ROCK_HEAD_ESCORT_MULT_L1 = 1.4
+export const ROCK_HEAD_ESCORT_MULT_L2 = 1.8
+export const ROCK_HEAD_STUDY_MULT_L1 = 0.6
+export const ROCK_HEAD_STUDY_MULT_L2 = 0.2
+/** Battle Armor: multiplicador de atributos na próxima missão após batalhar, por nível. */
+export const BATTLE_ARMOR_MISSION_MULT_L1 = 1.25
+export const BATTLE_ARMOR_MISSION_MULT_L2 = 1.5
 /** Rollout: bônus de batalha por Pokémon derrotado no duelo (acumula na sequência). */
 export const ROLLOUT_BATTLE_BONUS = 0.1
-/** Hustle: bônus de Batalha em batalhas; penalidade de atributos em missões. */
+/** Hustle: bônus de Batalha em batalhas; penalidade de atributos em missões, por nível. */
 export const HUSTLE_BATTLE_BONUS = 0.1
-export const HUSTLE_MISSION_MULT = 0.9
+export const HUSTLE_MISSION_MULT_L1 = 0.9
+export const HUSTLE_MISSION_MULT_L2 = 0.7
 /** Weak Armor: dano recebido dobrado; bônus de velocidade do time POR ponto de HP faltante. */
 export const WEAK_ARMOR_DAMAGE_MULT = 2
 export const WEAK_ARMOR_SPEED_PER_MISSING_HP = 0.2
@@ -275,8 +280,9 @@ export const DIG_TUNNEL_COST = 0.4
  * velocidade na água. Aplica-se só quando o time consegue surfar (ver engine/secretEffects).
  */
 export const SURF_WATER_TIME_MULT = 0.5
-/** Torrent: multiplicador de atributos na missão quando há outro aliado do tipo Água. */
-export const TORRENT_MISSION_MULT = 1.5
+/** Torrent: multiplicador de atributos na missão quando há outro aliado do tipo Água, por nível. */
+export const TORRENT_MISSION_MULT_L1 = 1.25
+export const TORRENT_MISSION_MULT_L2 = 1.5
 /** Thick Fat: multiplicador de Batalha contra oponentes do tipo Gelo. */
 export const THICK_FAT_VS_ICE_MULT = 1.5
 /** Moxie: bônus de Batalha (aditivo) por Pokémon derrotado na sequência da batalha. */
@@ -291,9 +297,11 @@ export const QUICK_FEET_SPEED_BONUS = 1
 export const REGENERATOR_HEAL_PER_WIN = 1
 /** Natural Cure: vida recuperada ao sair em missão. */
 export const NATURAL_CURE_MISSION_HEAL = 2
-/** Analytic: multiplicador de atributos em Ensino (ganho) e em Patrulha (perda). */
-export const ANALYTIC_STUDY_MULT = 1.5
-export const ANALYTIC_PATROL_MULT = 0.5
+/** Analytic: multiplicador de atributos em Ensino (ganho) e em Patrulha (perda), por nível. */
+export const ANALYTIC_STUDY_MULT_L1 = 1.4
+export const ANALYTIC_STUDY_MULT_L2 = 1.8
+export const ANALYTIC_PATROL_MULT_L1 = 0.6
+export const ANALYTIC_PATROL_MULT_L2 = 0.2
 /** Water Absorb: XP ganho quando a rota da missão passa pela água. */
 export const WATER_ABSORB_XP = 10
 
