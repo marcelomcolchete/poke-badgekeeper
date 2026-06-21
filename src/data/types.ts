@@ -79,8 +79,11 @@ export interface CitySiteNodes {
   gym: string
   /** Centro Pokémon: missões 'center' (curam o time no sucesso). */
   center: string
-  /** Poké Mart: missões 'mart' (recompensa em ouro). */
-  mart: string
+  /**
+   * Poké Mart: pontos onde a missão 'mart' pode surgir (recompensa em ouro). Cidades com um
+   * único mart usam lista de 1 elemento; Celadon tem 2 (['j', 'n']) — a missão sorteia um deles.
+   */
+  mart: string[]
   /**
    * Pontos onde a Missão Especial pode surgir (um por local especial da cidade, EM ORDEM).
    * Cidades com um único local usam lista de 1 elemento; Celadon pode ter 2 (['x', 'y']).

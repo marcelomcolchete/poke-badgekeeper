@@ -54,7 +54,7 @@ describe('Cerulean (cidade 2)', () => {
 
   it('todos os sítios de missão existem no grafo', () => {
     const sn = siteNodes
-    for (const id of [sn.gym, sn.center, sn.mart, ...sn.specialMission, ...sn.houses, ...sn.green]) {
+    for (const id of [sn.gym, sn.center, ...sn.mart, ...sn.specialMission, ...sn.houses, ...sn.green]) {
       expect(graph.nodes[id], `sítio ${id} fora do grafo`).toBeDefined()
     }
   })
@@ -62,7 +62,7 @@ describe('Cerulean (cidade 2)', () => {
   it('todo sítio é alcançável do ginásio E tem volta ao ginásio (apesar das mãos únicas)', () => {
     const sites = [
       siteNodes.center,
-      siteNodes.mart,
+      ...siteNodes.mart,
       ...siteNodes.specialMission,
       ...siteNodes.houses,
       ...siteNodes.green,
