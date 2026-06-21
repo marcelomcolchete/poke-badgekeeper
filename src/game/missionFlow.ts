@@ -16,6 +16,8 @@ import {
   RETURN_SPEED_BONUS_ON_SUCCESS,
   SNIPER_TIME_MULT_L1,
   SPECIAL_XP_MULTIPLIER,
+  STATIC_MOVE_CAP_L2,
+  STATIC_MOVE_PER_SEC_L2,
   SWIFT_SWIM_RAIN_BONUS,
 } from '../engine/balance.ts'
 import { goldForMart } from '../engine/economy.ts'
@@ -317,6 +319,7 @@ export function resolveMissionNow(s: GameState, mission: MissionInstance): void 
   mission.status = 'returning'
   mission.result = outcome.success ? 'success' : 'failure'
   if (outcome.success) speedUpReturn(mission)
+  applyStaticMovementBonus(mission)
   s.today.missionResults.push({
     templateId: mission.templateId,
     success: outcome.success,
@@ -329,6 +332,20 @@ function speedUpReturn(mission: MissionInstance): void {
   if (mission.resolveAtMs === null || mission.returnEndsAtMs === null) return
   const returnLeg = mission.returnEndsAtMs - mission.resolveAtMs
   mission.returnEndsAtMs = mission.resolveAtMs + returnLeg / RETURN_SPEED_BONUS_ON_SUCCESS
+}
+
+/**
+ * Static (NOVO, Fase 4): se a missão acumulou segundos parados por raio (staticStoppedSecs),
+ * aplica o bônus de velocidade de retorno — +10%/s parado, máx +100% (÷(1+bonus) no trecho).
+ * Aplicado APÓS speedUpReturn (os dois multiplicam).
+ */
+function applyStaticMovementBonus(mission: MissionInstance): void {
+  const secs = mission.staticStoppedSecs ?? 0
+  if (secs <= 0) return
+  if (mission.resolveAtMs === null || mission.returnEndsAtMs === null) return
+  const bonus = Math.min(STATIC_MOVE_CAP_L2, STATIC_MOVE_PER_SEC_L2 * secs)
+  const returnLeg = mission.returnEndsAtMs - mission.resolveAtMs
+  mission.returnEndsAtMs = mission.resolveAtMs + returnLeg / (1 + bonus)
 }
 
 /**

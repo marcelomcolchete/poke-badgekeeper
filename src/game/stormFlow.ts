@@ -6,11 +6,12 @@ import type { MapPos } from '../types/index.ts'
 import type { GameState } from '../engine/state.ts'
 import { pointInCircle, strikesResolvingBetween } from '../engine/storm.ts'
 import { travelerPositionsAt } from '../engine/travelerPositions.ts'
-import { STRIKE_DAMAGE, PARALYZE_STUN_MS } from '../engine/balance.ts'
-import { hasLightningRod, hasVoltAbsorb } from '../engine/secretEffects.ts'
+import { STRIKE_DAMAGE, PARALYZE_STUN_MS, STATIC_XP_PER_SEC } from '../engine/balance.ts'
+import { hasLightningRod, hasStatic, hasVoltAbsorb } from '../engine/secretEffects.ts'
 import { secretLevelOf } from '../data/secretAbilities.ts'
-import { findMon, replaceMon, settleFaintTracked } from './runtime.ts'
+import { findMon, replaceMon, settleFaintTracked, takeRng } from './runtime.ts'
 import { shiftMissionTimestamps } from './missionFlow.ts'
+import { applyXpGains } from './itemFlow.ts'
 
 /**
  * Marca o Pokémon como paralisado em batalha (idempotente) e desconta 1 de HP.
@@ -27,6 +28,10 @@ function markBattleParalyzed(s: GameState, id: string): void {
  * por container — o controle de deduplicação fica em `processStorms` (Set frozenContainers).
  * Reaplicar em strikes POSTERIORES estende o congelamento (comportamento cross-strike preservado).
  * `pos` é a posição do Pokémon no instante do impacto; `strikeAtMs` é o timestamp do raio.
+ *
+ * Static (NOVO, Fase 4): se qualquer membro do time da MISSÃO tem Static, acumula os segundos
+ * parados em `mission.staticStoppedSecs` e concede XP imediato (STATIC_XP_PER_SEC × stunSecs)
+ * a todos os membros do time.
  */
 function freezeContainer(s: GameState, id: string, pos: MapPos, strikeAtMs: number): void {
   // Missão em trânsito (ida/volta) com este Pokémon no time.
@@ -38,6 +43,17 @@ function freezeContainer(s: GameState, id: string, pos: MapPos, strikeAtMs: numb
     const untilMs = (active ? mission.paralyzeHold!.untilMs : strikeAtMs) + PARALYZE_STUN_MS
     mission.paralyzeHold = { pos: { ...pos }, untilMs }
     shiftMissionTimestamps(mission, mission.status === 'traveling' ? 'out' : 'back', PARALYZE_STUN_MS, true)
+    // Static (NOVO): se o time inclui um portador de Static, concede XP e acumula movimento.
+    const teamMons = mission.teamIds.map((tid) => findMon(s, tid)).filter((p) => p !== undefined)
+    if (teamMons.some(hasStatic)) {
+      const stunSecs = PARALYZE_STUN_MS / 1000
+      mission.staticStoppedSecs = (mission.staticStoppedSecs ?? 0) + stunSecs
+      const xpPerMember = STATIC_XP_PER_SEC * stunSecs
+      const gains = new Map(mission.teamIds.map((tid) => [tid, xpPerMember]))
+      const rng = takeRng(s)
+      applyXpGains(s, gains, rng)
+      for (const xp of gains.values()) s.today.xpEarned += xp
+    }
     return
   }
   // Procurador de captura a caminho.

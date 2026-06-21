@@ -324,8 +324,17 @@ export const MOXIE_TEMP_CAP_L2 = 25
  */
 export const PRESSURE_ENEMY_MULT_L1 = 0.85
 export const PRESSURE_ENEMY_MULT_L2 = 0.70
-/** Static/Paralyze: multiplicador da Batalha do inimigo paralisado (−50%, até o fim da batalha). */
-export const STATIC_PARALYZE_MULT = 0.5
+/**
+ * Static (NOVO, Fase 4): XP concedido por segundo que o time fica PARADO por raio ou poça.
+ * 1 XP/s: 5s de paralisia → +5 XP.
+ */
+export const STATIC_XP_PER_SEC = 1
+/**
+ * Static L2: bônus ADITIVO de velocidade de viagem por segundo parado (10%/s, cap 100%).
+ * Acumula em mission.staticStoppedSecs; aplica como min(STATIC_MOVE_CAP_L2, STATIC_MOVE_PER_SEC_L2 × secs).
+ */
+export const STATIC_MOVE_PER_SEC_L2 = 0.10
+export const STATIC_MOVE_CAP_L2 = 1.0
 /** Quick Feet: bônus aditivo de velocidade de viagem quando despachado sozinho (+100% → ×2). */
 export const QUICK_FEET_SPEED_BONUS = 1
 /** Regenerator: vida recuperada por Pokémon derrotado em batalha. */

@@ -175,8 +175,9 @@ describe('resolveDefense — Habilidades Secretas', () => {
     expect(out.duels[0]?.yourId).toBe('a')
   })
 
-  it('Static: ao perder um duelo, paralisa o inimigo (Batalha ×0,5) nos duelos seguintes', () => {
+  it('Static (NOVO): ao perder um duelo, NÃO paralisa mais o inimigo na batalha', () => {
     // Pikachu (25) par = ['sa-static','sa-dig']; Static no slot 0.
+    // O Static novo não tem mais efeito de batalha — o inimigo luta com Batalha cheia.
     const pika = makeMon({
       id: 'p', speciesId: 25, secretPicks: [{ slot: 0, level: 1 }], types: ['electric'],
       baseAttrs: makeAttrs({ batalha: 10, resistencia: 100 }),
@@ -189,8 +190,8 @@ describe('resolveDefense — Habilidades Secretas', () => {
     expect(out.duels[0]?.yourId).toBe('p')
     expect(out.duels[0]?.youWon).toBe(false)
     expect(out.duels[1]?.yourId).toBe('n')
-    // Inimigo paralisado: enemyEff = 100 × 0,5 = 50.
-    const expected = duelWinProbability(effectiveBattle(next, ['normal']), 50)
+    // Inimigo NÃO paralisado: enemyEff = 100 (batalha cheia, não ×0,5).
+    const expected = duelWinProbability(effectiveBattle(next, ['normal']), 100)
     expect(out.duels[1]?.pWin).toBeCloseTo(expected, 6)
   })
 

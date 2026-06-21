@@ -7,7 +7,7 @@ import type { GameState } from '../engine/state.ts'
 import type { StormEvent } from '../engine/storm.ts'
 import { travelerPositionsAt } from '../engine/travelerPositions.ts'
 import { getCity } from '../data/cities.ts'
-import { PARALYZE_STUN_MS, VOLT_ABSORB_BONUS_L1, VOLT_ABSORB_BONUS_L2 } from '../engine/balance.ts'
+import { PARALYZE_STUN_MS, STATIC_XP_PER_SEC, STATIC_MOVE_PER_SEC_L2, STATIC_MOVE_CAP_L2, VOLT_ABSORB_BONUS_L1, VOLT_ABSORB_BONUS_L2 } from '../engine/balance.ts'
 import { teamTravelSpeedMultiplier, missionAttrMultiplier, hasVoltAbsorb, type MissionSecretCtx } from '../engine/secretEffects.ts'
 import { getMissionTemplate } from '../data/missionTemplates.ts'
 import { makeMon } from '../engine/testkit.ts'
@@ -523,5 +523,104 @@ describe('hasVoltAbsorb predicado', () => {
     expect(hasVoltAbsorb(makeMon({ speciesId: 135, secretPicks: [{ slot: 1, level: 1 }] }))).toBe(true)
     // Electabuzz(125): slot1=volt-absorb
     expect(hasVoltAbsorb(makeMon({ speciesId: 125, secretPicks: [{ slot: 1, level: 1 }] }))).toBe(true)
+  })
+})
+
+// ---- Static (NOVO): XP e bônus de movimento por segundo parado ------------------
+
+describe('Static (NOVO) — XP por segundo parado (L1)', () => {
+  it('time com Static parado 5s por raio ganha +5 XP (STATIC_XP_PER_SEC × 5)', () => {
+    // Pikachu (25) par = ['sa-static','sa-dig']; Static no slot 0.
+    const { s, pos } = travelingState()
+    const mission = s.missions[0]!
+
+    const staticMon = makeMon({
+      id: s.roster[0]!.id,
+      speciesId: 25,
+      secretPicks: [{ slot: 0, level: 1 }], // Static L1
+      currentHp: 5,
+      maxHp: 5,
+      status: 'traveling' as const,
+    })
+    s.roster[0] = staticMon
+    mission.teamIds = [staticMon.id]
+
+    const storm: StormEvent = {
+      startMs: 0,
+      endMs: 30_000,
+      strikes: [{ warnAtMs: 0, strikeAtMs: 5_000, circles: [{ cx: pos.x, cy: pos.y, radius: 0.2 }] }],
+    }
+    s.weather = { ...s.weather, storms: [storm] }
+    processStorms(s, 0, 6_000)
+
+    // PARALYZE_STUN_MS = 5000 ms = 5 s → +5 XP (STATIC_XP_PER_SEC=1)
+    const expectedXp = STATIC_XP_PER_SEC * (PARALYZE_STUN_MS / 1000)
+    expect(s.today.xpEarned).toBe(expectedXp)
+  })
+
+  it('time SEM Static atingido por raio não ganha XP extra', () => {
+    const { s, pos } = travelingState()
+    const mission = s.missions[0]!
+    // Pokémon sem Static (sem secretPicks)
+    mission.teamIds = [s.roster[0]!.id]
+
+    const storm: StormEvent = {
+      startMs: 0,
+      endMs: 30_000,
+      strikes: [{ warnAtMs: 0, strikeAtMs: 5_000, circles: [{ cx: pos.x, cy: pos.y, radius: 0.2 }] }],
+    }
+    s.weather = { ...s.weather, storms: [storm] }
+    processStorms(s, 0, 6_000)
+
+    expect(s.today.xpEarned).toBe(0)
+  })
+})
+
+describe('Static (NOVO) — bônus de movimento por segundo parado (L2)', () => {
+  it('STATIC_MOVE_PER_SEC_L2 e STATIC_MOVE_CAP_L2 exportados de balance.ts', () => {
+    expect(typeof STATIC_MOVE_PER_SEC_L2).toBe('number')
+    expect(typeof STATIC_MOVE_CAP_L2).toBe('number')
+    expect(STATIC_MOVE_PER_SEC_L2).toBeCloseTo(0.10)
+    expect(STATIC_MOVE_CAP_L2).toBeCloseTo(1.0)
+  })
+
+  it('time parado 5s acumula staticStoppedSecs=5 na missão (L2)', () => {
+    const { s, pos } = travelingState()
+    const mission = s.missions[0]!
+
+    const staticMon = makeMon({
+      id: s.roster[0]!.id,
+      speciesId: 25,
+      secretPicks: [{ slot: 0, level: 1 }],
+      currentHp: 5,
+      maxHp: 5,
+      status: 'traveling' as const,
+    })
+    s.roster[0] = staticMon
+    mission.teamIds = [staticMon.id]
+
+    const storm: StormEvent = {
+      startMs: 0,
+      endMs: 30_000,
+      strikes: [{ warnAtMs: 0, strikeAtMs: 5_000, circles: [{ cx: pos.x, cy: pos.y, radius: 0.2 }] }],
+    }
+    s.weather = { ...s.weather, storms: [storm] }
+    processStorms(s, 0, 6_000)
+
+    // Após 5s parado: staticStoppedSecs deve ser 5
+    expect(mission.staticStoppedSecs).toBe(PARALYZE_STUN_MS / 1000)
+  })
+
+  it('10s parado = +100% de movimento (cap: STATIC_MOVE_CAP_L2)', () => {
+    // 10 s × 0.10 = 1.0 = cap → speedBonus = min(1.0, 0.10×10) = 1.0
+    const stoppedSecs = 10
+    const bonus = Math.min(STATIC_MOVE_CAP_L2, STATIC_MOVE_PER_SEC_L2 * stoppedSecs)
+    expect(bonus).toBeCloseTo(STATIC_MOVE_CAP_L2)
+  })
+
+  it('5s parado = +50% de movimento (abaixo do cap)', () => {
+    const stoppedSecs = 5
+    const bonus = Math.min(STATIC_MOVE_CAP_L2, STATIC_MOVE_PER_SEC_L2 * stoppedSecs)
+    expect(bonus).toBeCloseTo(0.5)
   })
 })

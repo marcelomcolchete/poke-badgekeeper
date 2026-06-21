@@ -142,6 +142,11 @@ export interface MissionInstance {
    */
   electirizerBonus?: Record<string, number>
   /**
+   * Static (NOVO, Fase 4): segundos totais parados por raio ou poça durante esta missão,
+   * acumulados para o bônus de movimento (L2). Ausente = 0.
+   */
+  staticStoppedSecs?: number
+  /**
    * Sub-seed do RNG de evolução, sorteado ao resolver. O XP só é APLICADO na volta ao
    * ginásio (PLAN §4.1, ajuste) — guardar o seed mantém a evolução determinística.
    */

@@ -37,7 +37,6 @@ import {
   PRESSURE_ENEMY_MULT_L2,
   REGENERATOR_HEAL_PER_WIN,
   RIVAL_EVOLUTION_DAYS,
-  STATIC_PARALYZE_MULT,
 } from './balance.ts'
 import { applyDamage, effectiveAttr } from './attributes.ts'
 import { secretLevelOf } from '../data/secretAbilities.ts'
@@ -49,7 +48,6 @@ import {
   hasMoxie,
   hasReckless,
   hasRegenerator,
-  hasStatic,
   hasSturdy,
   hasVitalSpirit,
   hustleBattleBonus,
@@ -279,7 +277,7 @@ export interface ResolveDefenseOpts {
  *  - Lightning Rod: contra um inimigo Elétrico, o portador assume o duelo (vai para a frente).
  *  - Reckless: ao perder, toma dano e tenta de novo sem passar a vez (até vencer ou desmaiar).
  *  - Explosion: ao perder, derrota o inimigo e perde metade da vida máxima (pode desmaiar).
- *  - Static: ao perder um duelo, paralisa o inimigo que o derrotou (Batalha ×0,5 até o fim).
+ *  - Static: efeito de batalha REMOVIDO (Fase 4) — o Static agora beneficia o time em missões paradas.
  */
 export function resolveDefense(
   rng: Rng,
@@ -300,8 +298,6 @@ export function resolveDefense(
   const pressureLevel = Math.max(0, ...squad.map((p) => secretLevelOf(p, 'sa-pressure')))
   const enemyPressureMult =
     pressureLevel === 2 ? PRESSURE_ENEMY_MULT_L2 : pressureLevel === 1 ? PRESSURE_ENEMY_MULT_L1 : 1
-  // Static: índices de inimigos paralisados — lutam com Batalha ×0,5 até o fim da batalha.
-  const paralyzed = new Set<number>()
   // Guarda contra laço infinito do Reckless (cada retentativa custa HP, mas é defensivo).
   let guard = 0
   const maxIterations = (result.length + enemies.length) * 1000 + 1000
@@ -348,8 +344,6 @@ export function resolveDefense(
     // Pressure (squad-wide, aplicado UMA VEZ no início): reduz a Batalha de TODOS os inimigos.
     let enemyEff = enemy.battle * typeAdvantageMultiplier(enemy.types, you.types)
     enemyEff *= enemyPressureMult
-    // Static: inimigo paralisado luta com metade da Batalha.
-    if (paralyzed.has(theirs)) enemyEff *= STATIC_PARALYZE_MULT
     // Auto-win: Thick Fat+ (L2) vs Gelo; Ice Body+ (L2) vs Fogo.
     let pWin = duelWinProbability(yourEff, enemyEff)
     if (
@@ -385,8 +379,7 @@ export function resolveDefense(
       frontWins += 1
       continue
     }
-    // Derrota no duelo. Static paralisa o inimigo que derrotou o portador (Batalha ×0,5 até o fim).
-    if (hasStatic(you)) paralyzed.add(theirs)
+    // Derrota no duelo.
     // Explosion derrota o inimigo junto e custa metade da vida máxima.
     // Explosion+ (L2): perde TODA a vida e derrota TODOS os inimigos restantes.
     if (hasExplosion(you)) {
