@@ -20,7 +20,6 @@ export type SecretId =
   | 'sa-sand-rush'
   | 'sa-rivalry'
   | 'sa-hustle'
-  | 'sa-dig-plus'
   | 'sa-sturdy'
   | 'sa-explosion'
   | 'sa-weak-armor'
@@ -31,10 +30,8 @@ export type SecretId =
   | 'sa-swift-swim'
   | 'sa-shell-armor'
   | 'sa-fly'
-  | 'sa-fly-plus'
   // Cerulean (Água/Gelo) — habilidades novas.
   | 'sa-surf'
-  | 'sa-surf-plus'
   | 'sa-torrent'
   | 'sa-thick-fat'
   | 'sa-moxie'
@@ -62,206 +59,236 @@ export type SecretId =
 export interface SecretKind {
   id: SecretId
   name: string
-  /** Texto do efeito exibido ao jogador (a regra mora na engine). */
-  effect: string
+  /** Texto do efeito no nível 1 (regra mora na engine). */
+  effectL1: string
+  /** Texto do efeito no nível 2 ("+", upgrade que inclui o nível 1). */
+  effectL2: string
 }
 
-/** Catálogo de TODAS as habilidades secretas (nome + efeito), por id. */
+/** Catálogo de TODAS as habilidades secretas (nome + effectL1/effectL2), por id. */
 export const SECRET_KINDS: Record<SecretId, SecretKind> = {
-  'sa-rollout': {
-    id: 'sa-rollout',
-    name: 'Rollout',
-    effect: 'Ao derrotar um Pokémon, +10% de bônus de batalha no próximo duelo (acumula na sequência).',
-  },
-  'sa-dig': {
-    id: 'sa-dig',
-    name: 'Dig',
-    effect: 'Abre 2 buracos ligando dois pontos; o time atravessa por baixo da terra.',
-  },
-  'sa-sand-rush': {
-    id: 'sa-sand-rush',
-    name: 'Sand Rush',
-    effect: '+200% de velocidade do time durante tempestade de areia. (sem efeito até existir clima)',
-  },
-  'sa-rivalry': {
-    id: 'sa-rivalry',
-    name: 'Rivalidade',
-    effect: '+10% nos atributos por aliado do mesmo gênero na missão e +10% de batalha contra oponente do mesmo gênero.',
-  },
-  'sa-hustle': {
-    id: 'sa-hustle',
-    name: 'Hustle',
-    effect: '+10% de Batalha em batalhas, mas −10% nos atributos em missões.',
-  },
-  'sa-dig-plus': {
-    id: 'sa-dig-plus',
-    name: 'Dig+',
-    effect: 'Upgrade do Dig: um dos buracos aparece sempre no ponto do ginásio.',
-  },
-  'sa-sturdy': {
-    id: 'sa-sturdy',
-    name: 'Sturdy',
-    effect: 'Quando desmaiaria em batalha, fica com 1 de vida. (1× por dia)',
-  },
-  'sa-explosion': {
-    id: 'sa-explosion',
-    name: 'Explosion',
-    effect: 'Ao ser derrotado em batalha, explode: perde metade da vida máxima (pode morrer) e derrota o Pokémon que o derrotou.',
-  },
-  'sa-weak-armor': {
-    id: 'sa-weak-armor',
-    name: 'Weak Armor',
-    effect: 'Ao receber dano perde o dobro de vida, mas dá +20% de velocidade ao time por ponto de vida faltante.',
-  },
-  'sa-rock-head': {
-    id: 'sa-rock-head',
-    name: 'Rock Head',
-    effect: '+50% nos atributos em missões de escolta e −50% em ensino.',
-  },
-  'sa-battle-armor': {
-    id: 'sa-battle-armor',
-    name: 'Battle Armor',
-    effect: 'Após uma batalha (ginásio/Rocket), +30% em todos os atributos na próxima missão.',
-  },
-  'sa-lightning-rod': {
-    id: 'sa-lightning-rod',
-    name: 'Lightning Rod',
-    effect: 'Quando o oponente é do tipo Elétrico, assume o duelo no lugar de quem está na frente.',
-  },
-  'sa-reckless': {
-    id: 'sa-reckless',
-    name: 'Reckless',
-    effect: 'Ao perder um combate, perde vida e tenta de novo sem passar a vez para o próximo Pokémon.',
-  },
-  'sa-swift-swim': {
-    id: 'sa-swift-swim',
-    name: 'Swift Swim',
-    effect: '+200% de velocidade do time enquanto chove.',
-  },
-  'sa-shell-armor': {
-    id: 'sa-shell-armor',
-    name: 'Shell Armor',
-    effect: 'Todo dano recebido na vida vira 1.',
+  // ---- Travessia / viagem ----
+  'sa-surf': {
+    id: 'sa-surf',
+    name: 'Surf',
+    effectL1: 'Atravessa os pontos de água e, enquanto está na água, ganha +100% de velocidade (só despachado sozinho).',
+    effectL2: 'Leva o time inteiro pela água.',
   },
   'sa-fly': {
     id: 'sa-fly',
     name: 'Fly',
-    effect: 'Voa em linha reta do ginásio até a tarefa — bem mais rápido. Só quando despachado sozinho.',
+    effectL1: 'Voa em linha reta do ginásio à tarefa (caminho curto), sem bônus de velocidade. Risco: um raio mata o time e perde a missão. Só sozinho.',
+    effectL2: 'Leva o time inteiro voando (mantém o risco do raio).',
   },
-  'sa-fly-plus': {
-    id: 'sa-fly-plus',
-    name: 'Fly+',
-    effect: 'Upgrade do Fly: pode levar o time inteiro voando.',
-  },
-  'sa-surf': {
-    id: 'sa-surf',
-    name: 'Surf',
-    effect: 'Atravessa os pontos de água e ganha +100% de velocidade na água. Só quando despachado sozinho.',
-  },
-  'sa-surf-plus': {
-    id: 'sa-surf-plus',
-    name: 'Surf+',
-    effect: 'Upgrade do Surf: pode levar o time inteiro pela água.',
-  },
-  'sa-torrent': {
-    id: 'sa-torrent',
-    name: 'Torrent',
-    effect: '+50% nos atributos quando vai a uma missão com outro Pokémon do tipo Água.',
-  },
-  'sa-thick-fat': {
-    id: 'sa-thick-fat',
-    name: 'Thick Fat',
-    effect: 'Recebe vantagem (×1,5 de Batalha) em batalhas contra Pokémon do tipo Gelo.',
-  },
-  'sa-moxie': {
-    id: 'sa-moxie',
-    name: 'Moxie',
-    effect: 'Ao derrotar um Pokémon na batalha, ganha +1 de Batalha (acumula na sequência).',
-  },
-  'sa-pressure': {
-    id: 'sa-pressure',
-    name: 'Pressure',
-    effect: 'Reduz a Batalha dos Pokémon enfrentados em 25%.',
-  },
-  'sa-regenerator': {
-    id: 'sa-regenerator',
-    name: 'Regenerator',
-    effect: 'Recupera 1 de vida a cada Pokémon derrotado em batalha.',
-  },
-  'sa-natural-cure': {
-    id: 'sa-natural-cure',
-    name: 'Natural Cure',
-    effect: 'Sempre que sai em missão, recupera 2 de vida.',
-  },
-  'sa-analytic': {
-    id: 'sa-analytic',
-    name: 'Analytic',
-    effect: '+50% nos atributos em missões de Ensino e −50% em Patrulha.',
-  },
-  'sa-clear-body': {
-    id: 'sa-clear-body',
-    name: 'Clear Body',
-    effect: 'Seu time não recebe debuff de atributo em missões.',
-  },
-  'sa-sniper': {
-    id: 'sa-sniper',
-    name: 'Sniper',
-    effect: 'Faz missões sem sair do ginásio (atua à distância). Só quando despachado sozinho.',
-  },
-  'sa-water-absorb': {
-    id: 'sa-water-absorb',
-    name: 'Water Absorb',
-    effect: 'Ganha 10 de XP sempre que a rota passa pela água.',
-  },
-  'sa-forewarn': {
-    id: 'sa-forewarn',
-    name: 'Forewarn',
-    effect: 'Antecipa uma das missões do dia para o início do dia (cada portador antecipa mais uma).',
-  },
-  'sa-cloud-nine': {
-    id: 'sa-cloud-nine',
-    name: 'Cloud Nine',
-    effect: '+25 pontos percentuais na chance de chover hoje (acumula por portador).',
-  },
-  'sa-ice-body': {
-    id: 'sa-ice-body',
-    name: 'Ice Body',
-    effect: 'Nunca fica congelado. (sem efeito até existir o status de congelamento)',
-  },
-  'sa-dry-skin': {
-    id: 'sa-dry-skin',
-    name: 'Dry Skin',
-    effect: 'Perde 1 de vida no calor e recupera 2 quando chove ou está frio. (sem efeito até existir clima)',
-  },
-  'sa-overcoat': {
-    id: 'sa-overcoat',
-    name: 'Overcoat',
-    effect: 'Não recebe dano de nenhum efeito climático. (sem efeito até existir clima)',
-  },
-  'sa-own-tempo': {
-    id: 'sa-own-tempo',
-    name: 'Own Tempo',
-    effect: 'Previne o Pokémon de ficar confuso. (sem efeito até existir o status de confusão)',
-  },
-  'sa-static': {
-    id: 'sa-static',
-    name: 'Static',
-    effect: 'Ao perder um duelo em batalha, paralisa o inimigo que o derrotou: a Batalha dele cai pela metade até o fim daquela batalha.',
-  },
-  'sa-vital-spirit': {
-    id: 'sa-vital-spirit',
-    name: 'Vital Spirit',
-    effect: 'Ao falhar uma missão, o time tenta de novo uma vez (mesma chance); só falha de fato se as duas tentativas falharem.',
+  'sa-dig': {
+    id: 'sa-dig',
+    name: 'Dig',
+    effectL1: 'Abre 2 buracos ligando dois pontos; o time atravessa por baixo da terra.',
+    effectL2: 'Um dos buracos aparece sempre no ponto do ginásio.',
   },
   'sa-quick-feet': {
     id: 'sa-quick-feet',
     name: 'Quick Feet',
-    effect: '+100% de velocidade de movimento quando despachado sozinho.',
+    effectL1: '+100% de movimento despachado sozinho.',
+    effectL2: '+100% de movimento para o time inteiro.',
+  },
+  // ---- Velocidade por condição ----
+  'sa-weak-armor': {
+    id: 'sa-weak-armor',
+    name: 'Weak Armor',
+    effectL1: '+15% de velocidade do time por ponto de vida faltante (sem o dobro de dano).',
+    effectL2: '+25% de velocidade do time por ponto de vida faltante.',
+  },
+  'sa-swift-swim': {
+    id: 'sa-swift-swim',
+    name: 'Swift Swim',
+    effectL1: '+200% de velocidade do time enquanto chove.',
+    effectL2: '+200% de velocidade e +30% de atributos em missões enquanto chove.',
+  },
+  // ---- Combate ----
+  'sa-rollout': {
+    id: 'sa-rollout',
+    name: 'Rollout',
+    effectL1: 'A cada Pokémon derrotado no duelo, o bônus de Batalha para o próximo dobra: +2, +4, +8, +16, +32 (teto). Reinicia a cada batalha.',
+    effectL2: 'Começa em +4 e dobra: +4, +8, +16, +32, +64 (teto).',
+  },
+  'sa-rivalry': {
+    id: 'sa-rivalry',
+    name: 'Rivalidade',
+    effectL1: '+10% nos atributos por aliado do mesmo gênero na missão; +10% de Batalha contra oponente do mesmo gênero.',
+    effectL2: '+20% / +20%.',
+  },
+  'sa-hustle': {
+    id: 'sa-hustle',
+    name: 'Hustle',
+    effectL1: '+10% de Batalha / −10% de atributos em missões.',
+    effectL2: '+30% / −30%.',
+  },
+  'sa-sturdy': {
+    id: 'sa-sturdy',
+    name: 'Sturdy',
+    effectL1: 'Ao desmaiar em batalha, fica com 1 de vida (1×/dia).',
+    effectL2: 'Nunca desmaia em batalha — sempre fica com 1 de vida (sem limite diário).',
+  },
+  'sa-explosion': {
+    id: 'sa-explosion',
+    name: 'Explosion',
+    effectL1: 'Ao ser derrotado, explode: perde metade da vida máxima (pode morrer) e derrota quem o derrotou.',
+    effectL2: 'Explode perdendo toda a vida (morre) e derrota todos os Pokémon inimigos.',
+  },
+  'sa-reckless': {
+    id: 'sa-reckless',
+    name: 'Reckless',
+    effectL1: 'Ao perder um combate, perde vida e tenta de novo sem passar a vez.',
+    effectL2: 'Na retentativa toma metade do dano que tomaria.',
+  },
+  'sa-pressure': {
+    id: 'sa-pressure',
+    name: 'Pressure',
+    effectL1: 'No início do combate, reduz a Batalha dos inimigos em 15%. Não acumula: vale só o de maior nível.',
+    effectL2: '30%. Não acumula: vale só o de maior nível.',
+  },
+  'sa-moxie': {
+    id: 'sa-moxie',
+    name: 'Moxie',
+    effectL1: 'Ao derrotar um Pokémon, +1 no atributo Batalha permanente (resto do jogo), até o teto 60.',
+    effectL2: 'Mantém o +1 permanente e ganha +5 temporário acumulável para a próxima batalha: +5, +10, +15, +20, +25 (teto).',
+  },
+  'sa-regenerator': {
+    id: 'sa-regenerator',
+    name: 'Regenerator',
+    effectL1: '+1 de vida por Pokémon derrotado em batalha.',
+    effectL2: 'Cura toda a vida a cada Pokémon derrotado.',
+  },
+  'sa-thick-fat': {
+    id: 'sa-thick-fat',
+    name: 'Thick Fat',
+    effectL1: 'Seu time não pode ser congelado em tempestade de gelo (sem efeito até existir tempestade de gelo).',
+    effectL2: 'Sempre vence batalhas contra Pokémon do tipo Gelo.',
+  },
+  'sa-ice-body': {
+    id: 'sa-ice-body',
+    name: 'Ice Body',
+    effectL1: 'Seu time não recebe efeito negativo do calor (sem efeito até existir clima de calor).',
+    effectL2: 'Sempre vence batalhas contra Pokémon do tipo Fogo.',
+  },
+  'sa-battle-armor': {
+    id: 'sa-battle-armor',
+    name: 'Battle Armor',
+    effectL1: 'Após uma batalha (ginásio/Rocket), +25% em todos os atributos na próxima missão.',
+    effectL2: '+50%.',
+  },
+  'sa-vital-spirit': {
+    id: 'sa-vital-spirit',
+    name: 'Vital Spirit',
+    effectL1: 'Ao falhar uma missão, o time tenta de novo 1× (mesma chance).',
+    effectL2: 'Mantém o L1 e ao perder um combate, tenta de novo sem perder vida.',
+  },
+  // ---- Defesa / dano recebido ----
+  'sa-shell-armor': {
+    id: 'sa-shell-armor',
+    name: 'Shell Armor',
+    effectL1: 'Recebe metade do dano em combate e missão (arredonda p/ cima: 3→2).',
+    effectL2: 'Recebe 1/3 do dano (3→1).',
+  },
+  'sa-natural-cure': {
+    id: 'sa-natural-cure',
+    name: 'Natural Cure',
+    effectL1: 'Ao sair em missão, +2 de vida.',
+    effectL2: 'Ao sair em missão, cura toda a vida.',
+  },
+  // ---- Missões (multiplicadores) ----
+  'sa-rock-head': {
+    id: 'sa-rock-head',
+    name: 'Rock Head',
+    effectL1: '+40% em escolta / −40% em ensino.',
+    effectL2: '+80% / −80%.',
+  },
+  'sa-analytic': {
+    id: 'sa-analytic',
+    name: 'Analytic',
+    effectL1: '+40% em ensino / −40% em patrulha.',
+    effectL2: '+80% / −80%.',
+  },
+  'sa-torrent': {
+    id: 'sa-torrent',
+    name: 'Torrent',
+    effectL1: '+25% nos atributos com outro aliado do tipo Água na missão.',
+    effectL2: '+50%.',
+  },
+  'sa-water-absorb': {
+    id: 'sa-water-absorb',
+    name: 'Water Absorb',
+    effectL1: 'Sempre que a rota passa pela água, +30% de atributos na próxima missão.',
+    effectL2: '+50%.',
+  },
+  'sa-sniper': {
+    id: 'sa-sniper',
+    name: 'Sniper',
+    effectL1: 'Faz missões sem sair do ginásio (à distância, só sozinho), mas a missão demora o dobro do tempo.',
+    effectL2: 'A missão demora o tempo normal.',
+  },
+  'sa-forewarn': {
+    id: 'sa-forewarn',
+    name: 'Forewarn',
+    effectL1: 'Antecipa 1 missão do dia (cada portador antecipa mais uma).',
+    effectL2: 'Antecipa 2 missões (por portador).',
+  },
+  // ---- Clima / tempestade ----
+  'sa-lightning-rod': {
+    id: 'sa-lightning-rod',
+    name: 'Lightning Rod',
+    effectL1: 'O time inteiro que sai na missão fica imune ao efeito/dano de raio (basta o portador estar despachado).',
+    effectL2: 'Mantém a imunidade e quando o oponente é do tipo Elétrico, assume o duelo no lugar de quem está na frente.',
   },
   'sa-volt-absorb': {
     id: 'sa-volt-absorb',
     name: 'Volt Absorb',
-    effect: 'Ao ser atingido por um raio, fica eletrizado pelo resto do dia: +50% de movimento e +50% nos atributos. (sem efeito até existir a tempestade em Vermilion)',
+    effectL1: 'Ao ser atingido por um raio, absorve (não toma o dano) e fica eletrizado pelo resto do dia: +30% de movimento e +30% nos atributos.',
+    effectL2: '+90% / +90%.',
+  },
+  'sa-static': {
+    id: 'sa-static',
+    name: 'Static',
+    effectL1: 'Os raios sempre caem no ponto mais próximo dele (marca vermelha, cai após 5s); e, parado em missão, o time ganha +1 de XP por segundo parado.',
+    effectL2: 'Mantém o L1 e o time ganha +10% de movimento por segundo parado (máx 100%).',
+  },
+  'sa-cloud-nine': {
+    id: 'sa-cloud-nine',
+    name: 'Cloud Nine',
+    effectL1: '+10pp na chance de chuva hoje e −10pp na chance de outros efeitos climáticos (acumula por portador).',
+    effectL2: '+20pp / −20pp.',
+  },
+  'sa-overcoat': {
+    id: 'sa-overcoat',
+    name: 'Overcoat',
+    effectL1: '−10pp na chance de qualquer efeito climático acontecer no dia (acumula por portador).',
+    effectL2: '−20pp.',
+  },
+  'sa-own-tempo': {
+    id: 'sa-own-tempo',
+    name: 'Own Tempo',
+    effectL1: 'No máximo 2 efeitos climáticos podem acontecer no dia. Não acumula: vale só o de maior nível.',
+    effectL2: 'No máximo 1. Não acumula: vale só o de maior nível.',
+  },
+  'sa-dry-skin': {
+    id: 'sa-dry-skin',
+    name: 'Dry Skin',
+    effectL1: 'Ao sair em missão, −25% de vida no calor (sem efeito até existir clima de calor) / +25% de vida na chuva ou frio (chuva já funciona; frio sem efeito até existir).',
+    effectL2: 'Mantém o L1 e −25% de bônus de missão no calor (sem efeito até existir) / +25% de bônus na chuva ou frio.',
+  },
+  'sa-clear-body': {
+    id: 'sa-clear-body',
+    name: 'Clear Body',
+    effectL1: 'O time não recebe efeitos negativos de clima (ex.: paralisia por raio).',
+    effectL2: 'Mantém o L1 e o time não recebe debuffs de habilidades secretas (ex.: −40% do Analytic em Patrulha).',
+  },
+  // ---- Inertes ----
+  'sa-sand-rush': {
+    id: 'sa-sand-rush',
+    name: 'Sand Rush',
+    effectL1: '+200% de velocidade do time durante tempestade de areia (sem efeito até existir tempestade de areia).',
+    effectL2: '+300% de velocidade do time durante tempestade de areia (sem efeito até existir tempestade de areia).',
   },
 }
 
@@ -298,7 +325,7 @@ export const SECRET_LINES: Record<number, readonly [SecretId, SecretId, SecretId
   // Electabuzz (Volt Absorb fica sem efeito até existir a tempestade)
   125: ['sa-vital-spirit', 'sa-volt-absorb', 'sa-static'],
   // Zapdos (ave-trovão lendária)
-  145: ['sa-fly', 'sa-fly-plus', 'sa-pressure'],
+  145: ['sa-fly', 'sa-pressure', 'sa-fly'],
 
   // Sandshrew → Sandslash
   27: ['sa-rollout', 'sa-dig', 'sa-sand-rush'],
@@ -307,7 +334,7 @@ export const SECRET_LINES: Record<number, readonly [SecretId, SecretId, SecretId
   // Nidoran♂ → Nidorino → Nidoking
   32: ['sa-rivalry', 'sa-hustle', 'sa-dig'],
   // Diglett → Dugtrio
-  50: ['sa-dig', 'sa-sand-rush', 'sa-dig-plus'],
+  50: ['sa-dig', 'sa-sand-rush', 'sa-dig'],
   // Geodude → Graveler → Golem
   74: ['sa-sturdy', 'sa-explosion', 'sa-rollout'],
   // Onix
@@ -321,21 +348,21 @@ export const SECRET_LINES: Record<number, readonly [SecretId, SecretId, SecretId
   // Kabuto → Kabutops
   140: ['sa-battle-armor', 'sa-weak-armor', 'sa-swift-swim'],
   // Aerodactyl
-  142: ['sa-fly', 'sa-rock-head', 'sa-fly-plus'],
+  142: ['sa-fly', 'sa-rock-head', 'sa-fly'],
 
   // ---- Dragões ----
   // Dratini → Dragonair → Dragonite
-  147: ['sa-surf', 'sa-fly', 'sa-fly-plus'],
+  147: ['sa-surf', 'sa-fly', 'sa-fly'],
 
   // ---- Cerulean (Água/Gelo) ----
   // Squirtle → Wartortle → Blastoise
-  7: ['sa-surf', 'sa-torrent', 'sa-surf-plus'],
+  7: ['sa-surf', 'sa-torrent', 'sa-surf'],
   // Psyduck → Golduck
   54: ['sa-surf', 'sa-swift-swim', 'sa-cloud-nine'],
   // Poliwag → Poliwhirl → Poliwrath
   60: ['sa-water-absorb', 'sa-surf', 'sa-swift-swim'],
   // Tentacool → Tentacruel
-  72: ['sa-clear-body', 'sa-surf', 'sa-surf-plus'],
+  72: ['sa-clear-body', 'sa-surf', 'sa-surf'],
   // Slowpoke → Slowbro
   79: ['sa-regenerator', 'sa-own-tempo', 'sa-surf'],
   // Seel → Dewgong
@@ -343,21 +370,21 @@ export const SECRET_LINES: Record<number, readonly [SecretId, SecretId, SecretId
   // Shellder → Cloyster
   90: ['sa-shell-armor', 'sa-overcoat', 'sa-surf'],
   // Krabby → Kingler
-  98: ['sa-dig', 'sa-shell-armor', 'sa-dig-plus'],
+  98: ['sa-dig', 'sa-shell-armor', 'sa-dig'],
   // Horsea → Seadra
   116: ['sa-swift-swim', 'sa-surf', 'sa-sniper'],
   // Goldeen → Seaking
-  118: ['sa-surf', 'sa-swift-swim', 'sa-surf-plus'],
+  118: ['sa-surf', 'sa-swift-swim', 'sa-surf'],
   // Staryu → Starmie
   120: ['sa-analytic', 'sa-surf', 'sa-natural-cure'],
   // Jynx
   124: ['sa-dry-skin', 'sa-forewarn', 'sa-analytic'],
   // Magikarp → Gyarados
-  129: ['sa-surf', 'sa-moxie', 'sa-surf-plus'],
+  129: ['sa-surf', 'sa-moxie', 'sa-surf'],
   // Lapras
-  131: ['sa-surf', 'sa-surf-plus', 'sa-shell-armor'],
+  131: ['sa-surf', 'sa-shell-armor', 'sa-shell-armor'],
   // Articuno
-  144: ['sa-fly', 'sa-fly-plus', 'sa-pressure'],
+  144: ['sa-fly', 'sa-pressure', 'sa-fly'],
   // Omanyte (138) e Kabuto (140) já estão definidos acima (linhas de fóssil) e batem com Cerulean.
 }
 
@@ -369,7 +396,7 @@ export const SECRET_LINES: Record<number, readonly [SecretId, SecretId, SecretId
  */
 const SECRET_LINE_BY_SPECIES: Partial<Record<number, readonly [SecretId, SecretId, SecretId]>> = {
   // Vaporeon
-  134: ['sa-surf', 'sa-surf-plus', 'sa-water-absorb'],
+  134: ['sa-surf', 'sa-water-absorb', 'sa-surf'],
   // Jolteon (Volt Absorb fica sem efeito até existir a tempestade)
   135: ['sa-quick-feet', 'sa-volt-absorb', 'sa-static'],
 }
@@ -382,7 +409,7 @@ export function secretLineFor(speciesId: number): readonly [SecretId, SecretId, 
 /** Quantas habilidades secretas este Pokémon já desbloqueou (0..3), com clamp defensivo. */
 export function secretCountOf(p: Pokemon): number {
   if (!secretLineFor(p.speciesId)) return 0
-  return Math.min(SECRET_MAX, Math.max(0, p.secretCount ?? 0))
+  return Math.min(SECRET_MAX, Math.max(0, p.secretPicks?.length ?? 0))
 }
 
 /** Ids das habilidades secretas ATIVAS (já desbloqueadas) deste Pokémon, na ordem da linha. */
