@@ -1,7 +1,8 @@
 // Efeitos das Habilidades Secretas — ponto único da engine. Cada efeito é amarrado pelo id da
 // habilidade e só vale se ela estiver DESBLOQUEADA no indivíduo (data/secretAbilities.ts →
-// hasSecret, derivado de pokemon.secretCount + a linha). Um Pokémon pode ter até três ativas ao
-// mesmo tempo, e os efeitos se acumulam. Funções puras; o estado diário (flags) vem do
+// hasSecret/secretLevelOf, derivado de pokemon.secretPicks + a linha). Um Pokémon pode ter até duas
+// ativas ao mesmo tempo (cada uma nível 1 ou 2), e os efeitos se acumulam. Funções puras; o estado
+// diário (flags) vem do
 // `SecretRuntime` por Pokémon (s.today.secretRuntime), atualizado pelos fluxos.
 
 import type { Attrs, AttrKey, Pokemon } from '../types/index.ts'
