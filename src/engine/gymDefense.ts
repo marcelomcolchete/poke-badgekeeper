@@ -38,6 +38,7 @@ import {
   THICK_FAT_VS_ICE_MULT,
 } from './balance.ts'
 import { applyDamage, effectiveAttr } from './attributes.ts'
+import { secretLevelOf } from '../data/secretAbilities.ts'
 import {
   damageTaken,
   explosionSelfDamage,
@@ -342,12 +343,13 @@ export function resolveDefense(
     const youWon = rng.bool(pWin)
     duels.push({ yourId: you.id, youWon, pWin })
     if (youWon) {
-      // Regenerator: recupera vida a cada inimigo derrotado.
+      // Regenerator: recupera vida a cada inimigo derrotado (L1: +1 HP; L2: HP cheio).
       if (hasRegenerator(you)) {
-        result[yours] = {
-          ...you,
-          currentHp: Math.min(you.maxHp, you.currentHp + REGENERATOR_HEAL_PER_WIN),
-        }
+        const regenHp =
+          secretLevelOf(you, 'sa-regenerator') === 2
+            ? you.maxHp
+            : Math.min(you.maxHp, you.currentHp + REGENERATOR_HEAL_PER_WIN)
+        result[yours] = { ...you, currentHp: regenHp }
       }
       theirs += 1 // o inimigo perde e sai; você permanece na frente
       frontWins += 1

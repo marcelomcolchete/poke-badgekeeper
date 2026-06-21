@@ -21,14 +21,16 @@ import {
   EVIOLITE_MISSION_MULT,
   EXPLOSION_SELF_DAMAGE_FRACTION,
   FLY_SPEED_BONUS,
-  HUSTLE_BATTLE_BONUS,
+  HUSTLE_BATTLE_BONUS_L1,
+  HUSTLE_BATTLE_BONUS_L2,
   HUSTLE_MISSION_MULT_L1,
   HUSTLE_MISSION_MULT_L2,
   LAGGING_TAIL_MISSION_MULT,
   LAGGING_TAIL_TRAVEL_MULT,
   RIVALRY_ATTR_PER_ALLY_L1,
   RIVALRY_ATTR_PER_ALLY_L2,
-  RIVALRY_BATTLE_BONUS,
+  RIVALRY_BATTLE_BONUS_L1,
+  RIVALRY_BATTLE_BONUS_L2,
   ROCK_HEAD_ESCORT_MULT_L1,
   ROCK_HEAD_ESCORT_MULT_L2,
   ROCK_HEAD_STUDY_MULT_L1,
@@ -159,12 +161,18 @@ export function rolloutBonusPerWin(p: Pokemon): number {
 
 /** Rivalidade: bônus de Batalha contra um oponente do mesmo gênero (0 caso contrário). */
 export function rivalryBattleBonus(p: Pokemon): number {
-  return hasRivalry(p) ? RIVALRY_BATTLE_BONUS : 0
+  const lv = secretLevelOf(p, 'sa-rivalry')
+  if (lv === 2) return RIVALRY_BATTLE_BONUS_L2
+  if (lv === 1) return RIVALRY_BATTLE_BONUS_L1
+  return 0
 }
 
 /** Hustle: bônus de Batalha em batalhas Pokémon (0 sem a habilidade). */
 export function hustleBattleBonus(p: Pokemon): number {
-  return hasHustle(p) ? HUSTLE_BATTLE_BONUS : 0
+  const lv = secretLevelOf(p, 'sa-hustle')
+  if (lv === 2) return HUSTLE_BATTLE_BONUS_L2
+  if (lv === 1) return HUSTLE_BATTLE_BONUS_L1
+  return 0
 }
 
 /** Explosion: dano que o portador inflige a SI ao explodir = metade da vida máxima (arred. p/ cima). */

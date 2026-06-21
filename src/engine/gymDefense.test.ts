@@ -273,13 +273,28 @@ describe('resolveDefense — Habilidades de Cerulean', () => {
     expect(out.duels[1]?.pWin).toBeCloseTo(21 / 30) // 2ª luta: +1 do 1º abate
   })
 
-  it('Regenerator: recupera 1 de vida por inimigo derrotado', () => {
+  it('Regenerator L1: recupera 1 de vida por inimigo derrotado', () => {
     // Slowpoke (79) par = ['sa-regenerator','sa-own-tempo']; Regenerator no slot 0. Vence os dois sem tomar dano.
     const slow = makeMon({ id: 's', speciesId: 79, secretPicks: [{ slot: 0, level: 1 }], types: ['normal'], baseAttrs: makeAttrs({ batalha: 50, resistencia: 100 }), currentHp: 5 })
     const foes: EnemyUnit[] = [{ battle: 10, types: ['normal'] }, { battle: 10, types: ['normal'] }]
     const out = resolveDefense(fixedRng(0), [slow], foes)
     expect(out.won).toBe(true)
     expect(out.squad[0]?.currentHp).toBe(7) // 5 + 1 por abate (2 abates)
+  })
+
+  it('Regenerator L2: cura para HP cheio em cada vitória', () => {
+    // Slowpoke (79) slot0=regenerator; nível 2. Começa com HP baixo; vence dois inimigos fracos.
+    // Garantia de vitória: batalha=50 vs inimigos battle=1 → pWin ≈ 1; fixedRng(0) sempre ganha.
+    const maxHp = 10
+    const slow = makeMon({
+      id: 's', speciesId: 79, secretPicks: [{ slot: 0, level: 2 }], types: ['normal'],
+      baseAttrs: makeAttrs({ batalha: 50, resistencia: 100 }), currentHp: 3, maxHp,
+    })
+    const foes: EnemyUnit[] = [{ battle: 1, types: ['normal'] }, { battle: 1, types: ['normal'] }]
+    const out = resolveDefense(fixedRng(0), [slow], foes)
+    expect(out.won).toBe(true)
+    // Após 1ª vitória já ficou com HP cheio; 2ª vitória mantém HP cheio.
+    expect(out.squad[0]?.currentHp).toBe(maxHp)
   })
 })
 

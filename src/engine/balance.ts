@@ -242,8 +242,9 @@ export const RIVAL_EVOLUTION_DAYS = [3, 6] as const
 /** Rivalidade: bônus de atributo na missão POR aliado do mesmo gênero (por nível). */
 export const RIVALRY_ATTR_PER_ALLY_L1 = 0.1
 export const RIVALRY_ATTR_PER_ALLY_L2 = 0.2
-/** Rivalidade: bônus de batalha contra um oponente do mesmo gênero. */
-export const RIVALRY_BATTLE_BONUS = 0.1
+/** Rivalidade: bônus de batalha contra um oponente do mesmo gênero, por nível. */
+export const RIVALRY_BATTLE_BONUS_L1 = 0.1
+export const RIVALRY_BATTLE_BONUS_L2 = 0.2
 /** Rock Head: multiplicador de atributos em escolta (ganho) e em ensino (perda), por nível. */
 export const ROCK_HEAD_ESCORT_MULT_L1 = 1.4
 export const ROCK_HEAD_ESCORT_MULT_L2 = 1.8
@@ -255,7 +256,8 @@ export const BATTLE_ARMOR_MISSION_MULT_L2 = 1.5
 /** Rollout: bônus de batalha por Pokémon derrotado no duelo (acumula na sequência). */
 export const ROLLOUT_BATTLE_BONUS = 0.1
 /** Hustle: bônus de Batalha em batalhas; penalidade de atributos em missões, por nível. */
-export const HUSTLE_BATTLE_BONUS = 0.1
+export const HUSTLE_BATTLE_BONUS_L1 = 0.1
+export const HUSTLE_BATTLE_BONUS_L2 = 0.3
 export const HUSTLE_MISSION_MULT_L1 = 0.9
 export const HUSTLE_MISSION_MULT_L2 = 0.7
 /** Weak Armor: dano recebido dobrado; bônus de velocidade do time POR ponto de HP faltante. */

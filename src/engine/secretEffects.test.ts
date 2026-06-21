@@ -276,15 +276,17 @@ describe('combate: bônus de batalha', () => {
     expect(rolloutBonusPerWin(makeMon({}))).toBe(0)
   })
 
-  it('Rivalidade: +10% de batalha contra o mesmo gênero', () => {
+  it('Rivalidade: +0.10 de batalha (L1) / +0.20 (L2) contra o mesmo gênero', () => {
     // Nidoran♀(29): slot0=rivalry
     expect(rivalryBattleBonus(makeMon({ speciesId: 29, secretPicks: [{ slot: 0, level: 1 }] }))).toBeCloseTo(0.1)
+    expect(rivalryBattleBonus(makeMon({ speciesId: 29, secretPicks: [{ slot: 0, level: 2 }] }))).toBeCloseTo(0.2)
     expect(rivalryBattleBonus(makeMon({}))).toBe(0)
   })
 
-  it('Hustle: +10% de batalha', () => {
+  it('Hustle: +0.10 de batalha (L1) / +0.30 (L2)', () => {
     // Nidoran♀(29): slot1=hustle; só slot1 → sem rivalry ativo
     expect(hustleBattleBonus(makeMon({ speciesId: 29, secretPicks: [{ slot: 1, level: 1 }] }))).toBeCloseTo(0.1)
+    expect(hustleBattleBonus(makeMon({ speciesId: 29, secretPicks: [{ slot: 1, level: 2 }] }))).toBeCloseTo(0.3)
     expect(hustleBattleBonus(makeMon({ speciesId: 29 }))).toBe(0)
   })
 
