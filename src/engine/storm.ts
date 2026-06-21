@@ -243,9 +243,9 @@ export function strikesResolvingBetween(
  *
  * @param extraRainChancePercent - pp delta aplicado à chance de chuva (positivo = mais chuva).
  * @param extraStormChancePercent - pp delta aplicado à chance de tempestade (negativo = menos).
- * @param maxWeatherEvents - teto de eventos totais (rain + storms próprias). Se informado (>0),
- *   chuvas são capeadas primeiro até o limite; tempestades próprias usam o restante. Eventos
- *   acoplados à chuva NUNCA são capeados (são derivados dos rain events, não são autônomos).
+ * @param maxWeatherEvents - teto de eventos climáticos TOTAIS do dia (Own Tempo). Se informado (>0),
+ *   as chuvas recebem slots primeiro até o limite; as tempestades (próprias E acopladas) usam o
+ *   orçamento restante e PARAM quando ele se esgota. 0 = sem cap.
  */
 export function buildDayWeather(
   seed: number,
