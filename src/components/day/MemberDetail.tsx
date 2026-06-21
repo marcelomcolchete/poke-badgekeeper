@@ -122,7 +122,7 @@ export function MemberDetail({ state, dispatch, pokemonId, onClose }: Props) {
                         className={styles.secretTierName}
                         style={unlocked ? { color: SECRET_MEDAL_INK[tier] } : undefined}
                       >
-                        {unlocked ? `${kind.name}${level === 2 ? '+' : ''}` : '? ? ?'}
+                        {unlocked ? `${kind.name}${level === 2 ? '+' : ''}` : kind.name}
                       </span>
                       {unlocked && (
                         <span className={styles.secretTierFlag}>
