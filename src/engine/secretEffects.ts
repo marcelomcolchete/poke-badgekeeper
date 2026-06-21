@@ -17,6 +17,7 @@ import {
   ANALYTIC_STUDY_MULT_L2,
   BATTLE_ARMOR_MISSION_MULT_L1,
   BATTLE_ARMOR_MISSION_MULT_L2,
+  DRY_SKIN_MISSION_BONUS_L2,
   ELECTIRIZER_MISSION_BONUS,
   EVIOLITE_MISSION_MULT,
   EXPLOSION_SELF_DAMAGE_FRACTION,
@@ -154,6 +155,9 @@ export function hasForewarn(p: Pokemon): boolean {
 export function hasCloudNine(p: Pokemon): boolean {
   return hasSecret(p, 'sa-cloud-nine')
 }
+export function hasDrySkin(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-dry-skin')
+}
 export function hasOvercoat(p: Pokemon): boolean {
   return hasSecret(p, 'sa-overcoat')
 }
@@ -290,12 +294,22 @@ export function missionAttrMultiplier(p: Pokemon, ctx: MissionSecretCtx): number
   ) {
     mult *= 1 + SWIFT_SWIM_MISSION_BONUS_L2
   }
+  // Dry Skin L2: +25% de atributos em missão enquanto chove (requer ctx.weather + ctx.nowMs).
+  if (
+    secretLevelOf(p, 'sa-dry-skin') === 2 &&
+    ctx.weather !== undefined &&
+    ctx.nowMs !== undefined &&
+    isRaining(ctx.weather, ctx.nowMs)
+  ) {
+    mult *= 1 + DRY_SKIN_MISSION_BONUS_L2
+  }
   if (hasHustle(p)) {
     const lvl = secretLevelOf(p, 'sa-hustle')
     mult *= lvl === 2 ? HUSTLE_MISSION_MULT_L2 : HUSTLE_MISSION_MULT_L1
   }
-  // Clear Body (nível de time): nenhum membro recebe debuff de atributo (multiplicador < 1).
-  if (mult < 1 && ctx.team.some(hasClearBody)) mult = 1
+  // Clear Body L2 (nível de time): nenhum membro recebe debuff de atributo (multiplicador < 1).
+  // L1 NÃO cancela debuffs — apenas L2. L1 = imunidade a efeitos negativos de clima (ver stormFlow).
+  if (mult < 1 && ctx.team.some((m) => secretLevelOf(m, 'sa-clear-body') === 2)) mult = 1
   // Electirizer: bônus positivo da "próxima missão" por raio sofrido (não anulado pelo Clear Body).
   const charges = ctx.electirizerBonus?.[p.id] ?? 0
   if (charges > 0) mult *= 1 + ELECTIRIZER_MISSION_BONUS * charges
@@ -541,7 +555,7 @@ export function missionEffectBreakdown(ctx: MissionSecretCtx): MissionEffectEntr
     push({ id: 'hustle', source: 'ability', label: 'Hustle', kind: 'attr', direction: 'loss',
       value: fmtMult(lvl === 2 ? HUSTLE_MISSION_MULT_L2 : HUSTLE_MISSION_MULT_L1), reason: 'troca atributo por poder de batalha' })
   }
-  if (hasAttrLoss && team.some(hasClearBody)) {
+  if (hasAttrLoss && team.some((m) => secretLevelOf(m, 'sa-clear-body') === 2)) {
     push({ id: 'clear-body', source: 'ability', label: 'Clear Body', kind: 'attr', direction: 'info',
       value: '', reason: 'anula reduções de atributo do time' })
   }

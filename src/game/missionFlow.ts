@@ -11,6 +11,7 @@ import { getCity } from '../data/cities.ts'
 import { getMissionTemplate } from '../data/missionTemplates.ts'
 import { damageForDay, MAX_DISPATCH, MIN_DISPATCH } from '../engine/constants.ts'
 import {
+  DRY_SKIN_RAIN_HEAL_FRAC,
   MISSION_XP_POOL,
   NATURAL_CURE_MISSION_HEAL,
   RETURN_SPEED_BONUS_ON_SUCCESS,
@@ -28,6 +29,7 @@ import {
   travelRoute,
 } from '../engine/missions.ts'
 import {
+  hasDrySkin,
   hasNaturalCure,
   hasSniper,
   hasWaterAbsorb,
@@ -145,11 +147,16 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
     mission.resolveAtMs + rainTravelMs(s.weather, mission.resolveAtMs, inbound.distance, team, s.runItems, s.today.electrified)
   mission.pSuccess = missionSuccessProbabilityCtx(ctx, mission.requirement)
   // Natural Cure: recupera vida ao sair em missão (L1 +2; L2 cura total); demais só viajam.
+  // Dry Skin: se chovendo agora, cura ceil(25% maxHp) ao despachar (L1 e L2).
+  const raining = isRaining(s.weather, now)
   for (const p of team) {
     let healed = p.currentHp
     if (hasNaturalCure(p)) {
       const lvl = secretLevelOf(p, 'sa-natural-cure')
       healed = lvl === 2 ? p.maxHp : Math.min(p.maxHp, p.currentHp + NATURAL_CURE_MISSION_HEAL)
+    }
+    if (hasDrySkin(p) && raining) {
+      healed = Math.min(p.maxHp, healed + Math.ceil(DRY_SKIN_RAIN_HEAL_FRAC * p.maxHp))
     }
     replaceMon(s, { ...p, currentHp: healed, status: 'traveling' })
   }

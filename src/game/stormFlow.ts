@@ -7,7 +7,7 @@ import type { GameState } from '../engine/state.ts'
 import { pointInCircle, strikesResolvingBetween } from '../engine/storm.ts'
 import { travelerPositionsAt } from '../engine/travelerPositions.ts'
 import { STRIKE_DAMAGE, PARALYZE_STUN_MS, STATIC_XP_PER_SEC } from '../engine/balance.ts'
-import { hasLightningRod, hasStatic, hasVoltAbsorb } from '../engine/secretEffects.ts'
+import { hasClearBody, hasLightningRod, hasStatic, hasVoltAbsorb } from '../engine/secretEffects.ts'
 import { secretLevelOf } from '../data/secretAbilities.ts'
 import { findMon, replaceMon, settleFaintTracked, takeRng } from './runtime.ts'
 import { shiftMissionTimestamps } from './missionFlow.ts'
@@ -229,6 +229,11 @@ export function processStorms(s: GameState, prevMs: number, nowMs: number): void
       const teamIds = containerTeamIds(s, id)
       const teamMons = teamIds.map((tid) => findMon(s, tid)).filter((p) => p !== undefined)
       if (teamMons.some(hasLightningRod)) continue
+
+      // (1b) Clear Body (qualquer nível): imunidade aos efeitos negativos do raio (dano + Paralyze).
+      // L1 = imunidade climática; L2 = imunidade climática + debuff de atributo (ver missionAttrMultiplier).
+      // Decisão de escopo: Clear Body pula tanto o dano quanto o Paralyze (consistente com Lightning Rod).
+      if (teamMons.some(hasClearBody)) continue
 
       // (2) Volt Absorb: o Pokémon atingido absorve o raio → eletrizado, sem dano/Paralyze.
       if (hasVoltAbsorb(mon)) {

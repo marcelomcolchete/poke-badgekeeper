@@ -378,6 +378,13 @@ export const PARALYZE_BATTLE_MULT = 0.5
 /** Volt Absorb: bônus de movimento E atributos ao ser atingido por um raio (por nível). */
 export const VOLT_ABSORB_BONUS_L1 = 0.30
 export const VOLT_ABSORB_BONUS_L2 = 0.90
+/**
+ * Dry Skin: fração do maxHp curada ao sair em missão ENQUANTO CHOVE (arredondada p/ cima).
+ * L1 e L2 curam a mesma fração; L2 também dá bônus de atributos em missão.
+ */
+export const DRY_SKIN_RAIN_HEAL_FRAC = 0.25
+/** Dry Skin L2: bônus MULTIPLICATIVO nos atributos de missão enquanto chove (+25%). */
+export const DRY_SKIN_MISSION_BONUS_L2 = 0.25
 
 // ---- Sistema de Itens (PLAN — Itens) ----
 

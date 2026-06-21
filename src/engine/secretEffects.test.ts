@@ -259,13 +259,13 @@ describe('missionAttrMultiplier — habilidades de Cerulean', () => {
     expect(missionAttrMultiplier(staryu, ctxOf([staryu], PALESTRA))).toBe(1)
   })
 
-  it('Clear Body: anula o debuff de atributo do time (Hustle)', () => {
+  it('Clear Body L2: anula o debuff de atributo do time (Hustle)', () => {
     // Nidoran♀(29): slot1=hustle → secretPicks:[{slot:0,level:1},{slot:1,level:1}]
     const nido = makeMon({ id: 'n', speciesId: 29, secretPicks: [{ slot: 0, level: 1 }, { slot: 1, level: 1 }], gender: 'female' })
-    // Tentacool(72): slot0=clear-body → secretPicks:[{slot:0,level:1}]
-    const tentacool = makeMon({ id: 't', speciesId: 72, secretPicks: [{ slot: 0, level: 1 }] })
+    // Tentacool(72): slot0=clear-body L2 → apenas L2 cancela debuffs de atributo
+    const tentacool = makeMon({ id: 't', speciesId: 72, secretPicks: [{ slot: 0, level: 2 }] })
     expect(missionAttrMultiplier(nido, ctxOf([nido]))).toBeCloseTo(0.9) // só Hustle
-    expect(missionAttrMultiplier(nido, ctxOf([nido, tentacool]))).toBe(1) // anulado
+    expect(missionAttrMultiplier(nido, ctxOf([nido, tentacool]))).toBe(1) // anulado pelo L2
   })
 })
 
