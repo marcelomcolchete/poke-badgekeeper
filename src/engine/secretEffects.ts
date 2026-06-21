@@ -312,9 +312,9 @@ export function teamSnipes(team: readonly Pokemon[]): boolean {
   return team.length === 1 && hasSniper(team[0] as Pokemon)
 }
 
-/** Quick Feet: +100% de velocidade de viagem, só quando despachado SOZINHO. */
+/** Quick Feet: +100% de velocidade de viagem quando despachado SOZINHO (L1) OU se algum membro tem L2 (time inteiro). */
 export function teamHasQuickFeet(team: readonly Pokemon[]): boolean {
-  return team.length === 1 && hasQuickFeet(team[0] as Pokemon)
+  return (team.length === 1 && hasQuickFeet(team[0] as Pokemon)) || team.some((p) => secretLevelOf(p, 'sa-quick-feet') === 2)
 }
 
 /** O time tenta a missão de novo ao falhar (Vital Spirit em qualquer membro)? */

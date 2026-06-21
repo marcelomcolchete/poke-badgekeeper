@@ -491,13 +491,34 @@ describe('Quick Feet (Jolteon, linha divergente)', () => {
     expect(hasQuickFeet(makeMon({ speciesId: 136, secretPicks: [{ slot: 0, level: 2 }, { slot: 1, level: 1 }] }))).toBe(false)
   })
 
-  it('teamHasQuickFeet só vale sozinho; dobra a velocidade de viagem (×2)', () => {
+  it('teamHasQuickFeet L1 solo: true', () => {
+    // Jolteon(135): slot0=quick-feet L1 sozinho → true
+    const jolteon = makeMon({ id: 'j', speciesId: 135, secretPicks: [{ slot: 0, level: 1 }] })
+    expect(teamHasQuickFeet([jolteon])).toBe(true)
+  })
+
+  it('teamHasQuickFeet L1 em time de 2: false', () => {
+    // Jolteon(135): slot0=quick-feet L1 acompanhado → false
     const jolteon = makeMon({ id: 'j', speciesId: 135, secretPicks: [{ slot: 0, level: 1 }] })
     const other = makeMon({ id: 'o' })
-    expect(teamHasQuickFeet([jolteon])).toBe(true)
-    expect(teamHasQuickFeet([jolteon, other])).toBe(false) // acompanhado não corre
-    expect(teamTravelSpeedMultiplier([jolteon])).toBeCloseTo(2, 6) // +100%
-    expect(teamTravelSpeedMultiplier([jolteon, other])).toBeCloseTo(1, 6) // sem bônus em grupo
+    expect(teamHasQuickFeet([jolteon, other])).toBe(false)
+  })
+
+  it('teamHasQuickFeet L2 em time de 2: true (time inteiro fica rápido)', () => {
+    // Jolteon(135): slot0=quick-feet L2 acompanhado → true (bônus para o time todo)
+    const jolteon = makeMon({ id: 'j', speciesId: 135, secretPicks: [{ slot: 0, level: 2 }] })
+    const other = makeMon({ id: 'o' })
+    expect(teamHasQuickFeet([jolteon, other])).toBe(true)
+  })
+
+  it('teamHasQuickFeet dobra a velocidade de viagem quando ativo', () => {
+    const jolteon = makeMon({ id: 'j', speciesId: 135, secretPicks: [{ slot: 0, level: 1 }] })
+    const other = makeMon({ id: 'o' })
+    expect(teamTravelSpeedMultiplier([jolteon])).toBeCloseTo(2, 6) // L1 solo: +100%
+    expect(teamTravelSpeedMultiplier([jolteon, other])).toBeCloseTo(1, 6) // L1 acompanhado: sem bônus
+    // L2 acompanhado: +100% para o time
+    const jolteonL2 = makeMon({ id: 'j2', speciesId: 135, secretPicks: [{ slot: 0, level: 2 }] })
+    expect(teamTravelSpeedMultiplier([jolteonL2, other])).toBeCloseTo(2, 6)
   })
 })
 
