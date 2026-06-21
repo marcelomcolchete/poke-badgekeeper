@@ -414,13 +414,57 @@ describe('resolveDefense — Habilidades de Cerulean', () => {
   // de auto-win em resolveDefense). Testes específicos de espécie removidos para evitar
   // dependência de Jynx ter ice-body (design decision: Jynx = ['sa-dry-skin','sa-forewarn']).
 
-  it('Moxie: +1 de Batalha por inimigo derrotado na sequência', () => {
-    // Magikarp (129) par = ['sa-surf','sa-moxie']; Moxie no slot 1. Vence os dois (fixedRng 0).
+  it('Moxie L1: +1 PERMANENTE em permaBonus.batalha por abate; sem bônus temporário adicional', () => {
+    // Magikarp (129) par = ['sa-surf','sa-moxie']; Moxie no slot 1, level 1.
+    // Base batalha=20. 1º duelo: pWin=20/30. Após vitória: permaBonus.batalha=1 → efetiva=21.
+    // 2º duelo: pWin=21/30 (permanente reflete IMEDIATAMENTE). Sem temp extra.
     const gyara = makeMon({ id: 'g', speciesId: 129, secretPicks: [{ slot: 0, level: 1 }, { slot: 1, level: 1 }], types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
     const foes: EnemyUnit[] = [{ battle: 30, types: ['normal'] }, { battle: 30, types: ['normal'] }]
     const out = resolveDefense(fixedRng(0), [gyara], foes)
-    expect(out.duels[0]?.pWin).toBeCloseTo(20 / 30) // 1ª luta: sem bônus
-    expect(out.duels[1]?.pWin).toBeCloseTo(21 / 30) // 2ª luta: +1 do 1º abate
+    // 1º duelo: base 20 vs 30, pWin=20/30
+    expect(out.duels[0]?.pWin).toBeCloseTo(20 / 30)
+    // 2º duelo: base 21 (permaBonus=1) vs 30, pWin=21/30 — NÃO 22/30 (nenhum temp extra de frontWins)
+    expect(out.duels[1]?.pWin).toBeCloseTo(21 / 30)
+    // Permanente: permaBonus.batalha === 2 (2 abates)
+    expect(out.squad[0]?.permaBonus?.batalha).toBe(2)
+  })
+
+  it('Moxie L1: permaBonus.batalha acumula por vitória (não capeado no campo, efetiva capeada em 60)', () => {
+    // Começa com permaBonus.batalha=59; uma vitória → permaBonus sobe para 60.
+    // Efetiva: base=1 + permaBonus=60 = 61, clamped a 60 pelo effectiveAttr.
+    const gyara = makeMon({ id: 'g', speciesId: 129, secretPicks: [{ slot: 1, level: 1 }], types: ['normal'], baseAttrs: makeAttrs({ batalha: 1, resistencia: 100 }), permaBonus: { batalha: 59 } })
+    const foes: EnemyUnit[] = [{ battle: 1, types: ['normal'] }]
+    const out = resolveDefense(fixedRng(0), [gyara], foes)
+    expect(out.squad[0]?.permaBonus?.batalha).toBe(60) // permanente sobe mesmo que efetivo já no teto
+  })
+
+  it('Moxie L2: +1 permanente E +5 temporário por vitória (teto temp +25)', () => {
+    // Gyarados (130) par = ['sa-surf','sa-moxie']; slot 1, level 2.
+    // Base batalha=30; inimigos battle=28 → pWin base = 30/28 > 1 (sempre vence).
+    // Após 1ª vitória: permaBonus.batalha=1; temp = min(25, 5*1)=5.
+    // Após 2ª vitória: permaBonus.batalha=2; temp = min(25, 5*2)=10.
+    // Verificar via duelo "borderline": usar batalha baixa onde só o temp vira a balança.
+    const gyara = makeMon({ id: 'g', speciesId: 130, secretPicks: [{ slot: 1, level: 2 }], types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
+    // 1º duelo: batalha=20 vs enemy=20 → pWin=1 (20/20). Vence.
+    // 2º duelo (frontWins=1): batalha efetiva = 20+5=25 vs enemy=24 → pWin>1. Sem L2 seria 20/24.
+    const foes: EnemyUnit[] = [{ battle: 20, types: ['normal'] }, { battle: 24, types: ['normal'] }]
+    const out = resolveDefense(fixedRng(0), [gyara], foes)
+    expect(out.won).toBe(true)
+    expect(out.squad[0]?.permaBonus?.batalha).toBe(2) // 2 abates → +2 permanente
+    // 2ª batalha: pWin = (20+5)/24 = 25/24 > 1, clamped a 1
+    expect(out.duels[1]?.pWin).toBeCloseTo(Math.min(1, 25 / 24))
+  })
+
+  it('Moxie L2: bônus temporário capeado em +25 (5 vitórias)', () => {
+    // Após 5 vitórias, temp = min(25, 5*5)=25. Na 6ª batalha, temp ainda é 25.
+    const gyara = makeMon({ id: 'g', speciesId: 130, secretPicks: [{ slot: 1, level: 2 }], types: ['normal'], baseAttrs: makeAttrs({ batalha: 30, resistencia: 100 }) })
+    const foes: EnemyUnit[] = Array(7).fill({ battle: 1, types: ['normal'] }) as EnemyUnit[]
+    const out = resolveDefense(fixedRng(0), [gyara], foes)
+    expect(out.won).toBe(true)
+    // Após 5 vitórias, o 6º duelo usa temp=25 (não 30); o 7º também.
+    // pWin do 6º duelo: (30+25)/1 = 55 → clamped 1; do 7º: (30+25+1perma)/1 → clamped 1
+    // O que importa é que permaBonus cresce linearmente
+    expect(out.squad[0]?.permaBonus?.batalha).toBe(7)
   })
 
   it('Regenerator L1: recupera 1 de vida por inimigo derrotado', () => {

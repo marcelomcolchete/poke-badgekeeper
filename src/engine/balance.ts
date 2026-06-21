@@ -289,8 +289,14 @@ export const SURF_WATER_TIME_MULT = 0.5
 /** Torrent: multiplicador de atributos na missão quando há outro aliado do tipo Água, por nível. */
 export const TORRENT_MISSION_MULT_L1 = 1.25
 export const TORRENT_MISSION_MULT_L2 = 1.5
-/** Moxie: bônus de Batalha (aditivo) por Pokémon derrotado na sequência da batalha. */
-export const MOXIE_BATTLE_PER_WIN = 1
+/**
+ * Moxie L1: +1 PERMANENTE em `permaBonus.batalha` por Pokémon derrotado em batalha.
+ * Moxie L2: idem +5 temporário por vitória na sequência (teto +25). Os antigos temporários
+ * foram substituídos; apenas L2 tem o stacking temporário.
+ */
+export const MOXIE_PERMA_PER_WIN = 1
+export const MOXIE_TEMP_PER_WIN_L2 = 5
+export const MOXIE_TEMP_CAP_L2 = 25
 /**
  * Pressure: multiplicador da Batalha de TODOS os inimigos aplicado no INÍCIO do combate,
  * a partir do MAIOR nível presente no esquadrão (não acumula entre portadores).

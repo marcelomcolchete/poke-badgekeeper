@@ -71,6 +71,22 @@ describe('effectiveAttr', () => {
     const down = makeMon({ baseAttrs: makeAttrs({ resistencia: 10 }), ivs: { ...zeroAttrs(), resistencia: -10 } })
     expect(effectiveAttr(down, 'resistencia')).toBe(0) // 10 − 10, piso 0
   })
+
+  it('permaBonus soma ao atributo efetivo', () => {
+    const mon = makeMon({ baseAttrs: makeAttrs({ batalha: 30 }), permaBonus: { batalha: 5 } })
+    expect(effectiveAttr(mon, 'batalha')).toBe(35)
+  })
+
+  it('permaBonus respeitado pelo teto 60', () => {
+    // base=58 + permaBonus=5 → seria 63, mas clamped a 60
+    const mon = makeMon({ baseAttrs: makeAttrs({ batalha: 58 }), permaBonus: { batalha: 5 } })
+    expect(effectiveAttr(mon, 'batalha')).toBe(60)
+  })
+
+  it('permaBonus ausente não quebra effectiveAttr', () => {
+    const mon = makeMon({ baseAttrs: makeAttrs({ batalha: 30 }) })
+    expect(effectiveAttr(mon, 'batalha')).toBe(30)
+  })
 })
 
 describe('teamAxisSum / teamSum', () => {

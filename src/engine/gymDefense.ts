@@ -29,7 +29,9 @@ import {
   MEDAL_FULL_DAY,
   MEDAL_OPEN_CHANCE,
   MEDAL_OPEN_DAY,
-  MOXIE_BATTLE_PER_WIN,
+  MOXIE_PERMA_PER_WIN,
+  MOXIE_TEMP_CAP_L2,
+  MOXIE_TEMP_PER_WIN_L2,
   PARALYZE_BATTLE_MULT,
   PRESSURE_ENEMY_MULT_L1,
   PRESSURE_ENEMY_MULT_L2,
@@ -335,8 +337,10 @@ export function resolveDefense(
     if (enemy.gender !== undefined && enemy.gender === you.gender) {
       yourEff *= 1 + rivalryBattleBonus(you)
     }
-    // Moxie: +1 de Batalha por inimigo já derrotado nesta sequência (frontWins). [ADITIVO]
-    if (hasMoxie(you)) yourEff += MOXIE_BATTLE_PER_WIN * frontWins
+    // Moxie L2: +5 temporário por inimigo já derrotado nesta sequência (teto +25). [ADITIVO]
+    // L1 não tem bônus temporário — só o permanente gravado na ramificação youWon.
+    if (hasMoxie(you) && secretLevelOf(you, 'sa-moxie') === 2)
+      yourEff += Math.min(MOXIE_TEMP_CAP_L2, MOXIE_TEMP_PER_WIN_L2 * frontWins)
     // Rollout: bônus ADITIVO de Batalha escalado pela sequência de vitórias. [ADITIVO]
     yourEff += rolloutBattleBonus(you, frontWins)
     // Paralyze (Tempestade): seu Pokémon paralisado hoje luta com metade da Batalha.
@@ -357,13 +361,25 @@ export function resolveDefense(
     const youWon = rng.bool(pWin)
     duels.push({ yourId: you.id, youWon, pWin })
     if (youWon) {
+      // Moxie (L1 e L2): +1 PERMANENTE em permaBonus.batalha por inimigo derrotado.
+      if (hasMoxie(you)) {
+        result[yours] = {
+          ...you,
+          permaBonus: {
+            ...you.permaBonus,
+            batalha: (you.permaBonus?.batalha ?? 0) + MOXIE_PERMA_PER_WIN,
+          },
+        }
+      }
       // Regenerator: recupera vida a cada inimigo derrotado (L1: +1 HP; L2: HP cheio).
+      // Compõe com Moxie: lê result[yours] (já atualizado pelo Moxie se aplicável).
       if (hasRegenerator(you)) {
+        const cur = result[yours] as typeof you
         const regenHp =
           secretLevelOf(you, 'sa-regenerator') === 2
             ? you.maxHp
-            : Math.min(you.maxHp, you.currentHp + REGENERATOR_HEAL_PER_WIN)
-        result[yours] = { ...you, currentHp: regenHp }
+            : Math.min(you.maxHp, cur.currentHp + REGENERATOR_HEAL_PER_WIN)
+        result[yours] = { ...cur, currentHp: regenHp }
       }
       theirs += 1 // o inimigo perde e sai; você permanece na frente
       frontWins += 1

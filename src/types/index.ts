@@ -180,6 +180,12 @@ export interface Pokemon {
    */
   hearts?: number
   /**
+   * Bônus permanente por eixo — sobrevive ao dia e à evolução. Usado pelo Moxie para acumular
+   * +1 de Batalha por Pokémon derrotado em batalha. Somado ao atributo efetivo antes do clamp
+   * (o teto 60 aplica o cap). Ausente = sem bônus.
+   */
+  permaBonus?: Partial<Attrs>
+  /**
    * Buffs temporários por eixo aplicados por itens x_* (somados ao atributo efetivo, afetando
    * inclusive o HP). Valem só no dia da compra e são limpos na virada do dia. Ausente = sem buff.
    */

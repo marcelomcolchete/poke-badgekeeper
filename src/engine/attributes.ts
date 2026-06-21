@@ -66,15 +66,17 @@ export function realPerPointGain(p: Pokemon, key: AttrKey): number {
 }
 
 /**
- * Atributo efetivo = clamp(base + iv + alocação·modificador + buff de item, 0, 60) — PLAN §4.1.
+ * Atributo efetivo = clamp(base + iv + alocação·modificador + buff de item + bônus permanente, 0, 60) — PLAN §4.1.
  * O `dayBuffs` (itens x_*) entra aqui, então propaga sozinho para missões, batalha, HP e cards.
+ * O `permaBonus` (ex.: Moxie) acumula permanentemente; o teto 60 aplica o cap do crescimento.
  */
 export function effectiveAttr(p: Pokemon, key: AttrKey): number {
   const perPoint = natureBonusPerPoint(p.nature, key)
   const iv = p.ivs?.[key] ?? 0
   const buff = p.dayBuffs?.[key] ?? 0
+  const perma = p.permaBonus?.[key] ?? 0
   return clamp(
-    p.baseAttrs[key] + iv + p.allocations[key] * perPoint + buff,
+    p.baseAttrs[key] + iv + p.allocations[key] * perPoint + buff + perma,
     ATTR_EFFECTIVE_MIN,
     ATTR_MAX,
   )
