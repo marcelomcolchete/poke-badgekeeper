@@ -72,6 +72,13 @@ export function SummaryScreen({ state, dispatch, onRestart }: Props) {
   const unlockAbilityId = unlock && unlockPair ? unlockPair[unlock.slot] : null
   const unlockedAbility = unlockAbilityId ? SECRET_KINDS[unlockAbilityId] ?? null : null
 
+  // Escolha de Habilidade Secreta pendente do Destaque (Fase 2).
+  const choice = state.today.secretChoice
+  const choiceMon = choice ? state.roster.find((p) => p.id === choice.pokemonId) : undefined
+  const choicePair = choiceMon ? secretLineFor(choiceMon.speciesId) : null
+  const choicePicks = choiceMon?.secretPicks ?? []
+  const choicePending = Boolean(choice && choiceMon && choicePair)
+
   return (
     <div className={styles.screen}>
       <div className={styles.header}>
@@ -108,6 +115,57 @@ export function SummaryScreen({ state, dispatch, onRestart }: Props) {
         />
       </div>
 
+      {choicePending && choiceMon && choicePair && (
+        <div className={styles.secretChoice}>
+          <span className={styles.secretChoiceTitle}>
+            ★ {displayNameOf(choiceMon)} virou Destaque — escolha sua Habilidade Secreta
+          </span>
+          <div className={styles.secretChoiceOptions}>
+            {choicePicks.length === 0
+              ? ([0, 1] as const).map((slot) => {
+                  const kind = SECRET_KINDS[choicePair[slot]]
+                  return (
+                    <button
+                      key={slot}
+                      type="button"
+                      className={styles.secretChoiceBtn}
+                      onClick={() => dispatch({ type: 'CHOOSE_SECRET', slot, level: 1 })}
+                    >
+                      <b>{kind.name}</b>
+                      <span>{kind.effectL1}</span>
+                    </button>
+                  )
+                })
+              : (() => {
+                  const cur = choicePicks[0]!
+                  const curKind = SECRET_KINDS[choicePair[cur.slot]]
+                  const other = (cur.slot === 0 ? 1 : 0) as 0 | 1
+                  const otherKind = SECRET_KINDS[choicePair[other]]
+                  return (
+                    <>
+                      <button
+                        type="button"
+                        className={styles.secretChoiceBtn}
+                        onClick={() => dispatch({ type: 'CHOOSE_SECRET', slot: cur.slot, level: 2 })}
+                      >
+                        <b>Aprofundar — {curKind.name}+</b>
+                        <span>{curKind.effectL2}</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.secretChoiceBtn}
+                        onClick={() => dispatch({ type: 'CHOOSE_SECRET', slot: other, level: 1 })}
+                      >
+                        <b>Ampliar — {otherKind.name}</b>
+                        <span>{otherKind.effectL1}</span>
+                      </button>
+                    </>
+                  )
+                })()}
+          </div>
+        </div>
+      )}
+
       {unlockedAbility && unlockMon && unlock && (
         <div className={styles.secretReveal}>
           <img
@@ -136,6 +194,8 @@ export function SummaryScreen({ state, dispatch, onRestart }: Props) {
           roster={state.roster}
           onRestart={onRestart}
         />
+      ) : choicePending ? (
+        <Textbox>Escolha a Habilidade Secreta do seu Destaque para continuar.</Textbox>
       ) : (
         <>
           <Textbox>Bom trabalho! Pronto para o próximo dia?</Textbox>
