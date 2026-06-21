@@ -275,6 +275,8 @@ export const EXPLOSION_SELF_DAMAGE_FRACTION = 0.5
 export const FLY_SPEED_BONUS = 0.5
 /** Swift Swim: bônus ADITIVO de velocidade do time enquanto chove (×3 = base +2). */
 export const SWIFT_SWIM_RAIN_BONUS = 2
+/** Swift Swim L2: bônus MULTIPLICATIVO nos atributos de missão enquanto chove (+30%). */
+export const SWIFT_SWIM_MISSION_BONUS_L2 = 0.30
 /** Cloud Nine: pontos percentuais somados à chance de chuva do dia POR portador no roster. */
 export const CLOUD_NINE_RAIN_CHANCE_BONUS_PP = 25
 /** Dig: quantos buracos (pontos) cada túnel liga — sempre 2 (dois pontos). */

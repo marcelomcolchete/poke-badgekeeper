@@ -69,6 +69,8 @@ export function MissionDispatch({ state, dispatch, missionId, onClose }: Props) 
     template,
     runtime: state.today.secretRuntime,
     runItems: state.runItems,
+    weather: state.weather,
+    nowMs: state.clock.dayElapsedMs,
   }
   const probability = Math.round(missionSuccessProbabilityCtx(ctx, mission.requirement) * 100)
   const graph = graphWithTunnels(city.graph, state.today.digTunnels)

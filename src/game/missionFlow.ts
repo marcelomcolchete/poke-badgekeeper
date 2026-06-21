@@ -123,6 +123,8 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
     runtime: s.today.secretRuntime,
     runItems: s.runItems,
     electirizerBonus,
+    weather: s.weather,
+    nowMs: now,
   }
 
   mission.teamIds = team.map((p) => p.id)
@@ -270,6 +272,8 @@ export function resolveMissionNow(s: GameState, mission: MissionInstance): void 
     runtime: s.today.secretRuntime,
     runItems: s.runItems,
     electirizerBonus: mission.electirizerBonus,
+    weather: s.weather,
+    nowMs: s.clock.dayElapsedMs,
   }
   const pSuccess = missionSuccessProbabilityCtx(ctx, mission.requirement)
   const outcome = resolveMission(

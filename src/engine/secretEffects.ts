@@ -42,6 +42,7 @@ import {
   ROLLOUT_START_L2,
   SHELL_ARMOR_DIVISOR_L1,
   SHELL_ARMOR_DIVISOR_L2,
+  SWIFT_SWIM_MISSION_BONUS_L2,
   TORRENT_MISSION_MULT_L1,
   TORRENT_MISSION_MULT_L2,
   WATER_ABSORB_MISSION_MULT_L1,
@@ -209,6 +210,16 @@ export interface MissionSecretCtx {
   runItems: readonly string[]
   /** Electirizer: cargas de bônus por Pokémon (id → nº de raios) fixadas no despacho. */
   electirizerBonus?: Record<string, number>
+  /**
+   * Agenda de clima do dia (opcional). Necessário para o bônus de missão do Swift Swim L2.
+   * Se ausente, o bônus de chuva de missão é omitido (call sites sem clima mantêm comportamento anterior).
+   */
+  weather?: WeatherSchedule
+  /**
+   * Instante do dia em ms (dayElapsedMs) no momento do despacho/resolução.
+   * Necessário junto com `weather` para avaliar se está chovendo agora para o Swift Swim L2.
+   */
+  nowMs?: number
 }
 
 /**
@@ -253,6 +264,15 @@ export function missionAttrMultiplier(p: Pokemon, ctx: MissionSecretCtx): number
   if (hasWaterAbsorb(p) && ctx.runtime[p.id]?.waterAbsorbPending) {
     const pending = ctx.runtime[p.id]!.waterAbsorbPending
     mult *= pending === 2 ? WATER_ABSORB_MISSION_MULT_L2 : WATER_ABSORB_MISSION_MULT_L1
+  }
+  // Swift Swim L2: +30% de atributos em missão enquanto chove (requer ctx.weather + ctx.nowMs).
+  if (
+    secretLevelOf(p, 'sa-swift-swim') === 2 &&
+    ctx.weather !== undefined &&
+    ctx.nowMs !== undefined &&
+    isRaining(ctx.weather, ctx.nowMs)
+  ) {
+    mult *= 1 + SWIFT_SWIM_MISSION_BONUS_L2
   }
   if (hasHustle(p)) {
     const lvl = secretLevelOf(p, 'sa-hustle')

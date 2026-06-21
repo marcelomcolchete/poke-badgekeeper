@@ -602,3 +602,80 @@ describe('missionEffectBreakdown', () => {
     expect(entries.find((e) => e.id === 'clear-body')).toBeUndefined()
   })
 })
+
+describe('Swift Swim L2: bônus de missão na chuva (+30%)', () => {
+  // Goldeen (118): par = ['sa-surf','sa-swift-swim'] → Swift Swim slot 1
+  // Omanyte (138): par = ['sa-swift-swim','sa-shell-armor'] → Swift Swim slot 0
+  // Kabuto (140): par = ['sa-battle-armor','sa-swift-swim'] → Swift Swim slot 1
+
+  const rainNow: import('./weather.ts').WeatherSchedule = {
+    rain: [{ startMs: 0, endMs: 100_000, puddles: [] }],
+    storms: [],
+    forecast: { rainChancePercent: 100, rainMmPerHour: 30, potentialRainCount: 1, stormChancePercent: 0, potentialStormCount: 0 },
+  }
+  const drySchedule: import('./weather.ts').WeatherSchedule = {
+    rain: [],
+    storms: [],
+    forecast: { rainChancePercent: 0, rainMmPerHour: 0, potentialRainCount: 0, stormChancePercent: 0, potentialStormCount: 0 },
+  }
+
+  it('Swift Swim L2: +30% atributos enquanto chove', () => {
+    // Omanyte(138): slot0=swift-swim L2
+    const oma = makeMon({ id: 'o', speciesId: 138, secretPicks: [{ slot: 0, level: 2 }] })
+    const ctx: MissionSecretCtx = {
+      team: [oma], template: PATRULHA, runtime: {}, runItems: [],
+      weather: rainNow, nowMs: 5_000,
+    }
+    expect(missionAttrMultiplier(oma, ctx)).toBeCloseTo(1.30)
+  })
+
+  it('Swift Swim L2: sem bônus quando NÃO está chovendo', () => {
+    // Omanyte(138): slot0=swift-swim L2 — mas sem chuva
+    const oma = makeMon({ id: 'o', speciesId: 138, secretPicks: [{ slot: 0, level: 2 }] })
+    const ctx: MissionSecretCtx = {
+      team: [oma], template: PATRULHA, runtime: {}, runItems: [],
+      weather: drySchedule, nowMs: 5_000,
+    }
+    expect(missionAttrMultiplier(oma, ctx)).toBeCloseTo(1.0)
+  })
+
+  it('Swift Swim L2: sem bônus depois da janela de chuva (nowMs posterior)', () => {
+    // Omanyte(138): slot0=swift-swim L2 — chuva terminou
+    const oma = makeMon({ id: 'o', speciesId: 138, secretPicks: [{ slot: 0, level: 2 }] })
+    const ctx: MissionSecretCtx = {
+      team: [oma], template: PATRULHA, runtime: {}, runItems: [],
+      weather: rainNow, nowMs: 200_000, // após o fim da chuva (endMs=100_000)
+    }
+    expect(missionAttrMultiplier(oma, ctx)).toBeCloseTo(1.0)
+  })
+
+  it('Swift Swim L1: NÃO ganha o bônus de missão (apenas L2)', () => {
+    // Omanyte(138): slot0=swift-swim L1
+    const oma = makeMon({ id: 'o', speciesId: 138, secretPicks: [{ slot: 0, level: 1 }] })
+    const ctx: MissionSecretCtx = {
+      team: [oma], template: PATRULHA, runtime: {}, runItems: [],
+      weather: rainNow, nowMs: 5_000,
+    }
+    expect(missionAttrMultiplier(oma, ctx)).toBeCloseTo(1.0)
+  })
+
+  it('Swift Swim L2: sem ctx.weather/nowMs → sem bônus (guarda call sites antigos)', () => {
+    // Omanyte(138): slot0=swift-swim L2 — mas ctx sem weather
+    const oma = makeMon({ id: 'o', speciesId: 138, secretPicks: [{ slot: 0, level: 2 }] })
+    const ctx: MissionSecretCtx = {
+      team: [oma], template: PATRULHA, runtime: {}, runItems: [],
+      // sem weather e nowMs
+    }
+    expect(missionAttrMultiplier(oma, ctx)).toBeCloseTo(1.0)
+  })
+
+  it('Kabuto (140, slot 1=swift-swim) L2: +30% na chuva', () => {
+    // Kabuto(140): par=['sa-battle-armor','sa-swift-swim'] → Swift Swim slot 1
+    const kab = makeMon({ id: 'k', speciesId: 140, secretPicks: [{ slot: 1, level: 2 }] })
+    const ctx: MissionSecretCtx = {
+      team: [kab], template: PATRULHA, runtime: {}, runItems: [],
+      weather: rainNow, nowMs: 5_000,
+    }
+    expect(missionAttrMultiplier(kab, ctx)).toBeCloseTo(1.30)
+  })
+})
