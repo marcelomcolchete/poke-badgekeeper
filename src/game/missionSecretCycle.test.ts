@@ -128,11 +128,13 @@ describe('Water Absorb — missionAttrMultiplier com pending', () => {
   })
 })
 
-describe('Water Absorb — rota aquática seta waterAbsorbPending', () => {
-  it('surfista com Water Absorb em rota aquática recebe waterAbsorbPending', () => {
-    // Vaporeon(134): slot0=surf L1 (sozinho surfa), slot1=water-absorb L1
+describe('Water Absorb — timing: pending setado no RESOLVE, não no dispatch', () => {
+  // Vaporeon(134): slot0=surf L1 (sozinho surfa), slot1=water-absorb L1
+  // O bônus deve ser da PRÓXIMA missão — espelha battleArmorPending.
+
+  it('dispatch de missão aquática NÃO seta waterAbsorbPending imediatamente', () => {
     const p = makeMon({
-      id: 'wa_p',
+      id: 'wa_timing1',
       speciesId: 134,
       secretPicks: [{ slot: 0, level: 1 }, { slot: 1, level: 1 }],
     })
@@ -140,21 +142,106 @@ describe('Water Absorb — rota aquática seta waterAbsorbPending', () => {
     const s = ceruleanState()
     s.roster = [{ ...p }]
 
-    // Encontra um nó de água em Cerulean (via surfNodes)
     const waterNode = city.graph.surfNodes?.[0]
-
     if (!waterNode) return // sem nó de água no grafo, pula
 
-    const mission = availableMission('mwa_s', waterNode)
+    const mission = availableMission('mwa_t1', waterNode)
     s.missions = [mission]
 
-    acceptMission(s, 'mwa_s', ['wa_p'])
+    acceptMission(s, 'mwa_t1', ['wa_timing1'])
 
     const m = s.missions[0]!
     if (m.surfing) {
-      // A rota cruzou água → pending deve estar setado
-      expect(s.today.secretRuntime['wa_p']?.waterAbsorbPending).toBe(1)
+      // Após dispatch, o pending NÃO deve estar setado ainda
+      expect(s.today.secretRuntime['wa_timing1']?.waterAbsorbPending).toBeUndefined()
     }
+  })
+
+  it('RESOLVE de missão aquática seta waterAbsorbPending (para a próxima missão)', () => {
+    const p = makeMon({
+      id: 'wa_timing2',
+      speciesId: 134,
+      secretPicks: [{ slot: 0, level: 1 }, { slot: 1, level: 1 }],
+    })
+    const city = getCity(1)
+    const s = ceruleanState()
+    s.roster = [{ ...p, status: 'onMission' }]
+
+    // Simula uma missão que JÁ cruzou água (surfing=true) e está pronta para resolver
+    const mission: MissionInstance = {
+      id: 'mwa_t2',
+      templateId: 'palestra',
+      requirement: { batalha: 0, inteligencia: 0, carisma: 0, agilidade: 0, resistencia: 0, percepcao: 0 },
+      node: city.siteNodes.gym,
+      path: [city.siteNodes.gym],
+      surfing: true, // cruzou água
+      spawnAtMs: 0,
+      expiresAtMs: 999_999,
+      status: 'inProgress',
+      teamIds: ['wa_timing2'],
+      acceptedAtMs: 0,
+      arriveAtMs: 0,
+      resolveAtMs: 0,
+      returnEndsAtMs: 5_000,
+      result: null,
+      pSuccess: null,
+    }
+    s.missions = [mission]
+
+    resolveMissionNow(s, mission)
+
+    // Após resolver missão aquática, o pending DEVE estar setado (para a próxima missão)
+    expect(s.today.secretRuntime['wa_timing2']?.waterAbsorbPending).toBe(1)
+  })
+
+  it('missão com pending pré-existente aplica o multiplicador e o consome; pending setado por aquática anterior', () => {
+    // Prova o ciclo completo: missão N (aquática) resolve → seta pending → missão N+1 consume
+    const p = makeMon({
+      id: 'wa_timing3',
+      speciesId: 134,
+      secretPicks: [{ slot: 0, level: 1 }, { slot: 1, level: 1 }],
+    })
+    const city = getCity(1)
+    const s = ceruleanState()
+    s.roster = [{ ...p, status: 'onMission' }]
+
+    // Pending já setado (resultado de uma missão aquática anterior)
+    s.today.secretRuntime['wa_timing3'] = { waterAbsorbPending: 1 }
+
+    // Missão N+1 (não aquática) — surfing=false ou undefined
+    const mission: MissionInstance = {
+      id: 'mwa_t3',
+      templateId: 'palestra',
+      requirement: { batalha: 0, inteligencia: 0, carisma: 0, agilidade: 0, resistencia: 0, percepcao: 0 },
+      node: city.siteNodes.gym,
+      path: [city.siteNodes.gym],
+      surfing: false, // não aquática
+      spawnAtMs: 0,
+      expiresAtMs: 999_999,
+      status: 'inProgress',
+      teamIds: ['wa_timing3'],
+      acceptedAtMs: 0,
+      arriveAtMs: 0,
+      resolveAtMs: 0,
+      returnEndsAtMs: 5_000,
+      result: null,
+      pSuccess: null,
+    }
+    s.missions = [mission]
+
+    // O multiplier deve ser ×1.30 ANTES de resolver (pending está presente)
+    const ctxBefore: MissionSecretCtx = {
+      team: [p],
+      template: PALESTRA,
+      runtime: s.today.secretRuntime,
+      runItems: [],
+    }
+    expect(missionAttrMultiplier(p, ctxBefore)).toBeCloseTo(WATER_ABSORB_MISSION_MULT_L1)
+
+    resolveMissionNow(s, mission)
+
+    // Após resolver missão não-aquática, o pending deve ser consumido (undefined)
+    expect(s.today.secretRuntime['wa_timing3']?.waterAbsorbPending).toBeUndefined()
   })
 })
 

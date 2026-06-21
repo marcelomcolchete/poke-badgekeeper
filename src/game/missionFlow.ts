@@ -38,7 +38,7 @@ import {
 import { secretLevelOf } from '../data/secretAbilities.ts'
 import { rainTravelMs } from '../engine/rainSpeed.ts'
 import { isRaining } from '../engine/weather.ts'
-import { graphWithTunnels, pathUsesSurf } from '../engine/pathfinding.ts'
+import { graphWithTunnels } from '../engine/pathfinding.ts'
 import { planWeatherLeg } from '../engine/weatherTravel.ts'
 import { createRng } from '../engine/rng.ts'
 import { applyXpGains } from './itemFlow.ts'
@@ -147,14 +147,6 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
       healed = lvl === 2 ? p.maxHp : Math.min(p.maxHp, p.currentHp + NATURAL_CURE_MISSION_HEAL)
     }
     replaceMon(s, { ...p, currentHp: healed, status: 'traveling' })
-  }
-  // Water Absorb: a rota passa pela água → marca pending para bônus na PRÓXIMA missão.
-  // (Espelha battleArmorPending: setado aqui, consumido em applyMissionSecretRuntime ao resolver.)
-  if (pathUsesSurf(graph, outbound.path)) {
-    for (const p of team.filter(hasWaterAbsorb)) {
-      const lvl = secretLevelOf(p, 'sa-water-absorb') as 1 | 2
-      ;(s.today.secretRuntime[p.id] ??= {}).waterAbsorbPending = lvl
-    }
   }
 }
 
@@ -288,8 +280,10 @@ export function resolveMissionNow(s: GameState, mission: MissionInstance): void 
     pSuccess,
     damageForDay(s.run.day),
   )
-  // Habilidades Secretas: consome o Battle Armor pendente (valeu para esta missão).
-  applyMissionSecretRuntime(s, team)
+  // Habilidades Secretas: consome o Battle Armor pendente e o Water Absorb pendente (valeu
+  // para ESTA missão). Após limpar, seta novo waterAbsorbPending se a missão cruzou água —
+  // o bônus vale para a PRÓXIMA missão (espelha battleArmorPending).
+  applyMissionSecretRuntime(s, team, mission)
 
   // Aplica só o dano (HP) agora; XP/cura/evolução são adiados para freeOnReturn.
   // Sturdy: salva do desmaio em missão (1×/dia) — fica com 1 de vida.
@@ -356,16 +350,30 @@ export function freeOnReturn(s: GameState, mission: MissionInstance): void {
 }
 
 /**
- * Atualiza o estado diário das Habilidades Secretas após resolver a missão: consome o Battle
- * Armor pendente e o Water Absorb pendente (o bônus de atributos valeu para ESTA missão).
- * Weak Armor deriva a velocidade do HP faltante e Shell Armor não tem debuff de velocidade
- * — nada a re-armar aqui.
+ * Atualiza o estado diário das Habilidades Secretas após resolver a missão:
+ * (a) consome o Battle Armor pendente e o Water Absorb pendente — bônus que valeu para ESTA missão;
+ * (b) se ESTA missão cruzou água, seta novo waterAbsorbPending para os portadores de Water Absorb
+ *     — o bônus valerá para a PRÓXIMA missão (espelha battleArmorPending).
+ * Set-after-clear garante que o novo pending não é imediatamente consumido.
+ * Weak Armor e Shell Armor não têm estado a re-armar aqui.
  */
-function applyMissionSecretRuntime(s: GameState, before: readonly Pokemon[]): void {
+function applyMissionSecretRuntime(
+  s: GameState,
+  before: readonly Pokemon[],
+  mission: MissionInstance,
+): void {
+  // (a) Consome os pendings existentes (que já foram lidos pelo missionSuccessProbabilityCtx).
   for (const p of before) {
     const rt = s.today.secretRuntime[p.id]
     if (rt?.battleArmorPending) rt.battleArmorPending = false
     if (rt?.waterAbsorbPending) rt.waterAbsorbPending = undefined
+  }
+  // (b) Water Absorb: se a missão que ACABOU de resolver cruzou água, seta pending para a próxima.
+  if (mission.surfing) {
+    for (const p of before.filter(hasWaterAbsorb)) {
+      const lvl = secretLevelOf(p, 'sa-water-absorb') as 1 | 2
+      ;(s.today.secretRuntime[p.id] ??= {}).waterAbsorbPending = lvl
+    }
   }
 }
 
