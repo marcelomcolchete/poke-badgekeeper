@@ -6,8 +6,8 @@ import { TypeBadge } from '../common/TypeBadge.tsx'
 import { Textbox } from '../Textbox/Textbox.tsx'
 import styles from './CitySelectScreen.module.css'
 
-/** Cidades com conteúdo pronto (Pewter, Cerulean e Vermilion). */
-const PLAYABLE_CITIES = new Set<number>([0, 1, 2])
+/** Cidades com conteúdo pronto (Pewter, Cerulean, Vermilion e Celadon). */
+const PLAYABLE_CITIES = new Set<number>([0, 1, 2, 3])
 
 export function CitySelectScreen({ onChoose }: { onChoose: (cityIndex: number) => void }) {
   return (

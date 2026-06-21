@@ -173,7 +173,7 @@ const PEWTER_GRAPH: CityGraph = {
 const PEWTER_SITE_NODES: CitySiteNodes = {
   gym: 'j', // 1 (ginásio)
   center: 'p', // 2 (centro)
-  mart: 'l', // 4 (mart)
+  mart: ['l'], // 4 (mart)
   specialMission: ['d'], // 5 (ponto único da Missão Especial)
   houses: ['a', 'g'], // 6.1, 6.2
   green: ['c', 'b', 'g', 'm', 'n'], // 3.1, 3.2, 3.3, 3.4, 3.5
@@ -284,7 +284,7 @@ const CERULEAN_GRAPH: CityGraph = {
 const CERULEAN_SITE_NODES: CitySiteNodes = {
   gym: 'u', // 1 (ginásio)
   center: 'p', // 2 (centro) — acessível de 'p' e 't'; paramos em 'p'
-  mart: 't', // 4 (mart) — acessível de 't' e 'u'; paramos em 't'
+  mart: ['t'], // 4 (mart) — acessível de 't' e 'u'; paramos em 't'
   specialMission: ['x'], // 5.2 — ponto especial ÚNICO
   houses: ['h', 'i', 'c', 'g', 'p', 't', 'u'], // 6.1..6.7
   green: ['g31', 'g32', 'g33', 'g34', 'g35', 'm'], // 3.1..3.6 (áreas de exploração/captura; 'm' era a 2ª Rocket)
@@ -427,10 +427,151 @@ const VERMILION_GRAPH: CityGraph = {
 const VERMILION_SITE_NODES: CitySiteNodes = {
   gym: 'aj', // GYM
   center: 'd', // CP
-  mart: 'ab', // MART
+  mart: ['ab'], // MART
   specialMission: ['x'], // SPEC — ponto especial único
   houses: ['c', 'e', 'g', 'y', 'ah'], // HOUSE ×5
   green: ['g31', 'g32', 'g33', 'g34', 'g35'], // GRASS ×5 (exploração/captura)
+}
+
+// ============================ Celadon (4.png) ============================
+// Grafo calibrado sobre a arte anotada (mapa do chat). 37 pontos de PARADA a–al (sem 'w')
+// + 3 nós dedicados de exploração g31..g33 (áreas GRASS, sobre os retângulos). O ginásio é
+// 'aa'. Posições normalizadas (0–1) estimadas da arte — refináveis com o DEV picker do CityMap.
+// Novidades: DOIS marts (a missão de mart surge em 'j' OU 'n'); 'n' é ponto de água (Surf), então
+// o mart de 'n' fica atrás de água. DUAS Missões Especiais (SPEC1='j', SPEC2='r'). Sem mão única.
+const CELADON_NODES: Record<string, MapPos> = {
+  a: { x: 0.108, y: 0.262 },
+  b: { x: 0.342, y: 0.262 },
+  c: { x: 0.51, y: 0.262 },
+  d: { x: 0.604, y: 0.262 },
+  e: { x: 0.716, y: 0.262 },
+  f: { x: 0.809, y: 0.262 },
+  g: { x: 0.88, y: 0.262 },
+  h: { x: 0.108, y: 0.354 },
+  i: { x: 0.158, y: 0.354 },
+  j: { x: 0.227, y: 0.354 },
+  k: { x: 0.342, y: 0.354 },
+  l: { x: 0.71, y: 0.35 },
+  m: { x: 0.809, y: 0.35 },
+  n: { x: 0.446, y: 0.498 }, // (surf) — mart atrás de água
+  o: { x: 0.108, y: 0.535 },
+  p: { x: 0.158, y: 0.535 },
+  q: { x: 0.342, y: 0.535 },
+  r: { x: 0.577, y: 0.532 },
+  s: { x: 0.71, y: 0.532 },
+  t: { x: 0.92, y: 0.532 },
+  u: { x: 0.158, y: 0.611 },
+  v: { x: 0.342, y: 0.611 },
+  x: { x: 0.446, y: 0.611 },
+  y: { x: 0.71, y: 0.611 },
+  z: { x: 0.108, y: 0.802 },
+  aa: { x: 0.182, y: 0.802 },
+  ab: { x: 0.446, y: 0.795 },
+  ac: { x: 0.564, y: 0.795 },
+  ad: { x: 0.676, y: 0.795 },
+  ae: { x: 0.762, y: 0.795 },
+  af: { x: 0.828, y: 0.795 },
+  ag: { x: 0.868, y: 0.795 },
+  ah: { x: 0.92, y: 0.795 },
+  ai: { x: 0.182, y: 0.927 },
+  aj: { x: 0.365, y: 0.927 },
+  ak: { x: 0.676, y: 0.927 },
+  al: { x: 0.875, y: 0.927 },
+  // Áreas de exploração (GRASS): nós dedicados sobre os retângulos, ligados ao ponto de acesso.
+  g31: { x: 0.955, y: 0.265 }, // GRASS direita (acesso 'g')
+  g32: { x: 0.04, y: 0.558 }, // GRASS esquerda (acesso 'o')
+  g33: { x: 0.11, y: 0.927 }, // GRASS baixo (acesso 'ai')
+}
+
+// Arestas NÃO-direcionadas (ligam os dois sentidos). Todas bidirecionais (sem mão única).
+const CELADON_EDGES: [string, string][] = [
+  ['b', 'c'],
+  ['c', 'd'],
+  ['d', 'e'],
+  ['e', 'f'],
+  ['f', 'g'],
+  ['a', 'h'],
+  ['b', 'k'],
+  ['e', 'l'],
+  ['f', 'm'],
+  ['h', 'i'],
+  ['i', 'j'],
+  ['j', 'k'],
+  ['l', 'm'],
+  ['h', 'o'],
+  ['i', 'p'],
+  ['k', 'q'],
+  ['l', 's'],
+  ['o', 'p'],
+  ['p', 'q'],
+  ['r', 's'],
+  ['s', 't'],
+  ['s', 'y'],
+  ['p', 'u'],
+  ['q', 'v'],
+  ['u', 'v'],
+  ['v', 'x'],
+  ['x', 'y'],
+  ['n', 'x'],
+  ['x', 'ab'],
+  ['z', 'aa'],
+  ['aa', 'ai'],
+  ['ai', 'aj'],
+  ['aj', 'ak'],
+  ['ab', 'ac'],
+  ['ac', 'ad'],
+  ['ad', 'ae'],
+  ['ae', 'af'],
+  ['af', 'ag'],
+  ['ag', 'ah'],
+  ['ad', 'ak'],
+  ['ak', 'al'],
+  ['ag', 'al'],
+  ['t', 'ah'],
+  // acesso às áreas de exploração (uma aresta por seta roxa do GRASS)
+  ['g', 'g31'],
+  ['o', 'g32'],
+  ['ai', 'g33'],
+]
+
+// Âncoras de EXIBIÇÃO: o popup aparece SOBRE o retângulo da arte (distinto da letra de parada).
+// 'j' hospeda DOIS pop-ups (mart da loja + SPEC1) → chave composta por TIPO.
+const CELADON_MARKERS: Record<string, MapPos> = {
+  aa: { x: 0.19, y: 0.685 }, // GYM (sobre o ginásio)
+  f: { x: 0.805, y: 0.13 }, // CP — centro (sobre o P.C)
+  'j:mart': { x: 0.26, y: 0.2 }, // MART (loja de departamentos)
+  'j:specialMission': { x: 0.19, y: 0.2 }, // SPEC1 (mesma parada 'j')
+  'n:mart': { x: 0.446, y: 0.38 }, // MART (prédio central; parada na água 'n')
+  r: { x: 0.577, y: 0.41 }, // SPEC2
+  a: { x: 0.11, y: 0.14 }, // HOUSE
+  b: { x: 0.36, y: 0.14 }, // HOUSE
+  c: { x: 0.51, y: 0.14 }, // HOUSE
+  d: { x: 0.6, y: 0.14 }, // HOUSE
+  e: { x: 0.69, y: 0.14 }, // HOUSE (×2 setas → mesma parada)
+  m: { x: 0.805, y: 0.44 }, // HOUSE (×2 setas → mesma parada)
+  s: { x: 0.655, y: 0.41 }, // HOUSE
+  aj: { x: 0.37, y: 0.79 }, // HOUSE
+  ac: { x: 0.57, y: 0.68 }, // HOUSE
+  ad: { x: 0.66, y: 0.68 }, // HOUSE (×2 setas → mesma parada)
+  ae: { x: 0.77, y: 0.68 }, // HOUSE
+  af: { x: 0.84, y: 0.68 }, // HOUSE
+}
+
+const CELADON_GRAPH: CityGraph = {
+  nodes: CELADON_NODES,
+  adj: buildAdjacency(CELADON_NODES, CELADON_EDGES),
+  markers: CELADON_MARKERS,
+  surfNodes: ['n'],
+}
+
+// Sítio → ponto do grafo (pop-ups da arte anotada de Celadon).
+const CELADON_SITE_NODES: CitySiteNodes = {
+  gym: 'aa', // GYM
+  center: 'f', // CP
+  mart: ['j', 'n'], // DOIS marts (loja em 'j'; prédio central em 'n', atrás de água)
+  specialMission: ['j', 'r'], // SPEC1 (loja, parada 'j') e SPEC2 ('r')
+  houses: ['a', 'b', 'c', 'd', 'e', 'm', 's', 'aj', 'ac', 'ad', 'ae', 'af'], // HOUSE
+  green: ['g31', 'g32', 'g33'], // GRASS ×3 (exploração/captura)
 }
 
 interface CitySeed {
@@ -492,6 +633,8 @@ const SEEDS: CitySeed[] = [
       { speciesId: 44, level: 3 }, // Gloom
       { speciesId: 1, level: 1 }, // Bulbasaur
     ],
+    graph: CELADON_GRAPH,
+    siteNodes: CELADON_SITE_NODES,
     trainers: CELADON_TRAINERS,
   },
   {
@@ -597,7 +740,7 @@ export function nodesByKind(siteNodes: CitySiteNodes, kind: SiteKind): string[] 
     case 'center':
       return [siteNodes.center]
     case 'mart':
-      return [siteNodes.mart]
+      return siteNodes.mart
     case 'specialMission':
       return siteNodes.specialMission
     case 'house':
