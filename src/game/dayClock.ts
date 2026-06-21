@@ -7,7 +7,7 @@ import type { Pokemon } from '../types/index.ts'
 import type { GameState } from '../engine/state.ts'
 import { isFainted } from '../engine/attributes.ts'
 import { advanceMission, expireMission, promoteMission } from './missionFlow.ts'
-import { expireDefense, loseRunByUndefendedGym, spawnDefense } from './defenseFlow.ts'
+import { expireDefense, penalizeUndefendedGym, spawnDefense } from './defenseFlow.ts'
 import { advanceCaptureReturn, advanceSearch } from './captureFlow.ts'
 import { finalizeDay } from './phaseFlow.ts'
 import { processStorms } from './stormFlow.ts'
@@ -87,7 +87,7 @@ function processDefenses(s: GameState, now: number, overtime: boolean): void {
       // Derrota imediata só se a defesa já estava ATIVA antes deste tick — o jogador
       // teve tempo real de reagir e não lutou (PLAN §4.4). Surgir e expirar no mesmo
       // salto de tempo (aba oculta / avanço headless do dia) apenas a remove, sem perder.
-      if (wasActive) loseRunByUndefendedGym(s)
+      if (wasActive) penalizeUndefendedGym(s)
     }
   }
 }
