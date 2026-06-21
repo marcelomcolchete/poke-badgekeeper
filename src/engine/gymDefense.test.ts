@@ -357,22 +357,76 @@ describe('resolveDefense — Habilidades Secretas', () => {
 })
 
 describe('resolveDefense — Habilidades de Cerulean', () => {
-  it('Thick Fat: vantagem de Batalha (×1,5) contra oponente do tipo Gelo', () => {
-    // Seel (86) par = ['sa-surf','sa-thick-fat']; Thick Fat no slot 1. Tipo neutro p/ isolar o efeito.
-    const seel = makeMon({ id: 's', speciesId: 86, secretPicks: [{ slot: 0, level: 1 }, { slot: 1, level: 1 }], types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
-    const plain = makeMon({ id: 'p', types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
-    const ice: EnemyUnit[] = [{ battle: 40, types: ['ice'] }]
-    expect(resolveDefense(fixedRng(1), [seel], ice).duels[0]?.pWin).toBeCloseTo(0.75) // 30/40
-    expect(resolveDefense(fixedRng(1), [plain], ice).duels[0]?.pWin).toBeCloseTo(0.5) // 20/40
+  it('Thick Fat L2: auto-vence duelos contra oponente do tipo Gelo (pWin=1)', () => {
+    // Seel (86) par = ['sa-surf','sa-thick-fat']; Thick Fat no slot 1, NÍVEL 2.
+    // Mesmo com batalha fraca (10 vs 100), o auto-win garante pWin=1.
+    const seelL2 = makeMon({ id: 's', speciesId: 86, secretPicks: [{ slot: 1, level: 2 }], types: ['normal'], baseAttrs: makeAttrs({ batalha: 10, resistencia: 100 }) })
+    const ice: EnemyUnit[] = [{ battle: 100, types: ['ice'] }]
+    // fixedRng(0.999) → normalmente perderia (pWin << 1), mas auto-win força pWin=1 e youWon=true.
+    const out = resolveDefense(fixedRng(0.999), [seelL2], ice)
+    expect(out.duels[0]?.pWin).toBe(1)
+    expect(out.duels[0]?.youWon).toBe(true)
+    expect(out.won).toBe(true)
   })
 
-  it('Pressure: reduz a Batalha do oponente enfrentado em 25%', () => {
-    // Articuno (144) par = ['sa-fly','sa-pressure']; Pressure no slot 1. Tipo neutro p/ isolar.
-    const arti = makeMon({ id: 'a', speciesId: 144, secretPicks: [{ slot: 0, level: 1 }, { slot: 1, level: 1 }], types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
+  it('Thick Fat L1: sem efeito de batalha (pWin idêntico a um Pokémon sem a habilidade)', () => {
+    // Seel (86) Thick Fat L1 — inerte, sem bônus de batalha vs Gelo.
+    const seelL1 = makeMon({ id: 's', speciesId: 86, secretPicks: [{ slot: 1, level: 1 }], types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
+    const plain = makeMon({ id: 'p', types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
+    const ice: EnemyUnit[] = [{ battle: 40, types: ['ice'] }]
+    const pWinL1 = resolveDefense(fixedRng(1), [seelL1], ice).duels[0]?.pWin
+    const pWinPlain = resolveDefense(fixedRng(1), [plain], ice).duels[0]?.pWin
+    expect(pWinL1).toBeCloseTo(pWinPlain ?? 0) // 20/40 = 0.5, sem bônus
+  })
+
+  it('Pressure L1: reduz a Batalha de TODOS os inimigos em 15% (início do combate, squad-wide)', () => {
+    // Articuno (144) par = ['sa-fly','sa-pressure']; Pressure no slot 1, L1.
+    const arti = makeMon({ id: 'a', speciesId: 144, secretPicks: [{ slot: 1, level: 1 }], types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
     const plain = makeMon({ id: 'p', types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
     const foe: EnemyUnit[] = [{ battle: 40, types: ['normal'] }]
-    expect(resolveDefense(fixedRng(1), [arti], foe).duels[0]?.pWin).toBeCloseTo(20 / 30) // inimigo 40→30
+    // Pressure L1: inimigo 40 × 0.85 = 34; pWin = 20/34 ≈ 0.588
+    expect(resolveDefense(fixedRng(1), [arti], foe).duels[0]?.pWin).toBeCloseTo(20 / 34, 5)
     expect(resolveDefense(fixedRng(1), [plain], foe).duels[0]?.pWin).toBeCloseTo(0.5) // 20/40
+  })
+
+  it('Pressure L2: reduz a Batalha de TODOS os inimigos em 30%', () => {
+    // Zapdos (145) par = ['sa-fly','sa-pressure']; Pressure no slot 1, L2.
+    const zapdos = makeMon({ id: 'z', speciesId: 145, secretPicks: [{ slot: 1, level: 2 }], types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
+    const foe: EnemyUnit[] = [{ battle: 40, types: ['normal'] }]
+    // Pressure L2: inimigo 40 × 0.70 = 28; pWin = 20/28 ≈ 0.714
+    expect(resolveDefense(fixedRng(1), [zapdos], foe).duels[0]?.pWin).toBeCloseTo(20 / 28, 5)
+  })
+
+  it('Pressure não acumula: squad com L1+L2 usa o maior (L2, ×0.70)', () => {
+    // Squad com Articuno L1 (slot 1) e Zapdos L2 (slot 1): o máximo é L2 → ×0.70.
+    const artiL1 = makeMon({ id: 'a', speciesId: 144, secretPicks: [{ slot: 1, level: 1 }], types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
+    const zapdosL2 = makeMon({ id: 'z', speciesId: 145, secretPicks: [{ slot: 1, level: 2 }], types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
+    const foe: EnemyUnit[] = [{ battle: 40, types: ['normal'] }]
+    // O Articuno enfrenta o inimigo (é o 1º no squad), mas o pressureMult vem do máximo do squad (L2).
+    // inimigo 40 × 0.70 = 28; pWin do 1º duelo (Articuno, batalha=20) = 20/28 ≈ 0.714.
+    const out = resolveDefense(fixedRng(1), [artiL1, zapdosL2], foe)
+    expect(out.duels[0]?.pWin).toBeCloseTo(20 / 28, 5)
+  })
+
+  it('Ice Body+ L2: auto-vence duelos contra oponente do tipo Fogo (pWin=1)', () => {
+    // Jynx (124) par inclui 'sa-ice-body'; slot 0, NÍVEL 2.
+    // Mesmo com batalha fraca (10 vs 100), o auto-win garante pWin=1.
+    const jynx = makeMon({ id: 'j', speciesId: 124, secretPicks: [{ slot: 0, level: 2 }], types: ['normal'], baseAttrs: makeAttrs({ batalha: 10, resistencia: 100 }) })
+    const fire: EnemyUnit[] = [{ battle: 100, types: ['fire'] }]
+    const out = resolveDefense(fixedRng(0.999), [jynx], fire)
+    expect(out.duels[0]?.pWin).toBe(1)
+    expect(out.duels[0]?.youWon).toBe(true)
+    expect(out.won).toBe(true)
+  })
+
+  it('Ice Body L1: sem efeito de batalha (pWin idêntico a um Pokémon sem a habilidade)', () => {
+    // Jynx (124) Ice Body L1 — inerte, sem bônus.
+    const jynxL1 = makeMon({ id: 'j', speciesId: 124, secretPicks: [{ slot: 0, level: 1 }], types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
+    const plain = makeMon({ id: 'p', types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
+    const fire: EnemyUnit[] = [{ battle: 40, types: ['fire'] }]
+    const pWinL1 = resolveDefense(fixedRng(1), [jynxL1], fire).duels[0]?.pWin
+    const pWinPlain = resolveDefense(fixedRng(1), [plain], fire).duels[0]?.pWin
+    expect(pWinL1).toBeCloseTo(pWinPlain ?? 0) // 20/40 = 0.5, sem bônus
   })
 
   it('Moxie: +1 de Batalha por inimigo derrotado na sequência', () => {

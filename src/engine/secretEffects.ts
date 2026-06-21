@@ -113,6 +113,9 @@ export function hasClearBody(p: Pokemon): boolean {
 export function hasThickFat(p: Pokemon): boolean {
   return hasSecret(p, 'sa-thick-fat')
 }
+export function hasIceBody(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-ice-body')
+}
 export function hasPressure(p: Pokemon): boolean {
   return hasSecret(p, 'sa-pressure')
 }

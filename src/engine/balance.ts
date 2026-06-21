@@ -289,12 +289,15 @@ export const SURF_WATER_TIME_MULT = 0.5
 /** Torrent: multiplicador de atributos na missão quando há outro aliado do tipo Água, por nível. */
 export const TORRENT_MISSION_MULT_L1 = 1.25
 export const TORRENT_MISSION_MULT_L2 = 1.5
-/** Thick Fat: multiplicador de Batalha contra oponentes do tipo Gelo. */
-export const THICK_FAT_VS_ICE_MULT = 1.5
 /** Moxie: bônus de Batalha (aditivo) por Pokémon derrotado na sequência da batalha. */
 export const MOXIE_BATTLE_PER_WIN = 1
-/** Pressure: multiplicador da Batalha do oponente enfrentado (−25%). */
-export const PRESSURE_ENEMY_MULT = 0.75
+/**
+ * Pressure: multiplicador da Batalha de TODOS os inimigos aplicado no INÍCIO do combate,
+ * a partir do MAIOR nível presente no esquadrão (não acumula entre portadores).
+ * L1 (−15%): ×0.85; L2 (−30%): ×0.70.
+ */
+export const PRESSURE_ENEMY_MULT_L1 = 0.85
+export const PRESSURE_ENEMY_MULT_L2 = 0.70
 /** Static/Paralyze: multiplicador da Batalha do inimigo paralisado (−50%, até o fim da batalha). */
 export const STATIC_PARALYZE_MULT = 0.5
 /** Quick Feet: bônus aditivo de velocidade de viagem quando despachado sozinho (+100% → ×2). */

@@ -31,11 +31,11 @@ import {
   MEDAL_OPEN_DAY,
   MOXIE_BATTLE_PER_WIN,
   PARALYZE_BATTLE_MULT,
-  PRESSURE_ENEMY_MULT,
+  PRESSURE_ENEMY_MULT_L1,
+  PRESSURE_ENEMY_MULT_L2,
   REGENERATOR_HEAL_PER_WIN,
   RIVAL_EVOLUTION_DAYS,
   STATIC_PARALYZE_MULT,
-  THICK_FAT_VS_ICE_MULT,
 } from './balance.ts'
 import { applyDamage, effectiveAttr } from './attributes.ts'
 import { secretLevelOf } from '../data/secretAbilities.ts'
@@ -45,12 +45,10 @@ import {
   hasExplosion,
   hasLightningRod,
   hasMoxie,
-  hasPressure,
   hasReckless,
   hasRegenerator,
   hasStatic,
   hasSturdy,
-  hasThickFat,
   hasVitalSpirit,
   hustleBattleBonus,
   rivalryBattleBonus,
@@ -295,6 +293,11 @@ export function resolveDefense(
   let yours = 0
   let theirs = 0
   let frontWins = 0 // vitórias seguidas do lutador da frente (Rollout)
+  // Pressure: multiplicador squad-wide aplicado UMA VEZ no início, a partir do MAIOR nível no squad.
+  // Não acumula — usa apenas o nível mais alto presente.
+  const pressureLevel = Math.max(0, ...squad.map((p) => secretLevelOf(p, 'sa-pressure')))
+  const enemyPressureMult =
+    pressureLevel === 2 ? PRESSURE_ENEMY_MULT_L2 : pressureLevel === 1 ? PRESSURE_ENEMY_MULT_L1 : 1
   // Static: índices de inimigos paralisados — lutam com Batalha ×0,5 até o fim da batalha.
   const paralyzed = new Set<number>()
   // Guarda contra laço infinito do Reckless (cada retentativa custa HP, mas é defensivo).
@@ -332,20 +335,25 @@ export function resolveDefense(
     if (enemy.gender !== undefined && enemy.gender === you.gender) {
       yourEff *= 1 + rivalryBattleBonus(you)
     }
-    // Thick Fat: vantagem contra oponentes do tipo Gelo.
-    if (hasThickFat(you) && enemy.types.includes('ice')) yourEff *= THICK_FAT_VS_ICE_MULT
     // Moxie: +1 de Batalha por inimigo já derrotado nesta sequência (frontWins). [ADITIVO]
     if (hasMoxie(you)) yourEff += MOXIE_BATTLE_PER_WIN * frontWins
     // Rollout: bônus ADITIVO de Batalha escalado pela sequência de vitórias. [ADITIVO]
     yourEff += rolloutBattleBonus(you, frontWins)
     // Paralyze (Tempestade): seu Pokémon paralisado hoje luta com metade da Batalha.
     if (opts.paralyzedIds?.has(you.id)) yourEff *= PARALYZE_BATTLE_MULT
-    // Pressure: reduz a Batalha do oponente enfrentado.
+    // Pressure (squad-wide, aplicado UMA VEZ no início): reduz a Batalha de TODOS os inimigos.
     let enemyEff = enemy.battle * typeAdvantageMultiplier(enemy.types, you.types)
-    if (hasPressure(you)) enemyEff *= PRESSURE_ENEMY_MULT
+    enemyEff *= enemyPressureMult
     // Static: inimigo paralisado luta com metade da Batalha.
     if (paralyzed.has(theirs)) enemyEff *= STATIC_PARALYZE_MULT
-    const pWin = duelWinProbability(yourEff, enemyEff)
+    // Auto-win: Thick Fat+ (L2) vs Gelo; Ice Body+ (L2) vs Fogo.
+    let pWin = duelWinProbability(yourEff, enemyEff)
+    if (
+      (secretLevelOf(you, 'sa-thick-fat') === 2 && enemy.types.includes('ice')) ||
+      (secretLevelOf(you, 'sa-ice-body') === 2 && enemy.types.includes('fire'))
+    ) {
+      pWin = 1
+    }
     const youWon = rng.bool(pWin)
     duels.push({ yourId: you.id, youWon, pWin })
     if (youWon) {

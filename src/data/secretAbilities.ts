@@ -345,7 +345,7 @@ export const SECRET_LINES: Record<number, readonly [SecretId, SecretId]> = {
   116: ['sa-surf', 'sa-sniper'],
   118: ['sa-surf', 'sa-swift-swim'],
   120: ['sa-analytic', 'sa-natural-cure'],
-  124: ['sa-dry-skin', 'sa-forewarn'],
+  124: ['sa-ice-body', 'sa-forewarn'],
   129: ['sa-surf', 'sa-moxie'],
   131: ['sa-surf', 'sa-shell-armor'],
   144: ['sa-fly', 'sa-pressure'],
