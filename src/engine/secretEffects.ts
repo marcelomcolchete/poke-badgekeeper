@@ -7,7 +7,7 @@
 import type { Attrs, AttrKey, Pokemon } from '../types/index.ts'
 import type { MissionTemplate } from '../data/types.ts'
 import type { SecretRuntime } from './state.ts'
-import { hasSecret } from '../data/secretAbilities.ts'
+import { hasSecret, secretLevelOf } from '../data/secretAbilities.ts'
 import { TEAM_ATTR_MAX } from './constants.ts'
 import {
   ANALYTIC_PATROL_MULT,
@@ -53,7 +53,7 @@ export function hasDig(p: Pokemon): boolean {
   return hasSecret(p, 'sa-dig')
 }
 export function hasDigPlus(p: Pokemon): boolean {
-  return hasSecret(p, 'sa-dig-plus')
+  return secretLevelOf(p, 'sa-dig') === 2
 }
 export function hasShellArmor(p: Pokemon): boolean {
   return hasSecret(p, 'sa-shell-armor')
@@ -131,9 +131,9 @@ export function hasCloudNine(p: Pokemon): boolean {
 export function hasSniper(p: Pokemon): boolean {
   return hasSecret(p, 'sa-sniper')
 }
-/** Surf (ou Surf+, que é upgrade): consegue se mover pela água. */
+/** Surf (nível ≥ 1): consegue se mover pela água. Surf+ (nível 2) leva o time. */
 export function hasSurf(p: Pokemon): boolean {
-  return hasSecret(p, 'sa-surf') || hasSecret(p, 'sa-surf-plus')
+  return secretLevelOf(p, 'sa-surf') >= 1
 }
 
 /** O Sturdy deste Pokémon ainda pode ser usado hoje? (1×/dia). */
@@ -227,9 +227,9 @@ export function teamSecretSum(ctx: MissionSecretCtx): Attrs {
 
 // ---- Viagem: velocidade do time e voo ----
 
-/** Este Pokémon é um voador? (passiva Fly do museu OU Aerodactyl com Fly/Fly+ desbloqueado). */
+/** Este Pokémon é um voador? (passiva Fly do museu OU habilidade sa-fly nível ≥ 1). */
 function isFlyer(p: Pokemon): boolean {
-  return p.passives.includes('fly') || hasSecret(p, 'sa-fly') || hasSecret(p, 'sa-fly-plus')
+  return p.passives.includes('fly') || hasSecret(p, 'sa-fly')
 }
 
 /** O time tem um voador? */
@@ -239,11 +239,11 @@ export function teamHasFly(team: readonly Pokemon[]): boolean {
 
 /**
  * O time VOA nesta tarefa? Voa em linha reta do ginásio até o ponto (caminho bem menor). Por
- * padrão o voador precisa estar SOZINHO; com Fly+ (sa-fly-plus) o voo funciona com o time inteiro.
+ * padrão o voador precisa estar SOZINHO; com Fly+ (sa-fly nível 2) o voo funciona com o time inteiro.
  */
 export function teamFlies(team: readonly Pokemon[]): boolean {
   if (!teamHasFly(team)) return false
-  return team.length === 1 || team.some((p) => hasSecret(p, 'sa-fly-plus'))
+  return team.length === 1 || team.some((p) => secretLevelOf(p, 'sa-fly') === 2)
 }
 
 /** O time tem um surfista? (o item Surfboard dá surf a todo o time). */
@@ -253,13 +253,13 @@ export function teamHasSurf(team: readonly Pokemon[], runItems: readonly string[
 
 /**
  * O time consegue SURFAR nesta tarefa (atravessar a água)? Por padrão o surfista precisa estar
- * SOZINHO; com Surf+ (sa-surf-plus) leva o time inteiro. Espelha a lógica de `teamFlies`/Fly+.
+ * SOZINHO; com Surf+ (sa-surf nível 2) leva o time inteiro. Espelha a lógica de `teamFlies`/Fly+.
  * O item Surfboard (runItems) faz o time inteiro surfar, como o Surf+.
  */
 export function teamSurfs(team: readonly Pokemon[], runItems: readonly string[] = []): boolean {
   if (runItems.includes('surfboard')) return true
   if (!teamHasSurf(team)) return false
-  return team.length === 1 || team.some((p) => hasSecret(p, 'sa-surf-plus'))
+  return team.length === 1 || team.some((p) => secretLevelOf(p, 'sa-surf') === 2)
 }
 
 /** O time atua do ginásio (Sniper, só sozinho)? Faz a missão sem viajar. */

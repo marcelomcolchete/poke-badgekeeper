@@ -18,7 +18,6 @@ import {
   hasSturdy,
   hasSurf,
   hasVitalSpirit,
-  hasWeakArmor,
   hustleBattleBonus,
   missionAttrMultiplier,
   missionEffectBreakdown,
@@ -44,9 +43,13 @@ const ENSINO = getMissionTemplate('ensino')
 const PATRULHA = getMissionTemplate('patrulha')
 const PALESTRA = getMissionTemplate('palestra')
 
-// Linhas de Cerulean (a habilidade vem da posição na linha):
-// Goldeen(118) Surf#1; Blastoise(9) Surf+#3; Horsea(116) Sniper#3; Squirtle(7) Torrent#2;
-// Staryu(120) Analytic#1; Tentacool(72) Clear Body#1; Nidoran♀(29) Hustle#2.
+// Pares de habilidades secretas (slot0, slot1) por linha:
+// Sandshrew(27):[rollout,dig]; Geodude(74):[sturdy,explosion]; Onix(95):[sturdy,weak-armor]
+// Cubone(104):[battle-armor,lightning-rod]; Rhyhorn(111):[rock-head,reckless]
+// Omanyte(138):[swift-swim,shell-armor]; Aerodactyl(142):[fly,rock-head]
+// Squirtle/Blastoise(7):[surf,torrent]; Goldeen(118):[surf,swift-swim]; Horsea(116):[surf,sniper]
+// Staryu(120):[analytic,natural-cure]; Tentacool(72):[clear-body,surf]; Nidoran♀(29):[rivalry,hustle]
+// Electabuzz(125):[vital-spirit,volt-absorb]; Jolteon(135 override):[quick-feet,volt-absorb]
 
 function ctxOf(
   team: ReturnType<typeof makeMon>[],
@@ -57,37 +60,40 @@ function ctxOf(
   return { team, template, runtime, runItems }
 }
 
-describe('desbloqueio sequencial (secretCount)', () => {
-  it('só ativa as habilidades já desbloqueadas, na ordem da linha', () => {
-    // Sandshrew (27): [Rollout, Dig, Sand Rush]
-    expect(rolloutBonusPerWin(makeMon({ speciesId: 27, secretCount: 1 }))).toBeGreaterThan(0)
-    expect(hasDig(makeMon({ speciesId: 27, secretCount: 1 }))).toBe(false)
-    expect(hasDig(makeMon({ speciesId: 27, secretCount: 2 }))).toBe(true)
+describe('desbloqueio por secretPicks', () => {
+  it('só ativa as habilidades já desbloqueadas, pelo slot', () => {
+    // Sandshrew (27): slot0=rollout, slot1=dig
+    expect(rolloutBonusPerWin(makeMon({ speciesId: 27, secretPicks: [{ slot: 0, level: 1 }] }))).toBeGreaterThan(0)
+    expect(hasDig(makeMon({ speciesId: 27, secretPicks: [{ slot: 0, level: 1 }] }))).toBe(false)
+    expect(hasDig(makeMon({ speciesId: 27, secretPicks: [{ slot: 0, level: 1 }, { slot: 1, level: 1 }] }))).toBe(true)
     // Sandslash (28) cai na mesma linha do Sandshrew (raiz 27).
-    expect(hasDig(makeMon({ speciesId: 28, secretCount: 2 }))).toBe(true)
-    // Sem destaque nenhum: nada ativo.
-    expect(rolloutBonusPerWin(makeMon({ speciesId: 27, secretCount: 0 }))).toBe(0)
+    expect(hasDig(makeMon({ speciesId: 28, secretPicks: [{ slot: 0, level: 1 }, { slot: 1, level: 1 }] }))).toBe(true)
+    // Sem picks: nada ativo.
+    expect(rolloutBonusPerWin(makeMon({ speciesId: 27 }))).toBe(0)
     // Espécie sem linha secreta: nada.
-    expect(hasDig(makeMon({ speciesId: 1, secretCount: 3 }))).toBe(false)
+    expect(hasDig(makeMon({ speciesId: 1, secretPicks: [{ slot: 0, level: 2 }, { slot: 1, level: 1 }] }))).toBe(false)
   })
 
-  it('flags por habilidade respeitam a posição na linha', () => {
-    expect(hasSturdy(makeMon({ speciesId: 74, secretCount: 1 }))).toBe(true) // Geodude #1
-    expect(hasExplosion(makeMon({ speciesId: 74, secretCount: 1 }))).toBe(false) // Geodude #2
-    expect(hasExplosion(makeMon({ speciesId: 74, secretCount: 2 }))).toBe(true)
-    expect(hasBattleArmor(makeMon({ speciesId: 104, secretCount: 2 }))).toBe(true) // Cubone #2
-    expect(hasLightningRod(makeMon({ speciesId: 111, secretCount: 1 }))).toBe(true) // Rhyhorn #1
-    expect(hasReckless(makeMon({ speciesId: 111, secretCount: 3 }))).toBe(true) // Rhyhorn #3
-    // Omanyte (138): [Swift Swim, Shell Armor, Weak Armor] — com 3, tem Shell E Weak.
-    const oma3 = makeMon({ speciesId: 138, secretCount: 3 })
-    expect(hasShellArmor(oma3)).toBe(true)
-    expect(hasWeakArmor(oma3)).toBe(true)
+  it('flags por habilidade respeitam o slot na linha', () => {
+    // Geodude(74): slot0=sturdy, slot1=explosion
+    expect(hasSturdy(makeMon({ speciesId: 74, secretPicks: [{ slot: 0, level: 1 }] }))).toBe(true)
+    expect(hasExplosion(makeMon({ speciesId: 74, secretPicks: [{ slot: 0, level: 1 }] }))).toBe(false)
+    expect(hasExplosion(makeMon({ speciesId: 74, secretPicks: [{ slot: 0, level: 1 }, { slot: 1, level: 1 }] }))).toBe(true)
+    // Cubone(104): slot0=battle-armor, slot1=lightning-rod
+    expect(hasBattleArmor(makeMon({ speciesId: 104, secretPicks: [{ slot: 0, level: 1 }] }))).toBe(true)
+    expect(hasLightningRod(makeMon({ speciesId: 104, secretPicks: [{ slot: 1, level: 1 }] }))).toBe(true)
+    // Rhyhorn(111): slot0=rock-head, slot1=reckless
+    expect(hasReckless(makeMon({ speciesId: 111, secretPicks: [{ slot: 0, level: 2 }, { slot: 1, level: 1 }] }))).toBe(true)
+    // Omanyte(138): slot0=swift-swim, slot1=shell-armor
+    const oma = makeMon({ speciesId: 138, secretPicks: [{ slot: 0, level: 1 }, { slot: 1, level: 1 }] })
+    expect(hasShellArmor(oma)).toBe(true)
   })
 })
 
 describe('missionAttrMultiplier', () => {
   it('Rivalidade: +10% por aliado do mesmo gênero', () => {
-    const nido = makeMon({ id: 'a', speciesId: 29, gender: 'male', secretCount: 1 })
+    // Nidoran♀(29): slot0=rivalry → secretPicks:[{slot:0,level:1}]
+    const nido = makeMon({ id: 'a', speciesId: 29, gender: 'male', secretPicks: [{ slot: 0, level: 1 }] })
     const allyM = makeMon({ id: 'b', gender: 'male' })
     const ally2 = makeMon({ id: 'd', gender: 'male' })
     const other = makeMon({ id: 'c', gender: 'female' })
@@ -98,49 +104,56 @@ describe('missionAttrMultiplier', () => {
   })
 
   it('Rock Head: +50% em escolta, −50% em ensino; nada em patrulha', () => {
-    const rhy = makeMon({ speciesId: 111, secretCount: 2 }) // Rhyhorn #2 = Rock Head
+    // Rhyhorn(111): slot0=rock-head → secretPicks:[{slot:0,level:1}]
+    const rhy = makeMon({ speciesId: 111, secretPicks: [{ slot: 0, level: 1 }] })
     expect(missionAttrMultiplier(rhy, ctxOf([rhy], ESCOLTA))).toBeCloseTo(1.5)
     expect(missionAttrMultiplier(rhy, ctxOf([rhy], ENSINO))).toBeCloseTo(0.5)
     expect(missionAttrMultiplier(rhy, ctxOf([rhy], PATRULHA))).toBe(1)
   })
 
   it('Battle Armor: +30% só com o flag pendente', () => {
-    const cub = makeMon({ id: 'cu', speciesId: 104, secretCount: 2 }) // Cubone #2 = Battle Armor
+    // Cubone(104): slot0=battle-armor → secretPicks:[{slot:0,level:1}]
+    const cub = makeMon({ id: 'cu', speciesId: 104, secretPicks: [{ slot: 0, level: 1 }] })
     expect(missionAttrMultiplier(cub, ctxOf([cub]))).toBe(1)
     const ctx = ctxOf([cub], PALESTRA, { cu: { battleArmorPending: true } })
     expect(missionAttrMultiplier(cub, ctx)).toBeCloseTo(1.3)
   })
 
   it('Hustle: −10% nos atributos em missão', () => {
-    const nido = makeMon({ speciesId: 29, secretCount: 2 }) // Nidoran♀ #2 = Hustle (e Rivalidade #1)
-    // Sozinho (sem aliado do mesmo gênero): só a penalidade do Hustle.
+    // Nidoran♀(29): slot1=hustle → secretPicks:[{slot:0,level:1},{slot:1,level:1}]
+    const nido = makeMon({ speciesId: 29, secretPicks: [{ slot: 0, level: 1 }, { slot: 1, level: 1 }] })
+    // Sozinho (sem aliado do mesmo gênero): Hustle (−10%) e Rivalry (sem aliados = 0%).
     expect(missionAttrMultiplier(nido, ctxOf([nido]))).toBeCloseTo(0.9)
   })
 
   it('teamSecretAxisSum aplica o multiplicador (e cai no teto)', () => {
-    const rhy = makeMon({ speciesId: 111, secretCount: 2 }) // efetivo 20/eixo, Rock Head
+    // Rhyhorn(111): slot0=rock-head → secretPicks:[{slot:0,level:1}]
+    const rhy = makeMon({ speciesId: 111, secretPicks: [{ slot: 0, level: 1 }] }) // efetivo 20/eixo, Rock Head
     expect(teamSecretAxisSum('batalha', ctxOf([rhy], ESCOLTA))).toBeCloseTo(30) // 20 × 1.5
   })
 })
 
 describe('Surf / Sniper: predicados de time', () => {
-  const goldeen = makeMon({ id: 'g', speciesId: 118, secretCount: 1 }) // Surf
-  const blastoise = makeMon({ id: 'bl', speciesId: 9, secretCount: 3 }) // Surf+
-  const horsea = makeMon({ id: 'h', speciesId: 116, secretCount: 3 }) // Sniper
+  // Goldeen(118): slot0=surf → level:1 = Surf base
+  const goldeen = makeMon({ id: 'g', speciesId: 118, secretPicks: [{ slot: 0, level: 1 }] })
+  // Blastoise(9, raiz 7): slot0=surf level:2 = Surf+ (leva o time)
+  const blastoise = makeMon({ id: 'bl', speciesId: 9, secretPicks: [{ slot: 0, level: 2 }] })
+  // Horsea(116): slot0=surf, slot1=sniper → level:1 cada
+  const horsea = makeMon({ id: 'h', speciesId: 116, secretPicks: [{ slot: 0, level: 1 }, { slot: 1, level: 1 }] })
   const other = makeMon({ id: 'o' })
 
-  it('hasSurf: Surf ou Surf+', () => {
+  it('hasSurf: Surf (nível 1) ou Surf+ (nível 2)', () => {
     expect(hasSurf(goldeen)).toBe(true)
     expect(hasSurf(blastoise)).toBe(true)
     expect(hasSurf(other)).toBe(false)
-    expect(hasSurf(makeMon({ speciesId: 118, secretCount: 0 }))).toBe(false)
+    expect(hasSurf(makeMon({ speciesId: 118 }))).toBe(false)
   })
 
   it('teamHasSurf / teamSurfs: sozinho sempre; em time só com Surf+', () => {
     expect(teamHasSurf([goldeen])).toBe(true)
     expect(teamSurfs([goldeen])).toBe(true)
-    expect(teamSurfs([goldeen, other])).toBe(false) // só Surf: acompanhado não surfa
-    expect(teamSurfs([blastoise, other])).toBe(true) // Surf+ leva o time
+    expect(teamSurfs([goldeen, other])).toBe(false) // só Surf (L1): acompanhado não surfa
+    expect(teamSurfs([blastoise, other])).toBe(true) // Surf+ (L2) leva o time
     expect(teamSurfs([other])).toBe(false)
   })
 
@@ -160,7 +173,8 @@ describe('Surf / Sniper: predicados de time', () => {
 
 describe('missionAttrMultiplier — habilidades de Cerulean', () => {
   it('Torrent: +50% com OUTRO aliado do tipo Água', () => {
-    const sq = makeMon({ id: 'sq', speciesId: 7, secretCount: 2, types: ['water'] }) // Torrent
+    // Squirtle(7): slot0=surf, slot1=torrent → secretPicks:[{slot:1,level:1}]
+    const sq = makeMon({ id: 'sq', speciesId: 7, secretPicks: [{ slot: 1, level: 1 }], types: ['water'] })
     const waterAlly = makeMon({ id: 'w', types: ['water'] })
     const fireAlly = makeMon({ id: 'f', types: ['fire'] })
     expect(missionAttrMultiplier(sq, ctxOf([sq, waterAlly]))).toBeCloseTo(1.5)
@@ -169,15 +183,18 @@ describe('missionAttrMultiplier — habilidades de Cerulean', () => {
   })
 
   it('Analytic: +50% em Ensino, −50% em Patrulha, nada em Palestra', () => {
-    const staryu = makeMon({ speciesId: 120, secretCount: 1 }) // Analytic
+    // Staryu(120): slot0=analytic → secretPicks:[{slot:0,level:1}]
+    const staryu = makeMon({ speciesId: 120, secretPicks: [{ slot: 0, level: 1 }] })
     expect(missionAttrMultiplier(staryu, ctxOf([staryu], ENSINO))).toBeCloseTo(1.5)
     expect(missionAttrMultiplier(staryu, ctxOf([staryu], PATRULHA))).toBeCloseTo(0.5)
     expect(missionAttrMultiplier(staryu, ctxOf([staryu], PALESTRA))).toBe(1)
   })
 
   it('Clear Body: anula o debuff de atributo do time (Hustle)', () => {
-    const nido = makeMon({ id: 'n', speciesId: 29, secretCount: 2, gender: 'female' }) // Hustle
-    const tentacool = makeMon({ id: 't', speciesId: 72, secretCount: 1 }) // Clear Body
+    // Nidoran♀(29): slot1=hustle → secretPicks:[{slot:0,level:1},{slot:1,level:1}]
+    const nido = makeMon({ id: 'n', speciesId: 29, secretPicks: [{ slot: 0, level: 1 }, { slot: 1, level: 1 }], gender: 'female' })
+    // Tentacool(72): slot0=clear-body → secretPicks:[{slot:0,level:1}]
+    const tentacool = makeMon({ id: 't', speciesId: 72, secretPicks: [{ slot: 0, level: 1 }] })
     expect(missionAttrMultiplier(nido, ctxOf([nido]))).toBeCloseTo(0.9) // só Hustle
     expect(missionAttrMultiplier(nido, ctxOf([nido, tentacool]))).toBe(1) // anulado
   })
@@ -185,18 +202,21 @@ describe('missionAttrMultiplier — habilidades de Cerulean', () => {
 
 describe('combate: bônus de batalha', () => {
   it('Rollout: +10% por vitória', () => {
-    expect(rolloutBonusPerWin(makeMon({ speciesId: 27, secretCount: 1 }))).toBeCloseTo(0.1)
+    // Sandshrew(27): slot0=rollout
+    expect(rolloutBonusPerWin(makeMon({ speciesId: 27, secretPicks: [{ slot: 0, level: 1 }] }))).toBeCloseTo(0.1)
     expect(rolloutBonusPerWin(makeMon({}))).toBe(0)
   })
 
   it('Rivalidade: +10% de batalha contra o mesmo gênero', () => {
-    expect(rivalryBattleBonus(makeMon({ speciesId: 29, secretCount: 1 }))).toBeCloseTo(0.1)
+    // Nidoran♀(29): slot0=rivalry
+    expect(rivalryBattleBonus(makeMon({ speciesId: 29, secretPicks: [{ slot: 0, level: 1 }] }))).toBeCloseTo(0.1)
     expect(rivalryBattleBonus(makeMon({}))).toBe(0)
   })
 
   it('Hustle: +10% de batalha', () => {
-    expect(hustleBattleBonus(makeMon({ speciesId: 29, secretCount: 2 }))).toBeCloseTo(0.1)
-    expect(hustleBattleBonus(makeMon({ speciesId: 29, secretCount: 1 }))).toBe(0)
+    // Nidoran♀(29): slot1=hustle; só slot1 → sem rivalry ativo
+    expect(hustleBattleBonus(makeMon({ speciesId: 29, secretPicks: [{ slot: 1, level: 1 }] }))).toBeCloseTo(0.1)
+    expect(hustleBattleBonus(makeMon({ speciesId: 29 }))).toBe(0)
   })
 
   it('Explosion: auto-dano = metade da vida máxima (arred. p/ cima)', () => {
@@ -207,24 +227,29 @@ describe('combate: bônus de batalha', () => {
 
 describe('dano recebido (damageTaken)', () => {
   it('Weak Armor dobra; Shell Armor reduz a 1; Shell tem precedência', () => {
-    expect(damageTaken(makeMon({ speciesId: 95, secretCount: 1 }), 3)).toBe(6) // Onix #1 = Weak Armor
-    expect(damageTaken(makeMon({ speciesId: 138, secretCount: 2 }), 3)).toBe(1) // Omanyte #2 = Shell
-    expect(damageTaken(makeMon({ speciesId: 138, secretCount: 3 }), 3)).toBe(1) // Shell + Weak → 1
+    // Onix(95): slot1=weak-armor → secretPicks:[{slot:1,level:1}]
+    expect(damageTaken(makeMon({ speciesId: 95, secretPicks: [{ slot: 1, level: 1 }] }), 3)).toBe(6)
+    // Omanyte(138): slot1=shell-armor → secretPicks:[{slot:1,level:1}]
+    expect(damageTaken(makeMon({ speciesId: 138, secretPicks: [{ slot: 1, level: 1 }] }), 3)).toBe(1)
+    // Omanyte slot0(swift-swim L2)+slot1(shell-armor L1): Shell tem precedência → 1
+    expect(damageTaken(makeMon({ speciesId: 138, secretPicks: [{ slot: 0, level: 2 }, { slot: 1, level: 1 }] }), 3)).toBe(1)
     expect(damageTaken(makeMon({}), 3)).toBe(3)
-    expect(damageTaken(makeMon({ speciesId: 138, secretCount: 2 }), 0)).toBe(0) // 0 continua 0
+    expect(damageTaken(makeMon({ speciesId: 138, secretPicks: [{ slot: 1, level: 1 }] }), 0)).toBe(0) // 0 continua 0
   })
 })
 
 describe('viagem e voo', () => {
   it('Weak Armor: +20% de velocidade por ponto de HP faltante', () => {
-    const onix = makeMon({ id: 'o', speciesId: 95, secretCount: 1, maxHp: 10, currentHp: 10 })
+    // Onix(95): slot1=weak-armor → secretPicks:[{slot:1,level:1}]
+    const onix = makeMon({ id: 'o', speciesId: 95, secretPicks: [{ slot: 1, level: 1 }], maxHp: 10, currentHp: 10 })
     expect(teamTravelSpeedMultiplier([onix])).toBeCloseTo(1) // cheio: sem bônus
-    const hurt = makeMon({ id: 'o', speciesId: 95, secretCount: 1, maxHp: 10, currentHp: 7 })
+    const hurt = makeMon({ id: 'o', speciesId: 95, secretPicks: [{ slot: 1, level: 1 }], maxHp: 10, currentHp: 7 })
     expect(teamTravelSpeedMultiplier([hurt])).toBeCloseTo(1.6) // 3 faltando → +60%
   })
 
   it('teamHasFly: Aerodactyl (sa-fly) ou a passiva Fly do museu', () => {
-    expect(teamHasFly([makeMon({ speciesId: 142, secretCount: 1 })])).toBe(true)
+    // Aerodactyl(142): slot0=fly → secretPicks:[{slot:0,level:1}]
+    expect(teamHasFly([makeMon({ speciesId: 142, secretPicks: [{ slot: 0, level: 1 }] })])).toBe(true)
     expect(teamHasFly([makeMon({ passives: ['fly'] })])).toBe(true)
     expect(teamHasFly([makeMon({})])).toBe(false)
   })
@@ -236,22 +261,25 @@ describe('viagem e voo', () => {
     expect(teamFlies([flyer, other])).toBe(false)
     expect(teamFlies([other])).toBe(false)
     expect(teamFlies([])).toBe(false)
-    // Aerodactyl com Fly+ (secretCount 3) faz o time inteiro voar.
-    const aero3 = makeMon({ id: 'a', speciesId: 142, secretCount: 3 })
+    // Aerodactyl(142): slot0=fly level:2 = Fly+ → faz o time inteiro voar
+    const aero3 = makeMon({ id: 'a', speciesId: 142, secretPicks: [{ slot: 0, level: 2 }] })
     expect(teamFlies([aero3, other])).toBe(true)
-    const aero1 = makeMon({ id: 'a', speciesId: 142, secretCount: 1 })
-    expect(teamFlies([aero1, other])).toBe(false) // só Fly: acompanhado não voa
+    // Aerodactyl com Fly (L1): sozinho voa, acompanhado não
+    const aero1 = makeMon({ id: 'a', speciesId: 142, secretPicks: [{ slot: 0, level: 1 }] })
+    expect(teamFlies([aero1, other])).toBe(false)
   })
 
   it('Fly acelera o time ao voar', () => {
-    const aero = makeMon({ speciesId: 142, secretCount: 1 })
+    // Aerodactyl(142): slot0=fly level:1
+    const aero = makeMon({ speciesId: 142, secretPicks: [{ slot: 0, level: 1 }] })
     expect(teamTravelSpeedMultiplier([aero])).toBeCloseTo(1.5) // sozinho voa: +50%
   })
 })
 
 describe('Sturdy: 1×/dia', () => {
   it('disponível por dia, consome no runtime', () => {
-    const geo = makeMon({ id: 'g', speciesId: 74, secretCount: 1 })
+    // Geodude(74): slot0=sturdy → secretPicks:[{slot:0,level:1}]
+    const geo = makeMon({ id: 'g', speciesId: 74, secretPicks: [{ slot: 0, level: 1 }] })
     expect(sturdyAvailable(geo, {})).toBe(true)
     expect(sturdyAvailable(geo, { g: { sturdyUsed: true } })).toBe(false)
     expect(sturdyAvailable(makeMon({ speciesId: 1 }), {})).toBe(false)
@@ -293,17 +321,18 @@ describe('Dig: túneis no grafo', () => {
 
 describe('predicados de chuva (Swift Swim / Cloud Nine)', () => {
   it('teamHasSwiftSwim: true se ALGUÉM no time tem Swift Swim', () => {
-    // Omanyte (138): [Swift Swim, Shell Armor, Weak Armor] → posição 1.
-    const swimmer = makeMon({ speciesId: 138, secretCount: 1 })
-    const plain = makeMon({ speciesId: 138, secretCount: 0 })
+    // Omanyte(138): slot0=swift-swim → secretPicks:[{slot:0,level:1}]
+    const swimmer = makeMon({ speciesId: 138, secretPicks: [{ slot: 0, level: 1 }] })
+    const plain = makeMon({ speciesId: 138 })
     expect(teamHasSwiftSwim([swimmer])).toBe(true)
     expect(teamHasSwiftSwim([plain])).toBe(false)
     expect(teamHasSwiftSwim([plain, swimmer])).toBe(true)
   })
 
-  it('hasCloudNine: só com a habilidade desbloqueada (Psyduck 54, posição 3)', () => {
-    expect(hasCloudNine(makeMon({ speciesId: 54, secretCount: 3 }))).toBe(true)
-    expect(hasCloudNine(makeMon({ speciesId: 54, secretCount: 2 }))).toBe(false)
+  it('hasCloudNine: só com a habilidade desbloqueada (Psyduck 54, slot1)', () => {
+    // Psyduck(54): slot0=surf, slot1=cloud-nine → secretPicks:[{slot:1,level:1}]
+    expect(hasCloudNine(makeMon({ speciesId: 54, secretPicks: [{ slot: 1, level: 1 }] }))).toBe(true)
+    expect(hasCloudNine(makeMon({ speciesId: 54, secretPicks: [{ slot: 0, level: 1 }] }))).toBe(false)
   })
 })
 
@@ -316,28 +345,29 @@ describe('teamIsSpeedy (aura de velocidade ao vivo)', () => {
   const dry = { rain: [], storms: [], forecast: { rainChancePercent: 0, rainMmPerHour: 0, potentialRainCount: 0, stormChancePercent: 0, potentialStormCount: 0 } }
 
   it('Swift Swim acende a aura SÓ enquanto chove', () => {
-    const swimmer = makeMon({ speciesId: 138, secretCount: 1 })
+    // Omanyte(138): slot0=swift-swim
+    const swimmer = makeMon({ speciesId: 138, secretPicks: [{ slot: 0, level: 1 }] })
     expect(teamIsSpeedy([swimmer], [], rainNow, 5_000)).toBe(true) // chovendo
     expect(teamIsSpeedy([swimmer], [], rainNow, 200_000)).toBe(false) // depois da chuva
     expect(teamIsSpeedy([swimmer], [], dry, 0)).toBe(false) // sem chuva
   })
 
   it('Weak Armor (HP faltante) mantém a aura como antes, sem depender de chuva', () => {
-    // Onix (95): Weak Armor na posição 1; com HP faltante o multiplicador base passa de 1.
-    const hurt = makeMon({ speciesId: 95, secretCount: 1, maxHp: 10, currentHp: 7 })
+    // Onix(95): slot1=weak-armor; com HP faltante o multiplicador base passa de 1.
+    const hurt = makeMon({ speciesId: 95, secretPicks: [{ slot: 1, level: 1 }], maxHp: 10, currentHp: 7 })
     expect(teamIsSpeedy([hurt], [], dry, 0)).toBe(true)
   })
 })
 
 describe('Vital Spirit (Electabuzz)', () => {
-  it('hasVitalSpirit ativa na 1ª posição da linha (Electabuzz 125)', () => {
-    // Electabuzz (125): [Vital Spirit, Volt Absorb, Static].
-    expect(hasVitalSpirit(makeMon({ speciesId: 125, secretCount: 0 }))).toBe(false)
-    expect(hasVitalSpirit(makeMon({ speciesId: 125, secretCount: 1 }))).toBe(true)
+  it('hasVitalSpirit ativa no slot0 da linha (Electabuzz 125)', () => {
+    // Electabuzz(125): slot0=vital-spirit, slot1=volt-absorb
+    expect(hasVitalSpirit(makeMon({ speciesId: 125 }))).toBe(false)
+    expect(hasVitalSpirit(makeMon({ speciesId: 125, secretPicks: [{ slot: 0, level: 1 }] }))).toBe(true)
   })
 
   it('teamHasVitalSpirit = qualquer membro do time com a habilidade', () => {
-    const carrier = makeMon({ id: 'e', speciesId: 125, secretCount: 1 })
+    const carrier = makeMon({ id: 'e', speciesId: 125, secretPicks: [{ slot: 0, level: 1 }] })
     const other = makeMon({ id: 'o' })
     expect(teamHasVitalSpirit([other])).toBe(false)
     expect(teamHasVitalSpirit([other, carrier])).toBe(true)
@@ -345,18 +375,18 @@ describe('Vital Spirit (Electabuzz)', () => {
 })
 
 describe('Quick Feet (Jolteon, linha divergente)', () => {
-  it('hasQuickFeet ativa na 1ª posição da linha do Jolteon (135)', () => {
-    // Jolteon (135): [Quick Feet, Volt Absorb, Static] — via SECRET_LINE_BY_SPECIES.
-    expect(hasQuickFeet(makeMon({ speciesId: 135, secretCount: 0 }))).toBe(false)
-    expect(hasQuickFeet(makeMon({ speciesId: 135, secretCount: 1 }))).toBe(true)
+  it('hasQuickFeet ativa no slot0 da linha do Jolteon (135)', () => {
+    // Jolteon(135): slot0=quick-feet, slot1=volt-absorb — via SECRET_LINE_BY_SPECIES
+    expect(hasQuickFeet(makeMon({ speciesId: 135 }))).toBe(false)
+    expect(hasQuickFeet(makeMon({ speciesId: 135, secretPicks: [{ slot: 0, level: 1 }] }))).toBe(true)
   })
 
   it('não vaza para outros eeveelutions (Flareon 136 sem linha)', () => {
-    expect(hasQuickFeet(makeMon({ speciesId: 136, secretCount: 3 }))).toBe(false)
+    expect(hasQuickFeet(makeMon({ speciesId: 136, secretPicks: [{ slot: 0, level: 2 }, { slot: 1, level: 1 }] }))).toBe(false)
   })
 
   it('teamHasQuickFeet só vale sozinho; dobra a velocidade de viagem (×2)', () => {
-    const jolteon = makeMon({ id: 'j', speciesId: 135, secretCount: 1 })
+    const jolteon = makeMon({ id: 'j', speciesId: 135, secretPicks: [{ slot: 0, level: 1 }] })
     const other = makeMon({ id: 'o' })
     expect(teamHasQuickFeet([jolteon])).toBe(true)
     expect(teamHasQuickFeet([jolteon, other])).toBe(false) // acompanhado não corre
@@ -395,12 +425,13 @@ describe('missionEffectBreakdown', () => {
   })
 
   it('time sem efeitos → lista vazia', () => {
-    const mon = makeMon({ id: 'p1', speciesId: 1, secretCount: 0 })
+    const mon = makeMon({ id: 'p1', speciesId: 1 })
     expect(missionEffectBreakdown(baseCtx({ team: [mon] }))).toEqual([])
   })
 
   it('Hustle aparece como perda de atributo', () => {
-    const mon = makeMon({ id: 'p1', speciesId: 29, secretCount: 2 }) // Nidoran♀ #2 = Hustle
+    // Nidoran♀(29): slot1=hustle → secretPicks:[{slot:1,level:1}]
+    const mon = makeMon({ id: 'p1', speciesId: 29, secretPicks: [{ slot: 1, level: 1 }] })
     const entries = missionEffectBreakdown(baseCtx({ team: [mon] }))
     expect(entries).toContainEqual(
       expect.objectContaining({ id: 'hustle', direction: 'loss', value: '−10%', kind: 'attr' }),
@@ -408,7 +439,7 @@ describe('missionEffectBreakdown', () => {
   })
 
   it('Lagging Tail gera ganho de atributo e perda de velocidade', () => {
-    const mon = makeMon({ id: 'p1', speciesId: 1, secretCount: 0 })
+    const mon = makeMon({ id: 'p1', speciesId: 1 })
     const entries = missionEffectBreakdown(baseCtx({ team: [mon], runItems: ['lagging-tail'] }))
     const attr = entries.find((e) => e.id === 'lagging-tail' && e.kind === 'attr')
     const speed = entries.find((e) => e.id === 'lagging-tail' && e.kind === 'speed')
@@ -417,8 +448,8 @@ describe('missionEffectBreakdown', () => {
   })
 
   it('Weak Armor com HP faltante vira ganho de velocidade proporcional', () => {
-    // Onix #1 = Weak Armor; 2 de HP faltante × 20% = +40%.
-    const mon = makeMon({ id: 'p1', speciesId: 95, secretCount: 1, maxHp: 5, currentHp: 3 })
+    // Onix(95): slot1=weak-armor; 2 de HP faltante × 20% = +40%.
+    const mon = makeMon({ id: 'p1', speciesId: 95, secretPicks: [{ slot: 1, level: 1 }], maxHp: 5, currentHp: 3 })
     const entries = missionEffectBreakdown(baseCtx({ team: [mon] }))
     expect(entries).toContainEqual(
       expect.objectContaining({ id: 'weak-armor', kind: 'speed', direction: 'gain', value: '+40%' }),
@@ -426,8 +457,8 @@ describe('missionEffectBreakdown', () => {
   })
 
   it('Rivalry com dois aliados do mesmo gênero mostra +20% (bônus agregado)', () => {
-    // Nidoran♀ (29) posição 1 = Rivalry; precisa de aliados femininos para ativar.
-    const nido = makeMon({ id: 'n1', speciesId: 29, secretCount: 1, gender: 'female' })
+    // Nidoran♀(29): slot0=rivalry → secretPicks:[{slot:0,level:1}]
+    const nido = makeMon({ id: 'n1', speciesId: 29, secretPicks: [{ slot: 0, level: 1 }], gender: 'female' })
     const ally1 = makeMon({ id: 'a1', gender: 'female' })
     const ally2 = makeMon({ id: 'a2', gender: 'female' })
     const entries = missionEffectBreakdown(baseCtx({ team: [nido, ally1, ally2] }))
@@ -437,9 +468,9 @@ describe('missionEffectBreakdown', () => {
   })
 
   it('Clear Body SEM perda de atributo no time: entrada não aparece', () => {
-    // Tentacool (72) posição 1 = Clear Body (sem habilidade que cause perda a si mesmo).
+    // Tentacool(72): slot0=clear-body → secretPicks:[{slot:0,level:1}]
     // Missão patrulha: nenhum Analytic ou Rock Head presente, logo nenhuma perda de atributo.
-    const tentacool = makeMon({ id: 't1', speciesId: 72, secretCount: 1 })
+    const tentacool = makeMon({ id: 't1', speciesId: 72, secretPicks: [{ slot: 0, level: 1 }] })
     const entries = missionEffectBreakdown(baseCtx({ team: [tentacool] }))
     expect(entries.find((e) => e.id === 'clear-body')).toBeUndefined()
   })
