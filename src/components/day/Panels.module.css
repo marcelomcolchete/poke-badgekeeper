@@ -1253,3 +1253,27 @@
   z-index: 1;
 }
 
+/* Emblema "R" da Equipe Rocket (no lugar do radar, no painel de perseguição). */
+.rocketEmblem {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 150px;
+  font-family: var(--font-pixel);
+  font-size: 96px;
+  line-height: 1;
+  color: #e23b3b;
+  background: var(--c-panel);
+  border: 3px solid var(--c-panel-border);
+  border-radius: var(--radius-pixel);
+  text-shadow:
+    0 0 6px rgba(226, 59, 59, 0.7),
+    0 0 18px rgba(226, 59, 59, 0.45);
+  animation: rocketEmblemPulse 1.3s ease-in-out infinite;
+}
+
+@keyframes rocketEmblemPulse {
+  0%, 100% { text-shadow: 0 0 6px rgba(226, 59, 59, 0.55), 0 0 14px rgba(226, 59, 59, 0.3); }
+  50% { text-shadow: 0 0 10px rgba(226, 59, 59, 0.9), 0 0 26px rgba(226, 59, 59, 0.6); }
+}
+
