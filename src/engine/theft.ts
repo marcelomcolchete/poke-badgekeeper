@@ -32,23 +32,46 @@ const THEFT_LABEL_BUCKETS: readonly { upTo: number; label: string }[] = [
   { upTo: 100, label: 'Inevitável' },
 ]
 
-/** Componente RGB interpolado verde→vermelho por t∈[0,1], em hex de 2 dígitos. */
+/** Componente RGB em hex de 2 dígitos. */
 function hex2(n: number): string {
   return clamp(Math.round(n), 0, 255).toString(16).padStart(2, '0')
 }
 
+/** Rampa de 5 paradas: azul → verde → amarelo → laranja → vermelho. */
+const THEFT_RAMP: readonly (readonly [number, number, number])[] = [
+  [59, 130, 246], // azul    #3b82f6
+  [46, 193, 106], // verde   #2ec16a
+  [242, 198, 60], // amarelo #f2c63c
+  [239, 140, 52], // laranja #ef8c34
+  [226, 59, 59], // vermelho #e23b3b
+]
+
+/** Cor da rampa em t∈[0,1] (interpola entre as paradas adjacentes). */
+function rampColor(t: number): [number, number, number] {
+  const ct = clamp(t, 0, 1)
+  const segs = THEFT_RAMP.length - 1
+  const scaled = ct * segs
+  const i = Math.min(Math.floor(scaled), segs - 1)
+  const f = scaled - i
+  const a = THEFT_RAMP[i]!
+  const b = THEFT_RAMP[i + 1]!
+  return [lerp(a[0], b[0], f), lerp(a[1], b[1], f), lerp(a[2], b[2], f)]
+}
+
+/** Tinta legível (escura/clara) pela luminância relativa da cor de fundo. */
+function inkFor(r: number, g: number, b: number): string {
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  return lum > 0.6 ? '#1a1a1a' : '#ffffff'
+}
+
 /**
- * Rótulo + cor da chance de roubo (B9): palavra por bucket (sequência 1→2→4→…→100) e cor que
- * interpola do verde (#2ec16a, perigo baixo) ao vermelho (#e23b3b, perigo máximo) por percent/100.
+ * Rótulo + cor + tinta da chance de roubo (B9): palavra por bucket e cor que percorre a rampa
+ * azul→vermelho por (percent-1)/99. A tinta acompanha a luminância para o chip ficar legível.
  */
-export function theftChanceLabel(percent: number): { label: string; color: string } {
+export function theftChanceLabel(percent: number): { label: string; color: string; ink: string } {
   const p = clamp(percent, 0, 100)
   const bucket = THEFT_LABEL_BUCKETS.find((b) => p <= b.upTo) ?? THEFT_LABEL_BUCKETS[THEFT_LABEL_BUCKETS.length - 1]!
-  // t = 0 no piso (1%) → verde puro #2ec16a; t = 1 no teto (100%) → vermelho puro #e23b3b.
   const t = p <= 1 ? 0 : p >= 100 ? 1 : (p - 1) / 99
-  // verde (46,193,106) → vermelho (226,59,59)
-  const r = lerp(46, 226, t)
-  const g = lerp(193, 59, t)
-  const b = lerp(106, 59, t)
-  return { label: bucket.label, color: `#${hex2(r)}${hex2(g)}${hex2(b)}` }
+  const [r, g, b] = rampColor(t)
+  return { label: bucket.label, color: `#${hex2(r)}${hex2(g)}${hex2(b)}`, ink: inkFor(r, g, b) }
 }

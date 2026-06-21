@@ -116,8 +116,8 @@ export function DayForecastPanel({ state }: { state: GameState }) {
         <div className={styles.count}>
           <span className={`${styles.countIcon} ${styles.rocketIcon}`} aria-hidden="true">🚨</span>
           <span
-            className={`${styles.countValue} ${styles.rocketValue}`}
-            style={{ color: theft.color }}
+            className={styles.rocketChip}
+            style={{ backgroundColor: theft.color, color: theft.ink }}
             title={`Chance de roubo hoje: ${state.run.theftChance}%`}
           >
             {theft.label}
