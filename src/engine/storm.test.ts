@@ -41,7 +41,7 @@ function testCity(): CityData {
       markers: {},
       surfNodes: ['w'],
     },
-    siteNodes: { gym: 'a', center: 'b', mart: 'b', specialMission: ['c'], houses: ['b'], green: ['c'] },
+    siteNodes: { gym: 'a', center: 'b', mart: ['b'], specialMission: ['c'], houses: ['b'], green: ['c'] },
     trainers: [],
   }
 }
