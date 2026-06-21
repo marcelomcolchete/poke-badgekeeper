@@ -253,8 +253,11 @@ export const ROCK_HEAD_STUDY_MULT_L2 = 0.2
 /** Battle Armor: multiplicador de atributos na próxima missão após batalhar, por nível. */
 export const BATTLE_ARMOR_MISSION_MULT_L1 = 1.25
 export const BATTLE_ARMOR_MISSION_MULT_L2 = 1.5
-/** Rollout: bônus de batalha por Pokémon derrotado no duelo (acumula na sequência). */
-export const ROLLOUT_BATTLE_BONUS = 0.1
+/** Rollout: bônus ADITIVO de Batalha pelo acúmulo de vitórias (start × 2^(frontWins-1), capado). */
+export const ROLLOUT_START_L1 = 2
+export const ROLLOUT_CAP_L1 = 32
+export const ROLLOUT_START_L2 = 4
+export const ROLLOUT_CAP_L2 = 64
 /** Hustle: bônus de Batalha em batalhas; penalidade de atributos em missões, por nível. */
 export const HUSTLE_BATTLE_BONUS_L1 = 0.1
 export const HUSTLE_BATTLE_BONUS_L2 = 0.3

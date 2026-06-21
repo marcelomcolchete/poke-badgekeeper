@@ -53,7 +53,7 @@ import {
   hasThickFat,
   hustleBattleBonus,
   rivalryBattleBonus,
-  rolloutBonusPerWin,
+  rolloutBattleBonus,
 } from './secretEffects.ts'
 import { itemBattleMultiplier } from './itemEffects.ts'
 import { attrRank, type Rank } from './ranking.ts'
@@ -320,8 +320,6 @@ export function resolveDefense(
     let yourEff = effectiveBattle(you, enemy.types)
     // Itens passivos (Thick Club p/ Ground, Lagging Tail p/ todos) na Batalha do seu lado.
     yourEff *= itemBattleMultiplier(you, runItems)
-    // Rollout: bônus acumulado pelas vitórias seguidas deste mesmo lutador.
-    yourEff *= 1 + rolloutBonusPerWin(you) * frontWins
     // Hustle: bônus fixo de Batalha em batalhas.
     yourEff *= 1 + hustleBattleBonus(you)
     // Rivalidade: vantagem contra oponente do mesmo gênero.
@@ -330,8 +328,10 @@ export function resolveDefense(
     }
     // Thick Fat: vantagem contra oponentes do tipo Gelo.
     if (hasThickFat(you) && enemy.types.includes('ice')) yourEff *= THICK_FAT_VS_ICE_MULT
-    // Moxie: +1 de Batalha por inimigo já derrotado nesta sequência (frontWins).
+    // Moxie: +1 de Batalha por inimigo já derrotado nesta sequência (frontWins). [ADITIVO]
     if (hasMoxie(you)) yourEff += MOXIE_BATTLE_PER_WIN * frontWins
+    // Rollout: bônus ADITIVO de Batalha escalado pela sequência de vitórias. [ADITIVO]
+    yourEff += rolloutBattleBonus(you, frontWins)
     // Paralyze (Tempestade): seu Pokémon paralisado hoje luta com metade da Batalha.
     if (opts.paralyzedIds?.has(you.id)) yourEff *= PARALYZE_BATTLE_MULT
     // Pressure: reduz a Batalha do oponente enfrentado.

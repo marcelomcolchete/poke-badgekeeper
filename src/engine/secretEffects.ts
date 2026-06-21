@@ -36,7 +36,10 @@ import {
   ROCK_HEAD_STUDY_MULT_L1,
   ROCK_HEAD_STUDY_MULT_L2,
   QUICK_FEET_SPEED_BONUS,
-  ROLLOUT_BATTLE_BONUS,
+  ROLLOUT_CAP_L1,
+  ROLLOUT_CAP_L2,
+  ROLLOUT_START_L1,
+  ROLLOUT_START_L2,
   SHELL_ARMOR_DAMAGE,
   TORRENT_MISSION_MULT_L1,
   TORRENT_MISSION_MULT_L2,
@@ -154,9 +157,18 @@ export function sturdyAvailable(p: Pokemon, runtime: SecretRuntimeMap): boolean 
 
 // ---- Combate: bônus de Batalha por habilidade ----
 
-/** Rollout: bônus de Batalha GANHO por cada Pokémon derrotado no duelo (0 sem a habilidade). */
-export function rolloutBonusPerWin(p: Pokemon): number {
-  return hasRollout(p) ? ROLLOUT_BATTLE_BONUS : 0
+/**
+ * Rollout: bônus ADITIVO de Batalha para o próximo oponente, após `frontWins` vitórias seguidas.
+ * Fórmula: min(cap, start × 2^(frontWins-1)) para frontWins ≥ 1; 0 caso contrário ou sem Rollout.
+ * L1: start=2, cap=32 → sequência 2, 4, 8, 16, 32, 32, …
+ * L2: start=4, cap=64 → sequência 4, 8, 16, 32, 64, 64, …
+ */
+export function rolloutBattleBonus(p: Pokemon, frontWins: number): number {
+  if (!hasRollout(p) || frontWins < 1) return 0
+  const lv = secretLevelOf(p, 'sa-rollout')
+  const start = lv === 2 ? ROLLOUT_START_L2 : ROLLOUT_START_L1
+  const cap = lv === 2 ? ROLLOUT_CAP_L2 : ROLLOUT_CAP_L1
+  return Math.min(cap, start * Math.pow(2, frontWins - 1))
 }
 
 /** Rivalidade: bônus de Batalha contra um oponente do mesmo gênero (0 caso contrário). */

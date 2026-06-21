@@ -22,7 +22,7 @@ import {
   missionAttrMultiplier,
   missionEffectBreakdown,
   rivalryBattleBonus,
-  rolloutBonusPerWin,
+  rolloutBattleBonus,
   sturdyAvailable,
   teamFlies,
   teamHasFly,
@@ -63,13 +63,13 @@ function ctxOf(
 describe('desbloqueio por secretPicks', () => {
   it('só ativa as habilidades já desbloqueadas, pelo slot', () => {
     // Sandshrew (27): slot0=rollout, slot1=dig
-    expect(rolloutBonusPerWin(makeMon({ speciesId: 27, secretPicks: [{ slot: 0, level: 1 }] }))).toBeGreaterThan(0)
+    expect(rolloutBattleBonus(makeMon({ speciesId: 27, secretPicks: [{ slot: 0, level: 1 }] }), 1)).toBeGreaterThan(0)
     expect(hasDig(makeMon({ speciesId: 27, secretPicks: [{ slot: 0, level: 1 }] }))).toBe(false)
     expect(hasDig(makeMon({ speciesId: 27, secretPicks: [{ slot: 0, level: 1 }, { slot: 1, level: 1 }] }))).toBe(true)
     // Sandslash (28) cai na mesma linha do Sandshrew (raiz 27).
     expect(hasDig(makeMon({ speciesId: 28, secretPicks: [{ slot: 0, level: 1 }, { slot: 1, level: 1 }] }))).toBe(true)
     // Sem picks: nada ativo.
-    expect(rolloutBonusPerWin(makeMon({ speciesId: 27 }))).toBe(0)
+    expect(rolloutBattleBonus(makeMon({ speciesId: 27 }), 1)).toBe(0)
     // Espécie sem linha secreta: nada.
     expect(hasDig(makeMon({ speciesId: 1, secretPicks: [{ slot: 0, level: 2 }, { slot: 1, level: 1 }] }))).toBe(false)
   })
@@ -270,10 +270,34 @@ describe('missionAttrMultiplier — habilidades de Cerulean', () => {
 })
 
 describe('combate: bônus de batalha', () => {
-  it('Rollout: +10% por vitória', () => {
-    // Sandshrew(27): slot0=rollout
-    expect(rolloutBonusPerWin(makeMon({ speciesId: 27, secretPicks: [{ slot: 0, level: 1 }] }))).toBeCloseTo(0.1)
-    expect(rolloutBonusPerWin(makeMon({}))).toBe(0)
+  it('Rollout: bônus aditivo dobrando por vitória (L1: 2→32, L2: 4→64)', () => {
+    // Sandshrew(27): slot0=rollout L1
+    const l1 = makeMon({ speciesId: 27, secretPicks: [{ slot: 0, level: 1 }] })
+    // Sandslash(28): slot0=rollout L2
+    const l2 = makeMon({ speciesId: 28, secretPicks: [{ slot: 0, level: 2 }] })
+    const none = makeMon({})
+
+    // frontWins=0 → 0 para qualquer nível
+    expect(rolloutBattleBonus(l1, 0)).toBe(0)
+    expect(rolloutBattleBonus(l2, 0)).toBe(0)
+    // sem Rollout → 0 independente de frontWins
+    expect(rolloutBattleBonus(none, 3)).toBe(0)
+
+    // L1: 1→2, 2→4, 3→8, 4→16, 5→32 (cap), 6→32 (cap)
+    expect(rolloutBattleBonus(l1, 1)).toBe(2)
+    expect(rolloutBattleBonus(l1, 2)).toBe(4)
+    expect(rolloutBattleBonus(l1, 3)).toBe(8)
+    expect(rolloutBattleBonus(l1, 4)).toBe(16)
+    expect(rolloutBattleBonus(l1, 5)).toBe(32)
+    expect(rolloutBattleBonus(l1, 6)).toBe(32)
+
+    // L2: 1→4, 2→8, 3→16, 4→32, 5→64 (cap), 6→64 (cap)
+    expect(rolloutBattleBonus(l2, 1)).toBe(4)
+    expect(rolloutBattleBonus(l2, 2)).toBe(8)
+    expect(rolloutBattleBonus(l2, 3)).toBe(16)
+    expect(rolloutBattleBonus(l2, 4)).toBe(32)
+    expect(rolloutBattleBonus(l2, 5)).toBe(64)
+    expect(rolloutBattleBonus(l2, 6)).toBe(64)
   })
 
   it('Rivalidade: +0.10 de batalha (L1) / +0.20 (L2) contra o mesmo gênero', () => {
