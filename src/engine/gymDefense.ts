@@ -51,6 +51,7 @@ import {
   hasStatic,
   hasSturdy,
   hasThickFat,
+  hasVitalSpirit,
   hustleBattleBonus,
   rivalryBattleBonus,
   rolloutBattleBonus,
@@ -299,8 +300,13 @@ export function resolveDefense(
   // Guarda contra laço infinito do Reckless (cada retentativa custa HP, mas é defensivo).
   let guard = 0
   const maxIterations = (result.length + enemies.length) * 1000 + 1000
-  const canSturdy = (you: Pokemon): boolean =>
-    hasSturdy(you) && !sturdyUsed.has(you.id) && (opts.sturdyAvailableIds?.has(you.id) ?? false)
+  const canSturdy = (you: Pokemon): boolean => {
+    if (!hasSturdy(you)) return false
+    // Sturdy+ (L2): uso ILIMITADO — nunca desmaia em batalha, sem token diário.
+    if (secretLevelOf(you, 'sa-sturdy') === 2) return true
+    // Sturdy L1: 1×/dia — precisa do token e não pode ter sido usado já hoje.
+    return !sturdyUsed.has(you.id) && (opts.sturdyAvailableIds?.has(you.id) ?? false)
+  }
 
   while (yours < result.length && theirs < enemies.length) {
     if (++guard > maxIterations) break
@@ -358,13 +364,17 @@ export function resolveDefense(
     // Derrota no duelo. Static paralisa o inimigo que derrotou o portador (Batalha ×0,5 até o fim).
     if (hasStatic(you)) paralyzed.add(theirs)
     // Explosion derrota o inimigo junto e custa metade da vida máxima.
+    // Explosion+ (L2): perde TODA a vida e derrota TODOS os inimigos restantes.
     if (hasExplosion(you)) {
-      const loss = explosionSelfDamage(you)
+      const isExplosionPlus = secretLevelOf(you, 'sa-explosion') === 2
+      const loss = isExplosionPlus ? you.currentHp : explosionSelfDamage(you)
       result[yours] =
         you.currentHp - loss <= 0 && canSturdy(you)
-          ? (sturdyUsed.add(you.id), { ...you, currentHp: 1, status: 'idle' })
+          ? (secretLevelOf(you, 'sa-sturdy') !== 2 && sturdyUsed.add(you.id),
+             { ...you, currentHp: 1, status: 'idle' })
           : applyDamage(you, loss)
-      theirs += 1 // a explosão leva o inimigo junto
+      // Explosion+ derrota TODOS os inimigos restantes; L1 derrota apenas o atual.
+      theirs = isExplosionPlus ? enemies.length : theirs + 1
       yours += 1 // perdeu o duelo: passa a vez mesmo vivo
       frontWins = 0
       continue
@@ -373,14 +383,25 @@ export function resolveDefense(
     if (you.currentHp - loss <= 0 && canSturdy(you)) {
       // Não desmaia: fica com 1 de vida, mas perdeu o duelo → passa a vez.
       result[yours] = { ...you, currentHp: 1, status: 'idle' }
-      sturdyUsed.add(you.id)
+      // Sturdy L1 consome o token; Sturdy+ (L2) não consome nada.
+      if (secretLevelOf(you, 'sa-sturdy') !== 2) sturdyUsed.add(you.id)
       yours += 1
       frontWins = 0
       continue
     }
-    const damaged = applyDamage(you, loss)
-    result[yours] = damaged
+    // Vital Spirit+ (L2): ao perder um duelo, tenta de novo SEM perder HP (não passa a vez).
+    if (hasVitalSpirit(you) && secretLevelOf(you, 'sa-vital-spirit') === 2) {
+      // Não aplica dano, não incrementa yours — retenta o mesmo duelo.
+      frontWins = 0
+      continue
+    }
     // Reckless: se sobreviveu, tenta de novo sem passar a vez (mesmo inimigo).
+    // Reckless+ (L2): o dano da retentativa é METADE (ceil).
+    const actualLoss = hasReckless(you) && secretLevelOf(you, 'sa-reckless') === 2
+      ? Math.ceil(loss / 2)
+      : loss
+    const damaged = applyDamage(you, actualLoss)
+    result[yours] = damaged
     if (hasReckless(you) && damaged.currentHp > 0) {
       frontWins = 0
       continue

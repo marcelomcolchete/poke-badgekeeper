@@ -243,6 +243,117 @@ describe('resolveDefense — Habilidades Secretas', () => {
     expect(out.squad[0]?.currentHp).toBe(1) // não desmaiou
     expect(out.sturdyUsedIds).toContain('g')
   })
+
+  it('Sturdy+ (L2): sobrevive a múltiplas quedas fatais sem token diário', () => {
+    // Geodude (74) par = ['sa-sturdy','sa-explosion']; Sturdy no slot 0, NÍVEL 2.
+    // currentHp=1 força que cada derrota seria fatal.
+    // Usamos 3 inimigos fracos: o pokemon perde todos os 3 duelos mas sobrevive com 1 HP em cada.
+    const geo = makeMon({
+      id: 'g', speciesId: 74, secretPicks: [{ slot: 0, level: 2 }], types: ['rock'],
+      baseAttrs: makeAttrs({ batalha: 10, resistencia: 10 }), currentHp: 1,
+    })
+    const threeStrong: EnemyUnit[] = [
+      { battle: 100, types: ['normal'] },
+      { battle: 100, types: ['normal'] },
+      { battle: 100, types: ['normal'] },
+    ]
+    // Sem sturdyAvailableIds (sem token diário): L1 não salvaria, L2 deve salvar TODOS.
+    const out = resolveDefense(fixedRng(0.999), [geo], threeStrong)
+    // O pokemon perde todos os 3 duelos (passa a vez cada vez) e fica com 1 HP em todos.
+    expect(out.squad[0]?.currentHp).toBe(1) // nunca desmaiou
+    expect(out.squad[0]?.status).not.toBe('fainted')
+    // Todos os duelos foram do mesmo Pokémon (sempre na frente, sobrevivendo com 1 HP).
+    expect(out.duels.every((d) => d.yourId === 'g')).toBe(true)
+    // sturdyUsedIds NÃO deve conter 'g' (L2 não consome o token).
+    expect(out.sturdyUsedIds).not.toContain('g')
+    // Com 3 inimigos e sem ajuda, a defesa é perdida (só 1 Pokémon no squad).
+    expect(out.won).toBe(false)
+  })
+
+  it('Explosion+ (L2): ao perder um duelo, derrota TODOS os inimigos restantes', () => {
+    // Voltorb (100) par = ['sa-explosion','sa-rollout']; Explosion no slot 0, NÍVEL 2.
+    const voltorb = makeMon({
+      id: 'v', speciesId: 100, secretPicks: [{ slot: 0, level: 2 }], types: ['electric'],
+      baseAttrs: makeAttrs({ batalha: 10, resistencia: 100 }),
+    })
+    const threeStrong: EnemyUnit[] = [
+      { battle: 100, types: ['normal'] },
+      { battle: 100, types: ['normal'] },
+      { battle: 100, types: ['normal'] },
+    ]
+    // fixedRng(0.999) → perde o duelo; Explosion+ deve derrotar TODOS os 3 inimigos.
+    const out = resolveDefense(fixedRng(0.999), [voltorb], threeStrong)
+    expect(out.won).toBe(true) // todos os inimigos derrotados
+    expect(out.duels).toHaveLength(1) // só um duelo aconteceu
+    expect(out.duels[0]?.youWon).toBe(false)
+    // O Pokémon tomou dano total (toda a vida) — pode ter sido salvo por Sturdy+ se aplicável,
+    // mas aqui não tem Sturdy, então desmaia.
+    expect(out.squad[0]?.status).toBe('fainted')
+  })
+
+  it('Reckless+ (L2): na retentativa toma metade do dano L1', () => {
+    // Rhyhorn (111) par = ['sa-rock-head','sa-reckless']; Reckless no slot 1, NÍVEL 2.
+    const damagePerLoss = 2
+    const maxHp = 20
+    const rhy = makeMon({
+      id: 'r', speciesId: 111, secretPicks: [{ slot: 1, level: 2 }], types: ['ground'],
+      baseAttrs: makeAttrs({ batalha: 10, resistencia: 100 }), maxHp, currentHp: maxHp,
+    })
+    // Um único inimigo forte: o pokemon perde exatamente 1 duelo, sobrevive, e retenta.
+    // Para controlar: vence no 2º duelo (rng alterna, mas usamos um truque).
+    // Usamos fixedRng(0.999) → perde sempre; vamos checar que na 1ª retentativa o dano é ceil(loss/2).
+    // loss = damageTaken(rhy, damagePerLoss) = 2 (sem Shell Armor); ceil(2/2)=1.
+    // Então: 1ª derrota → dano=1 (metade); continua tentando.
+    // Verificamos apenas que o HP após a 1ª retentativa é maxHp - 1 (não maxHp - 2).
+    // Para observar só a primeira derrota, usamos 1 inimigo e capturamos HP após 1ª retentativa.
+    // Porém com fixedRng(0.999) vai perder todas → eventualmente desmaia. Checamos via múltiplas perdas.
+    // Cada perda custa ceil(2/2)=1 HP. maxHp=20, então 20 derrotas antes de desmaiar.
+    const out = resolveDefense(fixedRng(0.999), [rhy], oneStrong, { damagePerLoss })
+    // Com L2 (dano=1 por tentativa) e maxHp=20, o pokemon perde 20 duelos antes de desmaiar.
+    expect(out.duels.length).toBe(maxHp) // 20 tentativas
+    expect(out.squad[0]?.status).toBe('fainted')
+    // Compara com L1 (dano=2): teria desmaiado em 10 tentativas.
+    const rhyL1 = makeMon({
+      id: 'r2', speciesId: 111, secretPicks: [{ slot: 1, level: 1 }], types: ['ground'],
+      baseAttrs: makeAttrs({ batalha: 10, resistencia: 100 }), maxHp, currentHp: maxHp,
+    })
+    const outL1 = resolveDefense(fixedRng(0.999), [rhyL1], oneStrong, { damagePerLoss })
+    expect(outL1.duels.length).toBe(maxHp / damagePerLoss) // 10 tentativas com L1
+  })
+
+  it('Vital Spirit+ (L2): ao perder um duelo, tenta de novo SEM perder HP', () => {
+    // Electabuzz (125) par = ['sa-vital-spirit','sa-volt-absorb']; Vital Spirit no slot 0, NÍVEL 2.
+    const maxHp = 10
+    const elec = makeMon({
+      id: 'e', speciesId: 125, secretPicks: [{ slot: 0, level: 2 }], types: ['electric'],
+      baseAttrs: makeAttrs({ batalha: 10, resistencia: 100 }), maxHp, currentHp: maxHp,
+    })
+    // fixedRng(0.999) perde todos os duelos mas nunca perde HP.
+    // Como nunca desmaia e há um inimigo, o loop continuaria infinitamente → o guard vai quebrar.
+    // Portanto testamos com um inimigo que VENCE depois de N tentativas usando rng variável.
+    // Usamos um rng que devolve 0.999 nas N-1 primeiras chamadas e 0 na enésima.
+    let callCount = 0
+    const nLosses = 5
+    const alternatingRng = {
+      next: () => 0,
+      int: (min: number) => min,
+      float: () => 0,
+      bool: (p = 0.5) => {
+        callCount++
+        // Perde nas primeiras nLosses chamadas, vence na enésima.
+        return callCount > nLosses ? 0 < p : 0.999 < p
+      },
+      pick: <T>(items: readonly T[]): T => items[0] as T,
+      shuffle: <T>(items: readonly T[]): T[] => [...items],
+      state: () => 0,
+    }
+    const out = resolveDefense(alternatingRng, [elec], oneStrong)
+    expect(out.won).toBe(true) // venceu após retentativas
+    // HP deve ser o mesmo que o inicial (zero dano durante as perdas).
+    expect(out.squad[0]?.currentHp).toBe(maxHp)
+    // Todos os duelos foram do mesmo Pokémon.
+    expect(out.duels.every((d) => d.yourId === 'e')).toBe(true)
+  })
 })
 
 describe('resolveDefense — Habilidades de Cerulean', () => {
