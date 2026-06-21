@@ -19,7 +19,7 @@ import { applyHeartDelta, dailyHeartDelta, heartsOf } from '../engine/hearts.ts'
 import { isFainted } from '../engine/attributes.ts'
 import { buildDaySummary, toDayLog } from '../engine/daySummary.ts'
 import { foldDayIntoLifetime } from '../engine/lifetime.ts'
-import { secretCountOf, secretLineFor, SECRET_MAX } from '../data/secretAbilities.ts'
+import { secretLineFor } from '../data/secretAbilities.ts'
 import { recomputeMaxHp } from '../engine/attributes.ts'
 import { expireMission, freeOnReturn, resolveMissionNow } from './missionFlow.ts'
 import { expireDefense } from './defenseFlow.ts'
@@ -145,25 +145,33 @@ function applyDailyHearts(s: GameState, mvpId: string | null): void {
 }
 
 /**
- * Destaque do Dia DESBLOQUEIA a PRÓXIMA Habilidade Secreta da sua LINHA, gravada no INDIVÍDUO
- * (sobrevive à evolução): a 1ª vez a habilidade 1, a 2ª a habilidade 2, a 3ª a habilidade 3 —
- * todas podem ficar ativas ao mesmo tempo. Com as três já desbloqueadas, nada muda. Registra em
- * today.secretUnlock (id da habilidade + posição) para o reveal no resumo.
+ * Destaque do Dia desbloqueia/evolui a Habilidade Secreta (no máx. 2 destaques na vida).
+ * Fundação (Fase 1): 1º destaque grava o slot 0 no nível 1; 2º destaque faz "widen" (a outra no
+ * nível 1). A ESCOLHA do jogador (qual slot; aprofundar vs ampliar) entra na Fase 2 (UI).
  */
-function unlockSecretAbility(s: GameState, mvpId: string | null): void {
+export function unlockSecretAbility(s: GameState, mvpId: string | null): void {
   s.today.secretUnlock = null
   if (!mvpId) return
   const mon = s.roster.find((p) => p.id === mvpId)
   if (!mon) return
   const line = secretLineFor(mon.speciesId)
   if (!line) return
-  const current = secretCountOf(mon) // 0 = nenhuma desbloqueada
-  if (current >= SECRET_MAX) return // já tem as três
-  const nextIndex = current + 1
-  const secretId = line[current] // a próxima habilidade da lista (0-based)
-  if (!secretId) return
-  s.roster = s.roster.map((p) => (p.id === mon.id ? { ...p, secretCount: nextIndex } : p))
-  s.today.secretUnlock = { pokemonId: mon.id, secretId, index: nextIndex }
+  const picks = mon.secretPicks ?? []
+  if (picks.length === 0) {
+    const next = [{ slot: 0 as const, level: 1 as const }]
+    s.roster = s.roster.map((p) => (p.id === mon.id ? { ...p, secretPicks: next } : p))
+    s.today.secretUnlock = { pokemonId: mon.id, slot: 0, level: 1, choice: 'first' }
+    return
+  }
+  const first = picks[0]
+  if (picks.length === 1 && first && first.level === 1) {
+    const otherSlot = (first.slot === 0 ? 1 : 0) as 0 | 1
+    const next = [...picks, { slot: otherSlot, level: 1 as const }]
+    s.roster = s.roster.map((p) => (p.id === mon.id ? { ...p, secretPicks: next } : p))
+    s.today.secretUnlock = { pokemonId: mon.id, slot: otherSlot, level: 1, choice: 'widen' }
+    return
+  }
+  // Já usou os 2 destaques (1 nível 2, ou 2 nível 1): nada muda.
 }
 
 /** Bônus de +30% sobre o ouro de defesas se TODAS as defesas do dia foram vencidas (PLAN §4.6). */

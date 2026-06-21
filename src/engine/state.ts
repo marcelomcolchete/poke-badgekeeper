@@ -404,9 +404,11 @@ export interface DayTally {
   faints: number
   /**
    * Habilidade Secreta desbloqueada HOJE pelo Destaque do Dia (reveal no resumo); null se
-   * nenhuma. `secretId` é o id do tipo de habilidade e `index` é a posição na linha (1, 2 ou 3).
+   * nenhuma. `slot` é 0 ou 1 (posição na linha do indivíduo), `level` é 1 ou 2 (profundidade),
+   * `choice` indica se foi o 1º desbloqueio ('first'), aprofundamento ('deepen') ou ampliação
+   * ('widen'). Modelo secretPicks — substitui o antigo secretCount/secretId/index.
    */
-  secretUnlock: { pokemonId: string; secretId: string; index: number } | null
+  secretUnlock: { pokemonId: string; slot: 0 | 1; level: 1 | 2; choice: 'first' | 'deepen' | 'widen' } | null
   /** Corações que o Destaque do Dia ganhou no fechamento (delta já capado em [0,5]) — resumo. */
   mvpHeartsGained: number
   /** Estado por-Pokémon das Habilidades Secretas hoje (stacks/flags), por id de Pokémon. */
