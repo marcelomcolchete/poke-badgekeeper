@@ -2,6 +2,7 @@
 
 import { describe, expect, it } from 'vitest'
 import { processStorms } from './stormFlow.ts'
+import { resolveMissionNow } from './missionFlow.ts'
 import { autoSeedRun } from './setup.ts'
 import type { GameState } from '../engine/state.ts'
 import type { StormEvent } from '../engine/storm.ts'
@@ -588,10 +589,11 @@ describe('Static (NOVO) — bônus de movimento por segundo parado (L2)', () => 
     const { s, pos } = travelingState()
     const mission = s.missions[0]!
 
+    // L2 para acumular o bônus de movimento
     const staticMon = makeMon({
       id: s.roster[0]!.id,
       speciesId: 25,
-      secretPicks: [{ slot: 0, level: 1 }],
+      secretPicks: [{ slot: 0, level: 2 }],
       currentHp: 5,
       maxHp: 5,
       status: 'traveling' as const,
@@ -607,8 +609,37 @@ describe('Static (NOVO) — bônus de movimento por segundo parado (L2)', () => 
     s.weather = { ...s.weather, storms: [storm] }
     processStorms(s, 0, 6_000)
 
-    // Após 5s parado: staticStoppedSecs deve ser 5
+    // Após 5s parado com L2: staticStoppedSecs deve ser 5
     expect(mission.staticStoppedSecs).toBe(PARALYZE_STUN_MS / 1000)
+  })
+
+  it('L1 Static parado 5s: NÃO acumula staticStoppedSecs (sem bônus de movimento)', () => {
+    const { s, pos } = travelingState()
+    const mission = s.missions[0]!
+
+    const staticMon = makeMon({
+      id: s.roster[0]!.id,
+      speciesId: 25,
+      secretPicks: [{ slot: 0, level: 1 }], // L1 — só XP
+      currentHp: 5,
+      maxHp: 5,
+      status: 'traveling' as const,
+    })
+    s.roster[0] = staticMon
+    mission.teamIds = [staticMon.id]
+
+    const storm: StormEvent = {
+      startMs: 0,
+      endMs: 30_000,
+      strikes: [{ warnAtMs: 0, strikeAtMs: 5_000, circles: [{ cx: pos.x, cy: pos.y, radius: 0.2 }] }],
+    }
+    s.weather = { ...s.weather, storms: [storm] }
+    processStorms(s, 0, 6_000)
+
+    // L1: não acumula segundos (sem bônus de movimento)
+    expect(mission.staticStoppedSecs ?? 0).toBe(0)
+    // L1: ainda recebe XP
+    expect(s.today.xpEarned).toBe(STATIC_XP_PER_SEC * (PARALYZE_STUN_MS / 1000))
   })
 
   it('10s parado = +100% de movimento (cap: STATIC_MOVE_CAP_L2)', () => {
@@ -622,5 +653,133 @@ describe('Static (NOVO) — bônus de movimento por segundo parado (L2)', () => 
     const stoppedSecs = 5
     const bonus = Math.min(STATIC_MOVE_CAP_L2, STATIC_MOVE_PER_SEC_L2 * stoppedSecs)
     expect(bonus).toBeCloseTo(0.5)
+  })
+})
+
+// ---- Static E2E: caminho completo raio → missão resolvida (nível L1 vs L2) --------
+
+describe('Static E2E — L2 encurta retorno; L1 só ganha XP', () => {
+  /**
+   * Monta um estado com um portador de Static (nível `level`) em missão inProgress,
+   * aplica um raio que para o time 5s, depois resolve a missão e verifica o resultado.
+   */
+  function staticE2EState(level: 1 | 2): {
+    s: GameState
+    mission: (typeof autoSeedRun extends (...args: never[]) => infer R ? R : never)['missions'][number]
+    pos: { x: number; y: number }
+  } {
+    const s = autoSeedRun(42)
+    s.run.phase = 'DAY'
+    const city = getCity(s.run.cityIndex)
+    const gym = city.siteNodes.gym
+    const neighbors = city.graph.adj[gym] ?? []
+    const neighbor = neighbors[0]!
+
+    const staticMon = makeMon({
+      id: s.roster[0]!.id,
+      speciesId: 25,
+      secretPicks: [{ slot: 0, level }],
+      currentHp: 5,
+      maxHp: 5,
+      status: 'traveling' as const,
+    })
+    s.roster[0] = staticMon
+
+    // Missão: ginásio → vizinho, já na fase traveling (meio do caminho = 5000ms)
+    const resolveAtMs = 20_000
+    const returnEndsAtMs = 30_000
+    s.missions = [
+      {
+        id: 'm1',
+        templateId: 'patrulha',
+        requirement: {} as never,
+        node: neighbor,
+        path: [gym, neighbor],
+        returnPath: [neighbor, gym],
+        spawnAtMs: 0,
+        expiresAtMs: 999_999,
+        status: 'traveling',
+        teamIds: [staticMon.id],
+        acceptedAtMs: 0,
+        arriveAtMs: 10_000,
+        resolveAtMs,
+        returnEndsAtMs,
+        result: null,
+        pSuccess: null,
+      },
+    ]
+
+    const pos = travelerPositionsAt(s, 5_000).find((t) => t.id === staticMon.id)!.pos
+    return { s, mission: s.missions[0]!, pos }
+  }
+
+  it('L2 Static: raio para 5s → staticStoppedSecs=5 e retorno encurtado por ÷1.5', () => {
+    const { s, mission, pos } = staticE2EState(2)
+
+    // Aplica raio enquanto em trânsito
+    const storm: StormEvent = {
+      startMs: 0,
+      endMs: 30_000,
+      strikes: [{ warnAtMs: 0, strikeAtMs: 5_000, circles: [{ cx: pos.x, cy: pos.y, radius: 0.2 }] }],
+    }
+    s.weather = { ...s.weather, storms: [storm] }
+    processStorms(s, 0, 6_000)
+
+    // Confirma acúmulo de segundos parados
+    expect(mission.staticStoppedSecs).toBe(PARALYZE_STUN_MS / 1000) // 5s
+
+    // Avança a missão para inProgress manualmente (paralyzeHold atrasou, mas testamos a resolução)
+    mission.status = 'inProgress'
+    s.clock = { ...s.clock, dayElapsedMs: mission.resolveAtMs! }
+
+    // Salva o resolveAtMs antes da resolução (applyStaticMovementBonus usa mission.resolveAtMs)
+    const resolveAt = mission.resolveAtMs!
+    const returnLegBefore = mission.returnEndsAtMs! - resolveAt
+
+    // Resolve a missão (aplica speedUpReturn se sucesso, depois applyStaticMovementBonus)
+    resolveMissionNow(s, mission)
+
+    // Bônus: 5s × 0.10 = 0.5 → ÷1.5 (pode ter speedUpReturn se sucesso, mas testamos o Static)
+    // Pegamos o returnEndsAtMs pós-resolução e verificamos que Static encurtou o trecho
+    const returnLegAfterResolve = mission.returnEndsAtMs! - resolveAt
+    // O Static sempre divide por (1+0.5)=1.5 o trecho APÓS qualquer speedUpReturn
+    // Assim: returnLegAfterResolve ≤ returnLegBefore / 1.5 (igualdade se sem speedUpReturn)
+    expect(returnLegAfterResolve).toBeLessThan(returnLegBefore)
+    // E staticStoppedSecs permanece 5 após a resolução
+    expect(mission.staticStoppedSecs).toBe(5)
+  })
+
+  it('L1 Static: raio para 5s → staticStoppedSecs=0 (sem bônus de movimento) mas XP concedido', () => {
+    const { s, mission, pos } = staticE2EState(1)
+
+    const storm: StormEvent = {
+      startMs: 0,
+      endMs: 30_000,
+      strikes: [{ warnAtMs: 0, strikeAtMs: 5_000, circles: [{ cx: pos.x, cy: pos.y, radius: 0.2 }] }],
+    }
+    s.weather = { ...s.weather, storms: [storm] }
+    processStorms(s, 0, 6_000)
+
+    // L1: não acumula segundos parados
+    expect(mission.staticStoppedSecs ?? 0).toBe(0)
+    // L1: recebe XP
+    expect(s.today.xpEarned).toBe(STATIC_XP_PER_SEC * (PARALYZE_STUN_MS / 1000))
+
+    // Avança para resolução
+    const resolveAt = mission.resolveAtMs!
+    const returnEndsAtMsBeforeResolve = mission.returnEndsAtMs!
+    mission.status = 'inProgress'
+    s.clock = { ...s.clock, dayElapsedMs: resolveAt }
+    resolveMissionNow(s, mission)
+
+    // Static L1 não encurta o retorno pelo bônus de movimento:
+    // O trecho de retorno pós-resolução NÃO deve ser menor que returnLegBefore/1.5
+    const returnLegBefore = returnEndsAtMsBeforeResolve - resolveAt
+    const returnLegAfterResolve = mission.returnEndsAtMs! - resolveAt
+    // Com L1, sem Static movement bonus: returnLegAfterResolve >= returnLegBefore/1.5 × 1.0
+    // Ou seja: NÃO foi dividido por 1.5 pelo Static (pode ser menor por speedUpReturn, mas não pelo Static)
+    // Prova: staticStoppedSecs=0, então applyStaticMovementBonus é no-op.
+    // returnLegAfterResolve deve ser MAIOR que returnLegBefore/1.5 (Static não aplicou)
+    expect(returnLegAfterResolve).toBeGreaterThan(returnLegBefore / 1.5)
   })
 })

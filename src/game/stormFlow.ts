@@ -43,11 +43,15 @@ function freezeContainer(s: GameState, id: string, pos: MapPos, strikeAtMs: numb
     const untilMs = (active ? mission.paralyzeHold!.untilMs : strikeAtMs) + PARALYZE_STUN_MS
     mission.paralyzeHold = { pos: { ...pos }, untilMs }
     shiftMissionTimestamps(mission, mission.status === 'traveling' ? 'out' : 'back', PARALYZE_STUN_MS, true)
-    // Static (NOVO): se o time inclui um portador de Static, concede XP e acumula movimento.
+    // Static (NOVO): se o time inclui um portador de Static, concede XP (L1 e L2).
+    // O bônus de MOVIMENTO (staticStoppedSecs) só é acumulado em L2 (§spec §3).
     const teamMons = mission.teamIds.map((tid) => findMon(s, tid)).filter((p) => p !== undefined)
     if (teamMons.some(hasStatic)) {
       const stunSecs = PARALYZE_STUN_MS / 1000
-      mission.staticStoppedSecs = (mission.staticStoppedSecs ?? 0) + stunSecs
+      // Acumula segundos parados para o bônus de movimento SOMENTE se houver portador L2.
+      if (teamMons.some((p) => secretLevelOf(p, 'sa-static') === 2)) {
+        mission.staticStoppedSecs = (mission.staticStoppedSecs ?? 0) + stunSecs
+      }
       const xpPerMember = STATIC_XP_PER_SEC * stunSecs
       const gains = new Map(mission.teamIds.map((tid) => [tid, xpPerMember]))
       const rng = takeRng(s)
