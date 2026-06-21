@@ -158,6 +158,9 @@ export const DEFENSE_SQUAD_MAX_SQRT_BASE = 9
  */
 export const MISSION_XP_POOL = 240
 
+/** XP fixo concedido ao explorador ao concluir uma exploração (capturando OU recusando). */
+export const EXPLORATION_XP = 100
+
 /**
  * Leveling §4.4: XP por duelo VENCIDO numa defesa de ginásio escala com o poder de
  * Batalha do desafiante derrotado — 0,5 por ponto, com teto de 30 por vitória. Como a
