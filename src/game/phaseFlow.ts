@@ -115,7 +115,7 @@ export function finalizeDay(s: GameState): void {
     capturedIds: s.today.capturedIds,
     roster: s.roster,
   })
-  unlockSecretAbility(s, summary.mvpId)
+  prepareSecretChoice(s, summary.mvpId)
   applyDailyHearts(s, summary.mvpId)
   s.history.push(toDayLog(summary))
   s.run.phase = 'SUMMARY'
@@ -145,33 +145,59 @@ function applyDailyHearts(s: GameState, mvpId: string | null): void {
 }
 
 /**
- * Destaque do Dia desbloqueia/evolui a Habilidade Secreta (no máx. 2 destaques na vida).
- * Fundação (Fase 1): 1º destaque grava o slot 0 no nível 1; 2º destaque faz "widen" (a outra no
- * nível 1). A ESCOLHA do jogador (qual slot; aprofundar vs ampliar) entra na Fase 2 (UI).
+ * Destaque do Dia: REGISTRA uma escolha de Habilidade Secreta pendente (resolvida pelo jogador na
+ * tela de resumo). Elegível se o MVP tem linha e ainda não usou os 2 destaques: picks vazio
+ * (1º destaque) ou 1 pick no nível 1 (2º destaque). Não muta `secretPicks`.
  */
-export function unlockSecretAbility(s: GameState, mvpId: string | null): void {
+export function prepareSecretChoice(s: GameState, mvpId: string | null): void {
   s.today.secretUnlock = null
+  s.today.secretChoice = null
   if (!mvpId) return
   const mon = s.roster.find((p) => p.id === mvpId)
-  if (!mon) return
-  const line = secretLineFor(mon.speciesId)
-  if (!line) return
+  if (!mon || !secretLineFor(mon.speciesId)) return
   const picks = mon.secretPicks ?? []
+  const eligible = picks.length === 0 || (picks.length === 1 && picks[0]?.level === 1)
+  if (eligible) s.today.secretChoice = { pokemonId: mvpId }
+}
+
+/**
+ * Aplica a escolha do jogador para o Pokémon em `today.secretChoice`: grava `secretPicks` e o
+ * `secretUnlock` (reveal). Valida a legalidade da transição; no-op se ilegal ou sem escolha pendente.
+ * - 1º destaque (picks []): `(slot, 1)` → `[{slot,1}]`, choice 'first'.
+ * - 2º destaque aprofundar: `(slotAtual, 2)` → `[{slot,2}]`, choice 'deepen'.
+ * - 2º destaque ampliar: `(outroSlot, 1)` → adiciona, choice 'widen'.
+ */
+export function chooseSecretAbility(s: GameState, slot: 0 | 1, level: 1 | 2): void {
+  const pending = s.today.secretChoice
+  if (!pending) return
+  const mon = s.roster.find((p) => p.id === pending.pokemonId)
+  if (!mon || !secretLineFor(mon.speciesId)) return
+  const picks = mon.secretPicks ?? []
+
+  let next: { slot: 0 | 1; level: 1 | 2 }[] | null = null
+  let choice: 'first' | 'deepen' | 'widen' | null = null
+
   if (picks.length === 0) {
-    const next = [{ slot: 0 as const, level: 1 as const }]
-    s.roster = s.roster.map((p) => (p.id === mon.id ? { ...p, secretPicks: next } : p))
-    s.today.secretUnlock = { pokemonId: mon.id, slot: 0, level: 1, choice: 'first' }
-    return
+    // 1º destaque: só nível 1, slot 0 ou 1.
+    if (level === 1) {
+      next = [{ slot, level: 1 }]
+      choice = 'first'
+    }
+  } else if (picks.length === 1 && picks[0]?.level === 1) {
+    const cur = picks[0]
+    if (slot === cur.slot && level === 2) {
+      next = [{ slot: cur.slot, level: 2 }]
+      choice = 'deepen'
+    } else if (slot !== cur.slot && level === 1) {
+      next = [cur, { slot, level: 1 }]
+      choice = 'widen'
+    }
   }
-  const first = picks[0]
-  if (picks.length === 1 && first && first.level === 1) {
-    const otherSlot = (first.slot === 0 ? 1 : 0) as 0 | 1
-    const next = [...picks, { slot: otherSlot, level: 1 as const }]
-    s.roster = s.roster.map((p) => (p.id === mon.id ? { ...p, secretPicks: next } : p))
-    s.today.secretUnlock = { pokemonId: mon.id, slot: otherSlot, level: 1, choice: 'widen' }
-    return
-  }
-  // Já usou os 2 destaques (1 nível 2, ou 2 nível 1): nada muda.
+
+  if (!next || !choice) return // transição ilegal: mantém pendente
+  s.roster = s.roster.map((p) => (p.id === mon.id ? { ...p, secretPicks: next } : p))
+  s.today.secretUnlock = { pokemonId: mon.id, slot, level, choice }
+  s.today.secretChoice = null
 }
 
 /** Bônus de +30% sobre o ouro de defesas se TODAS as defesas do dia foram vencidas (PLAN §4.6). */
