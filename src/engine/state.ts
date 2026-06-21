@@ -142,6 +142,11 @@ export interface MissionInstance {
    */
   electirizerBonus?: Record<string, number>
   /**
+   * Static (NOVO, Fase 4): segundos totais parados por raio ou poça durante esta missão,
+   * acumulados para o bônus de movimento (L2). Ausente = 0.
+   */
+  staticStoppedSecs?: number
+  /**
    * Sub-seed do RNG de evolução, sorteado ao resolver. O XP só é APLICADO na volta ao
    * ginásio (PLAN §4.1, ajuste) — guardar o seed mantém a evolução determinística.
    */
@@ -335,6 +340,8 @@ export interface SecretRuntime {
   battleArmorPending?: boolean
   /** Sturdy: já usou o "não desmaia" hoje (1×/dia). */
   sturdyUsed?: boolean
+  /** Water Absorb: rota da missão anterior cruzou água → bônus nos atributos da PRÓXIMA missão (consome ao resolver). */
+  waterAbsorbPending?: 1 | 2
 }
 
 /** Um inimigo derrotado numa defesa do dia: quem derrotou + espécie (sprite no relatório). */
@@ -404,9 +411,16 @@ export interface DayTally {
   faints: number
   /**
    * Habilidade Secreta desbloqueada HOJE pelo Destaque do Dia (reveal no resumo); null se
-   * nenhuma. `secretId` é o id do tipo de habilidade e `index` é a posição na linha (1, 2 ou 3).
+   * nenhuma. `slot` é 0 ou 1 (posição na linha do indivíduo), `level` é 1 ou 2 (profundidade),
+   * `choice` indica se foi o 1º desbloqueio ('first'), aprofundamento ('deepen') ou ampliação
+   * ('widen'). Modelo secretPicks — substitui o antigo secretCount/secretId/index.
    */
-  secretUnlock: { pokemonId: string; secretId: string; index: number } | null
+  secretUnlock: { pokemonId: string; slot: 0 | 1; level: 1 | 2; choice: 'first' | 'deepen' | 'widen' } | null
+  /**
+   * Escolha de Habilidade Secreta PENDENTE do Destaque do Dia (resolvida pelo jogador na tela de
+   * resumo via CHOOSE_SECRET). null = nenhuma escolha pendente. Ao resolver, vira `secretUnlock`.
+   */
+  secretChoice: { pokemonId: string } | null
   /** Corações que o Destaque do Dia ganhou no fechamento (delta já capado em [0,5]) — resumo. */
   mvpHeartsGained: number
   /** Estado por-Pokémon das Habilidades Secretas hoje (stacks/flags), por id de Pokémon. */
@@ -422,6 +436,11 @@ export interface DayTally {
   purchasedItems: string[]
   /** Pokémon (ids) com -50% de Batalha pelo resto do dia (Paralyze da Tempestade). */
   paralyzedBattleIds: string[]
+  /**
+   * Volt Absorb: Pokémon eletrizado pelo resto do dia (id → nível do Volt Absorb).
+   * +30%/+30% (L1) ou +90%/+90% (L2) em movimento e atributos. Zera a cada manhã.
+   */
+  electrified: Record<string, 1 | 2>
 }
 
 export interface DayLog {
@@ -530,12 +549,14 @@ export function emptyTally(): DayTally {
     defenseLosses: [],
     faints: 0,
     secretUnlock: null,
+    secretChoice: null,
     mvpHeartsGained: 0,
     secretRuntime: {},
     digTunnels: [],
     shopOffer: [],
     purchasedItems: [],
     paralyzedBattleIds: [],
+    electrified: {},
   }
 }
 

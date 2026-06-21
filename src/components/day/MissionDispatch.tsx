@@ -69,11 +69,14 @@ export function MissionDispatch({ state, dispatch, missionId, onClose }: Props) 
     template,
     runtime: state.today.secretRuntime,
     runItems: state.runItems,
+    weather: state.weather,
+    nowMs: state.clock.dayElapsedMs,
+    electrified: state.today.electrified,
   }
   const probability = Math.round(missionSuccessProbabilityCtx(ctx, mission.requirement) * 100)
   const graph = graphWithTunnels(city.graph, state.today.digTunnels)
   const { flying, surfing, path, distance } = travelRoute(graph, city.siteNodes.gym, mission.node, team)
-  const speedMult = teamTravelSpeedMultiplier(team, state.runItems)
+  const speedMult = teamTravelSpeedMultiplier(team, state.runItems, state.today.electrified)
   const durationS = Math.round(missionDurationMs(team, distance, template, speedMult) / 1000)
   const effects = missionEffectBreakdown(ctx)
   const sniping = teamSnipes(team)

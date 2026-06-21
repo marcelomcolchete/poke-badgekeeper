@@ -310,7 +310,8 @@ describe('missionSuccessProbabilityCtx — Vital Spirit', () => {
   const lowAttrs = makeAttrs({ batalha: 10, inteligencia: 10 })
 
   it('dobra a chance ao falhar: efetiva = 1 − (1 − p)²', () => {
-    const electa = makeMon({ id: 'e', speciesId: 125, secretCount: 1, baseAttrs: lowAttrs })
+    // Electabuzz (125) par = ['sa-vital-spirit','sa-volt-absorb']; Vital Spirit no slot 0.
+    const electa = makeMon({ id: 'e', speciesId: 125, secretPicks: [{ slot: 0, level: 1 }], baseAttrs: lowAttrs })
     const base = missionSuccessProbability([electa], req)
     expect(base).toBeGreaterThan(0)
     expect(base).toBeLessThan(1)

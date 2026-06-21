@@ -1,36 +1,57 @@
 // Efeitos das Habilidades Secretas — ponto único da engine. Cada efeito é amarrado pelo id da
 // habilidade e só vale se ela estiver DESBLOQUEADA no indivíduo (data/secretAbilities.ts →
-// hasSecret, derivado de pokemon.secretCount + a linha). Um Pokémon pode ter até três ativas ao
-// mesmo tempo, e os efeitos se acumulam. Funções puras; o estado diário (flags) vem do
+// hasSecret/secretLevelOf, derivado de pokemon.secretPicks + a linha). Um Pokémon pode ter até duas
+// ativas ao mesmo tempo (cada uma nível 1 ou 2), e os efeitos se acumulam. Funções puras; o estado
+// diário (flags) vem do
 // `SecretRuntime` por Pokémon (s.today.secretRuntime), atualizado pelos fluxos.
 
 import type { Attrs, AttrKey, Pokemon } from '../types/index.ts'
 import type { MissionTemplate } from '../data/types.ts'
 import type { SecretRuntime } from './state.ts'
-import { hasSecret } from '../data/secretAbilities.ts'
+import { hasSecret, secretLevelOf } from '../data/secretAbilities.ts'
 import { TEAM_ATTR_MAX } from './constants.ts'
 import {
-  ANALYTIC_PATROL_MULT,
-  ANALYTIC_STUDY_MULT,
-  BATTLE_ARMOR_MISSION_MULT,
+  ANALYTIC_PATROL_MULT_L1,
+  ANALYTIC_PATROL_MULT_L2,
+  ANALYTIC_STUDY_MULT_L1,
+  ANALYTIC_STUDY_MULT_L2,
+  BATTLE_ARMOR_MISSION_MULT_L1,
+  BATTLE_ARMOR_MISSION_MULT_L2,
+  DRY_SKIN_MISSION_BONUS_L2,
   ELECTIRIZER_MISSION_BONUS,
   EVIOLITE_MISSION_MULT,
   EXPLOSION_SELF_DAMAGE_FRACTION,
   FLY_SPEED_BONUS,
-  HUSTLE_BATTLE_BONUS,
-  HUSTLE_MISSION_MULT,
+  HUSTLE_BATTLE_BONUS_L1,
+  HUSTLE_BATTLE_BONUS_L2,
+  HUSTLE_MISSION_MULT_L1,
+  HUSTLE_MISSION_MULT_L2,
   LAGGING_TAIL_MISSION_MULT,
   LAGGING_TAIL_TRAVEL_MULT,
-  RIVALRY_ATTR_PER_ALLY,
-  RIVALRY_BATTLE_BONUS,
-  ROCK_HEAD_ESCORT_MULT,
-  ROCK_HEAD_STUDY_MULT,
+  RIVALRY_ATTR_PER_ALLY_L1,
+  RIVALRY_ATTR_PER_ALLY_L2,
+  RIVALRY_BATTLE_BONUS_L1,
+  RIVALRY_BATTLE_BONUS_L2,
+  ROCK_HEAD_ESCORT_MULT_L1,
+  ROCK_HEAD_ESCORT_MULT_L2,
+  ROCK_HEAD_STUDY_MULT_L1,
+  ROCK_HEAD_STUDY_MULT_L2,
   QUICK_FEET_SPEED_BONUS,
-  ROLLOUT_BATTLE_BONUS,
-  SHELL_ARMOR_DAMAGE,
-  TORRENT_MISSION_MULT,
-  WEAK_ARMOR_DAMAGE_MULT,
-  WEAK_ARMOR_SPEED_PER_MISSING_HP,
+  ROLLOUT_CAP_L1,
+  ROLLOUT_CAP_L2,
+  ROLLOUT_START_L1,
+  ROLLOUT_START_L2,
+  SHELL_ARMOR_DIVISOR_L1,
+  SHELL_ARMOR_DIVISOR_L2,
+  SWIFT_SWIM_MISSION_BONUS_L2,
+  TORRENT_MISSION_MULT_L1,
+  TORRENT_MISSION_MULT_L2,
+  VOLT_ABSORB_BONUS_L1,
+  VOLT_ABSORB_BONUS_L2,
+  WATER_ABSORB_MISSION_MULT_L1,
+  WATER_ABSORB_MISSION_MULT_L2,
+  WEAK_ARMOR_SPEED_PER_MISSING_HP_L1,
+  WEAK_ARMOR_SPEED_PER_MISSING_HP_L2,
 } from './balance.ts'
 import { effectiveAttr, mapAttrs } from './attributes.ts'
 import { itemMissionMultiplier, itemTravelSpeedMultiplier, notFinalEvolution } from './itemEffects.ts'
@@ -53,7 +74,7 @@ export function hasDig(p: Pokemon): boolean {
   return hasSecret(p, 'sa-dig')
 }
 export function hasDigPlus(p: Pokemon): boolean {
-  return hasSecret(p, 'sa-dig-plus')
+  return secretLevelOf(p, 'sa-dig') === 2
 }
 export function hasShellArmor(p: Pokemon): boolean {
   return hasSecret(p, 'sa-shell-armor')
@@ -72,6 +93,9 @@ export function hasExplosion(p: Pokemon): boolean {
 }
 export function hasLightningRod(p: Pokemon): boolean {
   return hasSecret(p, 'sa-lightning-rod')
+}
+export function hasVoltAbsorb(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-volt-absorb')
 }
 export function hasReckless(p: Pokemon): boolean {
   return hasSecret(p, 'sa-reckless')
@@ -97,6 +121,9 @@ export function hasClearBody(p: Pokemon): boolean {
 }
 export function hasThickFat(p: Pokemon): boolean {
   return hasSecret(p, 'sa-thick-fat')
+}
+export function hasIceBody(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-ice-body')
 }
 export function hasPressure(p: Pokemon): boolean {
   return hasSecret(p, 'sa-pressure')
@@ -128,12 +155,21 @@ export function hasForewarn(p: Pokemon): boolean {
 export function hasCloudNine(p: Pokemon): boolean {
   return hasSecret(p, 'sa-cloud-nine')
 }
+export function hasDrySkin(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-dry-skin')
+}
+export function hasOvercoat(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-overcoat')
+}
+export function hasOwnTempo(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-own-tempo')
+}
 export function hasSniper(p: Pokemon): boolean {
   return hasSecret(p, 'sa-sniper')
 }
-/** Surf (ou Surf+, que é upgrade): consegue se mover pela água. */
+/** Surf (nível ≥ 1): consegue se mover pela água. Surf+ (nível 2) leva o time. */
 export function hasSurf(p: Pokemon): boolean {
-  return hasSecret(p, 'sa-surf') || hasSecret(p, 'sa-surf-plus')
+  return secretLevelOf(p, 'sa-surf') >= 1
 }
 
 /** O Sturdy deste Pokémon ainda pode ser usado hoje? (1×/dia). */
@@ -143,19 +179,34 @@ export function sturdyAvailable(p: Pokemon, runtime: SecretRuntimeMap): boolean 
 
 // ---- Combate: bônus de Batalha por habilidade ----
 
-/** Rollout: bônus de Batalha GANHO por cada Pokémon derrotado no duelo (0 sem a habilidade). */
-export function rolloutBonusPerWin(p: Pokemon): number {
-  return hasRollout(p) ? ROLLOUT_BATTLE_BONUS : 0
+/**
+ * Rollout: bônus ADITIVO de Batalha para o próximo oponente, após `frontWins` vitórias seguidas.
+ * Fórmula: min(cap, start × 2^(frontWins-1)) para frontWins ≥ 1; 0 caso contrário ou sem Rollout.
+ * L1: start=2, cap=32 → sequência 2, 4, 8, 16, 32, 32, …
+ * L2: start=4, cap=64 → sequência 4, 8, 16, 32, 64, 64, …
+ */
+export function rolloutBattleBonus(p: Pokemon, frontWins: number): number {
+  if (!hasRollout(p) || frontWins < 1) return 0
+  const lv = secretLevelOf(p, 'sa-rollout')
+  const start = lv === 2 ? ROLLOUT_START_L2 : ROLLOUT_START_L1
+  const cap = lv === 2 ? ROLLOUT_CAP_L2 : ROLLOUT_CAP_L1
+  return Math.min(cap, start * Math.pow(2, frontWins - 1))
 }
 
 /** Rivalidade: bônus de Batalha contra um oponente do mesmo gênero (0 caso contrário). */
 export function rivalryBattleBonus(p: Pokemon): number {
-  return hasRivalry(p) ? RIVALRY_BATTLE_BONUS : 0
+  const lv = secretLevelOf(p, 'sa-rivalry')
+  if (lv === 2) return RIVALRY_BATTLE_BONUS_L2
+  if (lv === 1) return RIVALRY_BATTLE_BONUS_L1
+  return 0
 }
 
 /** Hustle: bônus de Batalha em batalhas Pokémon (0 sem a habilidade). */
 export function hustleBattleBonus(p: Pokemon): number {
-  return hasHustle(p) ? HUSTLE_BATTLE_BONUS : 0
+  const lv = secretLevelOf(p, 'sa-hustle')
+  if (lv === 2) return HUSTLE_BATTLE_BONUS_L2
+  if (lv === 1) return HUSTLE_BATTLE_BONUS_L1
+  return 0
 }
 
 /** Explosion: dano que o portador inflige a SI ao explodir = metade da vida máxima (arred. p/ cima). */
@@ -174,6 +225,21 @@ export interface MissionSecretCtx {
   runItems: readonly string[]
   /** Electirizer: cargas de bônus por Pokémon (id → nº de raios) fixadas no despacho. */
   electirizerBonus?: Record<string, number>
+  /**
+   * Agenda de clima do dia (opcional). Necessário para o bônus de missão do Swift Swim L2.
+   * Se ausente, o bônus de chuva de missão é omitido (call sites sem clima mantêm comportamento anterior).
+   */
+  weather?: WeatherSchedule
+  /**
+   * Instante do dia em ms (dayElapsedMs) no momento do despacho/resolução.
+   * Necessário junto com `weather` para avaliar se está chovendo agora para o Swift Swim L2.
+   */
+  nowMs?: number
+  /**
+   * Volt Absorb: Pokémon eletrizado pelo resto do dia (id → nível). Se presente, o portador
+   * recebe +30%/+90% (L1/L2) de atributos nesta missão.
+   */
+  electrified?: Record<string, 1 | 2>
 }
 
 /**
@@ -186,28 +252,72 @@ export function missionAttrMultiplier(p: Pokemon, ctx: MissionSecretCtx): number
   let mult = itemMissionMultiplier(p, ctx.runItems)
   if (hasRivalry(p)) {
     const allies = ctx.team.filter((o) => o.id !== p.id && o.gender === p.gender).length
-    mult *= 1 + RIVALRY_ATTR_PER_ALLY * allies
+    const rivalryPerAlly =
+      secretLevelOf(p, 'sa-rivalry') === 2 ? RIVALRY_ATTR_PER_ALLY_L2 : RIVALRY_ATTR_PER_ALLY_L1
+    mult *= 1 + rivalryPerAlly * allies
   }
   if (hasSecret(p, 'sa-rock-head')) {
-    if (ctx.template.id === 'escolta') mult *= ROCK_HEAD_ESCORT_MULT
-    else if (ctx.template.id === 'ensino') mult *= ROCK_HEAD_STUDY_MULT
+    const lvl = secretLevelOf(p, 'sa-rock-head')
+    if (ctx.template.id === 'escolta')
+      mult *= lvl === 2 ? ROCK_HEAD_ESCORT_MULT_L2 : ROCK_HEAD_ESCORT_MULT_L1
+    else if (ctx.template.id === 'ensino')
+      mult *= lvl === 2 ? ROCK_HEAD_STUDY_MULT_L2 : ROCK_HEAD_STUDY_MULT_L1
   }
   // Analytic: ganha em Ensino e perde em Patrulha (espelha o Rock Head em outros tipos).
   if (hasAnalytic(p)) {
-    if (ctx.template.id === 'ensino') mult *= ANALYTIC_STUDY_MULT
-    else if (ctx.template.id === 'patrulha') mult *= ANALYTIC_PATROL_MULT
+    const lvl = secretLevelOf(p, 'sa-analytic')
+    if (ctx.template.id === 'ensino')
+      mult *= lvl === 2 ? ANALYTIC_STUDY_MULT_L2 : ANALYTIC_STUDY_MULT_L1
+    else if (ctx.template.id === 'patrulha')
+      mult *= lvl === 2 ? ANALYTIC_PATROL_MULT_L2 : ANALYTIC_PATROL_MULT_L1
   }
-  // Torrent: +50% se há OUTRO aliado do tipo Água na missão.
+  // Torrent: +25%/+50% se há OUTRO aliado do tipo Água na missão.
   if (hasTorrent(p) && ctx.team.some((o) => o.id !== p.id && o.types.includes('water'))) {
-    mult *= TORRENT_MISSION_MULT
+    const lvl = secretLevelOf(p, 'sa-torrent')
+    mult *= lvl === 2 ? TORRENT_MISSION_MULT_L2 : TORRENT_MISSION_MULT_L1
   }
-  if (hasBattleArmor(p) && ctx.runtime[p.id]?.battleArmorPending) mult *= BATTLE_ARMOR_MISSION_MULT
-  if (hasHustle(p)) mult *= HUSTLE_MISSION_MULT
-  // Clear Body (nível de time): nenhum membro recebe debuff de atributo (multiplicador < 1).
-  if (mult < 1 && ctx.team.some(hasClearBody)) mult = 1
+  if (hasBattleArmor(p) && ctx.runtime[p.id]?.battleArmorPending) {
+    const lvl = secretLevelOf(p, 'sa-battle-armor')
+    mult *= lvl === 2 ? BATTLE_ARMOR_MISSION_MULT_L2 : BATTLE_ARMOR_MISSION_MULT_L1
+  }
+  // Water Absorb: rota anterior cruzou água → bônus nos atributos desta missão (consome ao resolver).
+  if (hasWaterAbsorb(p) && ctx.runtime[p.id]?.waterAbsorbPending) {
+    const pending = ctx.runtime[p.id]!.waterAbsorbPending
+    mult *= pending === 2 ? WATER_ABSORB_MISSION_MULT_L2 : WATER_ABSORB_MISSION_MULT_L1
+  }
+  // Swift Swim L2: +30% de atributos em missão enquanto chove (requer ctx.weather + ctx.nowMs).
+  if (
+    secretLevelOf(p, 'sa-swift-swim') === 2 &&
+    ctx.weather !== undefined &&
+    ctx.nowMs !== undefined &&
+    isRaining(ctx.weather, ctx.nowMs)
+  ) {
+    mult *= 1 + SWIFT_SWIM_MISSION_BONUS_L2
+  }
+  // Dry Skin L2: +25% de atributos em missão enquanto chove (requer ctx.weather + ctx.nowMs).
+  if (
+    secretLevelOf(p, 'sa-dry-skin') === 2 &&
+    ctx.weather !== undefined &&
+    ctx.nowMs !== undefined &&
+    isRaining(ctx.weather, ctx.nowMs)
+  ) {
+    mult *= 1 + DRY_SKIN_MISSION_BONUS_L2
+  }
+  if (hasHustle(p)) {
+    const lvl = secretLevelOf(p, 'sa-hustle')
+    mult *= lvl === 2 ? HUSTLE_MISSION_MULT_L2 : HUSTLE_MISSION_MULT_L1
+  }
+  // Clear Body L2 (nível de time): nenhum membro recebe debuff de atributo (multiplicador < 1).
+  // L1 NÃO cancela debuffs — apenas L2. L1 = imunidade a efeitos negativos de clima (ver stormFlow).
+  if (mult < 1 && ctx.team.some((m) => secretLevelOf(m, 'sa-clear-body') === 2)) mult = 1
   // Electirizer: bônus positivo da "próxima missão" por raio sofrido (não anulado pelo Clear Body).
   const charges = ctx.electirizerBonus?.[p.id] ?? 0
   if (charges > 0) mult *= 1 + ELECTIRIZER_MISSION_BONUS * charges
+  // Volt Absorb: eletrizado pelo raio → +30% (L1) ou +90% (L2) de atributos.
+  const elecLevel = ctx.electrified?.[p.id]
+  if (elecLevel !== undefined) {
+    mult *= 1 + (elecLevel === 2 ? VOLT_ABSORB_BONUS_L2 : VOLT_ABSORB_BONUS_L1)
+  }
   return mult
 }
 
@@ -227,9 +337,9 @@ export function teamSecretSum(ctx: MissionSecretCtx): Attrs {
 
 // ---- Viagem: velocidade do time e voo ----
 
-/** Este Pokémon é um voador? (passiva Fly do museu OU Aerodactyl com Fly/Fly+ desbloqueado). */
+/** Este Pokémon é um voador? (passiva Fly do museu OU habilidade sa-fly nível ≥ 1). */
 function isFlyer(p: Pokemon): boolean {
-  return p.passives.includes('fly') || hasSecret(p, 'sa-fly') || hasSecret(p, 'sa-fly-plus')
+  return p.passives.includes('fly') || hasSecret(p, 'sa-fly')
 }
 
 /** O time tem um voador? */
@@ -239,11 +349,11 @@ export function teamHasFly(team: readonly Pokemon[]): boolean {
 
 /**
  * O time VOA nesta tarefa? Voa em linha reta do ginásio até o ponto (caminho bem menor). Por
- * padrão o voador precisa estar SOZINHO; com Fly+ (sa-fly-plus) o voo funciona com o time inteiro.
+ * padrão o voador precisa estar SOZINHO; com Fly+ (sa-fly nível 2) o voo funciona com o time inteiro.
  */
 export function teamFlies(team: readonly Pokemon[]): boolean {
   if (!teamHasFly(team)) return false
-  return team.length === 1 || team.some((p) => hasSecret(p, 'sa-fly-plus'))
+  return team.length === 1 || team.some((p) => secretLevelOf(p, 'sa-fly') === 2)
 }
 
 /** O time tem um surfista? (o item Surfboard dá surf a todo o time). */
@@ -253,13 +363,13 @@ export function teamHasSurf(team: readonly Pokemon[], runItems: readonly string[
 
 /**
  * O time consegue SURFAR nesta tarefa (atravessar a água)? Por padrão o surfista precisa estar
- * SOZINHO; com Surf+ (sa-surf-plus) leva o time inteiro. Espelha a lógica de `teamFlies`/Fly+.
+ * SOZINHO; com Surf+ (sa-surf nível 2) leva o time inteiro. Espelha a lógica de `teamFlies`/Fly+.
  * O item Surfboard (runItems) faz o time inteiro surfar, como o Surf+.
  */
 export function teamSurfs(team: readonly Pokemon[], runItems: readonly string[] = []): boolean {
   if (runItems.includes('surfboard')) return true
   if (!teamHasSurf(team)) return false
-  return team.length === 1 || team.some((p) => hasSecret(p, 'sa-surf-plus'))
+  return team.length === 1 || team.some((p) => secretLevelOf(p, 'sa-surf') === 2)
 }
 
 /** O time atua do ginásio (Sniper, só sozinho)? Faz a missão sem viajar. */
@@ -267,9 +377,9 @@ export function teamSnipes(team: readonly Pokemon[]): boolean {
   return team.length === 1 && hasSniper(team[0] as Pokemon)
 }
 
-/** Quick Feet: +100% de velocidade de viagem, só quando despachado SOZINHO. */
+/** Quick Feet: +100% de velocidade de viagem quando despachado SOZINHO (L1) OU se algum membro tem L2 (time inteiro). */
 export function teamHasQuickFeet(team: readonly Pokemon[]): boolean {
-  return team.length === 1 && hasQuickFeet(team[0] as Pokemon)
+  return (team.length === 1 && hasQuickFeet(team[0] as Pokemon)) || team.some((p) => secretLevelOf(p, 'sa-quick-feet') === 2)
 }
 
 /** O time tenta a missão de novo ao falhar (Vital Spirit em qualquer membro)? */
@@ -295,18 +405,30 @@ export function teamIsSpeedy(
 
 /**
  * Multiplicador de VELOCIDADE do time na viagem (≥1 = mais rápido, <1 = mais lento):
- * Weak Armor (+20% por ponto de HP faltante de quem tem a habilidade), Fly (+ bônus ao voar) e o
- * item Lagging Tail (mais lento). O tempo de viagem é dividido por este valor.
+ * Weak Armor (+20% por ponto de HP faltante de quem tem a habilidade), Fly (+ bônus ao voar),
+ * Volt Absorb eletrizado (+30%/+90% por membro eletrizado) e o item Lagging Tail (mais lento).
+ * O tempo de viagem é dividido por este valor.
+ * @param electrified Mapa opcional de Pokémon eletrizados (Volt Absorb) — id → nível.
  */
 export function teamTravelSpeedMultiplier(
   team: readonly Pokemon[],
   runItems: readonly string[] = [],
+  electrified?: Record<string, 1 | 2>,
 ): number {
   let speed = 1
   for (const p of team) {
     if (hasWeakArmor(p)) {
       const missing = Math.max(0, p.maxHp - p.currentHp)
-      speed += WEAK_ARMOR_SPEED_PER_MISSING_HP * missing
+      const perPoint =
+        secretLevelOf(p, 'sa-weak-armor') === 2
+          ? WEAK_ARMOR_SPEED_PER_MISSING_HP_L2
+          : WEAK_ARMOR_SPEED_PER_MISSING_HP_L1
+      speed += perPoint * missing
+    }
+    // Volt Absorb eletrizado: +30% (L1) ou +90% (L2) de velocidade.
+    const elecLevel = electrified?.[p.id]
+    if (elecLevel !== undefined) {
+      speed += elecLevel === 2 ? VOLT_ABSORB_BONUS_L2 : VOLT_ABSORB_BONUS_L1
     }
   }
   if (teamFlies(team)) speed += FLY_SPEED_BONUS
@@ -320,14 +442,18 @@ export function teamTravelSpeedMultiplier(
 // ---- Combate: dano recebido ----
 
 /**
- * Dano que este Pokémon REALMENTE recebe a partir de um dano bruto: Shell Armor reduz para 1
- * (qualquer dano vira 1), Weak Armor dobra. Shell Armor tem precedência se o Pokémon tiver ambos.
+ * Dano que este Pokémon REALMENTE recebe a partir de um dano bruto: Shell Armor reduz para
+ * ceil(raw/2) (L1) ou ceil(raw/3) (L2). Weak Armor NÃO afeta mais o dano recebido.
+ * Shell Armor tem precedência se o Pokémon tiver ambos.
  * Vale tanto em batalhas quanto no dano de missões fracassadas.
  */
 export function damageTaken(p: Pokemon, raw: number): number {
   if (raw <= 0) return 0
-  if (hasShellArmor(p)) return SHELL_ARMOR_DAMAGE
-  if (hasWeakArmor(p)) return raw * WEAK_ARMOR_DAMAGE_MULT
+  if (hasShellArmor(p)) {
+    const divisor =
+      secretLevelOf(p, 'sa-shell-armor') === 2 ? SHELL_ARMOR_DIVISOR_L2 : SHELL_ARMOR_DIVISOR_L1
+    return Math.ceil(raw / divisor)
+  }
   return raw
 }
 
@@ -382,59 +508,71 @@ export function missionEffectBreakdown(ctx: MissionSecretCtx): MissionEffectEntr
   // --- Atributos: habilidades ---
   const rivalryBonus = Math.max(
     0,
-    ...team.map((p) =>
-      hasRivalry(p)
-        ? RIVALRY_ATTR_PER_ALLY * team.filter((o) => o.id !== p.id && o.gender === p.gender).length
-        : 0,
-    ),
+    ...team.map((p) => {
+      if (!hasRivalry(p)) return 0
+      const perAlly =
+        secretLevelOf(p, 'sa-rivalry') === 2 ? RIVALRY_ATTR_PER_ALLY_L2 : RIVALRY_ATTR_PER_ALLY_L1
+      return perAlly * team.filter((o) => o.id !== p.id && o.gender === p.gender).length
+    }),
   )
   if (rivalryBonus > 0) {
     push({ id: 'rivalry', source: 'ability', label: 'Rivalry', kind: 'attr', direction: 'gain',
       value: fmtAdd(rivalryBonus), reason: 'por aliados do mesmo gênero' })
   }
   if (team.some((p) => hasSecret(p, 'sa-rock-head'))) {
+    // Use the highest level among team members with rock-head for display.
+    const lvl = Math.max(...team.map((p) => secretLevelOf(p, 'sa-rock-head'))) as 0 | 1 | 2
     if (template.id === 'escolta') {
       push({ id: 'rock-head', source: 'ability', label: 'Rock Head', kind: 'attr', direction: 'gain',
-        value: fmtMult(ROCK_HEAD_ESCORT_MULT), reason: 'em Escolta' })
+        value: fmtMult(lvl === 2 ? ROCK_HEAD_ESCORT_MULT_L2 : ROCK_HEAD_ESCORT_MULT_L1), reason: 'em Escolta' })
     } else if (template.id === 'ensino') {
       push({ id: 'rock-head', source: 'ability', label: 'Rock Head', kind: 'attr', direction: 'loss',
-        value: fmtMult(ROCK_HEAD_STUDY_MULT), reason: 'em Ensino' })
+        value: fmtMult(lvl === 2 ? ROCK_HEAD_STUDY_MULT_L2 : ROCK_HEAD_STUDY_MULT_L1), reason: 'em Ensino' })
     }
   }
   if (team.some(hasAnalytic)) {
+    const lvl = Math.max(...team.map((p) => secretLevelOf(p, 'sa-analytic'))) as 0 | 1 | 2
     if (template.id === 'ensino') {
       push({ id: 'analytic', source: 'ability', label: 'Analytic', kind: 'attr', direction: 'gain',
-        value: fmtMult(ANALYTIC_STUDY_MULT), reason: 'em Ensino' })
+        value: fmtMult(lvl === 2 ? ANALYTIC_STUDY_MULT_L2 : ANALYTIC_STUDY_MULT_L1), reason: 'em Ensino' })
     } else if (template.id === 'patrulha') {
       push({ id: 'analytic', source: 'ability', label: 'Analytic', kind: 'attr', direction: 'loss',
-        value: fmtMult(ANALYTIC_PATROL_MULT), reason: 'em Patrulha' })
+        value: fmtMult(lvl === 2 ? ANALYTIC_PATROL_MULT_L2 : ANALYTIC_PATROL_MULT_L1), reason: 'em Patrulha' })
     }
   }
   if (team.some((p) => hasTorrent(p) && team.some((o) => o.id !== p.id && o.types.includes('water')))) {
+    const lvl = Math.max(...team.map((p) => secretLevelOf(p, 'sa-torrent'))) as 0 | 1 | 2
     push({ id: 'torrent', source: 'ability', label: 'Torrent', kind: 'attr', direction: 'gain',
-      value: fmtMult(TORRENT_MISSION_MULT), reason: 'com aliado do tipo Água' })
+      value: fmtMult(lvl === 2 ? TORRENT_MISSION_MULT_L2 : TORRENT_MISSION_MULT_L1), reason: 'com aliado do tipo Água' })
   }
   if (team.some((p) => hasBattleArmor(p) && runtime[p.id]?.battleArmorPending)) {
+    const lvl = Math.max(...team.filter((p) => hasBattleArmor(p) && runtime[p.id]?.battleArmorPending).map((p) => secretLevelOf(p, 'sa-battle-armor'))) as 0 | 1 | 2
     push({ id: 'battle-armor', source: 'ability', label: 'Battle Armor', kind: 'attr', direction: 'gain',
-      value: fmtMult(BATTLE_ARMOR_MISSION_MULT), reason: 'após batalhar na defesa' })
+      value: fmtMult(lvl === 2 ? BATTLE_ARMOR_MISSION_MULT_L2 : BATTLE_ARMOR_MISSION_MULT_L1), reason: 'após batalhar na defesa' })
   }
   if (team.some(hasHustle)) {
+    const lvl = Math.max(...team.map((p) => secretLevelOf(p, 'sa-hustle'))) as 0 | 1 | 2
     push({ id: 'hustle', source: 'ability', label: 'Hustle', kind: 'attr', direction: 'loss',
-      value: fmtMult(HUSTLE_MISSION_MULT), reason: 'troca atributo por poder de batalha' })
+      value: fmtMult(lvl === 2 ? HUSTLE_MISSION_MULT_L2 : HUSTLE_MISSION_MULT_L1), reason: 'troca atributo por poder de batalha' })
   }
-  if (hasAttrLoss && team.some(hasClearBody)) {
+  if (hasAttrLoss && team.some((m) => secretLevelOf(m, 'sa-clear-body') === 2)) {
     push({ id: 'clear-body', source: 'ability', label: 'Clear Body', kind: 'attr', direction: 'info',
       value: '', reason: 'anula reduções de atributo do time' })
   }
 
   // --- Velocidade (não-roteamento) ---
-  const missingHp = team.reduce(
-    (sum, p) => (hasWeakArmor(p) ? sum + Math.max(0, p.maxHp - p.currentHp) : sum),
-    0,
-  )
-  if (missingHp > 0) {
+  const weakArmorBonus = team.reduce((sum, p) => {
+    if (!hasWeakArmor(p)) return sum
+    const missing = Math.max(0, p.maxHp - p.currentHp)
+    const perPoint =
+      secretLevelOf(p, 'sa-weak-armor') === 2
+        ? WEAK_ARMOR_SPEED_PER_MISSING_HP_L2
+        : WEAK_ARMOR_SPEED_PER_MISSING_HP_L1
+    return sum + perPoint * missing
+  }, 0)
+  if (weakArmorBonus > 0) {
     push({ id: 'weak-armor', source: 'ability', label: 'Weak Armor', kind: 'speed', direction: 'gain',
-      value: fmtAdd(WEAK_ARMOR_SPEED_PER_MISSING_HP * missingHp), reason: 'por HP faltante' })
+      value: fmtAdd(weakArmorBonus), reason: 'por HP faltante' })
   }
   if (teamHasQuickFeet(team)) {
     push({ id: 'quick-feet', source: 'ability', label: 'Quick Feet', kind: 'speed', direction: 'gain',

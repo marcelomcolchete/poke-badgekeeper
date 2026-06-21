@@ -155,12 +155,13 @@ describe('Swift Swim acelera a ida da missão sob chuva', () => {
   )!
 
   /** Estado pronto para despachar UMA missão 'available' em `dest`, com o roster dado. */
-  function dispatchState(secretCount: number) {
+  // Omanyte (138) par = ['sa-swift-swim','sa-shell-armor']; Swift Swim no slot 0.
+  function dispatchState(hasSwiftSwim: boolean) {
     const s = createInitialState(1)
     s.run.cityIndex = 1
     s.weather = rainAllDay
     const mon = createPokemon({ id: 'p1', speciesId: 138 /* Omanyte */, level: 10, rng: createRng(1) })
-    mon.secretCount = secretCount // 1 = Swift Swim desbloqueado; 0 = sem habilidade
+    mon.secretPicks = hasSwiftSwim ? [{ slot: 0 as const, level: 1 as const }] : []
     mon.status = 'idle' // acceptMission só despacha quem está idle
     s.roster = [mon]
     s.missions = [
@@ -187,9 +188,9 @@ describe('Swift Swim acelera a ida da missão sob chuva', () => {
   }
 
   it('time com Swift Swim chega antes do que sem, sob chuva', () => {
-    const withSS = dispatchState(1)
+    const withSS = dispatchState(true)
     acceptMission(withSS, 'm1', ['p1'])
-    const plain = dispatchState(0)
+    const plain = dispatchState(false)
     acceptMission(plain, 'm1', ['p1'])
 
     const swiftArrive = withSS.missions[0]!.arriveAtMs!

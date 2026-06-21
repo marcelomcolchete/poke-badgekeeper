@@ -8,7 +8,7 @@ function gameState() {
   const s = createInitialState(1)
   s.run.cityIndex = 0
   s.roster = [
-    makeMon({ id: 'a', speciesId: 134, hearts: 4, secretCount: 2 }), // 134 tem linha de Hab. Secreta
+    makeMon({ id: 'a', speciesId: 134, hearts: 4, secretPicks: [{ slot: 0, level: 1 }, { slot: 1, level: 1 }] }), // 134 (Vaporeon) tem ['sa-surf','sa-water-absorb']
     makeMon({ id: 'b', speciesId: 4, hearts: 2 }),
   ]
   s.box = [makeMon({ id: 'c', speciesId: 7, hearts: 3 })]

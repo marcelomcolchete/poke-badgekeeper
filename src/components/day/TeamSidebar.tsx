@@ -8,7 +8,7 @@ import type { GameState } from '../../engine/state.ts'
 import type { Pokemon } from '../../types/index.ts'
 import { getSpecies, pokemonSpritePath } from '../../data/pokemon/index.ts'
 import { getMissionTemplate } from '../../data/missionTemplates.ts'
-import { secretCountOf, SECRET_KINDS, unlockedSecretIds } from '../../data/secretAbilities.ts'
+import { activeSecrets, SECRET_KINDS } from '../../data/secretAbilities.ts'
 import { ATTR_MAX, ATTR_PER_POINT, LEVEL_MAX } from '../../engine/constants.ts'
 import { effectiveAttr, perPointGain } from '../../engine/attributes.ts'
 import { addXp, pendingPoints, xpToNext } from '../../engine/leveling.ts'
@@ -132,10 +132,11 @@ export function TeamSidebar({ state, onSelect }: Props) {
           const rank = pokemonRank(mon)
           const willLevelUp = willLevelUpOnReturn(state, mon)
           // Habilidades Secretas desbloqueadas no indivíduo → medalha (quantas) + tooltip.
-          const secretCount = secretCountOf(mon)
+          const secrets = activeSecrets(mon)
+          const secretCount = secrets.length // 0..2
           const secretActive = secretCount > 0
           const secretTip = secretActive
-            ? `Habilidades Secretas: ${unlockedSecretIds(mon).map((id) => SECRET_KINDS[id].name).join(', ')}`
+            ? `Habilidades Secretas: ${secrets.map(({ id, level }) => `${SECRET_KINDS[id].name}${level === 2 ? '+' : ''}`).join(', ')}`
             : undefined
           const atMax = mon.level >= LEVEL_MAX
           const xpNeeded = xpToNext(mon.level)

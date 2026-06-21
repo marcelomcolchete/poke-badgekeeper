@@ -409,6 +409,49 @@
   color: var(--c-ink);
 }
 
+/* ---- Botões de escolha da Habilidade Secreta (Fase 2) ---- */
+.secretChoice {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  align-items: center;
+}
+.secretChoiceTitle {
+  font-weight: 700;
+  color: var(--c-hud-accent);
+  text-align: center;
+}
+.secretChoiceOptions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.secretChoiceBtn {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 240px;
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+  border: 2px solid var(--c-hud-accent);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  color: inherit;
+}
+.secretChoiceBtn:hover {
+  background: rgba(255, 203, 5, 0.15);
+}
+.secretChoiceBtn b {
+  color: var(--c-hud-accent);
+}
+.secretChoiceBtn span {
+  font-size: 0.85em;
+  opacity: 0.9;
+}
+
 /* ---- Reveal da Habilidade Secreta desbloqueada no dia ---- */
 .secretReveal {
   display: flex;

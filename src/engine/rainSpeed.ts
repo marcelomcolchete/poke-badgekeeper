@@ -38,6 +38,7 @@ function speedSegments(schedule: WeatherSchedule, startMs: number): SpeedSegment
  * Duração (ms de jogo) de uma perna de `distance` começando em `startMs`, considerando o Swift
  * Swim do time durante a chuva. Sem swimmer ou sem chuva → idêntico a graphTravelMs(distance,
  * team, baseMult) (linear).
+ * @param electrified Pokémon eletrizados (Volt Absorb) — id → nível; afeta o multiplicador base.
  */
 export function rainTravelMs(
   schedule: WeatherSchedule,
@@ -45,8 +46,9 @@ export function rainTravelMs(
   distance: number,
   team: readonly Pokemon[],
   runItems: readonly string[] = [],
+  electrified?: Record<string, 1 | 2>,
 ): number {
-  const baseMult = teamTravelSpeedMultiplier(team, runItems)
+  const baseMult = teamTravelSpeedMultiplier(team, runItems, electrified)
   const need = graphTravelMs(distance, team, 1) // progresso total a multiplicador 1
   if (need <= 0) return 0
   // Sem swimmer ou sem chuva → tempo linear. (Chuvas totalmente no passado também caem no

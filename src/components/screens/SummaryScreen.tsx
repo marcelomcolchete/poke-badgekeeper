@@ -12,7 +12,7 @@ import type { DailyProgress } from '../../engine/approval.ts'
 import { averageStars, dailyGoalMet, dailyPerfect, isHired } from '../../engine/approval.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
 import { Hearts } from '../common/Hearts.tsx'
-import { SECRET_KINDS, type SecretId } from '../../data/secretAbilities.ts'
+import { SECRET_KINDS, secretLineFor } from '../../data/secretAbilities.ts'
 import type { Pokemon } from '../../types/index.ts'
 import { Textbox } from '../Textbox/Textbox.tsx'
 import { TypeBadge } from '../common/TypeBadge.tsx'
@@ -68,7 +68,16 @@ export function SummaryScreen({ state, dispatch, onRestart }: Props) {
   // Reveal da Habilidade Secreta desbloqueada hoje pelo Destaque (PLAN §3, ajuste).
   const unlock = state.today.secretUnlock
   const unlockMon = unlock ? state.roster.find((p) => p.id === unlock.pokemonId) : undefined
-  const unlockedAbility = unlock ? SECRET_KINDS[unlock.secretId as SecretId] ?? null : null
+  const unlockPair = unlockMon ? secretLineFor(unlockMon.speciesId) : null
+  const unlockAbilityId = unlock && unlockPair ? unlockPair[unlock.slot] : null
+  const unlockedAbility = unlockAbilityId ? SECRET_KINDS[unlockAbilityId] ?? null : null
+
+  // Escolha de Habilidade Secreta pendente do Destaque (Fase 2).
+  const choice = state.today.secretChoice
+  const choiceMon = choice ? state.roster.find((p) => p.id === choice.pokemonId) : undefined
+  const choicePair = choiceMon ? secretLineFor(choiceMon.speciesId) : null
+  const choicePicks = choiceMon?.secretPicks ?? []
+  const choicePending = Boolean(choice && choiceMon && choicePair)
 
   return (
     <div className={styles.screen}>
@@ -106,6 +115,57 @@ export function SummaryScreen({ state, dispatch, onRestart }: Props) {
         />
       </div>
 
+      {choicePending && choiceMon && choicePair && (
+        <div className={styles.secretChoice}>
+          <span className={styles.secretChoiceTitle}>
+            ★ {displayNameOf(choiceMon)} virou Destaque — escolha sua Habilidade Secreta
+          </span>
+          <div className={styles.secretChoiceOptions}>
+            {choicePicks.length === 0
+              ? ([0, 1] as const).map((slot) => {
+                  const kind = SECRET_KINDS[choicePair[slot]]
+                  return (
+                    <button
+                      key={slot}
+                      type="button"
+                      className={styles.secretChoiceBtn}
+                      onClick={() => dispatch({ type: 'CHOOSE_SECRET', slot, level: 1 })}
+                    >
+                      <b>{kind.name}</b>
+                      <span>{kind.effectL1}</span>
+                    </button>
+                  )
+                })
+              : (() => {
+                  const cur = choicePicks[0]!
+                  const curKind = SECRET_KINDS[choicePair[cur.slot]]
+                  const other = (cur.slot === 0 ? 1 : 0) as 0 | 1
+                  const otherKind = SECRET_KINDS[choicePair[other]]
+                  return (
+                    <>
+                      <button
+                        type="button"
+                        className={styles.secretChoiceBtn}
+                        onClick={() => dispatch({ type: 'CHOOSE_SECRET', slot: cur.slot, level: 2 })}
+                      >
+                        <b>Aprofundar — {curKind.name}+</b>
+                        <span>{curKind.effectL2}</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.secretChoiceBtn}
+                        onClick={() => dispatch({ type: 'CHOOSE_SECRET', slot: other, level: 1 })}
+                      >
+                        <b>Ampliar — {otherKind.name}</b>
+                        <span>{otherKind.effectL1}</span>
+                      </button>
+                    </>
+                  )
+                })()}
+          </div>
+        </div>
+      )}
+
       {unlockedAbility && unlockMon && unlock && (
         <div className={styles.secretReveal}>
           <img
@@ -115,10 +175,14 @@ export function SummaryScreen({ state, dispatch, onRestart }: Props) {
           />
           <div className={styles.secretRevealText}>
             <span className={styles.secretRevealBadge}>
-              {SECRET_MEDAL[unlock.index]} HABILIDADE SECRETA {unlock.index}/3 — DESBLOQUEADA
+              {SECRET_MEDAL[unlock.slot + 1]} HABILIDADE SECRETA — {unlock.level === 2 ? 'NÍVEL 2' : 'DESBLOQUEADA'}
             </span>
-            <span className={styles.secretRevealName}>{unlockedAbility.name}</span>
-            <span className={styles.secretRevealDesc}>{unlockedAbility.effect}</span>
+            <span className={styles.secretRevealName}>
+              {unlockedAbility.name}{unlock.level === 2 ? '+' : ''}
+            </span>
+            <span className={styles.secretRevealDesc}>
+              {unlock.level === 2 ? unlockedAbility.effectL2 : unlockedAbility.effectL1}
+            </span>
           </div>
         </div>
       )}
@@ -130,6 +194,8 @@ export function SummaryScreen({ state, dispatch, onRestart }: Props) {
           roster={state.roster}
           onRestart={onRestart}
         />
+      ) : choicePending ? (
+        <Textbox>Escolha a Habilidade Secreta do seu Destaque para continuar.</Textbox>
       ) : (
         <>
           <Textbox>Bom trabalho! Pronto para o próximo dia?</Textbox>

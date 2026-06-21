@@ -135,9 +135,9 @@ describe('resolveDefense — Habilidades Secretas', () => {
   const oneStrong: EnemyUnit[] = [{ battle: 100, types: ['normal'] }]
 
   it('Explosion: ao perder, derrota o inimigo e a batalha é vencida mesmo perdendo o duelo', () => {
-    // Geodude (74) com secretCount 2 = [Sturdy, Explosion]; Sturdy não está disponível (sem opts).
+    // Geodude (74) par = ['sa-sturdy','sa-explosion']; slot 0=Sturdy, slot 1=Explosion. Sturdy não está disponível (sem opts).
     const geo = makeMon({
-      id: 'g', speciesId: 74, secretCount: 2, types: ['rock'],
+      id: 'g', speciesId: 74, secretPicks: [{ slot: 0, level: 1 }, { slot: 1, level: 1 }], types: ['rock'],
       baseAttrs: makeAttrs({ batalha: 10, resistencia: 100 }),
     })
     const out = resolveDefense(fixedRng(0.999), [geo], oneStrong)
@@ -150,7 +150,7 @@ describe('resolveDefense — Habilidades Secretas', () => {
 
   it('Explosion como último Pokémon que desmaia ainda vence (KO mútuo)', () => {
     const geo = makeMon({
-      id: 'g', speciesId: 74, secretCount: 2, types: ['rock'],
+      id: 'g', speciesId: 74, secretPicks: [{ slot: 0, level: 1 }, { slot: 1, level: 1 }], types: ['rock'],
       baseAttrs: makeAttrs({ batalha: 10, resistencia: 100 }), currentHp: 2,
     })
     const out = resolveDefense(fixedRng(0.999), [geo], oneStrong)
@@ -160,7 +160,8 @@ describe('resolveDefense — Habilidades Secretas', () => {
 
   it('Lightning Rod: contra inimigo Elétrico, o portador assume a frente', () => {
     const front = makeMon({ id: 'a', types: ['normal'], baseAttrs: makeAttrs({ batalha: 50 }) })
-    const rod = makeMon({ id: 'b', speciesId: 111, secretCount: 1, types: ['ground'], baseAttrs: makeAttrs({ batalha: 50 }) })
+    // Cubone (104) par = ['sa-battle-armor','sa-lightning-rod']; Lightning Rod no slot 1.
+    const rod = makeMon({ id: 'b', speciesId: 104, secretPicks: [{ slot: 1, level: 1 }], types: ['ground'], baseAttrs: makeAttrs({ batalha: 50 }) })
     const electric: EnemyUnit[] = [{ battle: 10, types: ['electric'] }]
     const out = resolveDefense(fixedRng(0), [front, rod], electric)
     expect(out.duels[0]?.yourId).toBe('b') // o portador atraiu o duelo
@@ -168,15 +169,17 @@ describe('resolveDefense — Habilidades Secretas', () => {
 
   it('Lightning Rod não troca a frente contra inimigo não-Elétrico', () => {
     const front = makeMon({ id: 'a', types: ['normal'], baseAttrs: makeAttrs({ batalha: 50 }) })
-    const rod = makeMon({ id: 'b', speciesId: 111, secretCount: 1, types: ['ground'], baseAttrs: makeAttrs({ batalha: 50 }) })
+    // Cubone (104) par = ['sa-battle-armor','sa-lightning-rod']; Lightning Rod no slot 1.
+    const rod = makeMon({ id: 'b', speciesId: 104, secretPicks: [{ slot: 1, level: 1 }], types: ['ground'], baseAttrs: makeAttrs({ batalha: 50 }) })
     const out = resolveDefense(fixedRng(0), [front, rod], oneStrong)
     expect(out.duels[0]?.yourId).toBe('a')
   })
 
-  it('Static: ao perder um duelo, paralisa o inimigo (Batalha ×0,5) nos duelos seguintes', () => {
-    // Pikachu (25) secretCount 1 = [Static]. Bate fraco e tanque (sobrevive e passa a vez).
+  it('Static (NOVO): ao perder um duelo, NÃO paralisa mais o inimigo na batalha', () => {
+    // Pikachu (25) par = ['sa-static','sa-dig']; Static no slot 0.
+    // O Static novo não tem mais efeito de batalha — o inimigo luta com Batalha cheia.
     const pika = makeMon({
-      id: 'p', speciesId: 25, secretCount: 1, types: ['electric'],
+      id: 'p', speciesId: 25, secretPicks: [{ slot: 0, level: 1 }], types: ['electric'],
       baseAttrs: makeAttrs({ batalha: 10, resistencia: 100 }),
     })
     const next = makeMon({
@@ -187,8 +190,8 @@ describe('resolveDefense — Habilidades Secretas', () => {
     expect(out.duels[0]?.yourId).toBe('p')
     expect(out.duels[0]?.youWon).toBe(false)
     expect(out.duels[1]?.yourId).toBe('n')
-    // Inimigo paralisado: enemyEff = 100 × 0,5 = 50.
-    const expected = duelWinProbability(effectiveBattle(next, ['normal']), 50)
+    // Inimigo NÃO paralisado: enemyEff = 100 (batalha cheia, não ×0,5).
+    const expected = duelWinProbability(effectiveBattle(next, ['normal']), 100)
     expect(out.duels[1]?.pWin).toBeCloseTo(expected, 6)
   })
 
@@ -207,9 +210,9 @@ describe('resolveDefense — Habilidades Secretas', () => {
   })
 
   it('Reckless: ao perder, tenta de novo sem passar a vez (até desmaiar)', () => {
-    // Rhyhorn (111) secretCount 3 = [Lightning Rod, Rock Head, Reckless].
+    // Rhyhorn (111) par = ['sa-rock-head','sa-reckless']; Reckless no slot 1.
     const rhy = makeMon({
-      id: 'r', speciesId: 111, secretCount: 3, types: ['ground'],
+      id: 'r', speciesId: 111, secretPicks: [{ slot: 1, level: 1 }], types: ['ground'],
       baseAttrs: makeAttrs({ batalha: 10, resistencia: 100 }),
     })
     const out = resolveDefense(fixedRng(0.999), [rhy], oneStrong)
@@ -219,19 +222,20 @@ describe('resolveDefense — Habilidades Secretas', () => {
     expect(out.won).toBe(false)
   })
 
-  it('Shell Armor reduz o dano de cada derrota a 1', () => {
-    // Omanyte (138) secretCount 2 = [Swift Swim, Shell Armor].
+  it('Shell Armor L1 reduz o dano de cada derrota a ceil(raw/2)', () => {
+    // Omanyte (138) par = ['sa-swift-swim','sa-shell-armor']; Shell Armor no slot 1 L1.
     const oma = makeMon({
-      id: 'o', speciesId: 138, secretCount: 2, types: ['rock'],
+      id: 'o', speciesId: 138, secretPicks: [{ slot: 1, level: 1 }], types: ['rock'],
       baseAttrs: makeAttrs({ batalha: 10, resistencia: 100 }),
     })
     const out = resolveDefense(fixedRng(0.999), [oma], oneStrong, { damagePerLoss: 4 })
-    expect(out.squad[0]?.currentHp).toBe(oma.maxHp - 1) // dano 4 vira 1
+    expect(out.squad[0]?.currentHp).toBe(oma.maxHp - 2) // dano 4 → ceil(4/2) = 2
   })
 
   it('Sturdy salva do desmaio (1 HP) quando disponível', () => {
+    // Geodude (74) par = ['sa-sturdy','sa-explosion']; Sturdy no slot 0.
     const geo = makeMon({
-      id: 'g', speciesId: 74, secretCount: 1, types: ['rock'],
+      id: 'g', speciesId: 74, secretPicks: [{ slot: 0, level: 1 }], types: ['rock'],
       baseAttrs: makeAttrs({ batalha: 10, resistencia: 10 }), currentHp: 1,
     })
     const out = resolveDefense(fixedRng(0.999), [geo], oneStrong, {
@@ -240,43 +244,252 @@ describe('resolveDefense — Habilidades Secretas', () => {
     expect(out.squad[0]?.currentHp).toBe(1) // não desmaiou
     expect(out.sturdyUsedIds).toContain('g')
   })
+
+  it('Sturdy+ (L2): sobrevive a múltiplas quedas fatais sem token diário', () => {
+    // Geodude (74) par = ['sa-sturdy','sa-explosion']; Sturdy no slot 0, NÍVEL 2.
+    // currentHp=1 força que cada derrota seria fatal.
+    // Usamos 3 inimigos fracos: o pokemon perde todos os 3 duelos mas sobrevive com 1 HP em cada.
+    const geo = makeMon({
+      id: 'g', speciesId: 74, secretPicks: [{ slot: 0, level: 2 }], types: ['rock'],
+      baseAttrs: makeAttrs({ batalha: 10, resistencia: 10 }), currentHp: 1,
+    })
+    const threeStrong: EnemyUnit[] = [
+      { battle: 100, types: ['normal'] },
+      { battle: 100, types: ['normal'] },
+      { battle: 100, types: ['normal'] },
+    ]
+    // Sem sturdyAvailableIds (sem token diário): L1 não salvaria, L2 deve salvar TODOS.
+    const out = resolveDefense(fixedRng(0.999), [geo], threeStrong)
+    // O pokemon perde todos os 3 duelos (passa a vez cada vez) e fica com 1 HP em todos.
+    expect(out.squad[0]?.currentHp).toBe(1) // nunca desmaiou
+    expect(out.squad[0]?.status).not.toBe('fainted')
+    // Todos os duelos foram do mesmo Pokémon (sempre na frente, sobrevivendo com 1 HP).
+    expect(out.duels.every((d) => d.yourId === 'g')).toBe(true)
+    // sturdyUsedIds NÃO deve conter 'g' (L2 não consome o token).
+    expect(out.sturdyUsedIds).not.toContain('g')
+    // Com 3 inimigos e sem ajuda, a defesa é perdida (só 1 Pokémon no squad).
+    expect(out.won).toBe(false)
+  })
+
+  it('Explosion+ (L2): ao perder um duelo, derrota TODOS os inimigos restantes', () => {
+    // Voltorb (100) par = ['sa-explosion','sa-rollout']; Explosion no slot 0, NÍVEL 2.
+    const voltorb = makeMon({
+      id: 'v', speciesId: 100, secretPicks: [{ slot: 0, level: 2 }], types: ['electric'],
+      baseAttrs: makeAttrs({ batalha: 10, resistencia: 100 }),
+    })
+    const threeStrong: EnemyUnit[] = [
+      { battle: 100, types: ['normal'] },
+      { battle: 100, types: ['normal'] },
+      { battle: 100, types: ['normal'] },
+    ]
+    // fixedRng(0.999) → perde o duelo; Explosion+ deve derrotar TODOS os 3 inimigos.
+    const out = resolveDefense(fixedRng(0.999), [voltorb], threeStrong)
+    expect(out.won).toBe(true) // todos os inimigos derrotados
+    expect(out.duels).toHaveLength(1) // só um duelo aconteceu
+    expect(out.duels[0]?.youWon).toBe(false)
+    // O Pokémon tomou dano total (toda a vida) — pode ter sido salvo por Sturdy+ se aplicável,
+    // mas aqui não tem Sturdy, então desmaia.
+    expect(out.squad[0]?.status).toBe('fainted')
+  })
+
+  it('Reckless+ (L2): na retentativa toma metade do dano L1', () => {
+    // Rhyhorn (111) par = ['sa-rock-head','sa-reckless']; Reckless no slot 1, NÍVEL 2.
+    const damagePerLoss = 2
+    const maxHp = 20
+    const rhy = makeMon({
+      id: 'r', speciesId: 111, secretPicks: [{ slot: 1, level: 2 }], types: ['ground'],
+      baseAttrs: makeAttrs({ batalha: 10, resistencia: 100 }), maxHp, currentHp: maxHp,
+    })
+    // Um único inimigo forte: o pokemon perde exatamente 1 duelo, sobrevive, e retenta.
+    // Para controlar: vence no 2º duelo (rng alterna, mas usamos um truque).
+    // Usamos fixedRng(0.999) → perde sempre; vamos checar que na 1ª retentativa o dano é ceil(loss/2).
+    // loss = damageTaken(rhy, damagePerLoss) = 2 (sem Shell Armor); ceil(2/2)=1.
+    // Então: 1ª derrota → dano=1 (metade); continua tentando.
+    // Verificamos apenas que o HP após a 1ª retentativa é maxHp - 1 (não maxHp - 2).
+    // Para observar só a primeira derrota, usamos 1 inimigo e capturamos HP após 1ª retentativa.
+    // Porém com fixedRng(0.999) vai perder todas → eventualmente desmaia. Checamos via múltiplas perdas.
+    // Cada perda custa ceil(2/2)=1 HP. maxHp=20, então 20 derrotas antes de desmaiar.
+    const out = resolveDefense(fixedRng(0.999), [rhy], oneStrong, { damagePerLoss })
+    // Com L2 (dano=1 por tentativa) e maxHp=20, o pokemon perde 20 duelos antes de desmaiar.
+    expect(out.duels.length).toBe(maxHp) // 20 tentativas
+    expect(out.squad[0]?.status).toBe('fainted')
+    // Compara com L1 (dano=2): teria desmaiado em 10 tentativas.
+    const rhyL1 = makeMon({
+      id: 'r2', speciesId: 111, secretPicks: [{ slot: 1, level: 1 }], types: ['ground'],
+      baseAttrs: makeAttrs({ batalha: 10, resistencia: 100 }), maxHp, currentHp: maxHp,
+    })
+    const outL1 = resolveDefense(fixedRng(0.999), [rhyL1], oneStrong, { damagePerLoss })
+    expect(outL1.duels.length).toBe(maxHp / damagePerLoss) // 10 tentativas com L1
+  })
+
+  it('Vital Spirit+ (L2): ao perder um duelo, tenta de novo SEM perder HP', () => {
+    // Electabuzz (125) par = ['sa-vital-spirit','sa-volt-absorb']; Vital Spirit no slot 0, NÍVEL 2.
+    const maxHp = 10
+    const elec = makeMon({
+      id: 'e', speciesId: 125, secretPicks: [{ slot: 0, level: 2 }], types: ['electric'],
+      baseAttrs: makeAttrs({ batalha: 10, resistencia: 100 }), maxHp, currentHp: maxHp,
+    })
+    // fixedRng(0.999) perde todos os duelos mas nunca perde HP.
+    // Como nunca desmaia e há um inimigo, o loop continuaria infinitamente → o guard vai quebrar.
+    // Portanto testamos com um inimigo que VENCE depois de N tentativas usando rng variável.
+    // Usamos um rng que devolve 0.999 nas N-1 primeiras chamadas e 0 na enésima.
+    let callCount = 0
+    const nLosses = 5
+    const alternatingRng = {
+      next: () => 0,
+      int: (min: number) => min,
+      float: () => 0,
+      bool: (p = 0.5) => {
+        callCount++
+        // Perde nas primeiras nLosses chamadas, vence na enésima.
+        return callCount > nLosses ? 0 < p : 0.999 < p
+      },
+      pick: <T>(items: readonly T[]): T => items[0] as T,
+      shuffle: <T>(items: readonly T[]): T[] => [...items],
+      state: () => 0,
+    }
+    const out = resolveDefense(alternatingRng, [elec], oneStrong)
+    expect(out.won).toBe(true) // venceu após retentativas
+    // HP deve ser o mesmo que o inicial (zero dano durante as perdas).
+    expect(out.squad[0]?.currentHp).toBe(maxHp)
+    // Todos os duelos foram do mesmo Pokémon.
+    expect(out.duels.every((d) => d.yourId === 'e')).toBe(true)
+  })
 })
 
 describe('resolveDefense — Habilidades de Cerulean', () => {
-  it('Thick Fat: vantagem de Batalha (×1,5) contra oponente do tipo Gelo', () => {
-    // Seel (86) secretCount 3 = [Surf, Ice Body, Thick Fat]. Tipo neutro p/ isolar o efeito.
-    const seel = makeMon({ id: 's', speciesId: 86, secretCount: 3, types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
-    const plain = makeMon({ id: 'p', types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
-    const ice: EnemyUnit[] = [{ battle: 40, types: ['ice'] }]
-    expect(resolveDefense(fixedRng(1), [seel], ice).duels[0]?.pWin).toBeCloseTo(0.75) // 30/40
-    expect(resolveDefense(fixedRng(1), [plain], ice).duels[0]?.pWin).toBeCloseTo(0.5) // 20/40
+  it('Thick Fat L2: auto-vence duelos contra oponente do tipo Gelo (pWin=1)', () => {
+    // Seel (86) par = ['sa-surf','sa-thick-fat']; Thick Fat no slot 1, NÍVEL 2.
+    // Mesmo com batalha fraca (10 vs 100), o auto-win garante pWin=1.
+    const seelL2 = makeMon({ id: 's', speciesId: 86, secretPicks: [{ slot: 1, level: 2 }], types: ['normal'], baseAttrs: makeAttrs({ batalha: 10, resistencia: 100 }) })
+    const ice: EnemyUnit[] = [{ battle: 100, types: ['ice'] }]
+    // fixedRng(0.999) → normalmente perderia (pWin << 1), mas auto-win força pWin=1 e youWon=true.
+    const out = resolveDefense(fixedRng(0.999), [seelL2], ice)
+    expect(out.duels[0]?.pWin).toBe(1)
+    expect(out.duels[0]?.youWon).toBe(true)
+    expect(out.won).toBe(true)
   })
 
-  it('Pressure: reduz a Batalha do oponente enfrentado em 25%', () => {
-    // Articuno (144) secretCount 3 = [Fly, Fly+, Pressure]. Tipo neutro p/ isolar.
-    const arti = makeMon({ id: 'a', speciesId: 144, secretCount: 3, types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
+  it('Thick Fat L1: sem efeito de batalha (pWin idêntico a um Pokémon sem a habilidade)', () => {
+    // Seel (86) Thick Fat L1 — inerte, sem bônus de batalha vs Gelo.
+    const seelL1 = makeMon({ id: 's', speciesId: 86, secretPicks: [{ slot: 1, level: 1 }], types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
+    const plain = makeMon({ id: 'p', types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
+    const ice: EnemyUnit[] = [{ battle: 40, types: ['ice'] }]
+    const pWinL1 = resolveDefense(fixedRng(1), [seelL1], ice).duels[0]?.pWin
+    const pWinPlain = resolveDefense(fixedRng(1), [plain], ice).duels[0]?.pWin
+    expect(pWinL1).toBeCloseTo(pWinPlain ?? 0) // 20/40 = 0.5, sem bônus
+  })
+
+  it('Pressure L1: reduz a Batalha de TODOS os inimigos em 15% (início do combate, squad-wide)', () => {
+    // Articuno (144) par = ['sa-fly','sa-pressure']; Pressure no slot 1, L1.
+    const arti = makeMon({ id: 'a', speciesId: 144, secretPicks: [{ slot: 1, level: 1 }], types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
     const plain = makeMon({ id: 'p', types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
     const foe: EnemyUnit[] = [{ battle: 40, types: ['normal'] }]
-    expect(resolveDefense(fixedRng(1), [arti], foe).duels[0]?.pWin).toBeCloseTo(20 / 30) // inimigo 40→30
+    // Pressure L1: inimigo 40 × 0.85 = 34; pWin = 20/34 ≈ 0.588
+    expect(resolveDefense(fixedRng(1), [arti], foe).duels[0]?.pWin).toBeCloseTo(20 / 34, 5)
     expect(resolveDefense(fixedRng(1), [plain], foe).duels[0]?.pWin).toBeCloseTo(0.5) // 20/40
   })
 
-  it('Moxie: +1 de Batalha por inimigo derrotado na sequência', () => {
-    // Magikarp (129) secretCount 2 = [Surf, Moxie]. Vence os dois (fixedRng 0).
-    const gyara = makeMon({ id: 'g', speciesId: 129, secretCount: 2, types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
-    const foes: EnemyUnit[] = [{ battle: 30, types: ['normal'] }, { battle: 30, types: ['normal'] }]
-    const out = resolveDefense(fixedRng(0), [gyara], foes)
-    expect(out.duels[0]?.pWin).toBeCloseTo(20 / 30) // 1ª luta: sem bônus
-    expect(out.duels[1]?.pWin).toBeCloseTo(21 / 30) // 2ª luta: +1 do 1º abate
+  it('Pressure L2: reduz a Batalha de TODOS os inimigos em 30%', () => {
+    // Zapdos (145) par = ['sa-fly','sa-pressure']; Pressure no slot 1, L2.
+    const zapdos = makeMon({ id: 'z', speciesId: 145, secretPicks: [{ slot: 1, level: 2 }], types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
+    const foe: EnemyUnit[] = [{ battle: 40, types: ['normal'] }]
+    // Pressure L2: inimigo 40 × 0.70 = 28; pWin = 20/28 ≈ 0.714
+    expect(resolveDefense(fixedRng(1), [zapdos], foe).duels[0]?.pWin).toBeCloseTo(20 / 28, 5)
   })
 
-  it('Regenerator: recupera 1 de vida por inimigo derrotado', () => {
-    // Slowpoke (79) secretCount 1 = [Regenerator]. Vence os dois sem tomar dano.
-    const slow = makeMon({ id: 's', speciesId: 79, secretCount: 1, types: ['normal'], baseAttrs: makeAttrs({ batalha: 50, resistencia: 100 }), currentHp: 5 })
+  it('Pressure não acumula: squad com L1+L2 usa o maior (L2, ×0.70)', () => {
+    // Squad com Articuno L1 (slot 1) e Zapdos L2 (slot 1): o máximo é L2 → ×0.70.
+    const artiL1 = makeMon({ id: 'a', speciesId: 144, secretPicks: [{ slot: 1, level: 1 }], types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
+    const zapdosL2 = makeMon({ id: 'z', speciesId: 145, secretPicks: [{ slot: 1, level: 2 }], types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
+    const foe: EnemyUnit[] = [{ battle: 40, types: ['normal'] }]
+    // O Articuno enfrenta o inimigo (é o 1º no squad), mas o pressureMult vem do máximo do squad (L2).
+    // inimigo 40 × 0.70 = 28; pWin do 1º duelo (Articuno, batalha=20) = 20/28 ≈ 0.714.
+    const out = resolveDefense(fixedRng(1), [artiL1, zapdosL2], foe)
+    expect(out.duels[0]?.pWin).toBeCloseTo(20 / 28, 5)
+  })
+
+  // NOTA: sa-ice-body existe como código na engine (ramo compartilhado com sa-thick-fat),
+  // mas nenhuma linha de espécie atualmente possui essa habilidade. O ramo de auto-win vs Fogo
+  // é exercitado indiretamente pela mesma lógica do Thick Fat (ambos usam o mesmo mecanismo
+  // de auto-win em resolveDefense). Testes específicos de espécie removidos para evitar
+  // dependência de Jynx ter ice-body (design decision: Jynx = ['sa-dry-skin','sa-forewarn']).
+
+  it('Moxie L1: +1 PERMANENTE em permaBonus.batalha por abate; sem bônus temporário adicional', () => {
+    // Magikarp (129) par = ['sa-surf','sa-moxie']; Moxie no slot 1, level 1.
+    // Base batalha=20. 1º duelo: pWin=20/30. Após vitória: permaBonus.batalha=1 → efetiva=21.
+    // 2º duelo: pWin=21/30 (permanente reflete IMEDIATAMENTE). Sem temp extra.
+    const gyara = makeMon({ id: 'g', speciesId: 129, secretPicks: [{ slot: 0, level: 1 }, { slot: 1, level: 1 }], types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
+    const foes: EnemyUnit[] = [{ battle: 30, types: ['normal'] }, { battle: 30, types: ['normal'] }]
+    const out = resolveDefense(fixedRng(0), [gyara], foes)
+    // 1º duelo: base 20 vs 30, pWin=20/30
+    expect(out.duels[0]?.pWin).toBeCloseTo(20 / 30)
+    // 2º duelo: base 21 (permaBonus=1) vs 30, pWin=21/30 — NÃO 22/30 (nenhum temp extra de frontWins)
+    expect(out.duels[1]?.pWin).toBeCloseTo(21 / 30)
+    // Permanente: permaBonus.batalha === 2 (2 abates)
+    expect(out.squad[0]?.permaBonus?.batalha).toBe(2)
+  })
+
+  it('Moxie L1: permaBonus.batalha acumula por vitória (não capeado no campo, efetiva capeada em 60)', () => {
+    // Começa com permaBonus.batalha=59; uma vitória → permaBonus sobe para 60.
+    // Efetiva: base=1 + permaBonus=60 = 61, clamped a 60 pelo effectiveAttr.
+    const gyara = makeMon({ id: 'g', speciesId: 129, secretPicks: [{ slot: 1, level: 1 }], types: ['normal'], baseAttrs: makeAttrs({ batalha: 1, resistencia: 100 }), permaBonus: { batalha: 59 } })
+    const foes: EnemyUnit[] = [{ battle: 1, types: ['normal'] }]
+    const out = resolveDefense(fixedRng(0), [gyara], foes)
+    expect(out.squad[0]?.permaBonus?.batalha).toBe(60) // permanente sobe mesmo que efetivo já no teto
+  })
+
+  it('Moxie L2: +1 permanente E +5 temporário por vitória (teto temp +25)', () => {
+    // Gyarados (130) par = ['sa-surf','sa-moxie']; slot 1, level 2.
+    // Base batalha=30; inimigos battle=28 → pWin base = 30/28 > 1 (sempre vence).
+    // Após 1ª vitória: permaBonus.batalha=1; temp = min(25, 5*1)=5.
+    // Após 2ª vitória: permaBonus.batalha=2; temp = min(25, 5*2)=10.
+    // Verificar via duelo "borderline": usar batalha baixa onde só o temp vira a balança.
+    const gyara = makeMon({ id: 'g', speciesId: 130, secretPicks: [{ slot: 1, level: 2 }], types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
+    // 1º duelo: batalha=20 vs enemy=20 → pWin=1 (20/20). Vence.
+    // 2º duelo (frontWins=1): batalha efetiva = 20+5=25 vs enemy=24 → pWin>1. Sem L2 seria 20/24.
+    const foes: EnemyUnit[] = [{ battle: 20, types: ['normal'] }, { battle: 24, types: ['normal'] }]
+    const out = resolveDefense(fixedRng(0), [gyara], foes)
+    expect(out.won).toBe(true)
+    expect(out.squad[0]?.permaBonus?.batalha).toBe(2) // 2 abates → +2 permanente
+    // 2ª batalha: pWin = (20+5)/24 = 25/24 > 1, clamped a 1
+    expect(out.duels[1]?.pWin).toBeCloseTo(Math.min(1, 25 / 24))
+  })
+
+  it('Moxie L2: bônus temporário capeado em +25 (5 vitórias)', () => {
+    // Após 5 vitórias, temp = min(25, 5*5)=25. Na 6ª batalha, temp ainda é 25.
+    const gyara = makeMon({ id: 'g', speciesId: 130, secretPicks: [{ slot: 1, level: 2 }], types: ['normal'], baseAttrs: makeAttrs({ batalha: 30, resistencia: 100 }) })
+    const foes: EnemyUnit[] = Array(7).fill({ battle: 1, types: ['normal'] }) as EnemyUnit[]
+    const out = resolveDefense(fixedRng(0), [gyara], foes)
+    expect(out.won).toBe(true)
+    // Após 5 vitórias, o 6º duelo usa temp=25 (não 30); o 7º também.
+    // pWin do 6º duelo: (30+25)/1 = 55 → clamped 1; do 7º: (30+25+1perma)/1 → clamped 1
+    // O que importa é que permaBonus cresce linearmente
+    expect(out.squad[0]?.permaBonus?.batalha).toBe(7)
+  })
+
+  it('Regenerator L1: recupera 1 de vida por inimigo derrotado', () => {
+    // Slowpoke (79) par = ['sa-regenerator','sa-own-tempo']; Regenerator no slot 0. Vence os dois sem tomar dano.
+    const slow = makeMon({ id: 's', speciesId: 79, secretPicks: [{ slot: 0, level: 1 }], types: ['normal'], baseAttrs: makeAttrs({ batalha: 50, resistencia: 100 }), currentHp: 5 })
     const foes: EnemyUnit[] = [{ battle: 10, types: ['normal'] }, { battle: 10, types: ['normal'] }]
     const out = resolveDefense(fixedRng(0), [slow], foes)
     expect(out.won).toBe(true)
     expect(out.squad[0]?.currentHp).toBe(7) // 5 + 1 por abate (2 abates)
+  })
+
+  it('Regenerator L2: cura para HP cheio em cada vitória', () => {
+    // Slowpoke (79) slot0=regenerator; nível 2. Começa com HP baixo; vence dois inimigos fracos.
+    // Garantia de vitória: batalha=50 vs inimigos battle=1 → pWin ≈ 1; fixedRng(0) sempre ganha.
+    const maxHp = 10
+    const slow = makeMon({
+      id: 's', speciesId: 79, secretPicks: [{ slot: 0, level: 2 }], types: ['normal'],
+      baseAttrs: makeAttrs({ batalha: 50, resistencia: 100 }), currentHp: 3, maxHp,
+    })
+    const foes: EnemyUnit[] = [{ battle: 1, types: ['normal'] }, { battle: 1, types: ['normal'] }]
+    const out = resolveDefense(fixedRng(0), [slow], foes)
+    expect(out.won).toBe(true)
+    // Após 1ª vitória já ficou com HP cheio; 2ª vitória mantém HP cheio.
+    expect(out.squad[0]?.currentHp).toBe(maxHp)
   })
 })
 

@@ -8,7 +8,7 @@ import type { GameAction } from './actions.ts'
 import { draft } from './runtime.ts'
 import { tick } from './dayClock.ts'
 import { startRun } from './setup.ts'
-import { advancePhase, setSpeed } from './phaseFlow.ts'
+import { advancePhase, setSpeed, chooseSecretAbility } from './phaseFlow.ts'
 import { acceptMission } from './missionFlow.ts'
 import { assignDefense, completeDefense } from './defenseFlow.ts'
 import {
@@ -99,6 +99,9 @@ export function reducer(state: GameState, action: GameAction): GameState {
       break
     case 'COMPLETE_THEFT_BATTLE':
       completeTheftBattle(s)
+      break
+    case 'CHOOSE_SECRET':
+      chooseSecretAbility(s, action.slot, action.level)
       break
   }
   return s

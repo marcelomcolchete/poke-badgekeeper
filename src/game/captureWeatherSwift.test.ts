@@ -21,12 +21,17 @@ const rainAllDay: WeatherSchedule = {
 const gym = CERULEAN.siteNodes.gym
 const spot = Object.keys(CERULEAN.graph.nodes).find((n) => shortestPath(DRY, gym, n).length >= 3)!
 
-function searchState(secretCount: number) {
+// Omanyte (138) par = ['sa-swift-swim','sa-shell-armor']; Swift Swim no slot 0.
+function searchState(hasSwiftSwim: boolean) {
   const s = createInitialState(1)
   s.run.cityIndex = 1
   s.weather = rainAllDay
   const mon = createPokemon({ id: 'p1', speciesId: 138 /* Omanyte */, level: 10, rng: createRng(1) })
-  s.roster = [{ ...mon, secretCount, status: 'idle' }]
+  s.roster = [{
+    ...mon,
+    secretPicks: hasSwiftSwim ? [{ slot: 0, level: 1 as const }] : [],
+    status: 'idle',
+  }]
   s.captureSpots = [spot]
   s.captureSpotSpawnsAtMs = [0]
   return s
@@ -34,9 +39,9 @@ function searchState(secretCount: number) {
 
 describe('Swift Swim acelera a exploração sob chuva', () => {
   it('explorador com Swift Swim chega antes na área', () => {
-    const withSS = searchState(1)
+    const withSS = searchState(true)
     startSearch(withSS, 'p1', 0)
-    const plain = searchState(0)
+    const plain = searchState(false)
     startSearch(plain, 'p1', 0)
 
     const swiftArrive = withSS.captureSearches[0]!.arriveAtMs

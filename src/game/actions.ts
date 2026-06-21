@@ -59,3 +59,5 @@ export type GameAction =
   | { type: 'RESOLVE_THEFT_BATTLE' }
   /** Conclui a batalha de resgate (após a animação): aplica 3× XP na vitória — Feature B. */
   | { type: 'COMPLETE_THEFT_BATTLE' }
+  /** Resolve a escolha de Habilidade Secreta do Destaque na tela de resumo (Fase 2). */
+  | { type: 'CHOOSE_SECRET'; slot: 0 | 1; level: 1 | 2 }

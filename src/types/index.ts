@@ -143,6 +143,15 @@ export type PokemonStatus =
 /** Sexo do Pokémon — sorteado na criação pela taxa da espécie (jogo original). */
 export type Gender = 'male' | 'female' | 'genderless'
 
+/**
+ * Uma Habilidade Secreta desbloqueada do PAR da linha do indivíduo, com seu nível.
+ * `slot` é qual das duas habilidades (0 ou 1, ver SECRET_LINES); `level` 1 = base, 2 = "+".
+ */
+export interface SecretPick {
+  slot: 0 | 1
+  level: 1 | 2
+}
+
 export interface Pokemon {
   id: string
   speciesId: number
@@ -160,16 +169,22 @@ export interface Pokemon {
   status: PokemonStatus
   passives: string[]
   /**
-   * Quantas das TRÊS Habilidades Secretas da LINHA este indivíduo já desbloqueou (0..3),
-   * gravado no Pokémon e preservado na evolução. Sobe +1 a cada vez que é o Destaque do Dia
-   * (1ª vez → habilidade 1, 2ª → 2, 3ª → 3). Ausente/0 = nenhuma desbloqueada.
+   * Habilidades Secretas desbloqueadas DESTE indivíduo (gravado no Pokémon, preservado na
+   * evolução). No máximo 2 destaques na vida: 1º destaque → 1 habilidade nível 1; 2º destaque →
+   * a mesma vira nível 2 (aprofundar) OU a outra entra no nível 1 (ampliar). Ausente/[] = nenhuma.
    */
-  secretCount?: number
+  secretPicks?: SecretPick[]
   /**
    * Corações de afininade (0..5, passo 0,5). Novos Pokémon começam com 2. Cada coração dá +10% de
    * XP ganho (teto +50%). Sobem/descem no fim do dia conforme o desempenho. Ausente = trata como 2.
    */
   hearts?: number
+  /**
+   * Bônus permanente por eixo — sobrevive ao dia e à evolução. Usado pelo Moxie para acumular
+   * +1 de Batalha por Pokémon derrotado em batalha. Somado ao atributo efetivo antes do clamp
+   * (o teto 60 aplica o cap). Ausente = sem bônus.
+   */
+  permaBonus?: Partial<Attrs>
   /**
    * Buffs temporários por eixo aplicados por itens x_* (somados ao atributo efetivo, afetando
    * inclusive o HP). Valem só no dia da compra e são limpos na virada do dia. Ausente = sem buff.

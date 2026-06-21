@@ -478,6 +478,29 @@ function migrate(file: Partial<SaveFile>): SaveFile | null {
     version = 36
   }
 
+  // v36 → v37: Habilidades Secretas viram 2 por linha com nível 1/2. secretCount → secretPicks
+  // (best-effort por contagem: 0→[]; 1→slot0 nível1; ≥2→slots 0 e 1 nível1). Limpa o reveal do dia.
+  if (version === 36) {
+    const migrateMon = (p: Record<string, unknown>): Record<string, unknown> => {
+      const count = typeof p.secretCount === 'number' ? p.secretCount : 0
+      const rest = { ...p }
+      delete rest.secretCount
+      const picks =
+        count <= 0 ? [] : count === 1 ? [{ slot: 0, level: 1 }] : [{ slot: 0, level: 1 }, { slot: 1, level: 1 }]
+      return { ...rest, secretPicks: picks }
+    }
+    const mapRoster = (arr: unknown): unknown =>
+      Array.isArray(arr) ? arr.map((p) => migrateMon(p as Record<string, unknown>)) : arr
+    const today = state.today as Record<string, unknown> | undefined
+    state = {
+      ...state,
+      roster: mapRoster(state.roster),
+      box: mapRoster(state.box),
+      today: today && typeof today === 'object' ? { ...today, secretUnlock: null } : today,
+    } as typeof state
+    version = 37
+  }
+
   if (version !== SAVE_VERSION) return null
   return { version, savedAtMs: (file as SaveFile).savedAtMs, state } as unknown as SaveFile
 }

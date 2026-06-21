@@ -565,3 +565,15 @@ describe('fluxo de roubo Rocket (Feature B)', () => {
     expect(base.theft!.chaserIds).not.toContain('p1') // entrada intacta
   })
 })
+
+describe('habilidades secretas (Fase 2)', () => {
+  it('CHOOSE_SECRET aplica a escolha pendente do Destaque', () => {
+    let s = createInitialState(1)
+    s.roster = [makeMon({ id: 'p1', speciesId: 7 })] // Squirtle [surf, torrent]
+    s.today.secretChoice = { pokemonId: 'p1' }
+    s = reducer(s, { type: 'CHOOSE_SECRET', slot: 0, level: 1 })
+    expect(s.roster[0]!.secretPicks).toEqual([{ slot: 0, level: 1 }])
+    expect(s.today.secretUnlock).toMatchObject({ slot: 0, level: 1, choice: 'first' })
+    expect(s.today.secretChoice).toBeNull()
+  })
+})

@@ -239,33 +239,64 @@ export const RIVAL_EVOLUTION_DAYS = [3, 6] as const
 // Cada habilidade tem efeito fixo (sem níveis). Várias linhas compartilham a mesma habilidade,
 // e um Pokémon pode ter até três ativas ao mesmo tempo (ver data/secretAbilities.ts).
 
-/** Rivalidade: bônus de atributo na missão POR aliado do mesmo gênero. */
-export const RIVALRY_ATTR_PER_ALLY = 0.1
-/** Rivalidade: bônus de batalha contra um oponente do mesmo gênero. */
-export const RIVALRY_BATTLE_BONUS = 0.1
-/** Rock Head: multiplicador de atributos em escolta (ganho) e em ensino (perda). */
-export const ROCK_HEAD_ESCORT_MULT = 1.5
-export const ROCK_HEAD_STUDY_MULT = 0.5
-/** Battle Armor: multiplicador de atributos na próxima missão após batalhar. */
-export const BATTLE_ARMOR_MISSION_MULT = 1.3
-/** Rollout: bônus de batalha por Pokémon derrotado no duelo (acumula na sequência). */
-export const ROLLOUT_BATTLE_BONUS = 0.1
-/** Hustle: bônus de Batalha em batalhas; penalidade de atributos em missões. */
-export const HUSTLE_BATTLE_BONUS = 0.1
-export const HUSTLE_MISSION_MULT = 0.9
-/** Weak Armor: dano recebido dobrado; bônus de velocidade do time POR ponto de HP faltante. */
-export const WEAK_ARMOR_DAMAGE_MULT = 2
-export const WEAK_ARMOR_SPEED_PER_MISSING_HP = 0.2
-/** Shell Armor: todo dano recebido na vida vira este valor (1). */
-export const SHELL_ARMOR_DAMAGE = 1
+/** Rivalidade: bônus de atributo na missão POR aliado do mesmo gênero (por nível). */
+export const RIVALRY_ATTR_PER_ALLY_L1 = 0.1
+export const RIVALRY_ATTR_PER_ALLY_L2 = 0.2
+/** Rivalidade: bônus de batalha contra um oponente do mesmo gênero, por nível. */
+export const RIVALRY_BATTLE_BONUS_L1 = 0.1
+export const RIVALRY_BATTLE_BONUS_L2 = 0.2
+/** Rock Head: multiplicador de atributos em escolta (ganho) e em ensino (perda), por nível. */
+export const ROCK_HEAD_ESCORT_MULT_L1 = 1.4
+export const ROCK_HEAD_ESCORT_MULT_L2 = 1.8
+export const ROCK_HEAD_STUDY_MULT_L1 = 0.6
+export const ROCK_HEAD_STUDY_MULT_L2 = 0.2
+/** Battle Armor: multiplicador de atributos na próxima missão após batalhar, por nível. */
+export const BATTLE_ARMOR_MISSION_MULT_L1 = 1.25
+export const BATTLE_ARMOR_MISSION_MULT_L2 = 1.5
+/** Rollout: bônus ADITIVO de Batalha pelo acúmulo de vitórias (start × 2^(frontWins-1), capado). */
+export const ROLLOUT_START_L1 = 2
+export const ROLLOUT_CAP_L1 = 32
+export const ROLLOUT_START_L2 = 4
+export const ROLLOUT_CAP_L2 = 64
+/** Hustle: bônus de Batalha em batalhas; penalidade de atributos em missões, por nível. */
+export const HUSTLE_BATTLE_BONUS_L1 = 0.1
+export const HUSTLE_BATTLE_BONUS_L2 = 0.3
+export const HUSTLE_MISSION_MULT_L1 = 0.9
+export const HUSTLE_MISSION_MULT_L2 = 0.7
+/** Weak Armor: bônus de velocidade do time POR ponto de HP faltante, por nível. */
+export const WEAK_ARMOR_SPEED_PER_MISSING_HP_L1 = 0.15
+export const WEAK_ARMOR_SPEED_PER_MISSING_HP_L2 = 0.25
+/** Shell Armor: divisor do dano recebido por nível (ceil(raw/divisor)). */
+export const SHELL_ARMOR_DIVISOR_L1 = 2
+export const SHELL_ARMOR_DIVISOR_L2 = 3
 /** Explosion: ao ser derrotado, perde esta fração da vida máxima e leva o inimigo junto. */
 export const EXPLOSION_SELF_DAMAGE_FRACTION = 0.5
 /** Fly: bônus de velocidade do time ao voar (além do atalho em linha reta). */
 export const FLY_SPEED_BONUS = 0.5
 /** Swift Swim: bônus ADITIVO de velocidade do time enquanto chove (×3 = base +2). */
 export const SWIFT_SWIM_RAIN_BONUS = 2
-/** Cloud Nine: pontos percentuais somados à chance de chuva do dia POR portador no roster. */
-export const CLOUD_NINE_RAIN_CHANCE_BONUS_PP = 25
+/** Swift Swim L2: bônus MULTIPLICATIVO nos atributos de missão enquanto chove (+30%). */
+export const SWIFT_SWIM_MISSION_BONUS_L2 = 0.30
+/**
+ * Cloud Nine: pontos percentuais adicionados à chance de CHUVA e subtraídos da chance de
+ * OUTROS climas (tempestade) por portador no roster. Acumula por portador.
+ */
+export const CLOUD_NINE_RAIN_PP_L1 = 10
+export const CLOUD_NINE_RAIN_PP_L2 = 20
+export const CLOUD_NINE_OTHER_PP_L1 = 10
+export const CLOUD_NINE_OTHER_PP_L2 = 20
+/**
+ * Overcoat: pontos percentuais subtraídos de QUALQUER clima (chuva E tempestade) por portador.
+ * Acumula por portador.
+ */
+export const OVERCOAT_PP_L1 = 10
+export const OVERCOAT_PP_L2 = 20
+/**
+ * Own Tempo: teto de eventos climáticos (chuva + tempestade) no dia. Não acumula: vale o
+ * nível mais alto presente (L2 → 1 evento; L1 → 2 eventos).
+ */
+export const OWN_TEMPO_CAP_L1 = 2
+export const OWN_TEMPO_CAP_L2 = 1
 /** Dig: quantos buracos (pontos) cada túnel liga — sempre 2 (dois pontos). */
 export const DIG_HOLES_PER_TUNNEL = 2
 /** Dig: custo do túnel entre os pontos (distância-do-grafo, bem baixa = atalho). */
@@ -275,27 +306,53 @@ export const DIG_TUNNEL_COST = 0.4
  * velocidade na água. Aplica-se só quando o time consegue surfar (ver engine/secretEffects).
  */
 export const SURF_WATER_TIME_MULT = 0.5
-/** Torrent: multiplicador de atributos na missão quando há outro aliado do tipo Água. */
-export const TORRENT_MISSION_MULT = 1.5
-/** Thick Fat: multiplicador de Batalha contra oponentes do tipo Gelo. */
-export const THICK_FAT_VS_ICE_MULT = 1.5
-/** Moxie: bônus de Batalha (aditivo) por Pokémon derrotado na sequência da batalha. */
-export const MOXIE_BATTLE_PER_WIN = 1
-/** Pressure: multiplicador da Batalha do oponente enfrentado (−25%). */
-export const PRESSURE_ENEMY_MULT = 0.75
-/** Static/Paralyze: multiplicador da Batalha do inimigo paralisado (−50%, até o fim da batalha). */
-export const STATIC_PARALYZE_MULT = 0.5
+/** Torrent: multiplicador de atributos na missão quando há outro aliado do tipo Água, por nível. */
+export const TORRENT_MISSION_MULT_L1 = 1.25
+export const TORRENT_MISSION_MULT_L2 = 1.5
+/**
+ * Moxie L1: +1 PERMANENTE em `permaBonus.batalha` por Pokémon derrotado em batalha.
+ * Moxie L2: idem +5 temporário por vitória na sequência (teto +25). Os antigos temporários
+ * foram substituídos; apenas L2 tem o stacking temporário.
+ */
+export const MOXIE_PERMA_PER_WIN = 1
+export const MOXIE_TEMP_PER_WIN_L2 = 5
+export const MOXIE_TEMP_CAP_L2 = 25
+/**
+ * Pressure: multiplicador da Batalha de TODOS os inimigos aplicado no INÍCIO do combate,
+ * a partir do MAIOR nível presente no esquadrão (não acumula entre portadores).
+ * L1 (−15%): ×0.85; L2 (−30%): ×0.70.
+ */
+export const PRESSURE_ENEMY_MULT_L1 = 0.85
+export const PRESSURE_ENEMY_MULT_L2 = 0.70
+/**
+ * Static (NOVO, Fase 4): XP concedido por segundo que o time fica PARADO por raio ou poça.
+ * 1 XP/s: 5s de paralisia → +5 XP.
+ */
+export const STATIC_XP_PER_SEC = 1
+/**
+ * Static L2: bônus ADITIVO de velocidade de viagem por segundo parado (10%/s, cap 100%).
+ * Acumula em mission.staticStoppedSecs; aplica como min(STATIC_MOVE_CAP_L2, STATIC_MOVE_PER_SEC_L2 × secs).
+ */
+export const STATIC_MOVE_PER_SEC_L2 = 0.10
+export const STATIC_MOVE_CAP_L2 = 1.0
 /** Quick Feet: bônus aditivo de velocidade de viagem quando despachado sozinho (+100% → ×2). */
 export const QUICK_FEET_SPEED_BONUS = 1
 /** Regenerator: vida recuperada por Pokémon derrotado em batalha. */
 export const REGENERATOR_HEAL_PER_WIN = 1
 /** Natural Cure: vida recuperada ao sair em missão. */
 export const NATURAL_CURE_MISSION_HEAL = 2
-/** Analytic: multiplicador de atributos em Ensino (ganho) e em Patrulha (perda). */
-export const ANALYTIC_STUDY_MULT = 1.5
-export const ANALYTIC_PATROL_MULT = 0.5
-/** Water Absorb: XP ganho quando a rota da missão passa pela água. */
+/** Analytic: multiplicador de atributos em Ensino (ganho) e em Patrulha (perda), por nível. */
+export const ANALYTIC_STUDY_MULT_L1 = 1.4
+export const ANALYTIC_STUDY_MULT_L2 = 1.8
+export const ANALYTIC_PATROL_MULT_L1 = 0.6
+export const ANALYTIC_PATROL_MULT_L2 = 0.2
+/** Water Absorb: XP ganho quando a rota da missão passa pela água (REMOVIDO — mantido para compatibilidade). */
 export const WATER_ABSORB_XP = 10
+/** Water Absorb: multiplicador de atributos na PRÓXIMA missão após cruzar água, por nível. */
+export const WATER_ABSORB_MISSION_MULT_L1 = 1.3
+export const WATER_ABSORB_MISSION_MULT_L2 = 1.5
+/** Sniper L1: multiplicador da duração de execução (dobra o tempo de execução). */
+export const SNIPER_TIME_MULT_L1 = 2
 
 // ---- Tempestade (raios + Paralyze) — efeito climático de Vermilion -------------------
 /** Orçamento de chance de tempestade somado entre os dias elegíveis (3–10), próprio. */
@@ -318,6 +375,16 @@ export const STRIKE_MIN_PER_STORM = 1
 /** Paralyze: tempo de congelamento do sprite e multiplicador de Batalha em batalhas 1v1. */
 export const PARALYZE_STUN_MS = 5_000
 export const PARALYZE_BATTLE_MULT = 0.5
+/** Volt Absorb: bônus de movimento E atributos ao ser atingido por um raio (por nível). */
+export const VOLT_ABSORB_BONUS_L1 = 0.30
+export const VOLT_ABSORB_BONUS_L2 = 0.90
+/**
+ * Dry Skin: fração do maxHp curada ao sair em missão ENQUANTO CHOVE (arredondada p/ cima).
+ * L1 e L2 curam a mesma fração; L2 também dá bônus de atributos em missão.
+ */
+export const DRY_SKIN_RAIN_HEAL_FRAC = 0.25
+/** Dry Skin L2: bônus MULTIPLICATIVO nos atributos de missão enquanto chove (+25%). */
+export const DRY_SKIN_MISSION_BONUS_L2 = 0.25
 
 // ---- Sistema de Itens (PLAN — Itens) ----
 

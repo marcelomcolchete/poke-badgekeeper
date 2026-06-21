@@ -10,7 +10,6 @@ import { heartsOf } from './hearts.ts'
 import { CITIES, getCity } from '../data/cities.ts'
 import { findItem } from '../data/items.ts'
 import { BALLS } from '../data/balls.ts'
-import { secretCountOf } from '../data/secretAbilities.ts'
 
 const BALL_BY_ID = new Map(BALLS.map((b) => [b.id, b]))
 
@@ -152,7 +151,7 @@ export function buildFinalReport(state: GameState, outcome: EndOutcome): FinalRe
         rank: pokemonRank(mon),
         missions: use.missions,
         defeats: use.defeats,
-        medalIndex: secretCountOf(mon),
+        medalIndex: mon.secretPicks?.length ?? 0,
       }
     })
 

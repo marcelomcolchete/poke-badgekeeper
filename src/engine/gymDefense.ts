@@ -29,30 +29,30 @@ import {
   MEDAL_FULL_DAY,
   MEDAL_OPEN_CHANCE,
   MEDAL_OPEN_DAY,
-  MOXIE_BATTLE_PER_WIN,
+  MOXIE_PERMA_PER_WIN,
+  MOXIE_TEMP_CAP_L2,
+  MOXIE_TEMP_PER_WIN_L2,
   PARALYZE_BATTLE_MULT,
-  PRESSURE_ENEMY_MULT,
+  PRESSURE_ENEMY_MULT_L1,
+  PRESSURE_ENEMY_MULT_L2,
   REGENERATOR_HEAL_PER_WIN,
   RIVAL_EVOLUTION_DAYS,
-  STATIC_PARALYZE_MULT,
-  THICK_FAT_VS_ICE_MULT,
 } from './balance.ts'
 import { applyDamage, effectiveAttr } from './attributes.ts'
+import { secretLevelOf } from '../data/secretAbilities.ts'
 import {
   damageTaken,
   explosionSelfDamage,
   hasExplosion,
   hasLightningRod,
   hasMoxie,
-  hasPressure,
   hasReckless,
   hasRegenerator,
-  hasStatic,
   hasSturdy,
-  hasThickFat,
+  hasVitalSpirit,
   hustleBattleBonus,
   rivalryBattleBonus,
-  rolloutBonusPerWin,
+  rolloutBattleBonus,
 } from './secretEffects.ts'
 import { itemBattleMultiplier } from './itemEffects.ts'
 import { attrRank, type Rank } from './ranking.ts'
@@ -277,7 +277,7 @@ export interface ResolveDefenseOpts {
  *  - Lightning Rod: contra um inimigo Elétrico, o portador assume o duelo (vai para a frente).
  *  - Reckless: ao perder, toma dano e tenta de novo sem passar a vez (até vencer ou desmaiar).
  *  - Explosion: ao perder, derrota o inimigo e perde metade da vida máxima (pode desmaiar).
- *  - Static: ao perder um duelo, paralisa o inimigo que o derrotou (Batalha ×0,5 até o fim).
+ *  - Static: efeito de batalha REMOVIDO (Fase 4) — o Static agora beneficia o time em missões paradas.
  */
 export function resolveDefense(
   rng: Rng,
@@ -293,13 +293,21 @@ export function resolveDefense(
   let yours = 0
   let theirs = 0
   let frontWins = 0 // vitórias seguidas do lutador da frente (Rollout)
-  // Static: índices de inimigos paralisados — lutam com Batalha ×0,5 até o fim da batalha.
-  const paralyzed = new Set<number>()
+  // Pressure: multiplicador squad-wide aplicado UMA VEZ no início, a partir do MAIOR nível no squad.
+  // Não acumula — usa apenas o nível mais alto presente.
+  const pressureLevel = Math.max(0, ...squad.map((p) => secretLevelOf(p, 'sa-pressure')))
+  const enemyPressureMult =
+    pressureLevel === 2 ? PRESSURE_ENEMY_MULT_L2 : pressureLevel === 1 ? PRESSURE_ENEMY_MULT_L1 : 1
   // Guarda contra laço infinito do Reckless (cada retentativa custa HP, mas é defensivo).
   let guard = 0
   const maxIterations = (result.length + enemies.length) * 1000 + 1000
-  const canSturdy = (you: Pokemon): boolean =>
-    hasSturdy(you) && !sturdyUsed.has(you.id) && (opts.sturdyAvailableIds?.has(you.id) ?? false)
+  const canSturdy = (you: Pokemon): boolean => {
+    if (!hasSturdy(you)) return false
+    // Sturdy+ (L2): uso ILIMITADO — nunca desmaia em batalha, sem token diário.
+    if (secretLevelOf(you, 'sa-sturdy') === 2) return true
+    // Sturdy L1: 1×/dia — precisa do token e não pode ter sido usado já hoje.
+    return !sturdyUsed.has(you.id) && (opts.sturdyAvailableIds?.has(you.id) ?? false)
+  }
 
   while (yours < result.length && theirs < enemies.length) {
     if (++guard > maxIterations) break
@@ -319,50 +327,71 @@ export function resolveDefense(
     let yourEff = effectiveBattle(you, enemy.types)
     // Itens passivos (Thick Club p/ Ground, Lagging Tail p/ todos) na Batalha do seu lado.
     yourEff *= itemBattleMultiplier(you, runItems)
-    // Rollout: bônus acumulado pelas vitórias seguidas deste mesmo lutador.
-    yourEff *= 1 + rolloutBonusPerWin(you) * frontWins
     // Hustle: bônus fixo de Batalha em batalhas.
     yourEff *= 1 + hustleBattleBonus(you)
     // Rivalidade: vantagem contra oponente do mesmo gênero.
     if (enemy.gender !== undefined && enemy.gender === you.gender) {
       yourEff *= 1 + rivalryBattleBonus(you)
     }
-    // Thick Fat: vantagem contra oponentes do tipo Gelo.
-    if (hasThickFat(you) && enemy.types.includes('ice')) yourEff *= THICK_FAT_VS_ICE_MULT
-    // Moxie: +1 de Batalha por inimigo já derrotado nesta sequência (frontWins).
-    if (hasMoxie(you)) yourEff += MOXIE_BATTLE_PER_WIN * frontWins
+    // Moxie L2: +5 temporário por inimigo já derrotado nesta sequência (teto +25). [ADITIVO]
+    // L1 não tem bônus temporário — só o permanente gravado na ramificação youWon.
+    if (hasMoxie(you) && secretLevelOf(you, 'sa-moxie') === 2)
+      yourEff += Math.min(MOXIE_TEMP_CAP_L2, MOXIE_TEMP_PER_WIN_L2 * frontWins)
+    // Rollout: bônus ADITIVO de Batalha escalado pela sequência de vitórias. [ADITIVO]
+    yourEff += rolloutBattleBonus(you, frontWins)
     // Paralyze (Tempestade): seu Pokémon paralisado hoje luta com metade da Batalha.
     if (opts.paralyzedIds?.has(you.id)) yourEff *= PARALYZE_BATTLE_MULT
-    // Pressure: reduz a Batalha do oponente enfrentado.
+    // Pressure (squad-wide, aplicado UMA VEZ no início): reduz a Batalha de TODOS os inimigos.
     let enemyEff = enemy.battle * typeAdvantageMultiplier(enemy.types, you.types)
-    if (hasPressure(you)) enemyEff *= PRESSURE_ENEMY_MULT
-    // Static: inimigo paralisado luta com metade da Batalha.
-    if (paralyzed.has(theirs)) enemyEff *= STATIC_PARALYZE_MULT
-    const pWin = duelWinProbability(yourEff, enemyEff)
+    enemyEff *= enemyPressureMult
+    // Auto-win: Thick Fat+ (L2) vs Gelo; Ice Body+ (L2) vs Fogo.
+    let pWin = duelWinProbability(yourEff, enemyEff)
+    if (
+      (secretLevelOf(you, 'sa-thick-fat') === 2 && enemy.types.includes('ice')) ||
+      (secretLevelOf(you, 'sa-ice-body') === 2 && enemy.types.includes('fire'))
+    ) {
+      pWin = 1
+    }
     const youWon = rng.bool(pWin)
     duels.push({ yourId: you.id, youWon, pWin })
     if (youWon) {
-      // Regenerator: recupera vida a cada inimigo derrotado.
-      if (hasRegenerator(you)) {
+      // Moxie (L1 e L2): +1 PERMANENTE em permaBonus.batalha por inimigo derrotado.
+      if (hasMoxie(you)) {
         result[yours] = {
           ...you,
-          currentHp: Math.min(you.maxHp, you.currentHp + REGENERATOR_HEAL_PER_WIN),
+          permaBonus: {
+            ...you.permaBonus,
+            batalha: (you.permaBonus?.batalha ?? 0) + MOXIE_PERMA_PER_WIN,
+          },
         }
+      }
+      // Regenerator: recupera vida a cada inimigo derrotado (L1: +1 HP; L2: HP cheio).
+      // Compõe com Moxie: lê result[yours] (já atualizado pelo Moxie se aplicável).
+      if (hasRegenerator(you)) {
+        const cur = result[yours] as typeof you
+        const regenHp =
+          secretLevelOf(you, 'sa-regenerator') === 2
+            ? you.maxHp
+            : Math.min(you.maxHp, cur.currentHp + REGENERATOR_HEAL_PER_WIN)
+        result[yours] = { ...cur, currentHp: regenHp }
       }
       theirs += 1 // o inimigo perde e sai; você permanece na frente
       frontWins += 1
       continue
     }
-    // Derrota no duelo. Static paralisa o inimigo que derrotou o portador (Batalha ×0,5 até o fim).
-    if (hasStatic(you)) paralyzed.add(theirs)
+    // Derrota no duelo.
     // Explosion derrota o inimigo junto e custa metade da vida máxima.
+    // Explosion+ (L2): perde TODA a vida e derrota TODOS os inimigos restantes.
     if (hasExplosion(you)) {
-      const loss = explosionSelfDamage(you)
+      const isExplosionPlus = secretLevelOf(you, 'sa-explosion') === 2
+      const loss = isExplosionPlus ? you.currentHp : explosionSelfDamage(you)
       result[yours] =
         you.currentHp - loss <= 0 && canSturdy(you)
-          ? (sturdyUsed.add(you.id), { ...you, currentHp: 1, status: 'idle' })
+          ? (secretLevelOf(you, 'sa-sturdy') !== 2 && sturdyUsed.add(you.id),
+             { ...you, currentHp: 1, status: 'idle' })
           : applyDamage(you, loss)
-      theirs += 1 // a explosão leva o inimigo junto
+      // Explosion+ derrota TODOS os inimigos restantes; L1 derrota apenas o atual.
+      theirs = isExplosionPlus ? enemies.length : theirs + 1
       yours += 1 // perdeu o duelo: passa a vez mesmo vivo
       frontWins = 0
       continue
@@ -371,14 +400,25 @@ export function resolveDefense(
     if (you.currentHp - loss <= 0 && canSturdy(you)) {
       // Não desmaia: fica com 1 de vida, mas perdeu o duelo → passa a vez.
       result[yours] = { ...you, currentHp: 1, status: 'idle' }
-      sturdyUsed.add(you.id)
+      // Sturdy L1 consome o token; Sturdy+ (L2) não consome nada.
+      if (secretLevelOf(you, 'sa-sturdy') !== 2) sturdyUsed.add(you.id)
       yours += 1
       frontWins = 0
       continue
     }
-    const damaged = applyDamage(you, loss)
-    result[yours] = damaged
+    // Vital Spirit+ (L2): ao perder um duelo, tenta de novo SEM perder HP (não passa a vez).
+    if (hasVitalSpirit(you) && secretLevelOf(you, 'sa-vital-spirit') === 2) {
+      // Não aplica dano, não incrementa yours — retenta o mesmo duelo.
+      frontWins = 0
+      continue
+    }
     // Reckless: se sobreviveu, tenta de novo sem passar a vez (mesmo inimigo).
+    // Reckless+ (L2): o dano da retentativa é METADE (ceil).
+    const actualLoss = hasReckless(you) && secretLevelOf(you, 'sa-reckless') === 2
+      ? Math.ceil(loss / 2)
+      : loss
+    const damaged = applyDamage(you, actualLoss)
+    result[yours] = damaged
     if (hasReckless(you) && damaged.currentHp > 0) {
       frontWins = 0
       continue

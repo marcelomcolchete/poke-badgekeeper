@@ -11,12 +11,15 @@ import { getCity } from '../data/cities.ts'
 import { getMissionTemplate } from '../data/missionTemplates.ts'
 import { damageForDay, MAX_DISPATCH, MIN_DISPATCH } from '../engine/constants.ts'
 import {
+  DRY_SKIN_RAIN_HEAL_FRAC,
   MISSION_XP_POOL,
   NATURAL_CURE_MISSION_HEAL,
   RETURN_SPEED_BONUS_ON_SUCCESS,
+  SNIPER_TIME_MULT_L1,
   SPECIAL_XP_MULTIPLIER,
+  STATIC_MOVE_CAP_L2,
+  STATIC_MOVE_PER_SEC_L2,
   SWIFT_SWIM_RAIN_BONUS,
-  WATER_ABSORB_XP,
 } from '../engine/balance.ts'
 import { goldForMart } from '../engine/economy.ts'
 import {
@@ -26,7 +29,9 @@ import {
   travelRoute,
 } from '../engine/missions.ts'
 import {
+  hasDrySkin,
   hasNaturalCure,
+  hasSniper,
   hasWaterAbsorb,
   sturdyAvailable,
   teamHasSwiftSwim,
@@ -34,9 +39,10 @@ import {
   teamTravelSpeedMultiplier,
   type MissionSecretCtx,
 } from '../engine/secretEffects.ts'
+import { secretLevelOf } from '../data/secretAbilities.ts'
 import { rainTravelMs } from '../engine/rainSpeed.ts'
 import { isRaining } from '../engine/weather.ts'
-import { graphWithTunnels, pathUsesSurf } from '../engine/pathfinding.ts'
+import { graphWithTunnels } from '../engine/pathfinding.ts'
 import { planWeatherLeg } from '../engine/weatherTravel.ts'
 import { createRng } from '../engine/rng.ts'
 import { applyXpGains } from './itemFlow.ts'
@@ -110,14 +116,20 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
   // já bloqueia, mas a guarda evita uma viagem instantânea por engano. Voo/Sniper nunca dão [].
   if (outbound.path.length === 0) return
   const inbound = travelRoute(graph, mission.node, city.siteNodes.gym, team, s.runItems)
-  const outMs = rainTravelMs(s.weather, now, outbound.distance, team, s.runItems)
-  const execution = executionMs(team, template.baseExecutionMs)
+  const outMs = rainTravelMs(s.weather, now, outbound.distance, team, s.runItems, s.today.electrified)
+  // Sniper L1: dobra a duração de execução (atua do ginásio, mas demora mais). L2 normal.
+  const baseExecution = executionMs(team, template.baseExecutionMs)
+  const sniperL1 = team.length === 1 && hasSniper(team[0]!) && secretLevelOf(team[0]!, 'sa-sniper') === 1
+  const execution = sniperL1 ? baseExecution * SNIPER_TIME_MULT_L1 : baseExecution
   const ctx: MissionSecretCtx = {
     team,
     template,
     runtime: s.today.secretRuntime,
     runItems: s.runItems,
     electirizerBonus,
+    weather: s.weather,
+    nowMs: now,
+    electrified: s.today.electrified,
   }
 
   mission.teamIds = team.map((p) => p.id)
@@ -132,21 +144,21 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
   mission.arriveAtMs = now + outMs
   mission.resolveAtMs = mission.arriveAtMs + execution
   mission.returnEndsAtMs =
-    mission.resolveAtMs + rainTravelMs(s.weather, mission.resolveAtMs, inbound.distance, team, s.runItems)
+    mission.resolveAtMs + rainTravelMs(s.weather, mission.resolveAtMs, inbound.distance, team, s.runItems, s.today.electrified)
   mission.pSuccess = missionSuccessProbabilityCtx(ctx, mission.requirement)
-  // Natural Cure: recupera vida ao sair em missão (cap em maxHp); demais só viajam.
+  // Natural Cure: recupera vida ao sair em missão (L1 +2; L2 cura total); demais só viajam.
+  // Dry Skin: se chovendo agora, cura ceil(25% maxHp) ao despachar (L1 e L2).
+  const raining = isRaining(s.weather, now)
   for (const p of team) {
-    const healed = hasNaturalCure(p)
-      ? Math.min(p.maxHp, p.currentHp + NATURAL_CURE_MISSION_HEAL)
-      : p.currentHp
+    let healed = p.currentHp
+    if (hasNaturalCure(p)) {
+      const lvl = secretLevelOf(p, 'sa-natural-cure')
+      healed = lvl === 2 ? p.maxHp : Math.min(p.maxHp, p.currentHp + NATURAL_CURE_MISSION_HEAL)
+    }
+    if (hasDrySkin(p) && raining) {
+      healed = Math.min(p.maxHp, healed + Math.ceil(DRY_SKIN_RAIN_HEAL_FRAC * p.maxHp))
+    }
     replaceMon(s, { ...p, currentHp: healed, status: 'traveling' })
-  }
-  // Water Absorb: a rota passa pela água → cada portador ganha XP na hora.
-  if (pathUsesSurf(graph, outbound.path)) {
-    const gains = new Map(
-      team.filter(hasWaterAbsorb).map((p) => [p.id, WATER_ABSORB_XP] as const),
-    )
-    if (gains.size > 0) applyXpGains(s, gains, takeRng(s))
   }
 }
 
@@ -207,7 +219,7 @@ export function applyWeatherHold(s: GameState, mission: MissionInstance, nowMs: 
   // consciente: como o sprite interpola linear em [legStart, arriveAtMs], os extremos não
   // dessincronizam (ver "Notas de implementação" no plano da feature).
   const speedMult =
-    teamTravelSpeedMultiplier(team, s.runItems) +
+    teamTravelSpeedMultiplier(team, s.runItems, s.today.electrified) +
     (teamHasSwiftSwim(team) && isRaining(s.weather, nowMs) ? SWIFT_SWIM_RAIN_BONUS : 0)
   const plan = planWeatherLeg({
     graph,
@@ -270,6 +282,9 @@ export function resolveMissionNow(s: GameState, mission: MissionInstance): void 
     runtime: s.today.secretRuntime,
     runItems: s.runItems,
     electirizerBonus: mission.electirizerBonus,
+    weather: s.weather,
+    nowMs: s.clock.dayElapsedMs,
+    electrified: s.today.electrified,
   }
   const pSuccess = missionSuccessProbabilityCtx(ctx, mission.requirement)
   const outcome = resolveMission(
@@ -280,8 +295,10 @@ export function resolveMissionNow(s: GameState, mission: MissionInstance): void 
     pSuccess,
     damageForDay(s.run.day),
   )
-  // Habilidades Secretas: consome o Battle Armor pendente (valeu para esta missão).
-  applyMissionSecretRuntime(s, team)
+  // Habilidades Secretas: consome o Battle Armor pendente e o Water Absorb pendente (valeu
+  // para ESTA missão). Após limpar, seta novo waterAbsorbPending se a missão cruzou água —
+  // o bônus vale para a PRÓXIMA missão (espelha battleArmorPending).
+  applyMissionSecretRuntime(s, team, mission)
 
   // Aplica só o dano (HP) agora; XP/cura/evolução são adiados para freeOnReturn.
   // Sturdy: salva do desmaio em missão (1×/dia) — fica com 1 de vida.
@@ -309,6 +326,7 @@ export function resolveMissionNow(s: GameState, mission: MissionInstance): void 
   mission.status = 'returning'
   mission.result = outcome.success ? 'success' : 'failure'
   if (outcome.success) speedUpReturn(mission)
+  applyStaticMovementBonus(mission)
   s.today.missionResults.push({
     templateId: mission.templateId,
     success: outcome.success,
@@ -321,6 +339,20 @@ function speedUpReturn(mission: MissionInstance): void {
   if (mission.resolveAtMs === null || mission.returnEndsAtMs === null) return
   const returnLeg = mission.returnEndsAtMs - mission.resolveAtMs
   mission.returnEndsAtMs = mission.resolveAtMs + returnLeg / RETURN_SPEED_BONUS_ON_SUCCESS
+}
+
+/**
+ * Static (NOVO, Fase 4): se a missão acumulou segundos parados por raio (staticStoppedSecs),
+ * aplica o bônus de velocidade de retorno — +10%/s parado, máx +100% (÷(1+bonus) no trecho).
+ * Aplicado APÓS speedUpReturn (os dois multiplicam).
+ */
+function applyStaticMovementBonus(mission: MissionInstance): void {
+  const secs = mission.staticStoppedSecs ?? 0
+  if (secs <= 0) return
+  if (mission.resolveAtMs === null || mission.returnEndsAtMs === null) return
+  const bonus = Math.min(STATIC_MOVE_CAP_L2, STATIC_MOVE_PER_SEC_L2 * secs)
+  const returnLeg = mission.returnEndsAtMs - mission.resolveAtMs
+  mission.returnEndsAtMs = mission.resolveAtMs + returnLeg / (1 + bonus)
 }
 
 /**
@@ -348,14 +380,30 @@ export function freeOnReturn(s: GameState, mission: MissionInstance): void {
 }
 
 /**
- * Atualiza o estado diário das Habilidades Secretas após resolver a missão: consome o Battle
- * Armor pendente (o bônus de atributos valeu para ESTA missão). Weak Armor deriva a velocidade do
- * HP faltante e Shell Armor não tem debuff de velocidade — nada a re-armar aqui.
+ * Atualiza o estado diário das Habilidades Secretas após resolver a missão:
+ * (a) consome o Battle Armor pendente e o Water Absorb pendente — bônus que valeu para ESTA missão;
+ * (b) se ESTA missão cruzou água, seta novo waterAbsorbPending para os portadores de Water Absorb
+ *     — o bônus valerá para a PRÓXIMA missão (espelha battleArmorPending).
+ * Set-after-clear garante que o novo pending não é imediatamente consumido.
+ * Weak Armor e Shell Armor não têm estado a re-armar aqui.
  */
-function applyMissionSecretRuntime(s: GameState, before: readonly Pokemon[]): void {
+function applyMissionSecretRuntime(
+  s: GameState,
+  before: readonly Pokemon[],
+  mission: MissionInstance,
+): void {
+  // (a) Consome os pendings existentes (que já foram lidos pelo missionSuccessProbabilityCtx).
   for (const p of before) {
     const rt = s.today.secretRuntime[p.id]
     if (rt?.battleArmorPending) rt.battleArmorPending = false
+    if (rt?.waterAbsorbPending) rt.waterAbsorbPending = undefined
+  }
+  // (b) Water Absorb: se a missão que ACABOU de resolver cruzou água, seta pending para a próxima.
+  if (mission.surfing) {
+    for (const p of before.filter(hasWaterAbsorb)) {
+      const lvl = secretLevelOf(p, 'sa-water-absorb') as 1 | 2
+      ;(s.today.secretRuntime[p.id] ??= {}).waterAbsorbPending = lvl
+    }
   }
 }
 

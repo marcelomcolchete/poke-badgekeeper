@@ -43,7 +43,7 @@ export function startSearch(s: GameState, searcherId: string, spotIndex: number)
   // "viagem instantânea" de caminho vazio (espelha acceptMission). Voo/Sniper nunca dão [].
   if (path.length === 0) return
   const now = s.clock.dayElapsedMs
-  const oneWay = rainTravelMs(s.weather, now, distance, [searcher], s.runItems)
+  const oneWay = rainTravelMs(s.weather, now, distance, [searcher], s.runItems, s.today.electrified)
   const arriveAtMs = now + oneWay
   // Fast Ball: a busca é resolvida na hora em que o Pokémon chega na área (sem tempo de busca).
   const instant = s.runItems.includes('fast-ball')
@@ -89,7 +89,7 @@ function applySearchWeatherHold(s: GameState, search: CaptureSearch, nowMs: numb
   // Velocidade efetiva AGORA (base + Swift Swim se chovendo); o extraMs do desvio é linear a essa
   // taxa, enquanto a chegada-base veio do integrador (rainSpeed) — aproximação consciente (ver plano).
   const speedMult =
-    teamTravelSpeedMultiplier(team, s.runItems) +
+    teamTravelSpeedMultiplier(team, s.runItems, s.today.electrified) +
     (teamHasSwiftSwim(team) && isRaining(s.weather, nowMs) ? SWIFT_SWIM_RAIN_BONUS : 0)
   const plan = planWeatherLeg({
     graph,
@@ -174,7 +174,7 @@ function startReturn(s: GameState, searcherId: string, spotIndex: number, captur
   // (ex.: voltar de 'k' por k→t→u) o caminho/tempo da volta diferem da ida (PLAN §3.1).
   const { flying, surfing, path, distance } = travelRoute(graph, node, city.siteNodes.gym, [searcher], s.runItems)
   const now = s.clock.dayElapsedMs
-  const oneWay = rainTravelMs(s.weather, now, distance, [searcher], s.runItems)
+  const oneWay = rainTravelMs(s.weather, now, distance, [searcher], s.runItems, s.today.electrified)
   replaceMon(s, { ...searcher, status: 'returning' })
   s.captureReturns.push({
     searcherId,
@@ -214,7 +214,7 @@ function applyReturnWeatherHold(s: GameState, ret: CaptureReturn, nowMs: number)
   // Velocidade efetiva AGORA (base + Swift Swim se chovendo); o extraMs do desvio é linear a essa
   // taxa, enquanto a chegada-base veio do integrador (rainSpeed) — aproximação consciente (ver plano).
   const speedMult =
-    teamTravelSpeedMultiplier(team, s.runItems) +
+    teamTravelSpeedMultiplier(team, s.runItems, s.today.electrified) +
     (teamHasSwiftSwim(team) && isRaining(s.weather, nowMs) ? SWIFT_SWIM_RAIN_BONUS : 0)
   const plan = planWeatherLeg({
     graph,
