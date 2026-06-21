@@ -325,7 +325,7 @@ export const SECRET_LINES: Record<number, readonly [SecretId, SecretId, SecretId
   // Electabuzz (Volt Absorb fica sem efeito até existir a tempestade)
   125: ['sa-vital-spirit', 'sa-volt-absorb', 'sa-static'],
   // Zapdos (ave-trovão lendária)
-  145: ['sa-fly', 'sa-pressure', 'sa-fly'],
+  145: ['sa-fly', 'sa-fly-plus', 'sa-pressure'],
 
   // Sandshrew → Sandslash
   27: ['sa-rollout', 'sa-dig', 'sa-sand-rush'],
@@ -334,7 +334,7 @@ export const SECRET_LINES: Record<number, readonly [SecretId, SecretId, SecretId
   // Nidoran♂ → Nidorino → Nidoking
   32: ['sa-rivalry', 'sa-hustle', 'sa-dig'],
   // Diglett → Dugtrio
-  50: ['sa-dig', 'sa-sand-rush', 'sa-dig'],
+  50: ['sa-dig', 'sa-sand-rush', 'sa-dig-plus'],
   // Geodude → Graveler → Golem
   74: ['sa-sturdy', 'sa-explosion', 'sa-rollout'],
   // Onix
@@ -348,21 +348,21 @@ export const SECRET_LINES: Record<number, readonly [SecretId, SecretId, SecretId
   // Kabuto → Kabutops
   140: ['sa-battle-armor', 'sa-weak-armor', 'sa-swift-swim'],
   // Aerodactyl
-  142: ['sa-fly', 'sa-rock-head', 'sa-fly'],
+  142: ['sa-fly', 'sa-rock-head', 'sa-fly-plus'],
 
   // ---- Dragões ----
   // Dratini → Dragonair → Dragonite
-  147: ['sa-surf', 'sa-fly', 'sa-fly'],
+  147: ['sa-surf', 'sa-fly', 'sa-fly-plus'],
 
   // ---- Cerulean (Água/Gelo) ----
   // Squirtle → Wartortle → Blastoise
-  7: ['sa-surf', 'sa-torrent', 'sa-surf'],
+  7: ['sa-surf', 'sa-torrent', 'sa-surf-plus'],
   // Psyduck → Golduck
   54: ['sa-surf', 'sa-swift-swim', 'sa-cloud-nine'],
   // Poliwag → Poliwhirl → Poliwrath
   60: ['sa-water-absorb', 'sa-surf', 'sa-swift-swim'],
   // Tentacool → Tentacruel
-  72: ['sa-clear-body', 'sa-surf', 'sa-surf'],
+  72: ['sa-clear-body', 'sa-surf', 'sa-surf-plus'],
   // Slowpoke → Slowbro
   79: ['sa-regenerator', 'sa-own-tempo', 'sa-surf'],
   // Seel → Dewgong
@@ -370,21 +370,21 @@ export const SECRET_LINES: Record<number, readonly [SecretId, SecretId, SecretId
   // Shellder → Cloyster
   90: ['sa-shell-armor', 'sa-overcoat', 'sa-surf'],
   // Krabby → Kingler
-  98: ['sa-dig', 'sa-shell-armor', 'sa-dig'],
+  98: ['sa-dig', 'sa-shell-armor', 'sa-dig-plus'],
   // Horsea → Seadra
   116: ['sa-swift-swim', 'sa-surf', 'sa-sniper'],
   // Goldeen → Seaking
-  118: ['sa-surf', 'sa-swift-swim', 'sa-surf'],
+  118: ['sa-surf', 'sa-swift-swim', 'sa-surf-plus'],
   // Staryu → Starmie
   120: ['sa-analytic', 'sa-surf', 'sa-natural-cure'],
   // Jynx
   124: ['sa-dry-skin', 'sa-forewarn', 'sa-analytic'],
   // Magikarp → Gyarados
-  129: ['sa-surf', 'sa-moxie', 'sa-surf'],
+  129: ['sa-surf', 'sa-moxie', 'sa-surf-plus'],
   // Lapras
-  131: ['sa-surf', 'sa-shell-armor', 'sa-shell-armor'],
+  131: ['sa-surf', 'sa-surf-plus', 'sa-shell-armor'],
   // Articuno
-  144: ['sa-fly', 'sa-pressure', 'sa-fly'],
+  144: ['sa-fly', 'sa-fly-plus', 'sa-pressure'],
   // Omanyte (138) e Kabuto (140) já estão definidos acima (linhas de fóssil) e batem com Cerulean.
 }
 
@@ -396,7 +396,7 @@ export const SECRET_LINES: Record<number, readonly [SecretId, SecretId, SecretId
  */
 const SECRET_LINE_BY_SPECIES: Partial<Record<number, readonly [SecretId, SecretId, SecretId]>> = {
   // Vaporeon
-  134: ['sa-surf', 'sa-water-absorb', 'sa-surf'],
+  134: ['sa-surf', 'sa-surf-plus', 'sa-water-absorb'],
   // Jolteon (Volt Absorb fica sem efeito até existir a tempestade)
   135: ['sa-quick-feet', 'sa-volt-absorb', 'sa-static'],
 }
@@ -409,7 +409,7 @@ export function secretLineFor(speciesId: number): readonly [SecretId, SecretId, 
 /** Quantas habilidades secretas este Pokémon já desbloqueou (0..3), com clamp defensivo. */
 export function secretCountOf(p: Pokemon): number {
   if (!secretLineFor(p.speciesId)) return 0
-  return Math.min(SECRET_MAX, Math.max(0, p.secretPicks?.length ?? 0))
+  return Math.min(SECRET_MAX, Math.max(0, p.secretCount ?? 0))
 }
 
 /** Ids das habilidades secretas ATIVAS (já desbloqueadas) deste Pokémon, na ordem da linha. */
