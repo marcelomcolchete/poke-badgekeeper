@@ -45,6 +45,8 @@ import {
   SWIFT_SWIM_MISSION_BONUS_L2,
   TORRENT_MISSION_MULT_L1,
   TORRENT_MISSION_MULT_L2,
+  VOLT_ABSORB_BONUS_L1,
+  VOLT_ABSORB_BONUS_L2,
   WATER_ABSORB_MISSION_MULT_L1,
   WATER_ABSORB_MISSION_MULT_L2,
   WEAK_ARMOR_SPEED_PER_MISSING_HP_L1,
@@ -90,6 +92,9 @@ export function hasExplosion(p: Pokemon): boolean {
 }
 export function hasLightningRod(p: Pokemon): boolean {
   return hasSecret(p, 'sa-lightning-rod')
+}
+export function hasVoltAbsorb(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-volt-absorb')
 }
 export function hasReckless(p: Pokemon): boolean {
   return hasSecret(p, 'sa-reckless')
@@ -226,6 +231,11 @@ export interface MissionSecretCtx {
    * Necessário junto com `weather` para avaliar se está chovendo agora para o Swift Swim L2.
    */
   nowMs?: number
+  /**
+   * Volt Absorb: Pokémon eletrizado pelo resto do dia (id → nível). Se presente, o portador
+   * recebe +30%/+90% (L1/L2) de atributos nesta missão.
+   */
+  electrified?: Record<string, 1 | 2>
 }
 
 /**
@@ -289,6 +299,11 @@ export function missionAttrMultiplier(p: Pokemon, ctx: MissionSecretCtx): number
   // Electirizer: bônus positivo da "próxima missão" por raio sofrido (não anulado pelo Clear Body).
   const charges = ctx.electirizerBonus?.[p.id] ?? 0
   if (charges > 0) mult *= 1 + ELECTIRIZER_MISSION_BONUS * charges
+  // Volt Absorb: eletrizado pelo raio → +30% (L1) ou +90% (L2) de atributos.
+  const elecLevel = ctx.electrified?.[p.id]
+  if (elecLevel !== undefined) {
+    mult *= 1 + (elecLevel === 2 ? VOLT_ABSORB_BONUS_L2 : VOLT_ABSORB_BONUS_L1)
+  }
   return mult
 }
 
@@ -376,12 +391,15 @@ export function teamIsSpeedy(
 
 /**
  * Multiplicador de VELOCIDADE do time na viagem (≥1 = mais rápido, <1 = mais lento):
- * Weak Armor (+20% por ponto de HP faltante de quem tem a habilidade), Fly (+ bônus ao voar) e o
- * item Lagging Tail (mais lento). O tempo de viagem é dividido por este valor.
+ * Weak Armor (+20% por ponto de HP faltante de quem tem a habilidade), Fly (+ bônus ao voar),
+ * Volt Absorb eletrizado (+30%/+90% por membro eletrizado) e o item Lagging Tail (mais lento).
+ * O tempo de viagem é dividido por este valor.
+ * @param electrified Mapa opcional de Pokémon eletrizados (Volt Absorb) — id → nível.
  */
 export function teamTravelSpeedMultiplier(
   team: readonly Pokemon[],
   runItems: readonly string[] = [],
+  electrified?: Record<string, 1 | 2>,
 ): number {
   let speed = 1
   for (const p of team) {
@@ -392,6 +410,11 @@ export function teamTravelSpeedMultiplier(
           ? WEAK_ARMOR_SPEED_PER_MISSING_HP_L2
           : WEAK_ARMOR_SPEED_PER_MISSING_HP_L1
       speed += perPoint * missing
+    }
+    // Volt Absorb eletrizado: +30% (L1) ou +90% (L2) de velocidade.
+    const elecLevel = electrified?.[p.id]
+    if (elecLevel !== undefined) {
+      speed += elecLevel === 2 ? VOLT_ABSORB_BONUS_L2 : VOLT_ABSORB_BONUS_L1
     }
   }
   if (teamFlies(team)) speed += FLY_SPEED_BONUS

@@ -112,7 +112,7 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
   // já bloqueia, mas a guarda evita uma viagem instantânea por engano. Voo/Sniper nunca dão [].
   if (outbound.path.length === 0) return
   const inbound = travelRoute(graph, mission.node, city.siteNodes.gym, team, s.runItems)
-  const outMs = rainTravelMs(s.weather, now, outbound.distance, team, s.runItems)
+  const outMs = rainTravelMs(s.weather, now, outbound.distance, team, s.runItems, s.today.electrified)
   // Sniper L1: dobra a duração de execução (atua do ginásio, mas demora mais). L2 normal.
   const baseExecution = executionMs(team, template.baseExecutionMs)
   const sniperL1 = team.length === 1 && hasSniper(team[0]!) && secretLevelOf(team[0]!, 'sa-sniper') === 1
@@ -125,6 +125,7 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
     electirizerBonus,
     weather: s.weather,
     nowMs: now,
+    electrified: s.today.electrified,
   }
 
   mission.teamIds = team.map((p) => p.id)
@@ -139,7 +140,7 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
   mission.arriveAtMs = now + outMs
   mission.resolveAtMs = mission.arriveAtMs + execution
   mission.returnEndsAtMs =
-    mission.resolveAtMs + rainTravelMs(s.weather, mission.resolveAtMs, inbound.distance, team, s.runItems)
+    mission.resolveAtMs + rainTravelMs(s.weather, mission.resolveAtMs, inbound.distance, team, s.runItems, s.today.electrified)
   mission.pSuccess = missionSuccessProbabilityCtx(ctx, mission.requirement)
   // Natural Cure: recupera vida ao sair em missão (L1 +2; L2 cura total); demais só viajam.
   for (const p of team) {
@@ -209,7 +210,7 @@ export function applyWeatherHold(s: GameState, mission: MissionInstance, nowMs: 
   // consciente: como o sprite interpola linear em [legStart, arriveAtMs], os extremos não
   // dessincronizam (ver "Notas de implementação" no plano da feature).
   const speedMult =
-    teamTravelSpeedMultiplier(team, s.runItems) +
+    teamTravelSpeedMultiplier(team, s.runItems, s.today.electrified) +
     (teamHasSwiftSwim(team) && isRaining(s.weather, nowMs) ? SWIFT_SWIM_RAIN_BONUS : 0)
   const plan = planWeatherLeg({
     graph,
@@ -274,6 +275,7 @@ export function resolveMissionNow(s: GameState, mission: MissionInstance): void 
     electirizerBonus: mission.electirizerBonus,
     weather: s.weather,
     nowMs: s.clock.dayElapsedMs,
+    electrified: s.today.electrified,
   }
   const pSuccess = missionSuccessProbabilityCtx(ctx, mission.requirement)
   const outcome = resolveMission(

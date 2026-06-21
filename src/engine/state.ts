@@ -431,6 +431,11 @@ export interface DayTally {
   purchasedItems: string[]
   /** Pokémon (ids) com -50% de Batalha pelo resto do dia (Paralyze da Tempestade). */
   paralyzedBattleIds: string[]
+  /**
+   * Volt Absorb: Pokémon eletrizado pelo resto do dia (id → nível do Volt Absorb).
+   * +30%/+30% (L1) ou +90%/+90% (L2) em movimento e atributos. Zera a cada manhã.
+   */
+  electrified: Record<string, 1 | 2>
 }
 
 export interface DayLog {
@@ -546,6 +551,7 @@ export function emptyTally(): DayTally {
     shopOffer: [],
     purchasedItems: [],
     paralyzedBattleIds: [],
+    electrified: {},
   }
 }
 

@@ -7,7 +7,9 @@ import type { GameState } from '../engine/state.ts'
 import { pointInCircle, strikesResolvingBetween } from '../engine/storm.ts'
 import { travelerPositionsAt } from '../engine/travelerPositions.ts'
 import { STRIKE_DAMAGE, PARALYZE_STUN_MS } from '../engine/balance.ts'
-import { findMon, replaceMon } from './runtime.ts'
+import { hasLightningRod, hasVoltAbsorb } from '../engine/secretEffects.ts'
+import { secretLevelOf } from '../data/secretAbilities.ts'
+import { findMon, replaceMon, settleFaintTracked } from './runtime.ts'
 import { shiftMissionTimestamps } from './missionFlow.ts'
 
 /**
@@ -107,10 +109,82 @@ export function applyParalyze(
 }
 
 /**
+ * Retorna os Pokémon no time que carrega `id` (pode ser apenas `id` sozinho em buscas de captura).
+ * Usado para verificar Lightning Rod e para aplicar morte por Fly-raio.
+ */
+function containerTeamIds(s: GameState, id: string): string[] {
+  const mission = s.missions.find(
+    (m) => m.teamIds.includes(id) && (m.status === 'traveling' || m.status === 'returning'),
+  )
+  if (mission) return [...mission.teamIds]
+  const search = s.captureSearches.find((c) => c.searcherId === id && c.phase === 'traveling')
+  if (search) return [search.searcherId]
+  const ret = s.captureReturns.find((r) => r.searcherId === id)
+  if (ret) return [ret.searcherId]
+  return [id]
+}
+
+/**
+ * Retorna true se o container que carrega `id` está voando (flying === true).
+ */
+function isInFlyingContainer(s: GameState, id: string): boolean {
+  const mission = s.missions.find(
+    (m) => m.teamIds.includes(id) && (m.status === 'traveling' || m.status === 'returning'),
+  )
+  if (mission) return mission.flying === true
+  const search = s.captureSearches.find((c) => c.searcherId === id && c.phase === 'traveling')
+  if (search) return search.flying === true
+  const ret = s.captureReturns.find((r) => r.searcherId === id)
+  if (ret) return ret.flying === true
+  return false
+}
+
+/**
+ * Mata todo o time voador: faz os membros desmaiarem (HP=0, status=fainted, today.faints++) e
+ * falha/encerra o container (missão → resolved/failure, busca/retorno → removido).
+ */
+function killFlyingContainer(s: GameState, id: string): void {
+  // Missão voadora
+  const mission = s.missions.find(
+    (m) => m.teamIds.includes(id) && (m.status === 'traveling' || m.status === 'returning'),
+  )
+  if (mission) {
+    for (const memberId of mission.teamIds) {
+      const mon = findMon(s, memberId)
+      if (mon) {
+        replaceMon(s, settleFaintTracked(s, { ...mon, currentHp: 0 }))
+      }
+    }
+    mission.status = 'resolved'
+    mission.result = 'failure'
+    s.today.missionResults.push({ templateId: mission.templateId, success: false, teamIds: mission.teamIds })
+    return
+  }
+  // Busca de captura voadora
+  const search = s.captureSearches.find((c) => c.searcherId === id && c.phase === 'traveling')
+  if (search) {
+    const mon = findMon(s, search.searcherId)
+    if (mon) replaceMon(s, settleFaintTracked(s, { ...mon, currentHp: 0 }))
+    s.captureSearches = s.captureSearches.filter((c) => c !== search)
+    return
+  }
+  // Retorno de captura voador
+  const ret = s.captureReturns.find((r) => r.searcherId === id)
+  if (ret) {
+    const mon = findMon(s, ret.searcherId)
+    if (mon) replaceMon(s, settleFaintTracked(s, { ...mon, currentHp: 0 }))
+    s.captureReturns = s.captureReturns.filter((r) => r !== ret)
+  }
+}
+
+/**
  * Processa os raios cujo impacto cai em (prevMs, nowMs]: para cada Pokémon VISÍVEL no mapa dentro
- * de algum círculo, reduz 1 de HP (preservando o status de trânsito — o desmaio é realizado no
- * settle normal da missão) e aplica Paralyze. Cada container é congelado no máximo uma vez por
- * strike (deduplicação via `frozenContainers`), mesmo que o time tenha 2–3 membros.
+ * de algum círculo, aplica os efeitos pela ordem de prioridade:
+ * (1) Lightning Rod no time → imunidade total (pula dano/Paralyze/Electirizer).
+ * (2) Volt Absorb no Pokémon atingido → absorção: eletriza o portador (buff de mov.+attr); sem dano.
+ * (3) Voando (container.flying) → time fainted + missão/busca perdida.
+ * (4) Normal: -1 HP + Paralyze + Electirizer.
+ * Cada container é congelado no máximo uma vez por strike (frozenContainers).
  */
 export function processStorms(s: GameState, prevMs: number, nowMs: number): void {
   if (s.weather.storms.length === 0) return
@@ -123,11 +197,38 @@ export function processStorms(s: GameState, prevMs: number, nowMs: number): void
     }
     // frozenContainers: rastreia quais containers já foram congelados NESTE strike.
     const frozenContainers = new Set<string>()
+    // killedContainers: rastreia quais containers já foram mortos NESTE strike (evita dupla-morte
+    // se dois membros do mesmo time flying forem atingidos no mesmo raio).
+    const killedContainers = new Set<string>()
     for (const id of hit) {
       const mon = findMon(s, id)
       if (!mon) continue
       const pos = positions.find((t) => t.id === id)!.pos
-      // Reduz HP SEM virar fainted aqui (preserva 'traveling'/'returning'); settle normal cuida.
+
+      // (1) Lightning Rod: se QUALQUER membro do time do container tem Lightning Rod → imunidade total.
+      const teamIds = containerTeamIds(s, id)
+      const teamMons = teamIds.map((tid) => findMon(s, tid)).filter((p) => p !== undefined)
+      if (teamMons.some(hasLightningRod)) continue
+
+      // (2) Volt Absorb: o Pokémon atingido absorve o raio → eletrizado, sem dano/Paralyze.
+      if (hasVoltAbsorb(mon)) {
+        const lvl = secretLevelOf(mon, 'sa-volt-absorb') as 1 | 2
+        ;(s.today.electrified ??= {})[id] = lvl
+        continue
+      }
+
+      // (3) Fly-raio: container está voando → time fainted + missão/busca perdida.
+      if (isInFlyingContainer(s, id)) {
+        // Chave do container para deduplicação (usa o id do membro principal/único).
+        const containerKey = teamIds[0] ?? id
+        if (!killedContainers.has(containerKey)) {
+          killedContainers.add(containerKey)
+          killFlyingContainer(s, id)
+        }
+        continue
+      }
+
+      // (4) Normal: -1 HP (sem virar fainted aqui — settle normal cuida), Paralyze, Electirizer.
       replaceMon(s, { ...mon, currentHp: Math.max(0, mon.currentHp - STRIKE_DAMAGE) })
       applyParalyze(s, id, pos, strike.strikeAtMs, frozenContainers)
       // Electirizer: cada raio sofrido vira +1 carga de bônus para a PRÓXIMA missão deste Pokémon.

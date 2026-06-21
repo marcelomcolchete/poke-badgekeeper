@@ -7,7 +7,10 @@ import type { GameState } from '../engine/state.ts'
 import type { StormEvent } from '../engine/storm.ts'
 import { travelerPositionsAt } from '../engine/travelerPositions.ts'
 import { getCity } from '../data/cities.ts'
-import { PARALYZE_STUN_MS } from '../engine/balance.ts'
+import { PARALYZE_STUN_MS, VOLT_ABSORB_BONUS_L1, VOLT_ABSORB_BONUS_L2 } from '../engine/balance.ts'
+import { teamTravelSpeedMultiplier, missionAttrMultiplier, hasVoltAbsorb, type MissionSecretCtx } from '../engine/secretEffects.ts'
+import { getMissionTemplate } from '../data/missionTemplates.ts'
+import { makeMon } from '../engine/testkit.ts'
 
 // Helpers locais -----------------------------------------------------------------
 
@@ -224,5 +227,301 @@ describe('stormFlow — aplicação dos raios', () => {
     s.weather = { ...s.weather, storms: [storm] }
     processStorms(s, 0, 6_000)
     expect(s.electirizerCharges[id]).toBeUndefined()
+  })
+})
+
+// ---- Novos efeitos de raio (Fase 4): Lightning Rod, Volt Absorb, Fly-raio --------
+
+describe('stormFlow — Lightning Rod (imunidade de time)', () => {
+  it('time com Lightning Rod não toma dano nem Paralyze ao ser atingido', () => {
+    const { s, pos } = travelingState()
+    const mission = s.missions[0]!
+    // Substitui o Pokémon atingido por um com Lightning Rod (Cubone 104, slot1)
+    const lrodMon = makeMon({
+      id: s.roster[0]!.id,
+      speciesId: 104,
+      secretPicks: [{ slot: 1, level: 1 }],
+      currentHp: 5,
+      maxHp: 5,
+      status: 'traveling' as const,
+    })
+    s.roster[0] = lrodMon
+    mission.teamIds = [lrodMon.id]
+
+    const storm: StormEvent = {
+      startMs: 0,
+      endMs: 30_000,
+      strikes: [{ warnAtMs: 0, strikeAtMs: 5_000, circles: [{ cx: pos.x, cy: pos.y, radius: 0.2 }] }],
+    }
+    s.weather = { ...s.weather, storms: [storm] }
+    processStorms(s, 0, 6_000)
+
+    const after = s.roster.find((p) => p.id === lrodMon.id)!
+    expect(after.currentHp).toBe(5) // sem dano
+    expect(s.today.paralyzedBattleIds).not.toContain(lrodMon.id) // sem Paralyze
+    expect(mission.paralyzeHold).toBeUndefined() // container não congelado
+  })
+
+  it('imunidade vale para TODOS do time se qualquer um tem Lightning Rod', () => {
+    const { s, pos } = travelingState()
+    const mission = s.missions[0]!
+    const idA = s.roster[0]!.id
+
+    // Segundo membro: Lightning Rod
+    const idB = 'lrod_teammate'
+    const lrodMon = makeMon({
+      id: idB,
+      speciesId: 104,
+      secretPicks: [{ slot: 1, level: 1 }],
+      currentHp: 5,
+      maxHp: 5,
+      status: 'traveling' as const,
+    })
+    s.roster.push(lrodMon)
+    mission.teamIds = [idA, idB]
+
+    const storm: StormEvent = {
+      startMs: 0,
+      endMs: 30_000,
+      strikes: [{ warnAtMs: 0, strikeAtMs: 5_000, circles: [{ cx: pos.x, cy: pos.y, radius: 0.5 }] }],
+    }
+    s.weather = { ...s.weather, storms: [storm] }
+    const hpA = s.roster.find((p) => p.id === idA)!.currentHp
+    processStorms(s, 0, 6_000)
+
+    expect(s.roster.find((p) => p.id === idA)!.currentHp).toBe(hpA) // sem dano
+    expect(s.today.paralyzedBattleIds).not.toContain(idA)
+    expect(s.today.paralyzedBattleIds).not.toContain(idB)
+  })
+})
+
+describe('stormFlow — Volt Absorb (absorção + eletriza)', () => {
+  it('Volt Absorb L1: sem dano, electrified setado a 1, sem Paralyze', () => {
+    const { s, pos } = travelingState()
+    const mission = s.missions[0]!
+    // Jolteon 135, slot1=volt-absorb L1
+    const voltMon = makeMon({
+      id: s.roster[0]!.id,
+      speciesId: 135,
+      secretPicks: [{ slot: 1, level: 1 }],
+      currentHp: 5,
+      maxHp: 5,
+      status: 'traveling' as const,
+    })
+    s.roster[0] = voltMon
+    mission.teamIds = [voltMon.id]
+
+    const storm: StormEvent = {
+      startMs: 0,
+      endMs: 30_000,
+      strikes: [{ warnAtMs: 0, strikeAtMs: 5_000, circles: [{ cx: pos.x, cy: pos.y, radius: 0.2 }] }],
+    }
+    s.weather = { ...s.weather, storms: [storm] }
+    processStorms(s, 0, 6_000)
+
+    const after = s.roster.find((p) => p.id === voltMon.id)!
+    expect(after.currentHp).toBe(5) // sem dano
+    expect(s.today.paralyzedBattleIds).not.toContain(voltMon.id)
+    expect(s.today.electrified[voltMon.id]).toBe(1) // eletrizado nível 1
+  })
+
+  it('Volt Absorb L2: electrified setado a 2', () => {
+    const { s, pos } = travelingState()
+    const mission = s.missions[0]!
+    // Jolteon 135, slot1=volt-absorb L2
+    const voltMon = makeMon({
+      id: s.roster[0]!.id,
+      speciesId: 135,
+      secretPicks: [{ slot: 1, level: 2 }],
+      currentHp: 5,
+      maxHp: 5,
+      status: 'traveling' as const,
+    })
+    s.roster[0] = voltMon
+    mission.teamIds = [voltMon.id]
+
+    const storm: StormEvent = {
+      startMs: 0,
+      endMs: 30_000,
+      strikes: [{ warnAtMs: 0, strikeAtMs: 5_000, circles: [{ cx: pos.x, cy: pos.y, radius: 0.2 }] }],
+    }
+    s.weather = { ...s.weather, storms: [storm] }
+    processStorms(s, 0, 6_000)
+
+    expect(s.today.electrified[voltMon.id]).toBe(2)
+  })
+
+  it('buff de movimento: eletrizado L1 → +30% na velocidade via teamTravelSpeedMultiplier', () => {
+    const voltMon = makeMon({ id: 'v', speciesId: 135, secretPicks: [{ slot: 1, level: 1 }] })
+    const electrified: Record<string, 1 | 2> = { v: 1 }
+    const withoutElec = teamTravelSpeedMultiplier([voltMon])
+    const withElec = teamTravelSpeedMultiplier([voltMon], [], electrified)
+    expect(withElec).toBeCloseTo(withoutElec + VOLT_ABSORB_BONUS_L1)
+  })
+
+  it('buff de movimento: eletrizado L2 → +90% na velocidade via teamTravelSpeedMultiplier', () => {
+    const voltMon = makeMon({ id: 'v', speciesId: 135, secretPicks: [{ slot: 1, level: 2 }] })
+    const electrified: Record<string, 1 | 2> = { v: 2 }
+    const withoutElec = teamTravelSpeedMultiplier([voltMon])
+    const withElec = teamTravelSpeedMultiplier([voltMon], [], electrified)
+    expect(withElec).toBeCloseTo(withoutElec + VOLT_ABSORB_BONUS_L2)
+  })
+
+  it('buff de atributos: eletrizado L1 → +30% no missionAttrMultiplier', () => {
+    const voltMon = makeMon({ id: 'v', speciesId: 135, secretPicks: [{ slot: 1, level: 1 }] })
+    const electrified: Record<string, 1 | 2> = { v: 1 }
+    const ctx: MissionSecretCtx = {
+      team: [voltMon],
+      template: getMissionTemplate('patrulha'),
+      runtime: {},
+      runItems: [],
+      electrified,
+    }
+    const ctxNoElec: MissionSecretCtx = { ...ctx, electrified: undefined }
+    expect(missionAttrMultiplier(voltMon, ctx)).toBeCloseTo(1 + VOLT_ABSORB_BONUS_L1)
+    expect(missionAttrMultiplier(voltMon, ctxNoElec)).toBeCloseTo(1)
+  })
+
+  it('buff de atributos: eletrizado L2 → +90% no missionAttrMultiplier', () => {
+    const voltMon = makeMon({ id: 'v', speciesId: 135, secretPicks: [{ slot: 1, level: 2 }] })
+    const electrified: Record<string, 1 | 2> = { v: 2 }
+    const ctx: MissionSecretCtx = {
+      team: [voltMon],
+      template: getMissionTemplate('patrulha'),
+      runtime: {},
+      runItems: [],
+      electrified,
+    }
+    expect(missionAttrMultiplier(voltMon, ctx)).toBeCloseTo(1 + VOLT_ABSORB_BONUS_L2)
+  })
+})
+
+describe('stormFlow — Fly-raio (missão voadora atingida)', () => {
+  it('missão flying atingida → membros fainted (HP=0) e missão resolved/failure', () => {
+    const { s, pos } = travelingState()
+    const mission = s.missions[0]!
+    mission.flying = true // marca como voando
+
+    const storm: StormEvent = {
+      startMs: 0,
+      endMs: 30_000,
+      strikes: [{ warnAtMs: 0, strikeAtMs: 5_000, circles: [{ cx: pos.x, cy: pos.y, radius: 0.2 }] }],
+    }
+    s.weather = { ...s.weather, storms: [storm] }
+    processStorms(s, 0, 6_000)
+
+    const id = mission.teamIds[0]!
+    const after = s.roster.find((p) => p.id === id)!
+    expect(after.currentHp).toBe(0)
+    expect(after.status).toBe('fainted')
+    expect(mission.status).toBe('resolved')
+    expect(mission.result).toBe('failure')
+    // today.faints deve ser incrementado
+    expect(s.today.faints).toBeGreaterThanOrEqual(1)
+  })
+
+  it('missão flying com time de 2: ambos fainted, missão resolvida uma única vez', () => {
+    const { s, pos } = travelingState()
+    const mission = s.missions[0]!
+    mission.flying = true
+
+    // Adiciona segundo membro
+    const mon1 = s.roster[0]!
+    const id2 = 'fly_test2'
+    const mon2 = { ...mon1, id: id2, currentHp: 5, maxHp: 5, status: 'traveling' as const }
+    s.roster.push(mon2)
+    mission.teamIds = [mon1.id, id2]
+
+    const storm: StormEvent = {
+      startMs: 0,
+      endMs: 30_000,
+      strikes: [{ warnAtMs: 0, strikeAtMs: 5_000, circles: [{ cx: pos.x, cy: pos.y, radius: 0.5 }] }],
+    }
+    s.weather = { ...s.weather, storms: [storm] }
+    processStorms(s, 0, 6_000)
+
+    expect(s.roster.find((p) => p.id === mon1.id)!.status).toBe('fainted')
+    expect(s.roster.find((p) => p.id === id2)!.status).toBe('fainted')
+    expect(mission.status).toBe('resolved')
+    expect(mission.result).toBe('failure')
+    // Registrado apenas 1 vez em missionResults
+    const flyResults = s.today.missionResults.filter((r) => r.teamIds.includes(mon1.id))
+    expect(flyResults).toHaveLength(1)
+  })
+})
+
+describe('stormFlow — precedência Lightning Rod / Volt Absorb sobre Fly-morte', () => {
+  it('voador COM Lightning Rod não morre (imunidade tem precedência)', () => {
+    const { s, pos } = travelingState()
+    const mission = s.missions[0]!
+    mission.flying = true
+
+    // Lightning Rod (Cubone 104 slot1)
+    const lrodFly = makeMon({
+      id: s.roster[0]!.id,
+      speciesId: 104,
+      secretPicks: [{ slot: 1, level: 1 }],
+      currentHp: 5,
+      maxHp: 5,
+      status: 'traveling' as const,
+    })
+    s.roster[0] = lrodFly
+    mission.teamIds = [lrodFly.id]
+
+    const storm: StormEvent = {
+      startMs: 0,
+      endMs: 30_000,
+      strikes: [{ warnAtMs: 0, strikeAtMs: 5_000, circles: [{ cx: pos.x, cy: pos.y, radius: 0.2 }] }],
+    }
+    s.weather = { ...s.weather, storms: [storm] }
+    processStorms(s, 0, 6_000)
+
+    const after = s.roster.find((p) => p.id === lrodFly.id)!
+    expect(after.currentHp).toBe(5) // não morreu
+    expect(after.status).not.toBe('fainted')
+    expect(mission.status).toBe('traveling') // missão continua
+  })
+
+  it('voador COM Volt Absorb não morre (absorção tem precedência)', () => {
+    const { s, pos } = travelingState()
+    const mission = s.missions[0]!
+    mission.flying = true
+
+    // Volt Absorb (Jolteon 135 slot1)
+    const voltFly = makeMon({
+      id: s.roster[0]!.id,
+      speciesId: 135,
+      secretPicks: [{ slot: 1, level: 1 }],
+      currentHp: 5,
+      maxHp: 5,
+      status: 'traveling' as const,
+    })
+    s.roster[0] = voltFly
+    mission.teamIds = [voltFly.id]
+
+    const storm: StormEvent = {
+      startMs: 0,
+      endMs: 30_000,
+      strikes: [{ warnAtMs: 0, strikeAtMs: 5_000, circles: [{ cx: pos.x, cy: pos.y, radius: 0.2 }] }],
+    }
+    s.weather = { ...s.weather, storms: [storm] }
+    processStorms(s, 0, 6_000)
+
+    const after = s.roster.find((p) => p.id === voltFly.id)!
+    expect(after.currentHp).toBe(5) // não morreu
+    expect(after.status).not.toBe('fainted')
+    expect(s.today.electrified[voltFly.id]).toBe(1) // absorveu o raio
+    expect(mission.status).toBe('traveling') // missão continua
+  })
+})
+
+describe('hasVoltAbsorb predicado', () => {
+  it('ativo somente quando sa-volt-absorb está desbloqueado', () => {
+    // Jolteon(135): slot1=volt-absorb
+    expect(hasVoltAbsorb(makeMon({ speciesId: 135 }))).toBe(false)
+    expect(hasVoltAbsorb(makeMon({ speciesId: 135, secretPicks: [{ slot: 0, level: 1 }] }))).toBe(false)
+    expect(hasVoltAbsorb(makeMon({ speciesId: 135, secretPicks: [{ slot: 1, level: 1 }] }))).toBe(true)
+    // Electabuzz(125): slot1=volt-absorb
+    expect(hasVoltAbsorb(makeMon({ speciesId: 125, secretPicks: [{ slot: 1, level: 1 }] }))).toBe(true)
   })
 })

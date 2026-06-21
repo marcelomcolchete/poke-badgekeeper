@@ -366,6 +366,9 @@ export const STRIKE_MIN_PER_STORM = 1
 /** Paralyze: tempo de congelamento do sprite e multiplicador de Batalha em batalhas 1v1. */
 export const PARALYZE_STUN_MS = 5_000
 export const PARALYZE_BATTLE_MULT = 0.5
+/** Volt Absorb: bônus de movimento E atributos ao ser atingido por um raio (por nível). */
+export const VOLT_ABSORB_BONUS_L1 = 0.30
+export const VOLT_ABSORB_BONUS_L2 = 0.90
 
 // ---- Sistema de Itens (PLAN — Itens) ----
 
