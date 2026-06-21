@@ -326,6 +326,14 @@ export function completeTheftBattle(s: GameState): void {
       if (enemy) {
         const base = gymWinXp(enemy.battle) * THEFT_XP_MULTIPLIER
         xpById.set(duel.yourId, (xpById.get(duel.yourId) ?? 0) + base)
+        // Conta a vitória contra a Rocket como "derrotado" do dia (Destaque + miniaturas).
+        s.today.defenseKills.push({
+          defeaterId: duel.yourId,
+          speciesId: enemy.speciesId,
+          enemyBattle: enemy.battle,
+          enemyMedal: enemy.medal,
+          enemyTypes: enemy.types,
+        })
       }
       theirs += 1
     }

@@ -15,6 +15,7 @@ import { THEFT_CHANCE_START } from '../engine/balance.ts'
 import { makeMon } from '../engine/testkit.ts'
 import { zeroAttrs } from '../engine/attributes.ts'
 import type { GameState } from '../engine/state.ts'
+import { createInitialState } from '../engine/state.ts'
 
 const zero = zeroAttrs()
 
@@ -238,5 +239,37 @@ describe('completeTheftBattle', () => {
     expect(s.theft!.won).toBe(true) // pré-condição
     completeTheftBattle(s)
     expect(s.theft!.phase).toBe('resolved')
+  })
+})
+
+describe('completeTheftBattle — derrotas da Rocket no Destaque', () => {
+  it('registra um defenseKill por duelo vencido (defeaterId + speciesId)', () => {
+    const s = createInitialState(1)
+    s.theft = {
+      phase: 'battle',
+      won: true,
+      resolved: true,
+      trainerId: 'ROCKET',
+      stolenId: undefined,
+      chaserIds: ['a', 'b'],
+      chaserArriveAtMs: [],
+      chaserStartAtMs: [],
+      targetNode: 'g',
+      enemies: [
+        { battle: 10, speciesId: 19, types: ['normal'] },
+        { battle: 12, speciesId: 16, types: ['normal'] },
+      ],
+      duels: [
+        { yourId: 'a', youWon: true },
+        { yourId: 'b', youWon: true },
+      ],
+      xpSeed: 1,
+    } as unknown as typeof s.theft
+
+    completeTheftBattle(s)
+
+    expect(s.today.defenseKills).toHaveLength(2)
+    expect(s.today.defenseKills[0]).toMatchObject({ defeaterId: 'a', speciesId: 19 })
+    expect(s.today.defenseKills[1]).toMatchObject({ defeaterId: 'b', speciesId: 16 })
   })
 })

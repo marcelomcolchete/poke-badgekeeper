@@ -349,7 +349,7 @@ function MvpSquare({
         </li>
         <li className={styles.mvpDeed}>
           <span className={styles.mvpDeedIcon}>⚔️</span>
-          <b>{defeats}</b> {defeats === 1 ? 'derrotado na defesa' : 'derrotados na defesa'}
+          <b>{defeats}</b> {defeats === 1 ? 'derrotado' : 'derrotados'}
           {killSpecies.length > 0 && (
             <span className={styles.mvpKills}>
               {killSpecies.map((sp, i) => (
