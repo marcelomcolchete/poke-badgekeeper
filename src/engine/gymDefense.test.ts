@@ -135,9 +135,9 @@ describe('resolveDefense — Habilidades Secretas', () => {
   const oneStrong: EnemyUnit[] = [{ battle: 100, types: ['normal'] }]
 
   it('Explosion: ao perder, derrota o inimigo e a batalha é vencida mesmo perdendo o duelo', () => {
-    // Geodude (74) com secretCount 2 = [Sturdy, Explosion]; Sturdy não está disponível (sem opts).
+    // Geodude (74) par = ['sa-sturdy','sa-explosion']; slot 0=Sturdy, slot 1=Explosion. Sturdy não está disponível (sem opts).
     const geo = makeMon({
-      id: 'g', speciesId: 74, secretCount: 2, types: ['rock'],
+      id: 'g', speciesId: 74, secretPicks: [{ slot: 0, level: 1 }, { slot: 1, level: 1 }], types: ['rock'],
       baseAttrs: makeAttrs({ batalha: 10, resistencia: 100 }),
     })
     const out = resolveDefense(fixedRng(0.999), [geo], oneStrong)
@@ -150,7 +150,7 @@ describe('resolveDefense — Habilidades Secretas', () => {
 
   it('Explosion como último Pokémon que desmaia ainda vence (KO mútuo)', () => {
     const geo = makeMon({
-      id: 'g', speciesId: 74, secretCount: 2, types: ['rock'],
+      id: 'g', speciesId: 74, secretPicks: [{ slot: 0, level: 1 }, { slot: 1, level: 1 }], types: ['rock'],
       baseAttrs: makeAttrs({ batalha: 10, resistencia: 100 }), currentHp: 2,
     })
     const out = resolveDefense(fixedRng(0.999), [geo], oneStrong)
@@ -160,7 +160,8 @@ describe('resolveDefense — Habilidades Secretas', () => {
 
   it('Lightning Rod: contra inimigo Elétrico, o portador assume a frente', () => {
     const front = makeMon({ id: 'a', types: ['normal'], baseAttrs: makeAttrs({ batalha: 50 }) })
-    const rod = makeMon({ id: 'b', speciesId: 111, secretCount: 1, types: ['ground'], baseAttrs: makeAttrs({ batalha: 50 }) })
+    // Cubone (104) par = ['sa-battle-armor','sa-lightning-rod']; Lightning Rod no slot 1.
+    const rod = makeMon({ id: 'b', speciesId: 104, secretPicks: [{ slot: 1, level: 1 }], types: ['ground'], baseAttrs: makeAttrs({ batalha: 50 }) })
     const electric: EnemyUnit[] = [{ battle: 10, types: ['electric'] }]
     const out = resolveDefense(fixedRng(0), [front, rod], electric)
     expect(out.duels[0]?.yourId).toBe('b') // o portador atraiu o duelo
@@ -168,15 +169,16 @@ describe('resolveDefense — Habilidades Secretas', () => {
 
   it('Lightning Rod não troca a frente contra inimigo não-Elétrico', () => {
     const front = makeMon({ id: 'a', types: ['normal'], baseAttrs: makeAttrs({ batalha: 50 }) })
-    const rod = makeMon({ id: 'b', speciesId: 111, secretCount: 1, types: ['ground'], baseAttrs: makeAttrs({ batalha: 50 }) })
+    // Cubone (104) par = ['sa-battle-armor','sa-lightning-rod']; Lightning Rod no slot 1.
+    const rod = makeMon({ id: 'b', speciesId: 104, secretPicks: [{ slot: 1, level: 1 }], types: ['ground'], baseAttrs: makeAttrs({ batalha: 50 }) })
     const out = resolveDefense(fixedRng(0), [front, rod], oneStrong)
     expect(out.duels[0]?.yourId).toBe('a')
   })
 
   it('Static: ao perder um duelo, paralisa o inimigo (Batalha ×0,5) nos duelos seguintes', () => {
-    // Pikachu (25) secretCount 1 = [Static]. Bate fraco e tanque (sobrevive e passa a vez).
+    // Pikachu (25) par = ['sa-static','sa-dig']; Static no slot 0.
     const pika = makeMon({
-      id: 'p', speciesId: 25, secretCount: 1, types: ['electric'],
+      id: 'p', speciesId: 25, secretPicks: [{ slot: 0, level: 1 }], types: ['electric'],
       baseAttrs: makeAttrs({ batalha: 10, resistencia: 100 }),
     })
     const next = makeMon({
@@ -207,9 +209,9 @@ describe('resolveDefense — Habilidades Secretas', () => {
   })
 
   it('Reckless: ao perder, tenta de novo sem passar a vez (até desmaiar)', () => {
-    // Rhyhorn (111) secretCount 3 = [Lightning Rod, Rock Head, Reckless].
+    // Rhyhorn (111) par = ['sa-rock-head','sa-reckless']; Reckless no slot 1.
     const rhy = makeMon({
-      id: 'r', speciesId: 111, secretCount: 3, types: ['ground'],
+      id: 'r', speciesId: 111, secretPicks: [{ slot: 1, level: 1 }], types: ['ground'],
       baseAttrs: makeAttrs({ batalha: 10, resistencia: 100 }),
     })
     const out = resolveDefense(fixedRng(0.999), [rhy], oneStrong)
@@ -220,9 +222,9 @@ describe('resolveDefense — Habilidades Secretas', () => {
   })
 
   it('Shell Armor reduz o dano de cada derrota a 1', () => {
-    // Omanyte (138) secretCount 2 = [Swift Swim, Shell Armor].
+    // Omanyte (138) par = ['sa-swift-swim','sa-shell-armor']; Shell Armor no slot 1.
     const oma = makeMon({
-      id: 'o', speciesId: 138, secretCount: 2, types: ['rock'],
+      id: 'o', speciesId: 138, secretPicks: [{ slot: 1, level: 1 }], types: ['rock'],
       baseAttrs: makeAttrs({ batalha: 10, resistencia: 100 }),
     })
     const out = resolveDefense(fixedRng(0.999), [oma], oneStrong, { damagePerLoss: 4 })
@@ -230,8 +232,9 @@ describe('resolveDefense — Habilidades Secretas', () => {
   })
 
   it('Sturdy salva do desmaio (1 HP) quando disponível', () => {
+    // Geodude (74) par = ['sa-sturdy','sa-explosion']; Sturdy no slot 0.
     const geo = makeMon({
-      id: 'g', speciesId: 74, secretCount: 1, types: ['rock'],
+      id: 'g', speciesId: 74, secretPicks: [{ slot: 0, level: 1 }], types: ['rock'],
       baseAttrs: makeAttrs({ batalha: 10, resistencia: 10 }), currentHp: 1,
     })
     const out = resolveDefense(fixedRng(0.999), [geo], oneStrong, {
@@ -244,8 +247,8 @@ describe('resolveDefense — Habilidades Secretas', () => {
 
 describe('resolveDefense — Habilidades de Cerulean', () => {
   it('Thick Fat: vantagem de Batalha (×1,5) contra oponente do tipo Gelo', () => {
-    // Seel (86) secretCount 3 = [Surf, Ice Body, Thick Fat]. Tipo neutro p/ isolar o efeito.
-    const seel = makeMon({ id: 's', speciesId: 86, secretCount: 3, types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
+    // Seel (86) par = ['sa-surf','sa-thick-fat']; Thick Fat no slot 1. Tipo neutro p/ isolar o efeito.
+    const seel = makeMon({ id: 's', speciesId: 86, secretPicks: [{ slot: 0, level: 1 }, { slot: 1, level: 1 }], types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
     const plain = makeMon({ id: 'p', types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
     const ice: EnemyUnit[] = [{ battle: 40, types: ['ice'] }]
     expect(resolveDefense(fixedRng(1), [seel], ice).duels[0]?.pWin).toBeCloseTo(0.75) // 30/40
@@ -253,8 +256,8 @@ describe('resolveDefense — Habilidades de Cerulean', () => {
   })
 
   it('Pressure: reduz a Batalha do oponente enfrentado em 25%', () => {
-    // Articuno (144) secretCount 3 = [Fly, Fly+, Pressure]. Tipo neutro p/ isolar.
-    const arti = makeMon({ id: 'a', speciesId: 144, secretCount: 3, types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
+    // Articuno (144) par = ['sa-fly','sa-pressure']; Pressure no slot 1. Tipo neutro p/ isolar.
+    const arti = makeMon({ id: 'a', speciesId: 144, secretPicks: [{ slot: 0, level: 1 }, { slot: 1, level: 1 }], types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
     const plain = makeMon({ id: 'p', types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
     const foe: EnemyUnit[] = [{ battle: 40, types: ['normal'] }]
     expect(resolveDefense(fixedRng(1), [arti], foe).duels[0]?.pWin).toBeCloseTo(20 / 30) // inimigo 40→30
@@ -262,8 +265,8 @@ describe('resolveDefense — Habilidades de Cerulean', () => {
   })
 
   it('Moxie: +1 de Batalha por inimigo derrotado na sequência', () => {
-    // Magikarp (129) secretCount 2 = [Surf, Moxie]. Vence os dois (fixedRng 0).
-    const gyara = makeMon({ id: 'g', speciesId: 129, secretCount: 2, types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
+    // Magikarp (129) par = ['sa-surf','sa-moxie']; Moxie no slot 1. Vence os dois (fixedRng 0).
+    const gyara = makeMon({ id: 'g', speciesId: 129, secretPicks: [{ slot: 0, level: 1 }, { slot: 1, level: 1 }], types: ['normal'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 100 }) })
     const foes: EnemyUnit[] = [{ battle: 30, types: ['normal'] }, { battle: 30, types: ['normal'] }]
     const out = resolveDefense(fixedRng(0), [gyara], foes)
     expect(out.duels[0]?.pWin).toBeCloseTo(20 / 30) // 1ª luta: sem bônus
@@ -271,8 +274,8 @@ describe('resolveDefense — Habilidades de Cerulean', () => {
   })
 
   it('Regenerator: recupera 1 de vida por inimigo derrotado', () => {
-    // Slowpoke (79) secretCount 1 = [Regenerator]. Vence os dois sem tomar dano.
-    const slow = makeMon({ id: 's', speciesId: 79, secretCount: 1, types: ['normal'], baseAttrs: makeAttrs({ batalha: 50, resistencia: 100 }), currentHp: 5 })
+    // Slowpoke (79) par = ['sa-regenerator','sa-own-tempo']; Regenerator no slot 0. Vence os dois sem tomar dano.
+    const slow = makeMon({ id: 's', speciesId: 79, secretPicks: [{ slot: 0, level: 1 }], types: ['normal'], baseAttrs: makeAttrs({ batalha: 50, resistencia: 100 }), currentHp: 5 })
     const foes: EnemyUnit[] = [{ battle: 10, types: ['normal'] }, { battle: 10, types: ['normal'] }]
     const out = resolveDefense(fixedRng(0), [slow], foes)
     expect(out.won).toBe(true)

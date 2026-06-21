@@ -6,9 +6,9 @@ import { rainTravelMs } from './rainSpeed.ts'
 import { teamTravelSpeedMultiplier } from './secretEffects.ts'
 import { emptyWeatherSchedule, type WeatherSchedule } from './weather.ts'
 
-// Omanyte (138): Swift Swim na posição 1 (sem Surf na linha). Mesma espécie sem habilidade = base.
-const swimmer = () => makeMon({ speciesId: 138, secretCount: 1 })
-const plain = () => makeMon({ speciesId: 138, secretCount: 0 })
+// Omanyte (138) par = ['sa-swift-swim','sa-shell-armor']; Swift Swim no slot 0. Mesma espécie sem habilidade = base.
+const swimmer = () => makeMon({ speciesId: 138, secretPicks: [{ slot: 0, level: 1 }] })
+const plain = () => makeMon({ speciesId: 138, secretPicks: [] })
 const DIST = 100
 
 /** Chuva cobrindo um intervalo [0, endMs] (sem poças — só a janela do evento). */
@@ -53,9 +53,9 @@ describe('rainTravelMs', () => {
   })
 
   it('sem chuva com multiplicador base ≠ 1 (Weak Armor) → ainda igual ao linear', () => {
-    // Omanyte (138) secretCount 3: tem Swift Swim E Weak Armor. Com HP faltante, base > 1 —
+    // Onix (95) par = ['sa-sturdy','sa-weak-armor']; Weak Armor no slot 1. Com HP faltante, base > 1 —
     // o fast-path (sem chuva) deve bater com graphTravelMs usando esse base.
-    const team = [makeMon({ speciesId: 138, secretCount: 3, maxHp: 10, currentHp: 7 })]
+    const team = [makeMon({ speciesId: 95, secretPicks: [{ slot: 1, level: 1 }], maxHp: 10, currentHp: 7 })]
     const baseMult = teamTravelSpeedMultiplier(team, [])
     expect(baseMult).toBeGreaterThan(1) // garante que o caso realmente testa base ≠ 1
     expect(rainTravelMs(emptyWeatherSchedule(), 0, DIST, team)).toBeCloseTo(

@@ -18,7 +18,8 @@ describe('Cloud Nine no setupDay', () => {
     const noCN = dayState([createPokemon({ id: 'p1', speciesId: 19, level: 5, rng: createRng(1) })])
     setupDay(noCN)
     const cn = dayState([createPokemon({ id: 'p1', speciesId: 54 /* Psyduck */, level: 5, rng: createRng(1) })])
-    cn.roster[0] = { ...cn.roster[0]!, secretCount: 3 } // Cloud Nine desbloqueado (posição 3 da linha)
+    // Psyduck (54) par = ['sa-surf','sa-cloud-nine']; Cloud Nine no slot 1.
+    cn.roster[0] = { ...cn.roster[0]!, secretPicks: [{ slot: 0, level: 1 }, { slot: 1, level: 1 }] }
     setupDay(cn)
     expect(cn.weather.forecast.rainChancePercent).toBe(
       Math.min(100, noCN.weather.forecast.rainChancePercent + 25),
@@ -29,8 +30,8 @@ describe('Cloud Nine no setupDay', () => {
     const noCN = dayState([createPokemon({ id: 'p1', speciesId: 19, level: 5, rng: createRng(1) })])
     setupDay(noCN)
     const two = dayState([
-      { ...createPokemon({ id: 'p1', speciesId: 54, level: 5, rng: createRng(1) }), secretCount: 3 },
-      { ...createPokemon({ id: 'p2', speciesId: 54, level: 5, rng: createRng(2) }), secretCount: 3 },
+      { ...createPokemon({ id: 'p1', speciesId: 54, level: 5, rng: createRng(1) }), secretPicks: [{ slot: 0, level: 1 as const }, { slot: 1, level: 1 as const }] },
+      { ...createPokemon({ id: 'p2', speciesId: 54, level: 5, rng: createRng(2) }), secretPicks: [{ slot: 0, level: 1 as const }, { slot: 1, level: 1 as const }] },
     ])
     setupDay(two)
     expect(two.weather.forecast.rainChancePercent).toBe(

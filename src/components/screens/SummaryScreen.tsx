@@ -12,7 +12,7 @@ import type { DailyProgress } from '../../engine/approval.ts'
 import { averageStars, dailyGoalMet, dailyPerfect, isHired } from '../../engine/approval.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
 import { Hearts } from '../common/Hearts.tsx'
-import { SECRET_KINDS, type SecretId } from '../../data/secretAbilities.ts'
+import { SECRET_KINDS, secretLineFor } from '../../data/secretAbilities.ts'
 import type { Pokemon } from '../../types/index.ts'
 import { Textbox } from '../Textbox/Textbox.tsx'
 import { TypeBadge } from '../common/TypeBadge.tsx'
@@ -68,7 +68,9 @@ export function SummaryScreen({ state, dispatch, onRestart }: Props) {
   // Reveal da Habilidade Secreta desbloqueada hoje pelo Destaque (PLAN §3, ajuste).
   const unlock = state.today.secretUnlock
   const unlockMon = unlock ? state.roster.find((p) => p.id === unlock.pokemonId) : undefined
-  const unlockedAbility = unlock ? SECRET_KINDS[unlock.secretId as SecretId] ?? null : null
+  const unlockPair = unlockMon ? secretLineFor(unlockMon.speciesId) : null
+  const unlockAbilityId = unlock && unlockPair ? unlockPair[unlock.slot] : null
+  const unlockedAbility = unlockAbilityId ? SECRET_KINDS[unlockAbilityId] ?? null : null
 
   return (
     <div className={styles.screen}>
@@ -115,10 +117,14 @@ export function SummaryScreen({ state, dispatch, onRestart }: Props) {
           />
           <div className={styles.secretRevealText}>
             <span className={styles.secretRevealBadge}>
-              {SECRET_MEDAL[unlock.index]} HABILIDADE SECRETA {unlock.index}/3 — DESBLOQUEADA
+              {SECRET_MEDAL[unlock.slot + 1]} HABILIDADE SECRETA — {unlock.level === 2 ? 'NÍVEL 2' : 'DESBLOQUEADA'}
             </span>
-            <span className={styles.secretRevealName}>{unlockedAbility.name}</span>
-            <span className={styles.secretRevealDesc}>{unlockedAbility.effect}</span>
+            <span className={styles.secretRevealName}>
+              {unlockedAbility.name}{unlock.level === 2 ? '+' : ''}
+            </span>
+            <span className={styles.secretRevealDesc}>
+              {unlock.level === 2 ? unlockedAbility.effectL2 : unlockedAbility.effectL1}
+            </span>
           </div>
         </div>
       )}

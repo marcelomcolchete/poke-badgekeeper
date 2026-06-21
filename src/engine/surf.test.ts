@@ -17,11 +17,11 @@ const GYM = siteNodes.gym // 'u'
 // O ponto 'm' (Rocket 5.1) só é alcançável cruzando os pontos de água a→n (u…→b→a→n→m).
 const WATER_NODE = 'm'
 
-// Surfistas/exploradores de teste (a habilidade vem da posição na linha do Pokémon).
-const goldeenSurf = makeMon({ id: 'g', speciesId: 118, secretCount: 1 }) // Goldeen: Surf é a 1ª
-const blastoiseSurfPlus = makeMon({ id: 'bl', speciesId: 9, secretCount: 3 }) // Blastoise: Surf+ na 3ª
-const horseaSniper = makeMon({ id: 'h', speciesId: 116, secretCount: 3 }) // Horsea: Sniper na 3ª
-const articunoFly = makeMon({ id: 'ar', speciesId: 144, secretCount: 1 }) // Articuno: Fly na 1ª
+// Surfistas/exploradores de teste (a habilidade vem do slot na linha do Pokémon).
+const goldeenSurf = makeMon({ id: 'g', speciesId: 118, secretPicks: [{ slot: 0, level: 1 }] }) // Goldeen par=['sa-surf','sa-swift-swim']: Surf slot 0
+const blastoiseSurfPlus = makeMon({ id: 'bl', speciesId: 9, secretPicks: [{ slot: 0, level: 2 }] }) // Blastoise par=['sa-surf','sa-torrent']: Surf L2 (leva time)
+const horseaSniper = makeMon({ id: 'h', speciesId: 116, secretPicks: [{ slot: 0, level: 1 }, { slot: 1, level: 1 }] }) // Horsea par=['sa-surf','sa-sniper']: Sniper slot 1
+const articunoFly = makeMon({ id: 'ar', speciesId: 144, secretPicks: [{ slot: 0, level: 1 }] }) // Articuno par=['sa-fly','sa-pressure']: Fly slot 0
 const plain = makeMon({ id: 'x', speciesId: 1 }) // sem linha secreta
 
 describe('graphWithoutSurf', () => {

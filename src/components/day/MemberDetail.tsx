@@ -7,10 +7,9 @@ import type { GameState } from '../../engine/state.ts'
 import type { GameAction } from '../../game/actions.ts'
 import { getNatureEntry, NATURE_LABEL_PT } from '../../data/natures.ts'
 import {
-  secretCountOf,
+  activeSecrets,
   secretLineFor,
   SECRET_KINDS,
-  SECRET_MAX,
 } from '../../data/secretAbilities.ts'
 import { ATTR_MAX } from '../../engine/constants.ts'
 import { effectiveAttr, realPerPointGain } from '../../engine/attributes.ts'
@@ -46,8 +45,9 @@ export function MemberDetail({ state, dispatch, pokemonId, onClose }: Props) {
 
   const pending = pendingPoints(mon)
   const natureEntry = mon.nature ? getNatureEntry(mon.nature) : null
-  const secretLine = secretLineFor(mon.speciesId) // [id1, id2, id3] | null
-  const secretCount = secretCountOf(mon) // 0..3 = quantas desbloqueou
+  const secretLine = secretLineFor(mon.speciesId) // [id0, id1] | null
+  const secrets = activeSecrets(mon)
+  const secretCount = secrets.length // 0..2
   const hurt = mon.currentHp > 0 && mon.currentHp < mon.maxHp
   const fainted = mon.currentHp <= 0
   const potions = count(state, 'potion')
@@ -82,24 +82,31 @@ export function MemberDetail({ state, dispatch, pokemonId, onClose }: Props) {
           <div className={styles.secret}>
             <span className={styles.secretHead}>
               <span className={styles.secretIcon}>{secretCount > 0 ? '✦' : '🔒'}</span>
-              Habilidades Secretas — {secretCount}/{SECRET_MAX}
+              Habilidades Secretas — {secretCount}/2
             </span>
             <ul className={styles.secretTiers}>
               {secretLine.map((id, i) => {
                 const kind = SECRET_KINDS[id]
-                const unlocked = i < secretCount
-                const tier = i + 1 // 1 = Bronze, 2 = Prata, 3 = Ouro
+                const pick = secrets.find((s) => s.id === id)
+                const unlocked = pick !== undefined
+                const level = pick?.level ?? 1
+                const tier = i + 1 // 1 = Bronze, 2 = Prata
                 const tierClass = [
                   styles.secretTier,
                   unlocked ? styles.secretTierReached : styles.secretTierLocked,
                 ]
                   .filter(Boolean)
                   .join(' ')
+                const effectText = unlocked
+                  ? level === 2
+                    ? kind.effectL2
+                    : kind.effectL1
+                  : 'Desbloqueie sendo o Destaque do Dia.'
                 return (
                   <li
                     key={`${id}-${i}`}
                     className={tierClass}
-                    // Borda da linha na cor da medalha (bronze/prata/ouro) quando desbloqueada.
+                    // Borda da linha na cor da medalha (bronze/prata) quando desbloqueada.
                     style={unlocked ? { borderColor: SECRET_MEDAL_COLOR[tier] } : undefined}
                   >
                     <span
@@ -110,23 +117,25 @@ export function MemberDetail({ state, dispatch, pokemonId, onClose }: Props) {
                       {SECRET_MEDAL[tier]}
                     </span>
                     <span className={styles.secretTierBody}>
-                      {/* Nome na cor da medalha; "ATIVA" abaixo do nome. */}
+                      {/* Nome na cor da medalha; "ATIVA"/"NÍVEL 2" abaixo do nome. */}
                       <span
                         className={styles.secretTierName}
                         style={unlocked ? { color: SECRET_MEDAL_INK[tier] } : undefined}
                       >
-                        {unlocked ? kind.name : '? ? ?'}
+                        {unlocked ? `${kind.name}${level === 2 ? '+' : ''}` : '? ? ?'}
                       </span>
-                      {unlocked && <span className={styles.secretTierFlag}>ATIVA</span>}
-                      <span className={styles.secretTierDesc}>
-                        {unlocked ? kind.effect : 'Desbloqueie sendo o Destaque do Dia.'}
-                      </span>
+                      {unlocked && (
+                        <span className={styles.secretTierFlag}>
+                          {level === 2 ? 'NÍVEL 2' : 'ATIVA'}
+                        </span>
+                      )}
+                      <span className={styles.secretTierDesc}>{effectText}</span>
                     </span>
                   </li>
                 )
               })}
             </ul>
-            {secretCount < SECRET_MAX && (
+            {secretCount < 2 && (
               <span className={styles.secretFoot}>
                 {secretCount === 0
                   ? 'Vire o Destaque do Dia para desbloquear a 1ª habilidade.'
