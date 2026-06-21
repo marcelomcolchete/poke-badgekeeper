@@ -219,6 +219,9 @@ export const DRAFT_CHOICES = 3
  * v36: Evento de Roubo Rocket. run.theftChance (1%, dobra por dia sem disparar) e
  * GameState.theft (TheftEvent opcional: fase/alvo/nós/timers/esquadrão). PokemonStatus ganha
  * 'stolen'. A migração inicia theftChance=1 e NÃO cria theft (eventos em voo não persistem;
- * recalculados no próximo dia-aberto). */
-export const SAVE_VERSION = 36
+ * recalculados no próximo dia-aberto).
+ * v37: Habilidades Secretas viram 2 por linha com nível (secretPicks). pokemon.secretCount →
+ * pokemon.secretPicks (best-effort: 0→[]; 1→slot0 nível1; ≥2→slots 0 e 1 nível1). Remove
+ * secretCount. Limpa today.secretUnlock (formato incompatível) → null. */
+export const SAVE_VERSION = 37
 export const SAVE_KEY = 'poke-badgekeeper:save'

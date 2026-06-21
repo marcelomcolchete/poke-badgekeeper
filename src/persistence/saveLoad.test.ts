@@ -133,6 +133,34 @@ describe('saveLoad (PLAN §5)', () => {
     expect(loaded!.theft).toBeUndefined()
   })
 
+  it('migra v36 → v37: converte secretCount para secretPicks e limpa secretUnlock do dia', () => {
+    const base = autoSeedRun(42) as unknown as Record<string, unknown>
+    const rosterBase = base.roster as Array<Record<string, unknown>>
+    const proto = rosterBase[0]!
+    const mon0 = { ...proto, id: 'p-sc-0', secretCount: 0 }  // 0 → []
+    const mon1 = { ...proto, id: 'p-sc-1', secretCount: 1 }  // 1 → [{slot:0,level:1}]
+    const mon2 = { ...proto, id: 'p-sc-2', secretCount: 3 }  // >=2 → [{slot:0},{slot:1}]
+    const today = { ...(base.today as Record<string, unknown>), secretUnlock: { foo: 1 } }
+    const v36 = {
+      version: 36,
+      savedAtMs: 0,
+      state: { ...base, roster: [mon0, mon1, mon2], today },
+    }
+    localStorage.setItem(SAVE_KEY, JSON.stringify(v36))
+    const loaded = loadGame()!
+    expect(loaded).not.toBeNull()
+    const r0 = loaded.roster.find((p) => p.id === 'p-sc-0')! as unknown as Record<string, unknown>
+    const r1 = loaded.roster.find((p) => p.id === 'p-sc-1')! as unknown as Record<string, unknown>
+    const r2 = loaded.roster.find((p) => p.id === 'p-sc-2')! as unknown as Record<string, unknown>
+    expect(r0.secretPicks ?? []).toEqual([])
+    expect(r1.secretPicks).toEqual([{ slot: 0, level: 1 }])
+    expect(r2.secretPicks).toEqual([{ slot: 0, level: 1 }, { slot: 1, level: 1 }])
+    expect(r0.secretCount).toBeUndefined()
+    expect(r1.secretCount).toBeUndefined()
+    expect(r2.secretCount).toBeUndefined()
+    expect(loaded.today.secretUnlock).toBeNull()
+  })
+
   it('clearSave remove o save', () => {
     saveGame(autoSeedRun(1), 0)
     clearSave()
