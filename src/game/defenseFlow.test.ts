@@ -1,16 +1,31 @@
 import { describe, expect, it } from 'vitest'
 import type { GameState } from '../engine/state.ts'
 import { createInitialState } from '../engine/state.ts'
-import { assignDefense, loseRunByUndefendedGym } from './defenseFlow.ts'
+import { assignDefense, penalizeUndefendedGym } from './defenseFlow.ts'
 import { makeAttrs, makeMon } from '../engine/testkit.ts'
 import type { EnemyUnit } from '../engine/gymDefense.ts'
 import type { DefenseEvent } from '../engine/state.ts'
+import { STARS_STEP } from '../engine/constants.ts'
 
-describe('loseRunByUndefendedGym', () => {
-  it('zera as estrelas de batalha e encerra a run com motivo gym', () => {
+describe('penalizeUndefendedGym', () => {
+  it('tira 1 estrela cheia, exclui a defesa do ratio e NÃO encerra a run se sobrar estrela', () => {
     const s = createInitialState(1)
     s.approval.battleStars = 5
-    loseRunByUndefendedGym(s)
+    s.today.defensesTotal = 2
+    s.clock.speed = 1
+    penalizeUndefendedGym(s)
+    expect(s.approval.battleStars).toBe(4)
+    expect(s.today.defensesTotal).toBe(1)
+    expect(s.run.phase).not.toBe('GAMEOVER')
+    expect(s.clock.speed).toBe(1)
+  })
+
+  it('chegar a 0 estrelas encerra a run com motivo gym e congela o relógio', () => {
+    const s = createInitialState(1)
+    s.approval.battleStars = STARS_STEP * 2 // exatamente 1 estrela cheia
+    s.today.defensesTotal = 1
+    s.clock.speed = 1
+    penalizeUndefendedGym(s)
     expect(s.approval.battleStars).toBe(0)
     expect(s.run.phase).toBe('GAMEOVER')
     expect(s.run.gameOverReason).toBe('gym')

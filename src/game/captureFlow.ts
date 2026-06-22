@@ -17,10 +17,17 @@ import { planWeatherLeg } from '../engine/weatherTravel.ts'
 import { teamHasSwiftSwim, teamSurfs, teamTravelSpeedMultiplier } from '../engine/secretEffects.ts'
 import { rainTravelMs } from '../engine/rainSpeed.ts'
 import { isRaining } from '../engine/weather.ts'
-import { SWIFT_SWIM_RAIN_BONUS } from '../engine/balance.ts'
+import { EXPLORATION_XP, SWIFT_SWIM_RAIN_BONUS } from '../engine/balance.ts'
+import { applyXpGains } from './itemFlow.ts'
 import { createRng } from '../engine/rng.ts'
 import { shinyChance, shinyForChance } from '../engine/shiny.ts'
 import { findMon, replaceMon, takeId, takeRng } from './runtime.ts'
+
+/** Concede o XP de exploração ao explorador e contabiliza no total do dia. */
+function awardExplorationXp(s: GameState, searcherId: string): void {
+  applyXpGains(s, new Map([[searcherId, EXPLORATION_XP]]), takeRng(s))
+  s.today.xpEarned += EXPLORATION_XP
+}
 
 /**
  * Manda um Pokémon idle viajar até um spot e procurar. Com o roster cheio a busca continua
@@ -281,6 +288,7 @@ export function capturePick(s: GameState, searcherId: string, candidateIndex: nu
 
   startReturn(s, searcherId, encounter.spotIndex, true)
   consumeSpot(s, encounter.spotIndex)
+  awardExplorationXp(s, searcherId)
 }
 
 /** Manhã: deposita um Pokémon do time no Computador (PC). Mantém pelo menos 1 no time. */
@@ -328,4 +336,5 @@ export function captureDismiss(s: GameState, searcherId: string): void {
   if (!encounter) return
   startReturn(s, searcherId, encounter.spotIndex, false)
   consumeSpot(s, encounter.spotIndex)
+  awardExplorationXp(s, searcherId)
 }

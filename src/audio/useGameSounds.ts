@@ -42,6 +42,7 @@ export function useGameSounds(state: GameState): void {
   const raining = useRef(false)
   const prevStormMs = useRef(0)
   const theftWarned = useRef(false)
+  const theftAnnounced = useRef(false)
 
   useEffect(() => {
     const first = !ready.current
@@ -107,6 +108,15 @@ export function useGameSounds(state: GameState): void {
       playThunder()
     }
     prevStormMs.current = now
+
+    // 6b) Rocket apareceu (virou perseguível): toca o MESMO som de missão nova, uma vez.
+    if (!first && state.theft?.phase === 'fleeing' && !theftAnnounced.current) {
+      theftAnnounced.current = true
+      playSound('missionNew')
+    }
+    if (!state.theft || state.theft.phase === 'resolved') {
+      theftAnnounced.current = false
+    }
 
     // 7) Roubo Rocket chegou ao nó mais distante: toca o alerta (mesmo da defesa acabando) uma vez.
     if (!first && state.theft?.phase === 'atFarNode' && !theftWarned.current) {

@@ -13,6 +13,7 @@ import { averageStars, dailyGoalMet, dailyPerfect, isHired } from '../../engine/
 import { getSpecies } from '../../data/pokemon/index.ts'
 import { Hearts } from '../common/Hearts.tsx'
 import { SECRET_KINDS, secretLineFor } from '../../data/secretAbilities.ts'
+import type { SecretId } from '../../data/secretAbilities.ts'
 import type { Pokemon } from '../../types/index.ts'
 import { Textbox } from '../Textbox/Textbox.tsx'
 import { TypeBadge } from '../common/TypeBadge.tsx'
@@ -79,6 +80,9 @@ export function SummaryScreen({ state, dispatch, onRestart }: Props) {
   const choicePicks = choiceMon?.secretPicks ?? []
   const choicePending = Boolean(choice && choiceMon && choicePair)
 
+  // A escolha aparece DENTRO do quadro do Destaque quando o pendente é o próprio MVP.
+  const choiceInMvp = Boolean(choicePending && mvp && choice && mvp.id === choice.pokemonId)
+
   return (
     <div className={styles.screen}>
       <div className={styles.header}>
@@ -112,56 +116,21 @@ export function SummaryScreen({ state, dispatch, onRestart }: Props) {
           defeats={summary.mvpDefeats}
           heartsGained={state.today.mvpHeartsGained}
           killSpecies={mvpKillSpecies}
+          secretChoice={
+            choiceInMvp && choicePair
+              ? { pair: choicePair, picks: choicePicks, dispatch }
+              : undefined
+          }
         />
       </div>
 
-      {choicePending && choiceMon && choicePair && (
+      {choicePending && choiceMon && choicePair && !choiceInMvp && (
         <div className={styles.secretChoice}>
           <span className={styles.secretChoiceTitle}>
             ★ {displayNameOf(choiceMon)} virou Destaque — escolha sua Habilidade Secreta
           </span>
           <div className={styles.secretChoiceOptions}>
-            {choicePicks.length === 0
-              ? ([0, 1] as const).map((slot) => {
-                  const kind = SECRET_KINDS[choicePair[slot]]
-                  return (
-                    <button
-                      key={slot}
-                      type="button"
-                      className={styles.secretChoiceBtn}
-                      onClick={() => dispatch({ type: 'CHOOSE_SECRET', slot, level: 1 })}
-                    >
-                      <b>{kind.name}</b>
-                      <span>{kind.effectL1}</span>
-                    </button>
-                  )
-                })
-              : (() => {
-                  const cur = choicePicks[0]!
-                  const curKind = SECRET_KINDS[choicePair[cur.slot]]
-                  const other = (cur.slot === 0 ? 1 : 0) as 0 | 1
-                  const otherKind = SECRET_KINDS[choicePair[other]]
-                  return (
-                    <>
-                      <button
-                        type="button"
-                        className={styles.secretChoiceBtn}
-                        onClick={() => dispatch({ type: 'CHOOSE_SECRET', slot: cur.slot, level: 2 })}
-                      >
-                        <b>Aprofundar — {curKind.name}+</b>
-                        <span>{curKind.effectL2}</span>
-                      </button>
-                      <button
-                        type="button"
-                        className={styles.secretChoiceBtn}
-                        onClick={() => dispatch({ type: 'CHOOSE_SECRET', slot: other, level: 1 })}
-                      >
-                        <b>Ampliar — {otherKind.name}</b>
-                        <span>{otherKind.effectL1}</span>
-                      </button>
-                    </>
-                  )
-                })()}
+            <SecretChoiceButtons pair={choicePair} picks={choicePicks} dispatch={dispatch} />
           </div>
         </div>
       )}
@@ -299,18 +268,75 @@ function FinalResult({
   )
 }
 
+function SecretChoiceButtons({
+  pair,
+  picks,
+  dispatch,
+}: {
+  pair: readonly string[]
+  picks: readonly { slot: 0 | 1; level: 1 | 2 }[]
+  dispatch: Dispatch<GameAction>
+}) {
+  if (picks.length === 0) {
+    return (
+      <>
+        {([0, 1] as const).map((slot) => {
+          const kind = SECRET_KINDS[pair[slot]! as SecretId]
+          return (
+            <button
+              key={slot}
+              type="button"
+              className={styles.secretChoiceBtn}
+              onClick={() => dispatch({ type: 'CHOOSE_SECRET', slot, level: 1 })}
+            >
+              <b>{kind.name}</b>
+              <span>{kind.effectL1}</span>
+            </button>
+          )
+        })}
+      </>
+    )
+  }
+  const cur = picks[0]!
+  const curKind = SECRET_KINDS[pair[cur.slot]! as SecretId]
+  const other = (cur.slot === 0 ? 1 : 0) as 0 | 1
+  const otherKind = SECRET_KINDS[pair[other]! as SecretId]
+  return (
+    <>
+      <button
+        type="button"
+        className={styles.secretChoiceBtn}
+        onClick={() => dispatch({ type: 'CHOOSE_SECRET', slot: cur.slot, level: 2 })}
+      >
+        <b>Aprofundar — {curKind.name}+</b>
+        <span>{curKind.effectL2}</span>
+      </button>
+      <button
+        type="button"
+        className={styles.secretChoiceBtn}
+        onClick={() => dispatch({ type: 'CHOOSE_SECRET', slot: other, level: 1 })}
+      >
+        <b>Ampliar — {otherKind.name}</b>
+        <span>{otherKind.effectL1}</span>
+      </button>
+    </>
+  )
+}
+
 function MvpSquare({
   mvp,
   missions,
   defeats,
   heartsGained,
   killSpecies,
+  secretChoice,
 }: {
   mvp: Pokemon | undefined
   missions: number
   defeats: number
   heartsGained: number
   killSpecies: ReturnType<typeof getSpecies>[]
+  secretChoice?: { pair: readonly string[]; picks: readonly { slot: 0 | 1; level: 1 | 2 }[]; dispatch: Dispatch<GameAction> }
 }) {
   if (!mvp) {
     return (
@@ -349,7 +375,7 @@ function MvpSquare({
         </li>
         <li className={styles.mvpDeed}>
           <span className={styles.mvpDeedIcon}>⚔️</span>
-          <b>{defeats}</b> {defeats === 1 ? 'derrotado na defesa' : 'derrotados na defesa'}
+          <b>{defeats}</b> {defeats === 1 ? 'derrotado' : 'derrotados'}
           {killSpecies.length > 0 && (
             <span className={styles.mvpKills}>
               {killSpecies.map((sp, i) => (
@@ -373,6 +399,14 @@ function MvpSquare({
           {Math.abs(heartsGained) === 1 ? 'coração de afinidade' : 'corações de afinidade'}
         </li>
       </ol>
+      {secretChoice && (
+        <div className={styles.secretChoiceInline}>
+          <span className={styles.secretChoiceInlineTitle}>★ Escolha sua Habilidade Secreta</span>
+          <div className={styles.secretChoiceOptions}>
+            <SecretChoiceButtons pair={secretChoice.pair} picks={secretChoice.picks} dispatch={secretChoice.dispatch} />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

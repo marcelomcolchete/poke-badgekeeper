@@ -7,7 +7,8 @@ import { markActive } from '../engine/state.ts'
 import { canDefend, gymWinXp, resolveDefense, type DefenseResolution } from '../engine/gymDefense.ts'
 import { hasBattleArmor, sturdyAvailable } from '../engine/secretEffects.ts'
 import { goldForDefense } from '../engine/economy.ts'
-import { damageForDay } from '../engine/constants.ts'
+import { damageForDay, STARS_MIN, STARS_STEP } from '../engine/constants.ts'
+import { applyDomainStars } from '../engine/approval.ts'
 import { createRng } from '../engine/rng.ts'
 import { applyXpGains } from './itemFlow.ts'
 import { findMon, replaceMon, settleFaintTracked, takeRng } from './runtime.ts'
@@ -26,15 +27,18 @@ export function expireDefense(defense: DefenseEvent): void {
 }
 
 /**
- * Derrota imediata: deixar o timer de uma defesa ATIVA zerar sem nem lutar encerra a
- * run na hora, independente do dia e da reputação. Congela o relógio e vai a GAMEOVER.
- * Zera as estrelas de batalha (ginásio abandonado).
+ * Ginásio indefendido (o timer de uma defesa ATIVA zerou sem ninguém lutar): tira 1 estrela
+ * cheia de batalha (piso 0) e NÃO conta essa defesa no ratio do dia — a punição já é o −1
+ * aqui, sem dupla punição no fim do dia. Só encerra a run se as estrelas chegarem a 0.
  */
-export function loseRunByUndefendedGym(s: GameState): void {
-  s.run.phase = 'GAMEOVER'
-  s.run.gameOverReason = 'gym'
-  s.approval.battleStars = 0
-  s.clock.speed = 0
+export function penalizeUndefendedGym(s: GameState): void {
+  s.today.defensesTotal = Math.max(0, s.today.defensesTotal - 1)
+  s.approval.battleStars = applyDomainStars(s.approval.battleStars, -STARS_STEP * 2)
+  if (s.approval.battleStars <= STARS_MIN) {
+    s.run.phase = 'GAMEOVER'
+    s.run.gameOverReason = 'gym'
+    s.clock.speed = 0
+  }
 }
 
 /**

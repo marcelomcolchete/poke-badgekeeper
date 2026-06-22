@@ -101,12 +101,18 @@
   color: var(--c-ink);
 }
 
-/* Cor definida via style inline (theftChanceLabel) — sem cor fixa aqui. */
-.rocketValue {
-  font-size: 11px;
-  line-height: 1.1;
+/* Palavra da Chance de Rocket como chip colorido (cor de fundo + tinta vêm do inline). */
+.rocketChip {
+  display: inline-block;
+  max-width: 100%;
+  font-family: var(--font-text);
+  font-size: 12px;
+  font-weight: bold;
+  line-height: 1.15;
   text-align: center;
-  letter-spacing: 0;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 2px solid rgba(0, 0, 0, 0.2);
 }
 
 .countLabel {

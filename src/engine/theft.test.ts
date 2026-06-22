@@ -36,9 +36,13 @@ describe('theftChanceLabel — B9', () => {
     expect(theftChanceLabel(64).label).toBe('Muito Provável')
     expect(theftChanceLabel(100).label).toBe('Inevitável')
   })
-  it('verde no piso, vermelho no teto (interpola)', () => {
-    expect(theftChanceLabel(1).color).toBe('#2ec16a') // verde
+  it('azul no piso, vermelho no teto (rampa 5 paradas)', () => {
+    expect(theftChanceLabel(1).color).toBe('#3b82f6') // azul
     expect(theftChanceLabel(100).color).toBe('#e23b3b') // vermelho
+  })
+  it('tinta legível por luminância (meio claro → tinta escura; teto → tinta clara)', () => {
+    expect(theftChanceLabel(100).ink).toBe('#ffffff')
+    expect(theftChanceLabel(50).ink).toBe('#1a1a1a')
   })
   it('é robusto a valores intermediários (5, 50, 80)', () => {
     expect(theftChanceLabel(5).label).toBe('Improvável') // 4 < 5 ≤ 8
