@@ -236,6 +236,9 @@ export const DRAFT_CHOICES = 3
  * recalculados no próximo dia-aberto).
  * v37: Habilidades Secretas viram 2 por linha com nível (secretPicks). pokemon.secretCount →
  * pokemon.secretPicks (best-effort: 0→[]; 1→slot0 nível1; ≥2→slots 0 e 1 nível1). Remove
- * secretCount. Limpa today.secretUnlock (formato incompatível) → null. */
-export const SAVE_VERSION = 37
+ * secretCount. Limpa today.secretUnlock (formato incompatível) → null.
+ * v38: efeito Calor. WeatherSchedule ganha `heat` e a previsão ganha heatChancePercent/
+ * potentialHeatCount. A migração inicia heat vazio e a previsão de calor zerada (recalculados no
+ * próximo setupDay). */
+export const SAVE_VERSION = 38
 export const SAVE_KEY = 'poke-badgekeeper:save'

@@ -501,6 +501,25 @@ function migrate(file: Partial<SaveFile>): SaveFile | null {
     version = 37
   }
 
+  // v37 → v38: efeito Calor. weather ganha heat + previsão de calor; recalculado no próximo
+  // setupDay. Aqui só garante a estrutura para saves no meio do dia.
+  if (version === 37) {
+    const weather = state.weather as Record<string, unknown> | undefined
+    const forecast = (weather?.forecast as Record<string, unknown> | undefined) ?? {}
+    state = {
+      ...state,
+      weather:
+        weather && typeof weather === 'object'
+          ? {
+              ...weather,
+              heat: Array.isArray(weather.heat) ? weather.heat : [],
+              forecast: { heatChancePercent: 0, potentialHeatCount: 0, ...forecast },
+            }
+          : weather,
+    } as typeof state
+    version = 38
+  }
+
   if (version !== SAVE_VERSION) return null
   return { version, savedAtMs: (file as SaveFile).savedAtMs, state } as unknown as SaveFile
 }
