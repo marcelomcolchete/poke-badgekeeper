@@ -92,7 +92,7 @@ function applySearchWeatherHold(s: GameState, search: CaptureSearch, nowMs: numb
   const city = getCity(s.run.cityIndex)
   const graph = graphWithTunnels(city.graph, s.today.digTunnels)
   const baseLeg = search.reroutePath ?? search.path
-  // Velocidade efetiva AGORA (base + Swift Swim se chovendo); o extraMs do desvio é linear a essa
+  // Velocidade efetiva AGORA (base + Swift Swim se chovendo, ou reduzida pelo calor); o extraMs do desvio é linear a essa
   // taxa, enquanto a chegada-base veio do integrador (rainSpeed) — aproximação consciente (ver plano).
   const speedMult = instantWeatherSpeed(s.weather, nowMs, team, s.runItems, s.today.electrified)
   const plan = planWeatherLeg({
@@ -215,7 +215,7 @@ function applyReturnWeatherHold(s: GameState, ret: CaptureReturn, nowMs: number)
   // `path` é ponto→ginásio (volta real); saves antigos guardavam ginásio→ponto (detecta e inverte).
   const back = ret.path[0] === ret.node ? ret.path : [...ret.path].reverse()
   const baseLeg = ret.reroutePath ?? back
-  // Velocidade efetiva AGORA (base + Swift Swim se chovendo); o extraMs do desvio é linear a essa
+  // Velocidade efetiva AGORA (base + Swift Swim se chovendo, ou reduzida pelo calor); o extraMs do desvio é linear a essa
   // taxa, enquanto a chegada-base veio do integrador (rainSpeed) — aproximação consciente (ver plano).
   const speedMult = instantWeatherSpeed(s.weather, nowMs, team, s.runItems, s.today.electrified)
   const plan = planWeatherLeg({

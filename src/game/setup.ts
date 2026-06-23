@@ -122,6 +122,7 @@ export function setupDay(s: GameState): void {
   // Clima do dia (chuva + tempestade): pré-computado e reprodutível por (seed, dia, cidade).
   // rainDelta = Σ cloudNineRainPP(level) − Σ overcoatPP(level)
   // stormDelta = −Σ cloudNineOtherPP(level) − Σ overcoatPP(level)
+  // heatDelta = −Σ cloudNineOtherPP(level) − Σ overcoatPP(level)
   // ownTempoCap: strictest (lowest) cap among Own Tempo holders; 0 = no cap
   let rainDelta = 0
   let stormDelta = 0

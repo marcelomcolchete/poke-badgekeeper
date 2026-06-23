@@ -778,6 +778,7 @@ describe('habilidades de calor', () => {
   })
   it('hasChlorophyll reflete o nível desbloqueado', () => {
     expect(hasChlorophyll(chloroL1())).toBe(true)
+    expect(hasChlorophyll(chloroL2())).toBe(true)
     expect(hasChlorophyll(plain())).toBe(false)
   })
 })

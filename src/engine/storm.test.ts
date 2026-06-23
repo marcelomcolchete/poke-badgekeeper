@@ -17,6 +17,7 @@ import { getCity } from '../data/cities.ts'
 import { STRIKE_WARNING_MS } from './balance.ts'
 import type { CityData } from '../data/types.ts'
 import type { RainEvent } from './weather.ts'
+import { maxHeatTimes } from './heat.ts'
 import { STRIKE_RADIUS, STRIKE_RADIUS_ON_WATER, STRIKE_SECONDARY_RADIUS } from './balance.ts'
 
 // Cidade mínima de teste: 3 pontos numa linha horizontal + um ponto de água (surf).
@@ -199,7 +200,7 @@ describe('buildDayWeather — Calor (Celadon)', () => {
     const s = buildDayWeather(7, 9, CELADON, 0, 0, 100) // extraHeat 100% força ocorrência
     expect(s.heat.length).toBeGreaterThan(0)
     expect(s.forecast.heatChancePercent).toBeGreaterThan(0)
-    expect(s.forecast.potentialHeatCount).toBe(maxStormTimes(9)) // mesma curva
+    expect(s.forecast.potentialHeatCount).toBe(maxHeatTimes(9))
   })
   it('Own Tempo (cap total) corta o calor por último: chuva → tempestade → calor', () => {
     // cap = 1 evento no dia: a chuva/tempestade consomem o orçamento e o calor fica sem slot.
