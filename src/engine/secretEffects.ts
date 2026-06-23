@@ -50,6 +50,7 @@ import {
   OVERGROW_MISSION_MULT_L2,
   SWARM_MISSION_MULT_L1,
   SWARM_MISSION_MULT_L2,
+  LEAF_GUARD_GYM_DAMAGE_DIVISOR,
   VOLT_ABSORB_BONUS_L1,
   VOLT_ABSORB_BONUS_L2,
   WATER_ABSORB_MISSION_MULT_L1,
@@ -57,7 +58,7 @@ import {
   WEAK_ARMOR_SPEED_PER_MISSING_HP_L1,
   WEAK_ARMOR_SPEED_PER_MISSING_HP_L2,
 } from './balance.ts'
-import { effectiveAttr, mapAttrs } from './attributes.ts'
+import { applyDamage, effectiveAttr, mapAttrs } from './attributes.ts'
 import { itemMissionMultiplier, itemTravelSpeedMultiplier, notFinalEvolution } from './itemEffects.ts'
 import { isRaining, type WeatherSchedule } from './weather.ts'
 
@@ -142,6 +143,32 @@ export function leafGuardAbsorberId(team: readonly Pokemon[], minLevel: 1 | 2 = 
     if (!best || p.currentHp > best.currentHp) best = p
   }
   return best?.id ?? null
+}
+
+/**
+ * Leaf Guard L2 (defesa de ginásio): pós-processa o resultado da cadeia. Com um portador L2 no
+ * esquadrão, cada aliado que perdeu vida é RESTAURADO ao HP pré-batalha e o absorvedor (portador
+ * L2 de maior vida pré-batalha) toma `ceil(perda/2)` no lugar de cada um. Sem portador L2, devolve
+ * `post` inalterado. A cadeia roda normalmente ANTES (Sturdy/Reckless/Explosion já resolvidos);
+ * isto só redistribui a vida final. Puro.
+ */
+export function redistributeLeafGuardGymDamage(
+  pre: readonly Pokemon[],
+  post: readonly Pokemon[],
+): Pokemon[] {
+  const absorberId = leafGuardAbsorberId(pre, 2)
+  if (absorberId === null) return [...post]
+  const preHpById = new Map(pre.map((p) => [p.id, p.currentHp]))
+  let absorbed = 0
+  const restored = post.map((p) => {
+    if (p.id === absorberId) return p
+    const before = preHpById.get(p.id) ?? p.currentHp
+    const lost = before - p.currentHp
+    if (lost <= 0) return p
+    absorbed += Math.ceil(lost / LEAF_GUARD_GYM_DAMAGE_DIVISOR)
+    return { ...p, currentHp: before, status: 'idle' as const }
+  })
+  return restored.map((p) => (p.id === absorberId ? applyDamage(p, absorbed) : p))
 }
 export function hasAnalytic(p: Pokemon): boolean {
   return hasSecret(p, 'sa-analytic')

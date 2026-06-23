@@ -53,6 +53,7 @@ import {
   hasSturdy,
   hasVitalSpirit,
   hustleBattleBonus,
+  redistributeLeafGuardGymDamage,
   rivalryBattleBonus,
   rolloutBattleBonus,
 } from './secretEffects.ts'
@@ -433,5 +434,6 @@ export function resolveDefense(
     yours += 1
     frontWins = 0 // novo lutador na frente: zera a sequência do Rollout
   }
-  return { won: theirs >= enemies.length, squad: result, duels, sturdyUsedIds: [...sturdyUsed] }
+  const finalSquad = redistributeLeafGuardGymDamage(squad, result)
+  return { won: theirs >= enemies.length, squad: finalSquad, duels, sturdyUsedIds: [...sturdyUsed] }
 }
