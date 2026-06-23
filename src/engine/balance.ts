@@ -312,6 +312,12 @@ export const SURF_WATER_TIME_MULT = 0.5
 /** Torrent: multiplicador de atributos na missão quando há outro aliado do tipo Água, por nível. */
 export const TORRENT_MISSION_MULT_L1 = 1.25
 export const TORRENT_MISSION_MULT_L2 = 1.5
+/** Overgrow: multiplicador de atributos na missão com outro aliado do tipo Grama, por nível. */
+export const OVERGROW_MISSION_MULT_L1 = 1.25
+export const OVERGROW_MISSION_MULT_L2 = 1.5
+/** Swarm: multiplicador de atributos na missão com outro aliado do tipo Inseto, por nível. */
+export const SWARM_MISSION_MULT_L1 = 1.25
+export const SWARM_MISSION_MULT_L2 = 1.5
 /**
  * Moxie L1: +1 PERMANENTE em `permaBonus.batalha` por Pokémon derrotado em batalha.
  * Moxie L2: idem +5 temporário por vitória na sequência (teto +25). Os antigos temporários
@@ -327,6 +333,15 @@ export const MOXIE_TEMP_CAP_L2 = 25
  */
 export const PRESSURE_ENEMY_MULT_L1 = 0.85
 export const PRESSURE_ENEMY_MULT_L2 = 0.70
+/** Tinted Lens: multiplicador da Batalha no duelo quando o portador está em desvantagem de tipo. */
+export const TINTED_LENS_BATTLE_MULT_L1 = 1.5
+export const TINTED_LENS_BATTLE_MULT_L2 = 2.0
+/** Leaf Guard L2: divisor do dano que o absorvedor toma no lugar de cada aliado na defesa (ceil). */
+export const LEAF_GUARD_GYM_DAMAGE_DIVISOR = 2
+/** Spore: fração do valor-BASE somada como buff do dia em cada eixo sorteado (+10%). */
+export const SPORE_ATTR_BONUS_FRACTION = 0.1
+/** Spore L2: quantos eixos distintos recebem o buff (L1 = 1). */
+export const SPORE_ATTRS_COUNT_L2 = 3
 /**
  * Static (NOVO, Fase 4): XP concedido por segundo que o time fica PARADO por raio ou poça.
  * 1 XP/s: 5s de paralisia → +5 XP.

@@ -53,6 +53,16 @@ export type SecretId =
   | 'sa-quick-feet'
   // Vermilion — só descrição por ora (depende da tempestade, ainda não implementada).
   | 'sa-volt-absorb'
+  // Celadon (Grama/Inseto) — habilidades novas com efeito.
+  | 'sa-overgrow'
+  | 'sa-swarm'
+  | 'sa-spore'
+  | 'sa-leaf-guard'
+  | 'sa-tinted-lens'
+  // Celadon — só descrição por ora (dependem de clima de calor / berries ainda não implementados).
+  | 'sa-chlorophyll'
+  | 'sa-gluttony'
+  | 'sa-harvest'
 
 export interface SecretKind {
   id: SecretId
@@ -288,6 +298,57 @@ export const SECRET_KINDS: Record<SecretId, SecretKind> = {
     effectL1: '+200% de velocidade do time durante tempestade de areia (sem efeito até existir tempestade de areia).',
     effectL2: '+300% de velocidade do time durante tempestade de areia (sem efeito até existir tempestade de areia).',
   },
+  // ---- Celadon (Grama/Inseto) ----
+  'sa-overgrow': {
+    id: 'sa-overgrow',
+    name: 'Overgrow',
+    effectL1: '+25% nos atributos com outro aliado do tipo Grama na missão.',
+    effectL2: '+50%.',
+  },
+  'sa-swarm': {
+    id: 'sa-swarm',
+    name: 'Swarm',
+    effectL1: '+25% nos atributos com outro aliado do tipo Inseto na missão.',
+    effectL2: '+50%.',
+  },
+  'sa-spore': {
+    id: 'sa-spore',
+    name: 'Spore',
+    effectL1: 'No início do dia, +10% em um atributo aleatório (vale o dia).',
+    effectL2: 'No início do dia, +10% em três atributos aleatórios.',
+  },
+  'sa-leaf-guard': {
+    id: 'sa-leaf-guard',
+    name: 'Leaf Guard',
+    effectL1:
+      'Numa missão fracassada, só ele perde vida (dano normal); o resto do time é poupado. Com 2+ portadores, o de maior vida absorve.',
+    effectL2:
+      'Vale também na defesa do ginásio: no lugar de cada aliado que perderia vida, ele toma metade do dano (4→2); o resto não perde vida.',
+  },
+  'sa-tinted-lens': {
+    id: 'sa-tinted-lens',
+    name: 'Tinted Lens',
+    effectL1: 'Em desvantagem de tipo no duelo, sua Batalha conta ×1.5 (compensa o golpe fraco).',
+    effectL2: 'Em desvantagem de tipo, sua Batalha conta ×2.0.',
+  },
+  'sa-chlorophyll': {
+    id: 'sa-chlorophyll',
+    name: 'Chlorophyll',
+    effectL1: '+200% de velocidade do time sob sol/calor (sem efeito até existir clima de calor).',
+    effectL2: '+300% de velocidade do time sob sol/calor (sem efeito até existir clima de calor).',
+  },
+  'sa-gluttony': {
+    id: 'sa-gluttony',
+    name: 'Gluttony',
+    effectL1: 'Cada berry usada nele concede +100 de XP (sem efeito até existirem berries).',
+    effectL2: '+200 de XP por berry usada (sem efeito até existirem berries).',
+  },
+  'sa-harvest': {
+    id: 'sa-harvest',
+    name: 'Harvest',
+    effectL1: 'Recebe 1 berry aleatória toda manhã (sem efeito até existirem berries).',
+    effectL2: 'Recebe 2 berries aleatórias toda manhã (sem efeito até existirem berries).',
+  },
 }
 
 // Mapa filho → pai (a partir dos passos de evolução), para achar a raiz de uma linha.
@@ -349,6 +410,18 @@ export const SECRET_LINES: Record<number, readonly [SecretId, SecretId]> = {
   129: ['sa-surf', 'sa-moxie'],
   131: ['sa-surf', 'sa-shell-armor'],
   144: ['sa-fly', 'sa-pressure'],
+  // Celadon (Grama/Inseto)
+  1: ['sa-chlorophyll', 'sa-overgrow'],
+  43: ['sa-chlorophyll', 'sa-spore'],
+  69: ['sa-gluttony', 'sa-hustle'],
+  102: ['sa-harvest', 'sa-analytic'],
+  114: ['sa-regenerator', 'sa-leaf-guard'],
+  10: ['sa-tinted-lens', 'sa-fly'],
+  13: ['sa-sniper', 'sa-swarm'],
+  46: ['sa-spore', 'sa-dig'],
+  48: ['sa-fly', 'sa-forewarn'],
+  123: ['sa-quick-feet', 'sa-fly'],
+  127: ['sa-dig', 'sa-moxie'],
 }
 
 /**

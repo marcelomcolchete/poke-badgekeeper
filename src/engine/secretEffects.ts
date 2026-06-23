@@ -5,8 +5,10 @@
 // diário (flags) vem do
 // `SecretRuntime` por Pokémon (s.today.secretRuntime), atualizado pelos fluxos.
 
+import { ATTR_KEYS } from '../types/index.ts'
 import type { Attrs, AttrKey, Pokemon } from '../types/index.ts'
 import type { MissionTemplate } from '../data/types.ts'
+import type { Rng } from './rng.ts'
 import type { SecretRuntime } from './state.ts'
 import { hasSecret, secretLevelOf } from '../data/secretAbilities.ts'
 import { TEAM_ATTR_MAX } from './constants.ts'
@@ -46,6 +48,13 @@ import {
   SWIFT_SWIM_MISSION_BONUS_L2,
   TORRENT_MISSION_MULT_L1,
   TORRENT_MISSION_MULT_L2,
+  OVERGROW_MISSION_MULT_L1,
+  OVERGROW_MISSION_MULT_L2,
+  SWARM_MISSION_MULT_L1,
+  SWARM_MISSION_MULT_L2,
+  LEAF_GUARD_GYM_DAMAGE_DIVISOR,
+  SPORE_ATTR_BONUS_FRACTION,
+  SPORE_ATTRS_COUNT_L2,
   VOLT_ABSORB_BONUS_L1,
   VOLT_ABSORB_BONUS_L2,
   WATER_ABSORB_MISSION_MULT_L1,
@@ -53,7 +62,7 @@ import {
   WEAK_ARMOR_SPEED_PER_MISSING_HP_L1,
   WEAK_ARMOR_SPEED_PER_MISSING_HP_L2,
 } from './balance.ts'
-import { effectiveAttr, mapAttrs } from './attributes.ts'
+import { applyDamage, effectiveAttr, mapAttrs } from './attributes.ts'
 import { itemMissionMultiplier, itemTravelSpeedMultiplier, notFinalEvolution } from './itemEffects.ts'
 import { isRaining, type WeatherSchedule } from './weather.ts'
 
@@ -112,6 +121,73 @@ export function teamHasSwiftSwim(team: readonly Pokemon[]): boolean {
 }
 export function hasTorrent(p: Pokemon): boolean {
   return hasSecret(p, 'sa-torrent')
+}
+export function hasOvergrow(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-overgrow')
+}
+export function hasSwarm(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-swarm')
+}
+
+/**
+ * Spore: incrementos de `dayBuffs` a aplicar no INÍCIO do dia. Sorteia 1 eixo (L1) ou 3 eixos
+ * distintos (L2) e dá +round(SPORE_ATTR_BONUS_FRACTION × base) em cada. Mapa vazio sem a habilidade.
+ * Puro; o `rng` deve ser determinístico (seed do dia) e o call site mescla em `p.dayBuffs`.
+ */
+export function sporeDayBuffs(p: Pokemon, rng: Rng): Partial<Record<AttrKey, number>> {
+  const level = secretLevelOf(p, 'sa-spore')
+  if (level < 1) return {}
+  const count = level === 2 ? SPORE_ATTRS_COUNT_L2 : 1
+  const axes = rng.shuffle(ATTR_KEYS).slice(0, count)
+  const out: Partial<Record<AttrKey, number>> = {}
+  for (const key of axes) out[key] = Math.round(SPORE_ATTR_BONUS_FRACTION * p.baseAttrs[key])
+  return out
+}
+export function hasTintedLens(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-tinted-lens')
+}
+export function hasLeafGuard(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-leaf-guard')
+}
+
+/**
+ * Id do portador de Leaf Guard que ABSORVE o dano do time: o de maior `currentHp` com nível
+ * ≥ `minLevel`. Desempate estável: o primeiro na ordem do time. `null` se nenhum portador.
+ * `minLevel` = 1 (missão, qualquer nível) ou 2 (defesa de ginásio, só L2).
+ */
+export function leafGuardAbsorberId(team: readonly Pokemon[], minLevel: 1 | 2 = 1): string | null {
+  let best: Pokemon | null = null
+  for (const p of team) {
+    if (secretLevelOf(p, 'sa-leaf-guard') < minLevel) continue
+    if (!best || p.currentHp > best.currentHp) best = p
+  }
+  return best?.id ?? null
+}
+
+/**
+ * Leaf Guard L2 (defesa de ginásio): pós-processa o resultado da cadeia. Com um portador L2 no
+ * esquadrão, cada aliado que perdeu vida é RESTAURADO ao HP pré-batalha e o absorvedor (portador
+ * L2 de maior vida pré-batalha) toma `ceil(perda/2)` no lugar de cada um. Sem portador L2, devolve
+ * `post` inalterado. A cadeia roda normalmente ANTES (Sturdy/Reckless/Explosion já resolvidos);
+ * isto só redistribui a vida final. Puro.
+ */
+export function redistributeLeafGuardGymDamage(
+  pre: readonly Pokemon[],
+  post: readonly Pokemon[],
+): Pokemon[] {
+  const absorberId = leafGuardAbsorberId(pre, 2)
+  if (absorberId === null) return [...post]
+  const preHpById = new Map(pre.map((p) => [p.id, p.currentHp]))
+  let absorbed = 0
+  const restored = post.map((p) => {
+    if (p.id === absorberId) return p
+    const before = preHpById.get(p.id) ?? p.currentHp
+    const lost = before - p.currentHp
+    if (lost <= 0) return p
+    absorbed += Math.ceil(lost / LEAF_GUARD_GYM_DAMAGE_DIVISOR)
+    return { ...p, currentHp: before, status: 'idle' as const }
+  })
+  return restored.map((p) => (p.id === absorberId ? applyDamage(p, absorbed) : p))
 }
 export function hasAnalytic(p: Pokemon): boolean {
   return hasSecret(p, 'sa-analytic')
@@ -275,6 +351,16 @@ export function missionAttrMultiplier(p: Pokemon, ctx: MissionSecretCtx): number
   if (hasTorrent(p) && ctx.team.some((o) => o.id !== p.id && o.types.includes('water'))) {
     const lvl = secretLevelOf(p, 'sa-torrent')
     mult *= lvl === 2 ? TORRENT_MISSION_MULT_L2 : TORRENT_MISSION_MULT_L1
+  }
+  // Overgrow: +25%/+50% se há OUTRO aliado do tipo Grama na missão.
+  if (hasOvergrow(p) && ctx.team.some((o) => o.id !== p.id && o.types.includes('grass'))) {
+    const lvl = secretLevelOf(p, 'sa-overgrow')
+    mult *= lvl === 2 ? OVERGROW_MISSION_MULT_L2 : OVERGROW_MISSION_MULT_L1
+  }
+  // Swarm: +25%/+50% se há OUTRO aliado do tipo Inseto na missão.
+  if (hasSwarm(p) && ctx.team.some((o) => o.id !== p.id && o.types.includes('bug'))) {
+    const lvl = secretLevelOf(p, 'sa-swarm')
+    mult *= lvl === 2 ? SWARM_MISSION_MULT_L2 : SWARM_MISSION_MULT_L1
   }
   if (hasBattleArmor(p) && ctx.runtime[p.id]?.battleArmorPending) {
     const lvl = secretLevelOf(p, 'sa-battle-armor')
@@ -544,6 +630,16 @@ export function missionEffectBreakdown(ctx: MissionSecretCtx): MissionEffectEntr
     const lvl = Math.max(...team.map((p) => secretLevelOf(p, 'sa-torrent'))) as 0 | 1 | 2
     push({ id: 'torrent', source: 'ability', label: 'Torrent', kind: 'attr', direction: 'gain',
       value: fmtMult(lvl === 2 ? TORRENT_MISSION_MULT_L2 : TORRENT_MISSION_MULT_L1), reason: 'com aliado do tipo Água' })
+  }
+  if (team.some((p) => hasOvergrow(p) && team.some((o) => o.id !== p.id && o.types.includes('grass')))) {
+    const lvl = Math.max(...team.map((p) => secretLevelOf(p, 'sa-overgrow'))) as 0 | 1 | 2
+    push({ id: 'overgrow', source: 'ability', label: 'Overgrow', kind: 'attr', direction: 'gain',
+      value: fmtMult(lvl === 2 ? OVERGROW_MISSION_MULT_L2 : OVERGROW_MISSION_MULT_L1), reason: 'com aliado do tipo Grama' })
+  }
+  if (team.some((p) => hasSwarm(p) && team.some((o) => o.id !== p.id && o.types.includes('bug')))) {
+    const lvl = Math.max(...team.map((p) => secretLevelOf(p, 'sa-swarm'))) as 0 | 1 | 2
+    push({ id: 'swarm', source: 'ability', label: 'Swarm', kind: 'attr', direction: 'gain',
+      value: fmtMult(lvl === 2 ? SWARM_MISSION_MULT_L2 : SWARM_MISSION_MULT_L1), reason: 'com aliado do tipo Inseto' })
   }
   if (team.some((p) => hasBattleArmor(p) && runtime[p.id]?.battleArmorPending)) {
     const lvl = Math.max(...team.filter((p) => hasBattleArmor(p) && runtime[p.id]?.battleArmorPending).map((p) => secretLevelOf(p, 'sa-battle-armor'))) as 0 | 1 | 2

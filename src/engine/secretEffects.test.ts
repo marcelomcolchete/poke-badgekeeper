@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { CityGraph } from '../data/types.ts'
-import { makeMon } from './testkit.ts'
+import { fixedRng, makeAttrs, makeMon } from './testkit.ts'
 import { getMissionTemplate } from '../data/missionTemplates.ts'
 import { DIG_TUNNEL_COST } from './balance.ts'
 import { graphWithTunnel, graphWithTunnels, pathDistance, shortestPath } from './pathfinding.ts'
@@ -23,6 +23,7 @@ import {
   missionEffectBreakdown,
   rivalryBattleBonus,
   rolloutBattleBonus,
+  sporeDayBuffs,
   sturdyAvailable,
   teamFlies,
   teamHasFly,
@@ -677,5 +678,63 @@ describe('Swift Swim L2: bônus de missão na chuva (+30%)', () => {
       weather: rainNow, nowMs: 5_000,
     }
     expect(missionAttrMultiplier(kab, ctx)).toBeCloseTo(1.30)
+  })
+})
+
+describe('Overgrow (Grama)', () => {
+  // Bulbasaur(1): par = ['sa-chlorophyll','sa-overgrow'] → Overgrow slot 1
+  it('+25% (L1) com outro aliado do tipo Grama', () => {
+    const carrier = makeMon({ id: 'a', speciesId: 1, types: ['grass', 'poison'], secretPicks: [{ slot: 1, level: 1 }] })
+    const ally = makeMon({ id: 'b', speciesId: 1, types: ['grass'] })
+    expect(missionAttrMultiplier(carrier, ctxOf([carrier, ally], PATRULHA))).toBeCloseTo(1.25)
+  })
+
+  it('+50% (L2) com aliado do tipo Grama', () => {
+    const carrier = makeMon({ id: 'a', speciesId: 1, types: ['grass'], secretPicks: [{ slot: 1, level: 2 }] })
+    const ally = makeMon({ id: 'b', speciesId: 1, types: ['grass'] })
+    expect(missionAttrMultiplier(carrier, ctxOf([carrier, ally], PATRULHA))).toBeCloseTo(1.5)
+  })
+
+  it('sem aliado do tipo Grama, sem bônus (exclui ele mesmo)', () => {
+    const carrier = makeMon({ id: 'a', speciesId: 1, types: ['grass'], secretPicks: [{ slot: 1, level: 1 }] })
+    const fireAlly = makeMon({ id: 'b', speciesId: 4, types: ['fire'] })
+    expect(missionAttrMultiplier(carrier, ctxOf([carrier, fireAlly], PATRULHA))).toBeCloseTo(1)
+    expect(missionAttrMultiplier(carrier, ctxOf([carrier], PATRULHA))).toBeCloseTo(1)
+  })
+})
+
+describe('Swarm (Inseto)', () => {
+  // Weedle(13): par = ['sa-sniper','sa-swarm'] → Swarm slot 1
+  it('+25% (L1) com outro aliado do tipo Inseto', () => {
+    const carrier = makeMon({ id: 'a', speciesId: 13, types: ['bug', 'poison'], secretPicks: [{ slot: 1, level: 1 }] })
+    const ally = makeMon({ id: 'b', speciesId: 13, types: ['bug'] })
+    expect(missionAttrMultiplier(carrier, ctxOf([carrier, ally], PATRULHA))).toBeCloseTo(1.25)
+  })
+
+  it('sem aliado do tipo Inseto, sem bônus', () => {
+    const carrier = makeMon({ id: 'a', speciesId: 13, types: ['bug'], secretPicks: [{ slot: 1, level: 1 }] })
+    const grassAlly = makeMon({ id: 'b', speciesId: 1, types: ['grass'] })
+    expect(missionAttrMultiplier(carrier, ctxOf([carrier, grassAlly], PATRULHA))).toBeCloseTo(1)
+  })
+})
+
+describe('Spore — buff diário (sporeDayBuffs)', () => {
+  // Oddish(43): par = ['sa-chlorophyll','sa-spore'] → Spore slot 1.
+  // fixedRng.shuffle devolve a ordem original de ATTR_KEYS → eixos iniciais (batalha, ...).
+  it('L1 dá +10% do base em 1 eixo (o primeiro com fixedRng)', () => {
+    const mon = makeMon({ speciesId: 43, baseAttrs: makeAttrs({ batalha: 30 }), secretPicks: [{ slot: 1, level: 1 }] })
+    expect(sporeDayBuffs(mon, fixedRng(0))).toEqual({ batalha: 3 }) // round(0.10 × 30) = 3
+  })
+
+  it('L2 dá +10% em 3 eixos distintos', () => {
+    const mon = makeMon({ speciesId: 43, baseAttrs: makeAttrs({}, 20), secretPicks: [{ slot: 1, level: 2 }] })
+    const buffs = sporeDayBuffs(mon, fixedRng(0))
+    expect(Object.keys(buffs)).toHaveLength(3)
+    expect(Object.values(buffs).every((v) => v === 2)).toBe(true) // round(0.10 × 20) = 2
+  })
+
+  it('sem a habilidade, mapa vazio', () => {
+    const mon = makeMon({ speciesId: 43, baseAttrs: makeAttrs() })
+    expect(sporeDayBuffs(mon, fixedRng(0))).toEqual({})
   })
 })

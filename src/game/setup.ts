@@ -16,8 +16,9 @@ import { createMissionInstance } from '../engine/missions.ts'
 import { buildDayWeather } from '../engine/storm.ts'
 import { generateDefenseEnemies, rollSquadSize } from '../engine/gymDefense.ts'
 import { createPokemon } from '../engine/leveling.ts'
-import { hasDig, hasDigPlus, hasOwnTempo } from '../engine/secretEffects.ts'
+import { hasDig, hasDigPlus, hasOwnTempo, sporeDayBuffs } from '../engine/secretEffects.ts'
 import { secretLevelOf } from '../data/secretAbilities.ts'
+import { recomputeMaxHp } from '../engine/attributes.ts'
 import { createRng, deriveSeed } from '../engine/rng.ts'
 import { shinyFor } from '../engine/shiny.ts'
 import {
@@ -34,7 +35,7 @@ import {
   MISSION_LIFETIME_MS,
   SPECIAL_CHANCE_START,
 } from '../engine/balance.ts'
-import { DIG_SEED_SALT, TRAINER_SEED_SALT } from '../engine/constants.ts'
+import { DIG_SEED_SALT, SPORE_SEED_SALT, TRAINER_SEED_SALT } from '../engine/constants.ts'
 import { takeId, takeRng } from './runtime.ts'
 
 /**
@@ -148,8 +149,28 @@ export function setupDay(s: GameState): void {
     ownTempoCap,
   )
   applyForewarn(s)
+  applySpore(s)
   s.clock.dayElapsedMs = 0
   s.clock.speed = 1
+}
+
+/**
+ * Spore: no início do dia, cada portador ganha buffs de atributo do dia (1 eixo no L1, 3 no L2).
+ * Os incrementos somam ao `dayBuffs` existente (itens da manhã), o HP é recalculado e o Pokémon
+ * começa o dia cheio. Determinístico por (seed do dia).
+ */
+export function applySpore(s: GameState): void {
+  const rng = createRng(deriveSeed(s.run.seed, SPORE_SEED_SALT, s.run.day))
+  s.roster = s.roster.map((p) => {
+    const add = sporeDayBuffs(p, rng)
+    if (Object.keys(add).length === 0) return p
+    const dayBuffs = { ...(p.dayBuffs ?? {}) }
+    for (const key of Object.keys(add) as (keyof typeof add)[]) {
+      dayBuffs[key] = (dayBuffs[key] ?? 0) + (add[key] ?? 0)
+    }
+    const recomputed = recomputeMaxHp({ ...p, dayBuffs })
+    return { ...recomputed, currentHp: recomputed.maxHp }
+  })
 }
 
 /**
