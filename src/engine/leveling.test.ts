@@ -168,20 +168,20 @@ describe('addXp e nível máximo', () => {
 describe('evolução (PLAN §4.1.1)', () => {
   it('evolui ao atingir o nível de evolução, preservando nível/XP/alocações', () => {
     const bulba = createPokemon({ id: 'b', speciesId: 1, level: 1, rng: rng() })
-    // XP efetivo p/ chegar ao nível 3, ajustado pela taxa de raridade da espécie.
-    const need = Math.ceil((xpToNext(1) + xpToNext(2)) / rarityXpRate(1))
+    // XP efetivo p/ chegar ao nível 4, ajustado pela taxa de raridade da espécie.
+    const need = Math.ceil((xpToNext(1) + xpToNext(2) + xpToNext(3)) / rarityXpRate(1))
     const { pokemon } = addXp(bulba, need)
-    expect(pokemon.level).toBe(3)
-    expect(pokemon.speciesId).toBe(2) // Bulbasaur → Ivysaur (atLevel 3)
+    expect(pokemon.level).toBe(4)
+    expect(pokemon.speciesId).toBe(2) // Bulbasaur → Ivysaur (atLevel 4)
     expect(pokemon.types).toEqual(getSpecies(2).types)
   })
 
   it('evolui em cadeia quando o nível cobre vários limiares', () => {
-    const lvl6Bulba = createPokemon({ id: 'b', speciesId: 1, level: 6, rng: rng() })
-    expect(lvl6Bulba.speciesId).toBe(1) // createPokemon não evolui sozinho
-    const evolved = evolveToLevel(lvl6Bulba)
-    expect(evolved.speciesId).toBe(3) // 1 → 2 → 3 (Venusaur) no nível 6
-    expect(evolved.level).toBe(6)
+    const lvl8Bulba = createPokemon({ id: 'b', speciesId: 1, level: 8, rng: rng() })
+    expect(lvl8Bulba.speciesId).toBe(1) // createPokemon não evolui sozinho
+    const evolved = evolveToLevel(lvl8Bulba)
+    expect(evolved.speciesId).toBe(3) // 1 → 2 → 3 (Venusaur) no nível 8 (limiares 4·8)
+    expect(evolved.level).toBe(8)
   })
 
   it('preserva a proporção de HP na evolução', () => {
