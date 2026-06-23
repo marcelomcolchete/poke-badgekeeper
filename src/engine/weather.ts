@@ -108,12 +108,12 @@ export function emptyWeatherSchedule(): WeatherSchedule {
 
 // ---- Tabelas determinísticas -----------------------------------------------------------
 
-/** Teto de chuvas potenciais por dia. */
-export const RAIN_MAX_TIMES_CAP = 4
+/** Teto de pancadas potenciais por dia. */
+export const RAIN_MAX_TIMES_CAP = 6
 
-/** Quantas chuvas potenciais no dia: +1 a cada 2 dias, capado em 4 (dia 3-4→1 … 9-10→4). */
+/** Quantas pancadas potenciais no dia: +1 a cada 3 dias, capado em 6 (dia 3→1, 6→2, …, 18→6). */
 export function maxRainTimes(day: number): number {
-  return clamp(Math.floor((day - 1) / 2), 0, RAIN_MAX_TIMES_CAP)
+  return clamp(Math.floor(day / 3), 0, RAIN_MAX_TIMES_CAP)
 }
 
 /**

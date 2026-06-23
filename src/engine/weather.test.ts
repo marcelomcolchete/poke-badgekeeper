@@ -83,8 +83,10 @@ describe('rainChanceForDay', () => {
 })
 
 describe('maxRainTimes', () => {
-  it('+1 a cada 2 dias, capado em 4', () => {
-    expect([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(maxRainTimes)).toEqual([0, 0, 1, 1, 2, 2, 3, 3, 4, 4])
+  it('+1 a cada 3 dias, capado em 6', () => {
+    expect([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(maxRainTimes)).toEqual([0, 0, 1, 1, 1, 2, 2, 2, 3, 3])
+    expect(maxRainTimes(18)).toBe(6)
+    expect(maxRainTimes(30)).toBe(6) // teto segura no infinito
   })
 
   it('nº de chuvas que ocorrem nunca passa o teto do dia', () => {

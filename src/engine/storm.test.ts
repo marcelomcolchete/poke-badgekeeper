@@ -56,10 +56,11 @@ describe('storm — agendamento', () => {
     expect(strikeCountForDay(10, 2)).toBe(0)
   })
 
-  it('maxStormTimes cresce +1 a cada 2 dias, cap 4', () => {
+  it('maxStormTimes segue a chuva: +1 a cada 3 dias, cap 6', () => {
     expect(maxStormTimes(2)).toBe(0)
     expect(maxStormTimes(3)).toBe(1)
-    expect(maxStormTimes(10)).toBe(4)
+    expect(maxStormTimes(10)).toBe(3)
+    expect(maxStormTimes(18)).toBe(6)
   })
 
   it('é determinístico: mesmo seed/dia → mesmo schedule', () => {
