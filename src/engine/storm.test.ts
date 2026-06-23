@@ -5,6 +5,7 @@ import {
   type StrikeCircle,
   buildStorms,
   maxStormTimes,
+  stormChanceForDay,
   strikeCountForDay,
   activeStormAt,
   isStorming,
@@ -61,6 +62,21 @@ describe('storm — agendamento', () => {
     expect(maxStormTimes(3)).toBe(1)
     expect(maxStormTimes(10)).toBe(3)
     expect(maxStormTimes(18)).toBe(6)
+  })
+
+  it('stormChanceForDay: Vermilion em [piso(dia), 50], regime 50 no dia 30+', () => {
+    for (let day = 3; day <= 10; day++) {
+      const lo = Math.min(20 + day, 50)
+      const c = stormChanceForDay(123, day, 2)
+      expect(c).toBeGreaterThanOrEqual(lo)
+      expect(c).toBeLessThanOrEqual(50)
+    }
+    expect(stormChanceForDay(123, 30, 2)).toBe(50)
+  })
+
+  it('stormChanceForDay: cidade sem tempestade (Cerulean=1) → 0; dia < 3 → 0', () => {
+    expect(stormChanceForDay(123, 7, 1)).toBe(0)
+    expect(stormChanceForDay(123, 2, 2)).toBe(0)
   })
 
   it('é determinístico: mesmo seed/dia → mesmo schedule', () => {

@@ -90,7 +90,7 @@ describe('Cloud Nine — rain +pp / storm −pp (setup)', () => {
   it('L1 holder: storm chance −10pp vs baseline in Vermilion', () => {
     const seed = 123
     const day = 7
-    const baseStorm = stormChanceForDay(seed, day)
+    const baseStorm = stormChanceForDay(seed, day, 2)
     const noOC = stormDayState([plainMon('p1')])
     setupDay(noOC)
     const cn = stormDayState([cloudNineMon('p1', 1)])
@@ -102,7 +102,7 @@ describe('Cloud Nine — rain +pp / storm −pp (setup)', () => {
   it('L2 holder: storm chance −20pp in Vermilion', () => {
     const seed = 123
     const day = 7
-    const baseStorm = stormChanceForDay(seed, day)
+    const baseStorm = stormChanceForDay(seed, day, 2)
     const cn = stormDayState([cloudNineMon('p1', 2)])
     setupDay(cn)
     const expected = Math.max(0, Math.min(100, baseStorm - 20))
@@ -155,7 +155,7 @@ describe('Overcoat — −pp to rain AND storm', () => {
   it('L1 holder: storm chance −10pp in Vermilion', () => {
     const seed = 123
     const day = 7
-    const baseStorm = stormChanceForDay(seed, day)
+    const baseStorm = stormChanceForDay(seed, day, 2)
     const noOC = stormDayState([plainMon('p1')])
     setupDay(noOC)
     const oc = stormDayState([overcoatMon('p1', 1)])
@@ -167,7 +167,7 @@ describe('Overcoat — −pp to rain AND storm', () => {
   it('L2 holder: storm chance −20pp in Vermilion', () => {
     const seed = 123
     const day = 7
-    const baseStorm = stormChanceForDay(seed, day)
+    const baseStorm = stormChanceForDay(seed, day, 2)
     const oc = stormDayState([overcoatMon('p1', 2)])
     setupDay(oc)
     const expected = Math.max(0, Math.min(100, baseStorm - 20))
@@ -179,7 +179,7 @@ describe('Overcoat — −pp to rain AND storm', () => {
 
 describe('Own Tempo — event cap (non-stacking)', () => {
   it('L1 holder: at most 2 weather events total (rain+storm) in Vermilion day 9', () => {
-    // Day 9: maxRainTimes=4, maxStormTimes=4 without cap
+    // Day 9: maxRainTimes=3, maxStormTimes=3 without cap
     const s = stormDayState([ownTempoMon('p1', 1)])
     s.run.day = 9
     setupDay(s)

@@ -11,18 +11,17 @@
 import type { MapPos } from '../types/index.ts'
 import type { CityData } from '../data/types.ts'
 import { createRng, deriveSeed, type Rng } from './rng.ts'
-import { DAY_LENGTH_MS, TOTAL_DAYS, STORM_SEED_SALT, MAP_ASPECT_W } from './constants.ts'
+import { DAY_LENGTH_MS, TOTAL_DAYS, STORM_SEED_SALT, STORM_CHANCE_SALT, MAP_ASPECT_W } from './constants.ts'
 import { clamp, lerp } from './math.ts'
 import { segmentLength } from './pathfinding.ts'
-import { puddleLevelAt, puddleNodePool, type RainEvent, WEATHER_FIRST_ELIGIBLE_DAY, maxRainTimes } from './weather.ts'
+import { weatherChanceForDay, puddleLevelAt, puddleNodePool, type RainEvent, WEATHER_FIRST_ELIGIBLE_DAY, maxRainTimes } from './weather.ts'
 import type { WeatherSchedule } from './weather.ts'
 import { buildWeatherSchedule } from './weather.ts'
-import { cityHasStorm } from '../data/cityWeather.ts'
+import { cityHasStorm, cityStormChance } from '../data/cityWeather.ts'
 import {
   STRIKE_RADIUS,
   STRIKE_RADIUS_ON_WATER,
   STRIKE_SECONDARY_RADIUS,
-  STORM_CHANCE_TOTAL_PERCENT,
   STORM_EVENT_MIN_MS,
   STORM_EVENT_MAX_MS,
   STORM_GAP_MS,
@@ -78,19 +77,11 @@ export function maxStormTimes(day: number): number {
   return maxRainTimes(day) // mesma curva da chuva
 }
 
-/**
- * Chance própria de tempestade (%) por dia elegível (3–10): pesos sorteados na MESMA stream da
- * run (estável e variada), normalizados para o orçamento STORM_CHANCE_TOTAL_PERCENT. Dias < 3 → 0.
- */
-export function stormChanceForDay(seed: number, day: number): number {
-  if (day < WEATHER_FIRST_ELIGIBLE_DAY) return 0
-  const rng = createRng(deriveSeed(seed, STORM_SEED_SALT))
-  const span = TOTAL_DAYS - WEATHER_FIRST_ELIGIBLE_DAY + 1
-  const weights = Array.from({ length: span }, () => 0.5 + rng.next())
-  const sum = weights.reduce((a, b) => a + b, 0)
-  const idx = day - WEATHER_FIRST_ELIGIBLE_DAY
-  const raw = (weights[idx] ?? 0) * (STORM_CHANCE_TOTAL_PERCENT / sum)
-  return clamp(Math.round(raw), 0, 100)
+/** Chance de tempestade (%) do dia na cidade. 0 se dia < 3 ou se a cidade não tem tempestade. */
+export function stormChanceForDay(seed: number, day: number, cityIndex: number): number {
+  const formula = cityStormChance(cityIndex)
+  if (!formula) return 0
+  return weatherChanceForDay(seed, day, formula, STORM_CHANCE_SALT)
 }
 
 /** Quantos raios numa tempestade: escala com o dia (piso STRIKE_MIN_PER_STORM) até ⌊pool/4⌋. */
@@ -148,7 +139,7 @@ export function buildStorms(
   if (day < WEATHER_FIRST_ELIGIBLE_DAY) return []
   const hasCap = maxTotalStorms !== undefined
   const rng = createRng(deriveSeed(seed, day, STORM_SEED_SALT))
-  const chance = clamp(stormChanceForDay(seed, day) + extraChancePercent, 0, 100)
+  const chance = clamp(stormChanceForDay(seed, day, city.index) + extraChancePercent, 0, 100)
   // Quando há cap total, as próprias recebem no máximo maxTotalStorms slots.
   const maxOwnSlots = hasCap ? Math.min(maxStormTimes(day), maxTotalStorms!) : maxStormTimes(day)
   const storms: StormEvent[] = []
@@ -267,7 +258,7 @@ export function buildDayWeather(
     storms,
     forecast: {
       ...base.forecast,
-      stormChancePercent: clamp(stormChanceForDay(seed, day) + extraStormChancePercent, 0, 100),
+      stormChancePercent: clamp(stormChanceForDay(seed, day, city.index) + extraStormChancePercent, 0, 100),
       potentialStormCount: maxStormTimes(day),
     },
   }
