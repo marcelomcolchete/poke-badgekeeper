@@ -69,4 +69,29 @@ describe('Linhas (pares) e níveis', () => {
     const ids = new Set(Object.values(SECRET_LINES).flat() as SecretId[])
     for (const id of ids) expect(SECRET_KINDS[id]).toBeDefined()
   })
+
+  it('linhas de grama/inseto (Celadon) mapeiam para os pares do spec', () => {
+    const CELADON_PAIRS: Record<number, readonly [SecretId, SecretId]> = {
+      1: ['sa-chlorophyll', 'sa-overgrow'],
+      43: ['sa-chlorophyll', 'sa-spore'],
+      69: ['sa-gluttony', 'sa-hustle'],
+      102: ['sa-harvest', 'sa-analytic'],
+      114: ['sa-regenerator', 'sa-leaf-guard'],
+      10: ['sa-tinted-lens', 'sa-fly'],
+      13: ['sa-sniper', 'sa-swarm'],
+      46: ['sa-spore', 'sa-dig'],
+      48: ['sa-fly', 'sa-forewarn'],
+      123: ['sa-quick-feet', 'sa-fly'],
+      127: ['sa-dig', 'sa-moxie'],
+    }
+    for (const [root, pair] of Object.entries(CELADON_PAIRS)) {
+      expect(secretLineFor(Number(root)), `linha ${root}`).toEqual(pair)
+    }
+  })
+
+  it('formas evoluídas de grama/inseto herdam a raiz', () => {
+    expect(secretLineFor(3)).toEqual(secretLineFor(1)) // Venusaur = Bulbasaur
+    expect(secretLineFor(12)).toEqual(secretLineFor(10)) // Butterfree = Caterpie
+    expect(secretLineFor(15)).toEqual(secretLineFor(13)) // Beedrill = Weedle
+  })
 })
