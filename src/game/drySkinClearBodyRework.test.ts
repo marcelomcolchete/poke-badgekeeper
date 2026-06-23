@@ -24,6 +24,25 @@ import type { StormEvent } from '../engine/storm.ts'
 import { getCity } from '../data/cities.ts'
 import { travelerPositionsAt } from '../engine/travelerPositions.ts'
 
+// ---- Hot weather fixture -----------------------------------------------------
+
+function hotSchedule(): WeatherSchedule {
+  return {
+    rain: [],
+    storms: [],
+    heat: [{ startMs: 0, endMs: 1_000_000 }],
+    forecast: {
+      rainChancePercent: 0,
+      rainMmPerHour: 0,
+      potentialRainCount: 0,
+      stormChancePercent: 0,
+      potentialStormCount: 0,
+      heatChancePercent: 100,
+      potentialHeatCount: 1,
+    },
+  }
+}
+
 // ---- Weather fixtures --------------------------------------------------------
 
 const rainAllDay: WeatherSchedule = {
@@ -264,6 +283,38 @@ describe('Dry Skin — cura ao sair em missão na chuva', () => {
 
     const updated = s.roster.find((r) => r.id === 'ds4')!
     expect(updated.currentHp).toBe(Math.min(maxHp, 2 + expectedHeal))
+  })
+})
+
+describe('Dry Skin — calor', () => {
+  it('L2: −25% de atributos em missão enquanto quente', () => {
+    const jynx = makeMon({ speciesId: 124, secretPicks: [{ slot: 0, level: 2 }], maxHp: 8, currentHp: 8 })
+    const ctx = ctxOf([jynx], { weather: hotSchedule(), nowMs: 100 })
+    expect(missionAttrMultiplier(jynx, ctx)).toBeCloseTo(1 - DRY_SKIN_MISSION_BONUS_L2)
+  })
+
+  it('despacho no calor: Dry Skin perde 25% da vida (piso 1)', () => {
+    const maxHp = 10
+    const jynx = makeMon({
+      id: 'ds-hot1',
+      speciesId: 124,
+      secretPicks: [{ slot: 0, level: 1 }],
+      maxHp,
+      currentHp: 4,
+    })
+    const city = getCity(1)
+    const s = ceruleanState()
+    s.roster = [{ ...jynx }]
+    s.weather = hotSchedule()
+    s.clock = { ...s.clock, dayElapsedMs: 5_000 }
+    const mission = availableMission('m-hot1', city.siteNodes.gym)
+    s.missions = [mission]
+
+    acceptMission(s, 'm-hot1', ['ds-hot1'])
+
+    const updated = s.roster.find((r) => r.id === 'ds-hot1')!
+    const expectedHp = Math.max(1, 4 - Math.ceil(DRY_SKIN_RAIN_HEAL_FRAC * maxHp))
+    expect(updated.currentHp).toBe(expectedHp)
   })
 })
 

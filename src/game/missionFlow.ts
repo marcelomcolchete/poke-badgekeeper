@@ -39,6 +39,7 @@ import {
 import { secretLevelOf } from '../data/secretAbilities.ts'
 import { instantWeatherSpeed, weatherTravelMs } from '../engine/rainSpeed.ts'
 import { isRaining } from '../engine/weather.ts'
+import { isHot } from '../engine/heat.ts'
 import { graphWithTunnels } from '../engine/pathfinding.ts'
 import { planWeatherLeg } from '../engine/weatherTravel.ts'
 import { createRng } from '../engine/rng.ts'
@@ -146,6 +147,7 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
   // Natural Cure: recupera vida ao sair em missão (L1 +2; L2 cura total); demais só viajam.
   // Dry Skin: se chovendo agora, cura ceil(25% maxHp) ao despachar (L1 e L2).
   const raining = isRaining(s.weather, now)
+  const hot = isHot(s.weather.heat, now)
   for (const p of team) {
     let healed = p.currentHp
     if (hasNaturalCure(p)) {
@@ -154,6 +156,9 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
     }
     if (hasDrySkin(p) && raining) {
       healed = Math.min(p.maxHp, healed + Math.ceil(DRY_SKIN_RAIN_HEAL_FRAC * p.maxHp))
+    }
+    if (hasDrySkin(p) && hot) {
+      healed = Math.max(1, healed - Math.ceil(DRY_SKIN_RAIN_HEAL_FRAC * p.maxHp))
     }
     replaceMon(s, { ...p, currentHp: healed, status: 'traveling' })
   }

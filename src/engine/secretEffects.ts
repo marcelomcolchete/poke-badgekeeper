@@ -67,6 +67,7 @@ import {
 import { applyDamage, effectiveAttr, mapAttrs } from './attributes.ts'
 import { itemMissionMultiplier, itemTravelSpeedMultiplier, notFinalEvolution } from './itemEffects.ts'
 import { isRaining, type WeatherSchedule } from './weather.ts'
+import { isHot } from './heat.ts'
 
 export type SecretRuntimeMap = Record<string, SecretRuntime>
 
@@ -410,6 +411,15 @@ export function missionAttrMultiplier(p: Pokemon, ctx: MissionSecretCtx): number
     isRaining(ctx.weather, ctx.nowMs)
   ) {
     mult *= 1 + DRY_SKIN_MISSION_BONUS_L2
+  }
+  // Dry Skin L2: −25% de atributos em missão enquanto QUENTE (espelha o +25% da chuva).
+  if (
+    secretLevelOf(p, 'sa-dry-skin') === 2 &&
+    ctx.weather !== undefined &&
+    ctx.nowMs !== undefined &&
+    isHot(ctx.weather.heat, ctx.nowMs)
+  ) {
+    mult *= 1 - DRY_SKIN_MISSION_BONUS_L2
   }
   if (hasHustle(p)) {
     const lvl = secretLevelOf(p, 'sa-hustle')
