@@ -77,6 +77,12 @@ export const WEATHER_SEED_SALT = 0x57656174 // 'Weat'
 /** Sub-seed da Tempestade: agenda própria do dia + distribuição da chance na run (independe da chuva). */
 export const STORM_SEED_SALT = 0x53746f72 // 'Stor'
 
+/** Salt do SORTEIO da chance de chuva — distinto do agendamento para não correlacionar streams. */
+export const WEATHER_CHANCE_SALT = 0x52436863 // 'RChc'
+
+/** Salt do SORTEIO da chance de tempestade — distinto do agendamento e da chuva. */
+export const STORM_CHANCE_SALT = 0x53436863 // 'SChc'
+
 /** Sub-seed do Evento de Roubo Rocket: rolagem da chance/alvo/nós/esquadrão por dia. */
 export const THEFT_SEED_SALT = 0x54686566 // 'Thef'
 

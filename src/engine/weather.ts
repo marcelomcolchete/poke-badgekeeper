@@ -14,17 +14,15 @@
 
 import type { CityData } from '../data/types.ts'
 import { createRng, deriveSeed, type Rng } from './rng.ts'
-import { DAY_LENGTH_MS, TOTAL_DAYS, WEATHER_SEED_SALT } from './constants.ts'
-import { cityHasRain } from '../data/cityWeather.ts'
-import { clamp } from './math.ts'
+import { DAY_LENGTH_MS, WEATHER_SEED_SALT, WEATHER_CHANCE_SALT } from './constants.ts'
+import { cityHasRain, cityRainChance, type WeatherChanceFormula } from '../data/cityWeather.ts'
+import { clamp, lerp } from './math.ts'
 import type { StormEvent } from './storm.ts'
 
 // ---- Constantes estruturais da chuva ---------------------------------------------------
 
 /** Primeiro dia em que pode haver clima (dias 1 e 2 nunca têm). */
 export const WEATHER_FIRST_ELIGIBLE_DAY = 3
-/** Orçamento de chance somado entre os 8 dias elegíveis (3–10). */
-export const RAIN_CHANCE_TOTAL_PERCENT = 400
 /** Duração de um evento de chuva (ms de jogo). */
 export const RAIN_EVENT_MIN_MS = 30_000
 export const RAIN_EVENT_MAX_MS = 50_000
@@ -117,21 +115,27 @@ export function maxRainTimes(day: number): number {
 }
 
 /**
- * Chance de chuva (%) de cada dia elegível (3–10), com pesos sorteados na MESMA stream da run
- * (estável e variada), normalizados para somar ~200% e limitados a [0,100]. Dias < 3 → 0.
+ * Chance (0–100) de clima do dia para uma fórmula. Sorteia UM valor em [piso, teto], estável por
+ * (seed, dia). Piso = min(pisoBase + pisoPorDia·dia, teto); quando o piso encosta no teto a faixa
+ * colapsa e a chance fixa no teto (regime do modo infinito). Usa um salt próprio do sorteio.
  */
-export function rainChanceForDay(seed: number, day: number): number {
+export function weatherChanceForDay(
+  seed: number,
+  day: number,
+  formula: WeatherChanceFormula,
+  salt: number,
+): number {
   if (day < WEATHER_FIRST_ELIGIBLE_DAY) return 0
-  const rng = createRng(deriveSeed(seed, WEATHER_SEED_SALT))
-  const firstDay = WEATHER_FIRST_ELIGIBLE_DAY
-  const lastDay = TOTAL_DAYS
-  const span = lastDay - firstDay + 1
-  // Pesos em [0.5, 1.5] garantem variedade sem extremos; normalizados para o orçamento total.
-  const weights = Array.from({ length: span }, () => 0.5 + rng.next())
-  const sum = weights.reduce((a, b) => a + b, 0)
-  const idx = day - firstDay
-  const raw = (weights[idx] ?? 0) * (RAIN_CHANCE_TOTAL_PERCENT / sum)
-  return clamp(Math.round(raw), 0, 100)
+  const lo = Math.min(formula.pisoBase + formula.pisoPorDia * day, formula.teto)
+  const u = createRng(deriveSeed(seed, day, salt)).next()
+  return clamp(Math.round(lerp(lo, formula.teto, u)), 0, 100)
+}
+
+/** Chance de chuva (%) do dia na cidade. 0 se dia < 3 ou se a cidade não tem chuva. */
+export function rainChanceForDay(seed: number, day: number, cityIndex: number): number {
+  const formula = cityRainChance(cityIndex)
+  if (!formula) return 0
+  return weatherChanceForDay(seed, day, formula, WEATHER_CHANCE_SALT)
 }
 
 /**
@@ -197,7 +201,7 @@ export function buildWeatherSchedule(
   if (day < WEATHER_FIRST_ELIGIBLE_DAY || !cityHasRain(city.index)) {
     return emptyWeatherSchedule()
   }
-  const chance = clamp(rainChanceForDay(seed, day) + extraChancePercent, 0, 100)
+  const chance = clamp(rainChanceForDay(seed, day, city.index) + extraChancePercent, 0, 100)
   const baseTimes = maxRainTimes(day)
   const maxTimes = maxEvents > 0 ? Math.min(baseTimes, maxEvents) : baseTimes
   const forecast: WeatherForecast = {
