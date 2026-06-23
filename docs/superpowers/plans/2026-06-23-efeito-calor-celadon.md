@@ -152,8 +152,8 @@ git commit -m "feat(clima): Calor por cidade — Celadon (indice 3) + helpers"
 - Test: `src/engine/weather.test.ts`
 
 **Interfaces:**
-- Produces: `WeatherSchedule.heat: HeatEvent[]`; `WeatherForecast.heatChancePercent`/`potentialHeatCount`; constantes `HEAT_EVENT_MIN_MS=30_000`, `HEAT_EVENT_MAX_MS=60_000`, `HEAT_GAP_MS=4_000`, `HEAT_SLOW_FACTOR=0.2`, `CHLOROPHYLL_HEAT_BONUS_L1=2`, `CHLOROPHYLL_HEAT_BONUS_L2=3`; salts `HEAT_SEED_SALT`, `HEAT_CHANCE_SALT`.
-- Consumes: `type HeatEvent` de `engine/heat.ts` (criado na Task 3 — neste passo o campo é tipado via `import type`, que não exige o runtime ainda; a Task 3 cria o arquivo. Para manter o build verde ANTES da Task 3, declare o tipo localmente conforme o Step 3).
+- Produces: `interface HeatEvent { startMs: number; endMs: number }` (definido EM `weather.ts`, ao lado de `RainEvent` — `heat.ts` o importa daqui na Task 3); `WeatherSchedule.heat: HeatEvent[]`; `WeatherForecast.heatChancePercent`/`potentialHeatCount`; constantes `HEAT_EVENT_MIN_MS=30_000`, `HEAT_EVENT_MAX_MS=60_000`, `HEAT_GAP_MS=4_000`, `HEAT_SLOW_FACTOR=0.2`, `CHLOROPHYLL_HEAT_BONUS_L1=2`, `CHLOROPHYLL_HEAT_BONUS_L2=3`; salts `HEAT_SEED_SALT`, `HEAT_CHANCE_SALT`.
+- Consumes: nada novo. `HeatEvent` é definido AQUI (não importado de `heat.ts`), então `weather.ts` compila sem depender da Task 3 — sem ciclo de import.
 
 - [ ] **Step 1: Escrever o teste que falha** — em `src/engine/weather.test.ts`, adicionar:
 
@@ -197,9 +197,13 @@ export const HEAT_CHANCE_SALT = 0x48436863 // 'HChc'
 ```
 
 Em `src/engine/weather.ts`:
-- Adicionar o import de tipo (após o import de `StormEvent`):
+- Definir o tipo `HeatEvent` aqui mesmo (ao lado de `RainEvent`, ANTES de `WeatherForecast`) — NÃO importar de `heat.ts`:
 ```ts
-import type { HeatEvent } from './heat.ts'
+/** Uma janela de calor: intervalo [startMs, endMs] (sem sub-objetos — calor não tem poça/raio). */
+export interface HeatEvent {
+  startMs: number
+  endMs: number
+}
 ```
 - No `WeatherForecast`, adicionar os dois campos (após `potentialStormCount`):
 ```ts
@@ -232,6 +236,8 @@ export function emptyWeatherSchedule(): WeatherSchedule {
   }
 }
 ```
+
+- Em `buildWeatherSchedule` (no MESMO arquivo `weather.ts`), corrigir os DOIS literais de produção: o `forecast` literal ganha `heatChancePercent: 0, potentialHeatCount: 0`; o `return { rain, storms: [], forecast }` vira `return { rain, storms: [], heat: [], forecast }`.
 
 - [ ] **Step 4: Corrigir os literais de `WeatherSchedule`/`WeatherForecast` nos testes** (para o build voltar a compilar). Em CADA um dos arquivos abaixo, todo objeto literal que monta um `WeatherSchedule` deve ganhar `heat: []`, e todo `forecast` literal deve ganhar `heatChancePercent: 0, potentialHeatCount: 0`:
 
@@ -266,7 +272,7 @@ grep -rn "storms: \[\]\|rainChancePercent:" src/engine src/game src/persistence 
 Run: `npm run build && npx vitest run src/engine/weather.test.ts`
 Expected: build PASS; teste PASS.
 
-> Nota: `engine/heat.ts` ainda não existe; o `import type { HeatEvent }` é apagado na compilação (type-only), então o build passa. A Task 3 cria o arquivo.
+> Nota: `HeatEvent` é definido em `weather.ts`, então o build NÃO depende de `engine/heat.ts` (criado na Task 3). Sem ciclo de import.
 
 - [ ] **Step 6: Commit**
 
@@ -285,7 +291,7 @@ git commit -m "feat(clima): estrutura do schedule de Calor (campo heat, previsao
 
 **Interfaces:**
 - Produces:
-  - `interface HeatEvent { startMs: number; endMs: number }`
+  - (`HeatEvent` NÃO é definido aqui — vem de `weather.ts`, Task 2; `heat.ts` o importa.)
   - `maxHeatTimes(day: number): number`
   - `heatChanceForDay(seed: number, day: number, cityIndex: number): number`
   - `buildHeat(seed: number, day: number, city: CityData, extraChancePercent?: number, maxEvents?: number): HeatEvent[]` (`maxEvents` undefined = sem cap; número = cap, 0 permitido)
@@ -382,13 +388,8 @@ import { DAY_LENGTH_MS, HEAT_SEED_SALT, HEAT_CHANCE_SALT } from './constants.ts'
 import { HEAT_EVENT_MIN_MS, HEAT_EVENT_MAX_MS, HEAT_GAP_MS } from './balance.ts'
 import { clamp } from './math.ts'
 import { weatherChanceForDay, maxRainTimes, WEATHER_FIRST_ELIGIBLE_DAY } from './weather.ts'
+import type { HeatEvent } from './weather.ts'
 import { cityHasHeat, cityHeatChance } from '../data/cityWeather.ts'
-
-/** Uma janela de calor: intervalo [startMs, endMs] (sem sub-objetos — calor não tem poça/raio). */
-export interface HeatEvent {
-  startMs: number
-  endMs: number
-}
 
 /** Teto de janelas de calor por dia: espelha a curva da chuva. */
 export function maxHeatTimes(day: number): number {
