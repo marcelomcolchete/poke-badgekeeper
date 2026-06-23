@@ -47,6 +47,7 @@ import {
 } from './attributes.ts'
 import {
   damageTaken,
+  leafGuardAbsorberId,
   teamFlies,
   teamHasVitalSpirit,
   teamSecretSum,
@@ -197,8 +198,13 @@ export function resolveMission(
     return { success: true, pSuccess, team: [...team], faintedIds: [] }
   }
   const damage = damageOverride ?? missionFailureDamage(pSuccess, danger)
+  // Leaf Guard (L1+): numa falha, só o portador-absorvedor (maior vida) toma o dano; os demais 0.
+  const absorberId = leafGuardAbsorberId(team)
   // Weak Armor dobra o dano recebido; Shell Armor reduz para 1.
-  const updated = team.map((p) => applyDamage(p, damageTaken(p, damage)))
+  const updated = team.map((p) => {
+    const raw = absorberId === null || p.id === absorberId ? damage : 0
+    return applyDamage(p, damageTaken(p, raw))
+  })
   return {
     success: false,
     pSuccess,

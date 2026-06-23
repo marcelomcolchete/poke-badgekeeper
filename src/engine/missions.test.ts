@@ -325,3 +325,33 @@ describe('missionSuccessProbabilityCtx — Vital Spirit', () => {
     expect(missionSuccessProbabilityCtx(ctx, req)).toBeCloseTo(missionSuccessProbability([plain], req), 6)
   })
 })
+
+describe('Leaf Guard L1 — dano de missão', () => {
+  const reqHigh = makeAttrs({}, 100) // exigência alta; pSuccessOverride=0 força a falha
+  // Tangela(114): par = ['sa-regenerator','sa-leaf-guard'] → Leaf Guard slot 1.
+  it('com 1 portador, só ele perde vida (dano normal)', () => {
+    const guard = makeMon({ id: 'g', speciesId: 114, types: ['grass'], baseAttrs: makeAttrs({ resistencia: 50 }), secretPicks: [{ slot: 1, level: 1 }] })
+    const ally = makeMon({ id: 'a', speciesId: 1, types: ['grass'], baseAttrs: makeAttrs({ resistencia: 50 }) })
+    const out = resolveMission(fixedRng(1), [guard, ally], reqHigh, 4, 0, 3)
+    const g = out.team.find((p) => p.id === 'g')!
+    const a = out.team.find((p) => p.id === 'a')!
+    expect(g.maxHp - g.currentHp).toBe(3) // absorvedor toma o dano normal (3)
+    expect(a.currentHp).toBe(a.maxHp) // aliado intacto
+  })
+
+  it('com 2 portadores, só o de maior vida absorve', () => {
+    const low = makeMon({ id: 'low', speciesId: 114, baseAttrs: makeAttrs({ resistencia: 50 }), currentHp: 4, secretPicks: [{ slot: 1, level: 1 }] })
+    const high = makeMon({ id: 'high', speciesId: 114, baseAttrs: makeAttrs({ resistencia: 50 }), secretPicks: [{ slot: 1, level: 1 }] })
+    const out = resolveMission(fixedRng(1), [low, high], reqHigh, 4, 0, 3)
+    expect(out.team.find((p) => p.id === 'low')!.currentHp).toBe(4) // intacto
+    const h = out.team.find((p) => p.id === 'high')!
+    expect(h.maxHp - h.currentHp).toBe(3) // o de maior vida absorve
+  })
+
+  it('sem portador, o dano é distribuído como antes', () => {
+    const a = makeMon({ id: 'a', speciesId: 1, baseAttrs: makeAttrs({ resistencia: 50 }) })
+    const b = makeMon({ id: 'b', speciesId: 1, baseAttrs: makeAttrs({ resistencia: 50 }) })
+    const out = resolveMission(fixedRng(1), [a, b], reqHigh, 4, 0, 3)
+    expect(out.team.every((p) => p.maxHp - p.currentHp === 3)).toBe(true)
+  })
+})

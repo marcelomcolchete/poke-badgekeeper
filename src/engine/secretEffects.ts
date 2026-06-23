@@ -126,6 +126,23 @@ export function hasSwarm(p: Pokemon): boolean {
 export function hasTintedLens(p: Pokemon): boolean {
   return hasSecret(p, 'sa-tinted-lens')
 }
+export function hasLeafGuard(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-leaf-guard')
+}
+
+/**
+ * Id do portador de Leaf Guard que ABSORVE o dano do time: o de maior `currentHp` com nível
+ * ≥ `minLevel`. Desempate estável: o primeiro na ordem do time. `null` se nenhum portador.
+ * `minLevel` = 1 (missão, qualquer nível) ou 2 (defesa de ginásio, só L2).
+ */
+export function leafGuardAbsorberId(team: readonly Pokemon[], minLevel: 1 | 2 = 1): string | null {
+  let best: Pokemon | null = null
+  for (const p of team) {
+    if (secretLevelOf(p, 'sa-leaf-guard') < minLevel) continue
+    if (!best || p.currentHp > best.currentHp) best = p
+  }
+  return best?.id ?? null
+}
 export function hasAnalytic(p: Pokemon): boolean {
   return hasSecret(p, 'sa-analytic')
 }
