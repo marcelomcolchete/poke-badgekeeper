@@ -139,7 +139,7 @@ export function generateRequirement(
     const principalAxes = rng.shuffle(ATTR_KEYS).slice(0, SPECIAL5_PRINCIPALS)
     const principalSet = new Set(principalAxes)
     for (const ax of principalAxes) out[ax as AttrKey] = principalValue(rng, day)
-    const secAxes = rng.shuffle(ATTR_KEYS).slice(0, SPECIAL5_SECONDARIES)
+    const secAxes = rng.shuffle(ATTR_KEYS).slice(0, SPECIAL5_SECONDARIES) // sorteio independente sobre todos os 6 eixos → secundário pode cair em principal (mega) ou eixo livre
     for (const ax of secAxes) {
       out[ax as AttrKey] = principalSet.has(ax)
         ? clamp(out[ax as AttrKey] + secondaryValue(rng, day), 0, TEAM_ATTR_MAX) // mega

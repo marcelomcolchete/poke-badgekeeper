@@ -547,7 +547,7 @@ const CELADON_MARKERS: Record<string, MapPos> = {
   f: { x: 0.805, y: 0.13 }, // CP — centro (sobre o P.C)
   'j:mart': { x: 0.26, y: 0.2 }, // MART (loja de departamentos)
   'j:specialMission': { x: 0.19, y: 0.2 }, // SPEC1 (mesma parada 'j')
-  'n:mart': { x: 0.446, y: 0.38 }, // MART (prédio central; parada na água 'n')
+  'n:mart': { x: 0.446, y: 0.38 }, // MART (prédio central; parada 'n', a pé via 'nu')
   r: { x: 0.577, y: 0.41 }, // SPEC2
   a: { x: 0.11, y: 0.14 }, // HOUSE
   b: { x: 0.36, y: 0.14 }, // HOUSE
@@ -574,7 +574,7 @@ const CELADON_GRAPH: CityGraph = {
 const CELADON_SITE_NODES: CitySiteNodes = {
   gym: 'aa', // GYM
   center: 'f', // CP
-  mart: ['j', 'n'], // DOIS marts (loja em 'j'; prédio central em 'n', atrás de água)
+  mart: ['j', 'n'], // DOIS marts (loja em 'j'; prédio central em 'n', alcançável a pé via 'nu')
   specialMission: ['j', 'r'], // SPEC1 (loja, parada 'j') e SPEC2 ('r')
   houses: ['a', 'b', 'c', 'd', 'e', 'm', 's', 'aj', 'ac', 'ad', 'ae', 'af'], // HOUSE
   green: ['g31', 'g32', 'g33'], // GRASS ×3 (exploração/captura)

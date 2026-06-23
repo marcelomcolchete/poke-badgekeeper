@@ -66,8 +66,8 @@ export function realPerPointGain(p: Pokemon, key: AttrKey): number {
 }
 
 /**
- * Atributo efetivo = clamp(base + iv + alocação·modificador + buff de item + bônus permanente, 0, 60) — PLAN §4.1.
- * O `dayBuffs` (itens x_*) entra aqui, então propaga sozinho para missões, batalha, HP e cards.
+ * Atributo efetivo = clamp(base + iv + alocação·modificador + buff de item + buff secreto + bônus permanente, 0, 60) — PLAN §4.1.
+ * O `dayBuffs` (itens x_*) e `secretBuffs` (habilidades secretas, ex.: Spore) entram aqui, então propagam sozinhos para missões, batalha, HP e cards.
  * O `permaBonus` (ex.: Moxie) acumula permanentemente; o teto 60 aplica o cap do crescimento.
  */
 export function effectiveAttr(p: Pokemon, key: AttrKey): number {
