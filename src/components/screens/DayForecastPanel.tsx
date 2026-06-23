@@ -60,6 +60,7 @@ export function DayForecastPanel({ state }: { state: GameState }) {
   ).forecast
   const rainChance = rainAtLeastOnceChance(forecast.rainChancePercent, forecast.potentialRainCount)
   const stormChance = rainAtLeastOnceChance(forecast.stormChancePercent, forecast.potentialStormCount)
+  const heatChance = rainAtLeastOnceChance(forecast.heatChancePercent, forecast.potentialHeatCount)
 
   const missions = missionsForDay(state.run.day)
   const defenses = defensesForDay(state.run.day)
@@ -73,9 +74,15 @@ export function DayForecastPanel({ state }: { state: GameState }) {
         <span className={styles.subTitle}>PREVISÃO DO TEMPO</span>
         <div className={styles.effects}>
           {/* Cada WeatherEffectKind tem a sua própria chance combinada. */}
-          {weather && (rainChance > 0 || stormChance > 0) ? (
+          {weather && (rainChance > 0 || stormChance > 0 || heatChance > 0) ? (
             weather.effects.map((effect) =>
-              effect.kind === 'rain' && rainChance > 0 ? (
+              effect.kind === 'heat' && heatChance > 0 ? (
+                <div key="heat" className={styles.effect}>
+                  <span className={styles.effectIcon} aria-hidden="true">{EFFECT_ICON.heat}</span>
+                  <span className={styles.effectName}>{EFFECT_NAME.heat}</span>
+                  <span className={styles.effectChance}>{heatChance}%</span>
+                </div>
+              ) : effect.kind === 'rain' && rainChance > 0 ? (
                 <div key="rain" className={styles.effect}>
                   <span className={styles.effectIcon} aria-hidden="true">
                     {EFFECT_ICON.rain}

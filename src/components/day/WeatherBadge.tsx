@@ -1,10 +1,10 @@
 // Selo do efeito climático ativo (canto superior direito da fase Dia). Circular, com emoji do
-// efeito. Chuva e Tempestade são os dois efeitos suportados.
+// efeito. Chuva, Tempestade e Calor são os três efeitos suportados.
 
 import type { WeatherEffectKind } from '../../data/cityWeather.ts'
 import styles from './WeatherBadge.module.css'
 
-const WEATHER_ICON: Record<WeatherEffectKind, string> = { rain: '🌧️', storm: '⛈️', heat: '🔥' }
+const WEATHER_ICON: Record<WeatherEffectKind, string> = { rain: '🌧️', storm: '⛈️', heat: '☀️' }
 
 const WEATHER_LABEL: Record<WeatherEffectKind, string> = { rain: 'Chovendo', storm: 'Tempestade', heat: 'Calor' }
 

@@ -468,6 +468,19 @@ describe('teamIsSpeedy (aura de velocidade ao vivo)', () => {
     const hurt = makeMon({ speciesId: 95, secretPicks: [{ slot: 1, level: 1 }], maxHp: 10, currentHp: 7 })
     expect(teamIsSpeedy([hurt], [], dry, 0)).toBe(true)
   })
+
+  it('Chlorophyll acende a aura SÓ enquanto está quente', () => {
+    // Bulbasaur(1): slot0=chlorophyll
+    const bulba = makeMon({ speciesId: 1, secretPicks: [{ slot: 0, level: 1 }] })
+    const hotNow = {
+      rain: [], storms: [],
+      heat: [{ startMs: 0, endMs: 1_000_000 }],
+      forecast: { rainChancePercent: 0, rainMmPerHour: 0, potentialRainCount: 0, stormChancePercent: 0, potentialStormCount: 0, heatChancePercent: 100, potentialHeatCount: 1 },
+    }
+    expect(teamIsSpeedy([bulba], [], hotNow, 5_000)).toBe(true)  // dentro da janela de calor
+    expect(teamIsSpeedy([bulba], [], hotNow, 2_000_000)).toBe(false) // após o fim do calor
+    expect(teamIsSpeedy([bulba], [], dry, 0)).toBe(false)           // sem calor
+  })
 })
 
 describe('Vital Spirit (Electabuzz)', () => {

@@ -517,7 +517,8 @@ export function teamIsSpeedy(
 ): boolean {
   return (
     teamTravelSpeedMultiplier(team, runItems) > 1 ||
-    (teamHasSwiftSwim(team) && isRaining(weather, nowMs))
+    (teamHasSwiftSwim(team) && isRaining(weather, nowMs)) ||
+    (teamHeatSpeedBonus(team) > 0 && isHot(weather.heat, nowMs))
   )
 }
 

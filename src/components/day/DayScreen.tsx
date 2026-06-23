@@ -14,6 +14,7 @@ import { CityMap } from './CityMap.tsx'
 import { WeatherBadge } from './WeatherBadge.tsx'
 import { isRaining } from '../../engine/weather.ts'
 import { isStorming } from '../../engine/storm.ts'
+import { isHot } from '../../engine/heat.ts'
 import { TeamSidebar } from './TeamSidebar.tsx'
 import { ReportSidebar } from './ReportSidebar.tsx'
 import { MemberDetail } from './MemberDetail.tsx'
@@ -215,9 +216,12 @@ export function DayScreen({ state, dispatch, onRestart, onPauseChange }: Props) 
           onTheft={() => setChaseOpen(true)}
         />
 
-        {/* Selos climáticos empilhados verticalmente: Chuva e/ou Tempestade. */}
-        {(isRaining(state.weather, state.clock.dayElapsedMs) || isStorming(state.weather.storms, state.clock.dayElapsedMs)) && (
+        {/* Selos climáticos empilhados verticalmente: Calor, Chuva e/ou Tempestade. */}
+        {(isRaining(state.weather, state.clock.dayElapsedMs) ||
+          isStorming(state.weather.storms, state.clock.dayElapsedMs) ||
+          isHot(state.weather.heat, state.clock.dayElapsedMs)) && (
           <div className={styles.weatherFloat}>
+            {isHot(state.weather.heat, state.clock.dayElapsedMs) && <WeatherBadge kind="heat" />}
             {isRaining(state.weather, state.clock.dayElapsedMs) && <WeatherBadge kind="rain" />}
             {isStorming(state.weather.storms, state.clock.dayElapsedMs) && <WeatherBadge kind="storm" />}
           </div>
