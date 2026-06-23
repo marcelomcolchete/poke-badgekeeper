@@ -679,3 +679,40 @@ describe('Swift Swim L2: bônus de missão na chuva (+30%)', () => {
     expect(missionAttrMultiplier(kab, ctx)).toBeCloseTo(1.30)
   })
 })
+
+describe('Overgrow (Grama)', () => {
+  // Bulbasaur(1): par = ['sa-chlorophyll','sa-overgrow'] → Overgrow slot 1
+  it('+25% (L1) com outro aliado do tipo Grama', () => {
+    const carrier = makeMon({ id: 'a', speciesId: 1, types: ['grass', 'poison'], secretPicks: [{ slot: 1, level: 1 }] })
+    const ally = makeMon({ id: 'b', speciesId: 1, types: ['grass'] })
+    expect(missionAttrMultiplier(carrier, ctxOf([carrier, ally], PATRULHA))).toBeCloseTo(1.25)
+  })
+
+  it('+50% (L2) com aliado do tipo Grama', () => {
+    const carrier = makeMon({ id: 'a', speciesId: 1, types: ['grass'], secretPicks: [{ slot: 1, level: 2 }] })
+    const ally = makeMon({ id: 'b', speciesId: 1, types: ['grass'] })
+    expect(missionAttrMultiplier(carrier, ctxOf([carrier, ally], PATRULHA))).toBeCloseTo(1.5)
+  })
+
+  it('sem aliado do tipo Grama, sem bônus (exclui ele mesmo)', () => {
+    const carrier = makeMon({ id: 'a', speciesId: 1, types: ['grass'], secretPicks: [{ slot: 1, level: 1 }] })
+    const fireAlly = makeMon({ id: 'b', speciesId: 4, types: ['fire'] })
+    expect(missionAttrMultiplier(carrier, ctxOf([carrier, fireAlly], PATRULHA))).toBeCloseTo(1)
+    expect(missionAttrMultiplier(carrier, ctxOf([carrier], PATRULHA))).toBeCloseTo(1)
+  })
+})
+
+describe('Swarm (Inseto)', () => {
+  // Weedle(13): par = ['sa-sniper','sa-swarm'] → Swarm slot 1
+  it('+25% (L1) com outro aliado do tipo Inseto', () => {
+    const carrier = makeMon({ id: 'a', speciesId: 13, types: ['bug', 'poison'], secretPicks: [{ slot: 1, level: 1 }] })
+    const ally = makeMon({ id: 'b', speciesId: 13, types: ['bug'] })
+    expect(missionAttrMultiplier(carrier, ctxOf([carrier, ally], PATRULHA))).toBeCloseTo(1.25)
+  })
+
+  it('sem aliado do tipo Inseto, sem bônus', () => {
+    const carrier = makeMon({ id: 'a', speciesId: 13, types: ['bug'], secretPicks: [{ slot: 1, level: 1 }] })
+    const grassAlly = makeMon({ id: 'b', speciesId: 1, types: ['grass'] })
+    expect(missionAttrMultiplier(carrier, ctxOf([carrier, grassAlly], PATRULHA))).toBeCloseTo(1)
+  })
+})

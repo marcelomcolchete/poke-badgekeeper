@@ -309,6 +309,12 @@ export const SURF_WATER_TIME_MULT = 0.5
 /** Torrent: multiplicador de atributos na missão quando há outro aliado do tipo Água, por nível. */
 export const TORRENT_MISSION_MULT_L1 = 1.25
 export const TORRENT_MISSION_MULT_L2 = 1.5
+/** Overgrow: multiplicador de atributos na missão com outro aliado do tipo Grama, por nível. */
+export const OVERGROW_MISSION_MULT_L1 = 1.25
+export const OVERGROW_MISSION_MULT_L2 = 1.5
+/** Swarm: multiplicador de atributos na missão com outro aliado do tipo Inseto, por nível. */
+export const SWARM_MISSION_MULT_L1 = 1.25
+export const SWARM_MISSION_MULT_L2 = 1.5
 /**
  * Moxie L1: +1 PERMANENTE em `permaBonus.batalha` por Pokémon derrotado em batalha.
  * Moxie L2: idem +5 temporário por vitória na sequência (teto +25). Os antigos temporários

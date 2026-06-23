@@ -46,6 +46,10 @@ import {
   SWIFT_SWIM_MISSION_BONUS_L2,
   TORRENT_MISSION_MULT_L1,
   TORRENT_MISSION_MULT_L2,
+  OVERGROW_MISSION_MULT_L1,
+  OVERGROW_MISSION_MULT_L2,
+  SWARM_MISSION_MULT_L1,
+  SWARM_MISSION_MULT_L2,
   VOLT_ABSORB_BONUS_L1,
   VOLT_ABSORB_BONUS_L2,
   WATER_ABSORB_MISSION_MULT_L1,
@@ -112,6 +116,12 @@ export function teamHasSwiftSwim(team: readonly Pokemon[]): boolean {
 }
 export function hasTorrent(p: Pokemon): boolean {
   return hasSecret(p, 'sa-torrent')
+}
+export function hasOvergrow(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-overgrow')
+}
+export function hasSwarm(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-swarm')
 }
 export function hasAnalytic(p: Pokemon): boolean {
   return hasSecret(p, 'sa-analytic')
@@ -275,6 +285,16 @@ export function missionAttrMultiplier(p: Pokemon, ctx: MissionSecretCtx): number
   if (hasTorrent(p) && ctx.team.some((o) => o.id !== p.id && o.types.includes('water'))) {
     const lvl = secretLevelOf(p, 'sa-torrent')
     mult *= lvl === 2 ? TORRENT_MISSION_MULT_L2 : TORRENT_MISSION_MULT_L1
+  }
+  // Overgrow: +25%/+50% se há OUTRO aliado do tipo Grama na missão.
+  if (hasOvergrow(p) && ctx.team.some((o) => o.id !== p.id && o.types.includes('grass'))) {
+    const lvl = secretLevelOf(p, 'sa-overgrow')
+    mult *= lvl === 2 ? OVERGROW_MISSION_MULT_L2 : OVERGROW_MISSION_MULT_L1
+  }
+  // Swarm: +25%/+50% se há OUTRO aliado do tipo Inseto na missão.
+  if (hasSwarm(p) && ctx.team.some((o) => o.id !== p.id && o.types.includes('bug'))) {
+    const lvl = secretLevelOf(p, 'sa-swarm')
+    mult *= lvl === 2 ? SWARM_MISSION_MULT_L2 : SWARM_MISSION_MULT_L1
   }
   if (hasBattleArmor(p) && ctx.runtime[p.id]?.battleArmorPending) {
     const lvl = secretLevelOf(p, 'sa-battle-armor')
@@ -544,6 +564,16 @@ export function missionEffectBreakdown(ctx: MissionSecretCtx): MissionEffectEntr
     const lvl = Math.max(...team.map((p) => secretLevelOf(p, 'sa-torrent'))) as 0 | 1 | 2
     push({ id: 'torrent', source: 'ability', label: 'Torrent', kind: 'attr', direction: 'gain',
       value: fmtMult(lvl === 2 ? TORRENT_MISSION_MULT_L2 : TORRENT_MISSION_MULT_L1), reason: 'com aliado do tipo Água' })
+  }
+  if (team.some((p) => hasOvergrow(p) && team.some((o) => o.id !== p.id && o.types.includes('grass')))) {
+    const lvl = Math.max(...team.map((p) => secretLevelOf(p, 'sa-overgrow'))) as 0 | 1 | 2
+    push({ id: 'overgrow', source: 'ability', label: 'Overgrow', kind: 'attr', direction: 'gain',
+      value: fmtMult(lvl === 2 ? OVERGROW_MISSION_MULT_L2 : OVERGROW_MISSION_MULT_L1), reason: 'com aliado do tipo Grama' })
+  }
+  if (team.some((p) => hasSwarm(p) && team.some((o) => o.id !== p.id && o.types.includes('bug')))) {
+    const lvl = Math.max(...team.map((p) => secretLevelOf(p, 'sa-swarm'))) as 0 | 1 | 2
+    push({ id: 'swarm', source: 'ability', label: 'Swarm', kind: 'attr', direction: 'gain',
+      value: fmtMult(lvl === 2 ? SWARM_MISSION_MULT_L2 : SWARM_MISSION_MULT_L1), reason: 'com aliado do tipo Inseto' })
   }
   if (team.some((p) => hasBattleArmor(p) && runtime[p.id]?.battleArmorPending)) {
     const lvl = Math.max(...team.filter((p) => hasBattleArmor(p) && runtime[p.id]?.battleArmorPending).map((p) => secretLevelOf(p, 'sa-battle-armor'))) as 0 | 1 | 2
