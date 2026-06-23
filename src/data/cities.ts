@@ -580,6 +580,124 @@ const CELADON_SITE_NODES: CitySiteNodes = {
   green: ['g31', 'g32', 'g33'], // GRASS ×3 (exploração/captura)
 }
 
+// ============================ Fuchsia (5.png) ============================
+// Grafo calibrado sobre a arte anotada (mapa do chat). 28 pontos de PARADA a–ac (sem 'w')
+// + 4 nós dedicados de exploração g31..g34 (áreas GRASS, sobre os retângulos). O ginásio é
+// 's'. Posições normalizadas (0–1) estimadas da arte — refináveis com o DEV picker do CityMap.
+// É uma CIDADE-LOOP: duas mãos únicas (s→r no ginásio, v→x no corredor inferior) forçam a
+// circulação. Volta ao ginásio fecha pela esquerda (i–r→aa→ab→s) e pela direita (h–q). Sem Surf.
+const FUCHSIA_NODES: Record<string, MapPos> = {
+  a: { x: 0.072, y: 0.169 },
+  b: { x: 0.227, y: 0.169 },
+  c: { x: 0.513, y: 0.169 },
+  d: { x: 0.578, y: 0.222 },
+  e: { x: 0.117, y: 0.282 },
+  f: { x: 0.578, y: 0.357 },
+  g: { x: 0.628, y: 0.357 },
+  h: { x: 0.907, y: 0.359 },
+  i: { x: 0.061, y: 0.457 },
+  j: { x: 0.117, y: 0.457 },
+  k: { x: 0.513, y: 0.457 },
+  l: { x: 0.578, y: 0.457 },
+  m: { x: 0.628, y: 0.457 },
+  n: { x: 0.628, y: 0.757 },
+  o: { x: 0.702, y: 0.757 },
+  p: { x: 0.795, y: 0.757 },
+  q: { x: 0.907, y: 0.757 },
+  r: { x: 0.061, y: 0.833 },
+  s: { x: 0.198, y: 0.833 },
+  t: { x: 0.304, y: 0.833 },
+  u: { x: 0.419, y: 0.833 },
+  v: { x: 0.534, y: 0.833 },
+  x: { x: 0.628, y: 0.833 },
+  y: { x: 0.795, y: 0.833 },
+  z: { x: 0.907, y: 0.833 },
+  aa: { x: 0.061, y: 0.913 },
+  ab: { x: 0.198, y: 0.913 },
+  ac: { x: 0.419, y: 0.943 },
+  // Áreas de exploração (GRASS): nós dedicados sobre os retângulos, ligados ao ponto de acesso.
+  g31: { x: 0.072, y: 0.051 }, // GRASS topo-esq (acesso 'a')
+  g32: { x: 0.041, y: 0.282 }, // GRASS esquerda (acesso 'e')
+  g33: { x: 0.965, y: 0.359 }, // GRASS direita (acesso 'h')
+  g34: { x: 0.534, y: 0.944 }, // GRASS baixo (acesso 'ac')
+}
+
+// Arestas NÃO-direcionadas (ligam os dois sentidos). As mãos únicas s→r e v→x ficam em DIRECTED.
+const FUCHSIA_EDGES: [string, string][] = [
+  ['a', 'b'],
+  ['b', 'c'],
+  ['c', 'k'],
+  ['d', 'f'],
+  ['e', 'j'],
+  ['f', 'g'],
+  ['f', 'l'],
+  ['g', 'h'],
+  ['g', 'm'],
+  ['h', 'q'],
+  ['i', 'j'],
+  ['i', 'r'],
+  ['j', 'k'],
+  ['k', 'l'],
+  ['l', 'm'],
+  ['m', 'n'],
+  ['n', 'o'],
+  ['n', 'x'],
+  ['o', 'p'],
+  ['p', 'q'],
+  ['p', 'y'],
+  ['q', 'z'],
+  ['r', 'aa'],
+  ['s', 't'],
+  ['s', 'ab'],
+  ['t', 'u'],
+  ['u', 'v'],
+  ['u', 'ac'],
+  ['x', 'y'],
+  ['y', 'z'],
+  ['aa', 'ab'],
+  // acesso às áreas de exploração (uma aresta por seta roxa do GRASS)
+  ['a', 'g31'],
+  ['e', 'g32'],
+  ['h', 'g33'],
+  ['ac', 'g34'],
+]
+
+// Arestas de MÃO ÚNICA: vai mas não volta. Ginásio sai por s→r (volta via aa→ab→s); o corredor
+// inferior entra no cluster direito por v→x (volta dá a volta pelo topo).
+const FUCHSIA_DIRECTED_EDGES: [string, string][] = [
+  ['s', 'r'],
+  ['v', 'x'],
+]
+
+// Âncoras de EXIBIÇÃO: o popup aparece SOBRE o retângulo da arte (distinto da letra de parada).
+// Nenhuma letra hospeda mais de um pop-up aqui, então todas as chaves são simples.
+const FUCHSIA_MARKERS: Record<string, MapPos> = {
+  s: { x: 0.198, y: 0.648 }, // GYM (sobre o ginásio)
+  v: { x: 0.53, y: 0.628 }, // CP — centro (sobre o P.C)
+  b: { x: 0.227, y: 0.052 }, // MART (sobre o prédio)
+  d: { x: 0.59, y: 0.083 }, // SPEC1 (sobre o prédio laranja)
+  t: { x: 0.304, y: 0.648 }, // HOUSE
+  u: { x: 0.409, y: 0.648 }, // HOUSE
+  o: { x: 0.702, y: 0.648 }, // HOUSE
+  p: { x: 0.806, y: 0.648 }, // HOUSE
+}
+
+const FUCHSIA_GRAPH: CityGraph = {
+  nodes: FUCHSIA_NODES,
+  adj: buildAdjacency(FUCHSIA_NODES, FUCHSIA_EDGES, FUCHSIA_DIRECTED_EDGES),
+  markers: FUCHSIA_MARKERS,
+}
+
+// Sítio → ponto do grafo (pop-ups da arte anotada de Fuchsia).
+const FUCHSIA_SITE_NODES: CitySiteNodes = {
+  gym: 's', // GYM
+  center: 'v', // CP
+  mart: ['b'], // MART
+  specialMission: ['d'], // SPEC1 — ponto especial único
+  houses: ['t', 'u', 'o', 'p'], // HOUSE ×4
+  green: ['g31', 'g32', 'g33', 'g34'], // GRASS ×4 (exploração/captura)
+}
+
 interface CitySeed {
   name: string
   primaryType: CityData['primaryType']
@@ -651,6 +769,8 @@ const SEEDS: CitySeed[] = [
       { speciesId: 109, level: 3 }, // Koffing
       { speciesId: 41, level: 1 }, // Zubat
     ],
+    graph: FUCHSIA_GRAPH,
+    siteNodes: FUCHSIA_SITE_NODES,
     trainers: FUCHSIA_TRAINERS,
   },
   {
