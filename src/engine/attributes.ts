@@ -74,9 +74,10 @@ export function effectiveAttr(p: Pokemon, key: AttrKey): number {
   const perPoint = natureBonusPerPoint(p.nature, key)
   const iv = p.ivs?.[key] ?? 0
   const buff = p.dayBuffs?.[key] ?? 0
+  const secret = p.secretBuffs?.[key] ?? 0
   const perma = p.permaBonus?.[key] ?? 0
   return clamp(
-    p.baseAttrs[key] + iv + p.allocations[key] * perPoint + buff + perma,
+    p.baseAttrs[key] + iv + p.allocations[key] * perPoint + buff + secret + perma,
     ATTR_EFFECTIVE_MIN,
     ATTR_MAX,
   )

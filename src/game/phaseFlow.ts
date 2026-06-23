@@ -268,12 +268,13 @@ function startNextDay(s: GameState): void {
 
 /**
  * Cura todos os Pokémon (time e Computador) e os deixa disponíveis (descanso entre dias).
- * Também limpa os buffs diários de itens x_* (dayBuffs) e recalcula o HP — o efeito só vale no
- * dia da compra. O PC também é curado para que um Pokémon depositado machucado fique pronto ao trocar.
+ * Também limpa os buffs diários de itens x_* (`dayBuffs`) e de habilidades (`secretBuffs`) e
+ * recalcula o HP — o efeito só vale no dia. O PC também é curado para que um Pokémon depositado
+ * machucado fique pronto ao trocar.
  */
 function healRoster(s: GameState): void {
   const restore = (p: GameState['roster'][number]): GameState['roster'][number] => {
-    const cleared = recomputeMaxHp({ ...p, dayBuffs: undefined })
+    const cleared = recomputeMaxHp({ ...p, dayBuffs: undefined, secretBuffs: undefined })
     return { ...cleared, currentHp: cleared.maxHp, status: 'idle' }
   }
   s.roster = s.roster.map(restore)

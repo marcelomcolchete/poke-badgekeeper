@@ -190,6 +190,12 @@ export interface Pokemon {
    * inclusive o HP). Valem só no dia da compra e são limpos na virada do dia. Ausente = sem buff.
    */
   dayBuffs?: Partial<Attrs>
+  /**
+   * Buffs temporários por eixo aplicados por HABILIDADES SECRETAS (ex.: Spore). Somados ao
+   * atributo efetivo como o `dayBuffs`, mas separados dos itens x_* — não aparecem na barra de
+   * itens. Valem só no dia e são limpos na virada do dia. Ausente = sem buff.
+   */
+  secretBuffs?: Partial<Attrs>
   /** Sexo sorteado na captura/criação pela proporção da espécie (PLAN §4.5). */
   gender: Gender
   /** Apelido dado pelo jogador na captura; null = usa o nome da espécie. */
