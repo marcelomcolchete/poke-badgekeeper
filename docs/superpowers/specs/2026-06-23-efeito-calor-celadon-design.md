@@ -160,6 +160,16 @@ Renomeia `rainTravelMs` → `weatherTravelMs` e atualiza os **4 call-sites** (mi
 - `teamIsSpeedy(...)` em `secretEffects.ts` passa a marcar a aura de "veloz" também quando há
   Chlorophyll no time e está quente agora (efeito ao vivo, como o Swift Swim na chuva).
 
+**Som de calor** (espelha o loop de chuva):
+
+- Novo `audio/heatPlayer.ts`, cópia do `audio/rainPlayer.ts`: loop com fade in/out, respeitando
+  mute + volume mestre, best-effort (falha em silêncio). `HEAT_SRC = '/sounds/weather/heat.mp3'`
+  (arquivo já existe). Exporta `startHeat()` / `stopHeat()`.
+- `audio/useGameSounds.ts`: importa `startHeat`/`stopHeat` e `isHot` (de `engine/heat.ts`); novo
+  ref `hot`. No tique: `const isHotNow = state.run.phase === 'DAY' && isHot(state.weather.heat, now)`;
+  `if (isHotNow && !hot.current) startHeat(); else if (!isHotNow && hot.current) stopHeat()`.
+  Cleanup no unmount: `stopHeat()` (espelha o `() => stopRain()`).
+
 ### 7. Persistência — `engine/constants.ts` + `persistence/saveLoad.ts`
 
 - `SAVE_VERSION` 37 → **38**. `WeatherSchedule` ganha `heat`; a previsão ganha
@@ -212,12 +222,13 @@ despacho/tick de missão ou captura
   calor (`heatDelta` e orçamento).
 - `data/cityWeather.test.ts` (estende): Celadon tem os 3 efeitos na ordem certa, com as fórmulas
   do pedido.
+- `audio/useGameSounds.test.ts` (estende): `startHeat`/`stopHeat` disparam ao entrar/sair de uma
+  janela de calor na fase DAY (espelha os testes de `startRain`/`stopRain`).
 - Verificação final: `npm run build` (tsc -b) **e** `npm test`.
 
 ## Fora de escopo (YAGNI)
 
-- **Som** próprio de calor e **overlay/tinta** de calor no mapa (a chuva tem `rainPlayer`, a
-  tempestade `thunderPlayer`; o calor entra só com selo + previsão). Melhoria futura.
+- **Overlay/tinta** de calor no mapa (selo + previsão + som bastam). Melhoria futura.
 - Outras cidades além de Celadon terem calor (trivial depois: somar à lista da cidade).
 - Berries / Gluttony e demais habilidades não relacionadas a calor.
 
