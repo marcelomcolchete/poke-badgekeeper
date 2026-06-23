@@ -2,12 +2,13 @@ import { describe, expect, it } from 'vitest'
 import type { CityGraph } from '../data/types.ts'
 import { fixedRng, makeAttrs, makeMon } from './testkit.ts'
 import { getMissionTemplate } from '../data/missionTemplates.ts'
-import { DIG_TUNNEL_COST } from './balance.ts'
+import { CHLOROPHYLL_HEAT_BONUS_L1, CHLOROPHYLL_HEAT_BONUS_L2, DIG_TUNNEL_COST } from './balance.ts'
 import { graphWithTunnel, graphWithTunnels, pathDistance, shortestPath } from './pathfinding.ts'
 import {
   damageTaken,
   explosionSelfDamage,
   hasBattleArmor,
+  hasChlorophyll,
   hasCloudNine,
   hasDig,
   hasExplosion,
@@ -31,6 +32,8 @@ import {
   teamHasSwiftSwim,
   teamHasSurf,
   teamHasVitalSpirit,
+  teamHeatSpeedBonus,
+  teamImmuneToHeat,
   teamIsSpeedy,
   teamSecretAxisSum,
   teamSnipes,
@@ -739,5 +742,29 @@ describe('Spore — buff diário (sporeDayBuffs)', () => {
   it('sem a habilidade, mapa vazio', () => {
     const mon = makeMon({ speciesId: 43, baseAttrs: makeAttrs() })
     expect(sporeDayBuffs(mon, fixedRng(0))).toEqual({})
+  })
+})
+
+describe('habilidades de calor', () => {
+  const chloroL1 = () => makeMon({ speciesId: 1, secretPicks: [{ slot: 0, level: 1 }] }) // Bulbasaur Chlorophyll
+  const chloroL2 = () => makeMon({ speciesId: 1, secretPicks: [{ slot: 0, level: 2 }] })
+  const clearBody = () => makeMon({ speciesId: 72, secretPicks: [{ slot: 0, level: 1 }] }) // Tentacool Clear Body
+  const plain = () => makeMon({ speciesId: 16, secretPicks: [] })
+
+  it('teamImmuneToHeat: Chlorophyll e Clear Body imunizam; sem nada, não', () => {
+    expect(teamImmuneToHeat([chloroL1()])).toBe(true)
+    expect(teamImmuneToHeat([clearBody()])).toBe(true)
+    expect(teamImmuneToHeat([plain()])).toBe(false)
+    expect(teamImmuneToHeat([plain(), clearBody()])).toBe(true)
+  })
+  it('teamHeatSpeedBonus: 0 sem Chlorophyll, +2 (L1), +3 (L2), maior do time', () => {
+    expect(teamHeatSpeedBonus([plain()])).toBe(0)
+    expect(teamHeatSpeedBonus([chloroL1()])).toBe(CHLOROPHYLL_HEAT_BONUS_L1)
+    expect(teamHeatSpeedBonus([chloroL2()])).toBe(CHLOROPHYLL_HEAT_BONUS_L2)
+    expect(teamHeatSpeedBonus([chloroL1(), chloroL2()])).toBe(CHLOROPHYLL_HEAT_BONUS_L2)
+  })
+  it('hasChlorophyll reflete o nível desbloqueado', () => {
+    expect(hasChlorophyll(chloroL1())).toBe(true)
+    expect(hasChlorophyll(plain())).toBe(false)
   })
 })

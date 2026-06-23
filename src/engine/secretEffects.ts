@@ -19,6 +19,8 @@ import {
   ANALYTIC_STUDY_MULT_L2,
   BATTLE_ARMOR_MISSION_MULT_L1,
   BATTLE_ARMOR_MISSION_MULT_L2,
+  CHLOROPHYLL_HEAT_BONUS_L1,
+  CHLOROPHYLL_HEAT_BONUS_L2,
   DRY_SKIN_MISSION_BONUS_L2,
   ELECTIRIZER_MISSION_BONUS,
   EVIOLITE_MISSION_MULT,
@@ -201,6 +203,26 @@ export function hasThickFat(p: Pokemon): boolean {
 export function hasIceBody(p: Pokemon): boolean {
   return hasSecret(p, 'sa-ice-body')
 }
+export function hasChlorophyll(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-chlorophyll')
+}
+
+/** Imune ao slowdown de calor (nível de time): Ice Body, Clear Body (≥1) ou Chlorophyll. */
+export function teamImmuneToHeat(team: readonly Pokemon[]): boolean {
+  return team.some((p) => hasIceBody(p) || hasClearBody(p) || hasChlorophyll(p))
+}
+
+/** Bônus ADITIVO de velocidade do time no calor (Chlorophyll): 0, +2 (L1) ou +3 (L2). */
+export function teamHeatSpeedBonus(team: readonly Pokemon[]): number {
+  let bonus = 0
+  for (const p of team) {
+    const lv = secretLevelOf(p, 'sa-chlorophyll')
+    if (lv === 2) bonus = Math.max(bonus, CHLOROPHYLL_HEAT_BONUS_L2)
+    else if (lv === 1) bonus = Math.max(bonus, CHLOROPHYLL_HEAT_BONUS_L1)
+  }
+  return bonus
+}
+
 export function hasPressure(p: Pokemon): boolean {
   return hasSecret(p, 'sa-pressure')
 }
