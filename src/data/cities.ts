@@ -698,6 +698,125 @@ const FUCHSIA_SITE_NODES: CitySiteNodes = {
   green: ['g31', 'g32', 'g33', 'g34'], // GRASS ×4 (exploração/captura)
 }
 
+// ============================ Saffron (6.png) ============================
+// Grafo calibrado sobre a arte anotada (mapa do chat). 29 pontos de PARADA a–ad (sem 'w')
+// + 3 nós dedicados de exploração g31..g33 (áreas GRASS, sobre os retângulos). O ginásio é
+// 'd'. Posições normalizadas (0–1) estimadas da arte — refináveis com o DEV picker do CityMap.
+// A arte tem DOIS prédios GYM (→C e →D); como o modelo só tem um ginásio (base de viagens/
+// defesas), 'd' é o ginásio oficial e 'c' (o 2º GYM) vira casa. Layout em "escada": loop
+// perimetral (spines e–j–p–r–z / i–o–q–y–ad) + dois degraus internos (j–k–l–m–n–o e
+// r–s–t–u–v–x–y). Sem Surf e sem mãos únicas (tudo bidirecional).
+const SAFFRON_NODES: Record<string, MapPos> = {
+  a: { x: 0.529, y: 0.157 },
+  b: { x: 0.529, y: 0.236 },
+  c: { x: 0.617, y: 0.236 },
+  d: { x: 0.702, y: 0.236 },
+  e: { x: 0.25, y: 0.307 },
+  f: { x: 0.356, y: 0.307 },
+  g: { x: 0.529, y: 0.307 },
+  h: { x: 0.702, y: 0.307 },
+  i: { x: 0.791, y: 0.307 },
+  j: { x: 0.25, y: 0.524 },
+  k: { x: 0.31, y: 0.524 },
+  l: { x: 0.401, y: 0.524 },
+  m: { x: 0.608, y: 0.524 },
+  n: { x: 0.726, y: 0.524 },
+  o: { x: 0.791, y: 0.524 },
+  p: { x: 0.25, y: 0.619 },
+  q: { x: 0.791, y: 0.619 },
+  r: { x: 0.25, y: 0.78 },
+  s: { x: 0.326, y: 0.78 },
+  t: { x: 0.401, y: 0.78 },
+  u: { x: 0.508, y: 0.78 },
+  v: { x: 0.611, y: 0.78 },
+  x: { x: 0.688, y: 0.78 },
+  y: { x: 0.791, y: 0.78 },
+  z: { x: 0.25, y: 0.963 },
+  aa: { x: 0.371, y: 0.963 },
+  ab: { x: 0.499, y: 0.963 },
+  ac: { x: 0.666, y: 0.963 },
+  ad: { x: 0.791, y: 0.963 },
+  // Áreas de exploração (GRASS): nós dedicados sobre os retângulos, ligados ao ponto de acesso.
+  g31: { x: 0.529, y: 0.079 }, // GRASS topo (acesso 'a')
+  g32: { x: 0.078, y: 0.616 }, // GRASS esquerda (acesso 'p')
+  g33: { x: 0.935, y: 0.616 }, // GRASS direita (acesso 'q')
+}
+
+// Arestas NÃO-direcionadas (ligam os dois sentidos). Todas bidirecionais (sem mão única).
+const SAFFRON_EDGES: [string, string][] = [
+  ['a', 'b'],
+  ['b', 'c'],
+  ['b', 'g'],
+  ['c', 'd'],
+  ['d', 'h'],
+  ['e', 'f'],
+  ['e', 'j'],
+  ['f', 'g'],
+  ['g', 'h'],
+  ['h', 'i'],
+  ['i', 'o'],
+  ['j', 'k'],
+  ['j', 'p'],
+  ['k', 'l'],
+  ['l', 'm'],
+  ['m', 'n'],
+  ['n', 'o'],
+  ['o', 'q'],
+  ['p', 'r'],
+  ['q', 'y'],
+  ['r', 's'],
+  ['r', 'z'],
+  ['s', 't'],
+  ['t', 'u'],
+  ['u', 'v'],
+  ['v', 'x'],
+  ['x', 'y'],
+  ['y', 'ad'],
+  ['z', 'aa'],
+  ['aa', 'ab'],
+  ['ab', 'ac'],
+  ['ac', 'ad'],
+  // acesso às áreas de exploração (uma aresta por seta roxa do GRASS)
+  ['a', 'g31'],
+  ['p', 'g32'],
+  ['q', 'g33'],
+]
+
+// Âncoras de EXIBIÇÃO: o popup aparece SOBRE o retângulo da arte (distinto da letra de parada).
+// Nenhuma letra hospeda mais de um pop-up aqui, então todas as chaves são simples.
+const SAFFRON_MARKERS: Record<string, MapPos> = {
+  d: { x: 0.702, y: 0.137 }, // GYM (prédio direito; ginásio oficial)
+  c: { x: 0.608, y: 0.139 }, // HOUSE (era o 2º GYM, à esquerda)
+  m: { x: 0.608, y: 0.405 }, // MART (sobre o prédio)
+  u: { x: 0.508, y: 0.616 }, // SPEC1 (sobre o prédio laranja)
+  aa: { x: 0.371, y: 0.85 }, // CP — centro (sobre o P.C)
+  f: { x: 0.354, y: 0.215 }, // HOUSE
+  k: { x: 0.31, y: 0.414 }, // HOUSE
+  n: { x: 0.726, y: 0.415 }, // HOUSE
+  s: { x: 0.326, y: 0.648 }, // HOUSE
+  t: { x: 0.401, y: 0.648 }, // HOUSE
+  v: { x: 0.611, y: 0.648 }, // HOUSE
+  x: { x: 0.688, y: 0.648 }, // HOUSE
+  ab: { x: 0.499, y: 0.847 }, // HOUSE
+  ac: { x: 0.666, y: 0.852 }, // HOUSE
+}
+
+const SAFFRON_GRAPH: CityGraph = {
+  nodes: SAFFRON_NODES,
+  adj: buildAdjacency(SAFFRON_NODES, SAFFRON_EDGES),
+  markers: SAFFRON_MARKERS,
+}
+
+// Sítio → ponto do grafo (pop-ups da arte anotada de Saffron).
+const SAFFRON_SITE_NODES: CitySiteNodes = {
+  gym: 'd', // GYM oficial (prédio direito)
+  center: 'aa', // CP
+  mart: ['m'], // MART
+  specialMission: ['u'], // SPEC1 — ponto especial único
+  houses: ['c', 'f', 'k', 'n', 's', 't', 'v', 'x', 'ab', 'ac'], // HOUSE ×10 ('c' = 2º GYM)
+  green: ['g31', 'g32', 'g33'], // GRASS ×3 (exploração/captura)
+}
+
 interface CitySeed {
   name: string
   primaryType: CityData['primaryType']
@@ -781,6 +900,8 @@ const SEEDS: CitySeed[] = [
       { speciesId: 63, level: 3 }, // Abra
       { speciesId: 92, level: 1 }, // Gastly
     ],
+    graph: SAFFRON_GRAPH,
+    siteNodes: SAFFRON_SITE_NODES,
     trainers: SAFFRON_TRAINERS,
   },
   {
