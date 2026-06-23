@@ -11,9 +11,9 @@ import {
   puddleLevelAt,
   rainAtLeastOnceChance,
   rainChanceForDay,
+  weatherChanceForDay,
   type PuddleSpec,
   type WeatherSchedule,
-  RAIN_CHANCE_TOTAL_PERCENT,
   RAIN_EVENT_MAX_MS,
   RAIN_EVENT_MIN_MS,
   RAIN_GAP_MS,
@@ -55,36 +55,54 @@ describe('determinismo', () => {
   })
 })
 
-describe('rainChanceForDay', () => {
-  it('cada dia elegível (3–10) fica em [0,100] e a soma fica perto do orçamento', () => {
+describe('rainChanceForDay (fórmula por cidade)', () => {
+  it('Cerulean: chance do dia fica em [piso(dia), teto] e é estável por (seed,dia)', () => {
     for (const seed of SEEDS) {
-      let sum = 0
       for (let day = 3; day <= 10; day++) {
-        const c = rainChanceForDay(seed, day)
-        expect(c).toBeGreaterThanOrEqual(0)
-        expect(c).toBeLessThanOrEqual(100)
-        sum += c
+        const lo = Math.min(40 + day, 70)
+        const c = rainChanceForDay(seed, day, 1)
+        expect(c).toBeGreaterThanOrEqual(lo)
+        expect(c).toBeLessThanOrEqual(70)
+        expect(rainChanceForDay(seed, day, 1)).toBe(c) // estável
       }
-      // Arredondamento + clamp (cada dia ≤ 100%) podem desviar um pouco do orçamento total.
-      expect(sum).toBeGreaterThan(RAIN_CHANCE_TOTAL_PERCENT - 80)
-      expect(sum).toBeLessThanOrEqual(RAIN_CHANCE_TOTAL_PERCENT + 8)
     }
   })
 
-  it('há variedade entre os dias (não é tudo igual à média)', () => {
-    const values = Array.from({ length: 8 }, (_, i) => rainChanceForDay(424242, i + 3))
+  it('regime do infinito: piso encosta no teto (Cerulean dia 30+ → 70)', () => {
+    for (const seed of SEEDS.slice(0, 10)) {
+      expect(rainChanceForDay(seed, 30, 1)).toBe(70)
+      expect(rainChanceForDay(seed, 50, 1)).toBe(70)
+    }
+  })
+
+  it('funciona além do dia 10 (não zera como o modelo antigo)', () => {
+    expect(rainChanceForDay(424242, 15, 1)).toBeGreaterThan(0)
+  })
+
+  it('há variedade entre os dias (não é tudo igual)', () => {
+    const values = Array.from({ length: 8 }, (_, i) => rainChanceForDay(424242, i + 3, 1))
     expect(new Set(values).size).toBeGreaterThan(1)
   })
 
-  it('dias < 3 → 0%', () => {
-    expect(rainChanceForDay(5, 1)).toBe(0)
-    expect(rainChanceForDay(5, 2)).toBe(0)
+  it('dias < 3 → 0%; cidade sem chuva (Pewter=0) → 0%', () => {
+    expect(rainChanceForDay(5, 1, 1)).toBe(0)
+    expect(rainChanceForDay(5, 2, 1)).toBe(0)
+    expect(rainChanceForDay(5, 7, 0)).toBe(0)
+  })
+})
+
+describe('weatherChanceForDay (genérica)', () => {
+  it('faixa colapsa quando piso ≥ teto (sempre o teto)', () => {
+    const f = { pisoBase: 100, pisoPorDia: 0, teto: 50 }
+    for (const seed of SEEDS.slice(0, 5)) expect(weatherChanceForDay(seed, 7, f, 0xabc)).toBe(50)
   })
 })
 
 describe('maxRainTimes', () => {
-  it('+1 a cada 2 dias, capado em 4', () => {
-    expect([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(maxRainTimes)).toEqual([0, 0, 1, 1, 2, 2, 3, 3, 4, 4])
+  it('+1 a cada 3 dias, capado em 6', () => {
+    expect([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(maxRainTimes)).toEqual([0, 0, 1, 1, 1, 2, 2, 2, 3, 3])
+    expect(maxRainTimes(18)).toBe(6)
+    expect(maxRainTimes(30)).toBe(6) // teto segura no infinito
   })
 
   it('nº de chuvas que ocorrem nunca passa o teto do dia', () => {

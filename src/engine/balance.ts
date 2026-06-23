@@ -358,8 +358,6 @@ export const WATER_ABSORB_MISSION_MULT_L2 = 1.5
 export const SNIPER_TIME_MULT_L1 = 2
 
 // ---- Tempestade (raios + Paralyze) — efeito climático de Vermilion -------------------
-/** Orçamento de chance de tempestade somado entre os dias elegíveis (3–10), próprio. */
-export const STORM_CHANCE_TOTAL_PERCENT = 300
 /** Duração de um evento de tempestade (ms de jogo). */
 export const STORM_EVENT_MIN_MS = 15_000
 export const STORM_EVENT_MAX_MS = 30_000
