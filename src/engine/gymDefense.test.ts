@@ -660,3 +660,29 @@ describe('medalhas dos invasores (piso de 10% + rampa)', () => {
     }
   })
 })
+
+describe('Tinted Lens', () => {
+  // Caterpie(10): par = ['sa-tinted-lens','sa-fly'] → Tinted Lens slot 0.
+  // Inseto vs Fogo = desvantagem (singleTypeMultiplier('bug','fire')=0.5 → ×0.5 contra mim).
+  // Sem TL: yourEff = 20×0.5 = 10; enemyEff = 20×1.5 = 30 → pWin = 1/3.
+  it('em desvantagem de tipo, a Batalha conta ×1.5 (L1)', () => {
+    const you = makeMon({ id: 'a', speciesId: 10, types: ['bug'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 30 }, 0), secretPicks: [{ slot: 0, level: 1 }] })
+    const enemy: EnemyUnit = { battle: 20, types: ['fire'] }
+    const res = resolveDefense(createRng(1), [you], [enemy])
+    expect(res.duels[0]?.pWin).toBeCloseTo(0.5) // (10×1.5)/30 = 0.5
+  })
+
+  it('em desvantagem, L2 conta ×2.0', () => {
+    const you = makeMon({ id: 'a', speciesId: 10, types: ['bug'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 30 }, 0), secretPicks: [{ slot: 0, level: 2 }] })
+    const enemy: EnemyUnit = { battle: 20, types: ['fire'] }
+    const res = resolveDefense(createRng(1), [you], [enemy])
+    expect(res.duels[0]?.pWin).toBeCloseTo(20 / 30) // (10×2.0)/30
+  })
+
+  it('sem desvantagem (neutro), Tinted Lens não atua', () => {
+    const you = makeMon({ id: 'a', speciesId: 10, types: ['bug'], baseAttrs: makeAttrs({ batalha: 20, resistencia: 30 }, 0), secretPicks: [{ slot: 0, level: 1 }] })
+    const enemy: EnemyUnit = { battle: 20, types: ['normal'] }
+    const res = resolveDefense(createRng(1), [you], [enemy])
+    expect(res.duels[0]?.pWin).toBeCloseTo(1) // 20/20 = 1 (clamp)
+  })
+})

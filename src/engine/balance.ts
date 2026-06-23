@@ -330,6 +330,9 @@ export const MOXIE_TEMP_CAP_L2 = 25
  */
 export const PRESSURE_ENEMY_MULT_L1 = 0.85
 export const PRESSURE_ENEMY_MULT_L2 = 0.70
+/** Tinted Lens: multiplicador da Batalha no duelo quando o portador está em desvantagem de tipo. */
+export const TINTED_LENS_BATTLE_MULT_L1 = 1.5
+export const TINTED_LENS_BATTLE_MULT_L2 = 2.0
 /**
  * Static (NOVO, Fase 4): XP concedido por segundo que o time fica PARADO por raio ou poça.
  * 1 XP/s: 5s de paralisia → +5 XP.

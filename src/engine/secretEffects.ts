@@ -123,6 +123,9 @@ export function hasOvergrow(p: Pokemon): boolean {
 export function hasSwarm(p: Pokemon): boolean {
   return hasSecret(p, 'sa-swarm')
 }
+export function hasTintedLens(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-tinted-lens')
+}
 export function hasAnalytic(p: Pokemon): boolean {
   return hasSecret(p, 'sa-analytic')
 }

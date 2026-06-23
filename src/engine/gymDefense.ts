@@ -37,6 +37,8 @@ import {
   PRESSURE_ENEMY_MULT_L2,
   REGENERATOR_HEAL_PER_WIN,
   RIVAL_EVOLUTION_DAYS,
+  TINTED_LENS_BATTLE_MULT_L1,
+  TINTED_LENS_BATTLE_MULT_L2,
 } from './balance.ts'
 import { applyDamage, effectiveAttr } from './attributes.ts'
 import { secretLevelOf } from '../data/secretAbilities.ts'
@@ -332,6 +334,11 @@ export function resolveDefense(
     // Rivalidade: vantagem contra oponente do mesmo gênero.
     if (enemy.gender !== undefined && enemy.gender === you.gender) {
       yourEff *= 1 + rivalryBattleBonus(you)
+    }
+    // Tinted Lens: em desvantagem de tipo, compensa o golpe fraco (×1.5 / ×2.0). [MULTIPLICATIVO]
+    const tintedLevel = secretLevelOf(you, 'sa-tinted-lens')
+    if (tintedLevel >= 1 && typeAdvantageMultiplier(you.types, enemy.types) < 1) {
+      yourEff *= tintedLevel === 2 ? TINTED_LENS_BATTLE_MULT_L2 : TINTED_LENS_BATTLE_MULT_L1
     }
     // Moxie L2: +5 temporário por inimigo já derrotado nesta sequência (teto +25). [ADITIVO]
     // L1 não tem bônus temporário — só o permanente gravado na ramificação youWon.
