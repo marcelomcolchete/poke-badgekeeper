@@ -120,7 +120,7 @@ export const MISSION_REST_DAY_PIVOT = 6
 /** Quantos eixos principais/secundários cada modo especial gera. */
 export const SPECIAL2_PRINCIPALS = 2
 export const SPECIAL2_SECONDARIES = 1
-export const SPECIAL5_PRINCIPALS = 3
+export const SPECIAL5_PRINCIPALS = 4
 export const SPECIAL5_SECONDARIES = 2
 
 /**

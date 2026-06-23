@@ -173,15 +173,23 @@ describe('generateRequirement (rebalanceamento)', () => {
     expect(mega?.requirement.batalha).toBe(TEAM_ATTR_MAX) // principal + secundário no dia 20 satura em 100
   })
 
-  it('special5 (Missão Especial): 3 principais + 2 secundários + 1 resto, nada forçado ao teto', () => {
-    for (let seed = 1; seed <= 20; seed++) {
+  it('special5 (Missão Especial): 4 principais + 2 secundários, com mega possível', () => {
+    let sawMega = false
+    for (let seed = 1; seed <= 40; seed++) {
       const { requirement, secondaryAttr } = generateRequirement(createRng(seed), 3, SPECIAL_TEMPLATE)
       expect(secondaryAttr).toBeNull()
-      // Dia 3: principais (≥30) e secundários (≥20) reforçados; resto ≤18 → 5 reforçados + 1 resto.
-      expect(ATTR_KEYS.filter((k) => requirement[k] >= 20).length).toBe(5)
-      // Sem o forçado-ao-máximo: no dia 3 nenhum eixo chega ao teto do time.
+      // 4 principais sempre presentes (no dia 3 o principal cai em 30..40).
+      expect(ATTR_KEYS.filter((k) => requirement[k] >= 30).length).toBeGreaterThanOrEqual(4)
+      // Entre 4 e 6 eixos reforçados (>=20): 0..2 sobram no "resto" conforme quantos viram mega.
+      const loaded = ATTR_KEYS.filter((k) => requirement[k] >= 20).length
+      expect(loaded).toBeGreaterThanOrEqual(4)
+      expect(loaded).toBeLessThanOrEqual(6)
+      // Dia 3 não satura nenhum eixo no teto do time.
       expect(ATTR_KEYS.every((k) => requirement[k] < TEAM_ATTR_MAX)).toBe(true)
+      // Mega = principal + secundário no mesmo eixo → no dia 3 passa de 40 (acima do principal puro).
+      if (ATTR_KEYS.some((k) => requirement[k] > 40)) sawMega = true
     }
+    expect(sawMega, 'a coincidência principal×secundário (mega) ocorre em alguns sorteios').toBe(true)
   })
 
   it('special2 (pokecenter): ao menos 2 eixos principais e sem subtipo', () => {
