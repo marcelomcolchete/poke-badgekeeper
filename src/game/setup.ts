@@ -159,19 +159,19 @@ export function setupDay(s: GameState): void {
 
 /**
  * Spore: no início do dia, cada portador ganha buffs de atributo do dia (1 eixo no L1, 3 no L2).
- * Os incrementos somam ao `dayBuffs` existente (itens da manhã), o HP é recalculado e o Pokémon
- * começa o dia cheio. Determinístico por (seed do dia).
+ * Os incrementos somam ao `secretBuffs` existente (buffs de habilidade, separados dos itens x_*),
+ * o HP é recalculado e o Pokémon começa o dia cheio. Determinístico por (seed do dia).
  */
 export function applySpore(s: GameState): void {
   const rng = createRng(deriveSeed(s.run.seed, SPORE_SEED_SALT, s.run.day))
   s.roster = s.roster.map((p) => {
     const add = sporeDayBuffs(p, rng)
     if (Object.keys(add).length === 0) return p
-    const dayBuffs = { ...(p.dayBuffs ?? {}) }
+    const secretBuffs = { ...(p.secretBuffs ?? {}) }
     for (const key of Object.keys(add) as (keyof typeof add)[]) {
-      dayBuffs[key] = (dayBuffs[key] ?? 0) + (add[key] ?? 0)
+      secretBuffs[key] = (secretBuffs[key] ?? 0) + (add[key] ?? 0)
     }
-    const recomputed = recomputeMaxHp({ ...p, dayBuffs })
+    const recomputed = recomputeMaxHp({ ...p, secretBuffs })
     return { ...recomputed, currentHp: recomputed.maxHp }
   })
 }

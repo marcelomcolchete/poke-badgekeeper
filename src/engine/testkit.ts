@@ -52,6 +52,7 @@ export function makeMon(overrides: Partial<Pokemon> = {}): Pokemon {
     hearts: overrides.hearts,
     permaBonus: overrides.permaBonus,
     dayBuffs: overrides.dayBuffs,
+    secretBuffs: overrides.secretBuffs,
     gender: overrides.gender ?? 'genderless',
     nickname: overrides.nickname ?? null,
     nature: overrides.nature ?? null,

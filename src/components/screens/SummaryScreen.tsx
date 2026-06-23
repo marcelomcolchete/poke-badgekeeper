@@ -268,6 +268,29 @@ function FinalResult({
   )
 }
 
+function SecretOption({
+  name,
+  badge,
+  effect,
+  onClick,
+}: {
+  name: string
+  badge: string
+  effect: string
+  onClick: () => void
+}) {
+  return (
+    <button type="button" className={styles.secretChoiceBtn} onClick={onClick}>
+      <span className={styles.secretChoiceHead}>
+        <b className={styles.secretChoiceName}>{name}</b>
+        <span className={styles.secretChoiceBadge}>{badge}</span>
+      </span>
+      <span className={styles.secretChoiceEffect}>{effect}</span>
+      <span className={styles.secretChoiceCta}>▶ ESCOLHER</span>
+    </button>
+  )
+}
+
 function SecretChoiceButtons({
   pair,
   picks,
@@ -283,15 +306,13 @@ function SecretChoiceButtons({
         {([0, 1] as const).map((slot) => {
           const kind = SECRET_KINDS[pair[slot]! as SecretId]
           return (
-            <button
+            <SecretOption
               key={slot}
-              type="button"
-              className={styles.secretChoiceBtn}
+              name={kind.name}
+              badge="Nv.1"
+              effect={kind.effectL1}
               onClick={() => dispatch({ type: 'CHOOSE_SECRET', slot, level: 1 })}
-            >
-              <b>{kind.name}</b>
-              <span>{kind.effectL1}</span>
-            </button>
+            />
           )
         })}
       </>
@@ -303,22 +324,18 @@ function SecretChoiceButtons({
   const otherKind = SECRET_KINDS[pair[other]! as SecretId]
   return (
     <>
-      <button
-        type="button"
-        className={styles.secretChoiceBtn}
+      <SecretOption
+        name={`Aprofundar — ${curKind.name}+`}
+        badge="Nv.2"
+        effect={curKind.effectL2}
         onClick={() => dispatch({ type: 'CHOOSE_SECRET', slot: cur.slot, level: 2 })}
-      >
-        <b>Aprofundar — {curKind.name}+</b>
-        <span>{curKind.effectL2}</span>
-      </button>
-      <button
-        type="button"
-        className={styles.secretChoiceBtn}
+      />
+      <SecretOption
+        name={`Ampliar — ${otherKind.name}`}
+        badge="Nv.1"
+        effect={otherKind.effectL1}
         onClick={() => dispatch({ type: 'CHOOSE_SECRET', slot: other, level: 1 })}
-      >
-        <b>Ampliar — {otherKind.name}</b>
-        <span>{otherKind.effectL1}</span>
-      </button>
+      />
     </>
   )
 }

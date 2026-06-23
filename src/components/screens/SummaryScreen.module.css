@@ -431,25 +431,63 @@
 .secretChoiceBtn {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  width: 215px;
   max-width: 240px;
-  padding: 10px 12px;
+  padding: 0;
+  overflow: hidden;
   text-align: left;
   cursor: pointer;
-  border: 2px solid var(--c-hud-accent);
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.25);
-  color: inherit;
+  border: 3px solid var(--c-panel-border);
+  border-radius: 9px;
+  background: var(--c-panel);
+  color: var(--c-ink);
+  box-shadow: 0 4px 0 #14331f;
+  transition: transform 0.12s, box-shadow 0.12s;
 }
 .secretChoiceBtn:hover {
-  background: rgba(255, 203, 5, 0.15);
+  transform: translateY(-3px);
+  box-shadow: 0 7px 0 #14331f;
 }
-.secretChoiceBtn b {
-  color: var(--c-hud-accent);
+.secretChoiceHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 8px 10px;
+  background: var(--c-hud-accent);
+  border-bottom: 3px solid var(--c-panel-border);
 }
-.secretChoiceBtn span {
-  font-size: 0.85em;
-  opacity: 0.9;
+.secretChoiceName {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  line-height: 1.4;
+  color: var(--c-ink);
+}
+.secretChoiceBadge {
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  color: #7a5a00;
+  white-space: nowrap;
+}
+.secretChoiceEffect {
+  flex: 1;
+  font-family: var(--font-text);
+  font-size: 18px;
+  line-height: 1.15;
+  color: var(--c-ink);
+  padding: 10px 11px 12px;
+}
+.secretChoiceCta {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  letter-spacing: 0.5px;
+  color: #fff;
+  background: var(--c-panel-border);
+  text-align: center;
+  padding: 8px;
+}
+.secretChoiceBtn:hover .secretChoiceCta {
+  background: #247a40;
 }
 
 /* Escolha de habilidade DENTRO do quadro do Destaque: chama atenção com brilho pulsante. */
@@ -475,8 +513,8 @@
   animation: secretChoiceGlow 1.3s ease-in-out infinite;
 }
 @keyframes secretChoiceGlow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 203, 5, 0); }
-  50% { box-shadow: 0 0 14px 2px rgba(255, 203, 5, 0.65); }
+  0%, 100% { box-shadow: 0 4px 0 #14331f; }
+  50% { box-shadow: 0 4px 0 #14331f, 0 0 14px 3px rgba(47, 143, 80, 0.7); }
 }
 
 /* ---- Reveal da Habilidade Secreta desbloqueada no dia ---- */

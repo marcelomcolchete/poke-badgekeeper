@@ -108,7 +108,8 @@ export interface GeneratedRequirement {
  * Gera a exigência da missão escalando com o dia (rebalanceamento). Todo eixo começa em
  * "resto" (5..20) e os escolhidos recebem principal/secundário. Normais: principal no
  * primaryAttr + 1 secundário sorteado (se coincidir, vira "mega" = principal+secundário).
- * Especiais: eixos sorteados (special2 = 2 princ + 1 sec; special5 = 3 princ + 2 sec).
+ * Especiais: special2 = 2 princ + 1 sec (distintos); special5 = 4 princ + 2 sec, e um
+ * secundário pode coincidir com um principal (vira "mega" naquele eixo).
  */
 export function generateRequirement(
   rng: Rng,
@@ -131,13 +132,27 @@ export function generateRequirement(
     return { requirement: out, secondaryAttr: secondary }
   }
 
-  // Especiais: sorteia os eixos principais/secundários sem repetição (sem nenhum forçado).
-  const principals = template.gen === 'special5' ? SPECIAL5_PRINCIPALS : SPECIAL2_PRINCIPALS
-  const secondaries = template.gen === 'special5' ? SPECIAL5_SECONDARIES : SPECIAL2_SECONDARIES
+  // special5 (Missão Especial): 4 principais + 2 secundários sorteados entre TODOS os eixos
+  // (distintos entre si). Um secundário que cai num eixo principal vira "mega" (principal +
+  // secundário no mesmo eixo, capado no teto do time). Sobram 0..2 eixos no "resto".
+  if (template.gen === 'special5') {
+    const principalAxes = rng.shuffle(ATTR_KEYS).slice(0, SPECIAL5_PRINCIPALS)
+    const principalSet = new Set(principalAxes)
+    for (const ax of principalAxes) out[ax as AttrKey] = principalValue(rng, day)
+    const secAxes = rng.shuffle(ATTR_KEYS).slice(0, SPECIAL5_SECONDARIES) // sorteio independente sobre todos os 6 eixos → secundário pode cair em principal (mega) ou eixo livre
+    for (const ax of secAxes) {
+      out[ax as AttrKey] = principalSet.has(ax)
+        ? clamp(out[ax as AttrKey] + secondaryValue(rng, day), 0, TEAM_ATTR_MAX) // mega
+        : secondaryValue(rng, day)
+    }
+    return { requirement: out, secondaryAttr: null }
+  }
+
+  // special2 (pokecenter/pokemart): 2 principais + 1 secundário, todos distintos (sem mega).
   const axes = rng.shuffle(ATTR_KEYS)
   let i = 0
-  for (let k = 0; k < principals; k++, i++) out[axes[i] as AttrKey] = principalValue(rng, day)
-  for (let k = 0; k < secondaries; k++, i++) out[axes[i] as AttrKey] = secondaryValue(rng, day)
+  for (let k = 0; k < SPECIAL2_PRINCIPALS; k++, i++) out[axes[i] as AttrKey] = principalValue(rng, day)
+  for (let k = 0; k < SPECIAL2_SECONDARIES; k++, i++) out[axes[i] as AttrKey] = secondaryValue(rng, day)
   return { requirement: out, secondaryAttr: null }
 }
 
