@@ -1,13 +1,13 @@
-// Tela inicial: escolha da cidade de Kanto (PLAN §3). Na Fase 5 só Pewter tem
-// conteúdo pronto; as demais ficam como "Em breve" (desabilitadas).
+// Tela inicial: escolha da cidade de Kanto (PLAN §3). As cidades com mapa calibrado
+// ficam jogáveis; as demais ficam como "Em breve" (desabilitadas).
 
 import { CITIES } from '../../data/cities.ts'
 import { TypeBadge } from '../common/TypeBadge.tsx'
 import { Textbox } from '../Textbox/Textbox.tsx'
 import styles from './CitySelectScreen.module.css'
 
-/** Cidades com conteúdo pronto (Pewter, Cerulean, Vermilion e Celadon). */
-const PLAYABLE_CITIES = new Set<number>([0, 1, 2, 3])
+/** Cidades com conteúdo pronto (Pewter, Cerulean, Vermilion, Celadon, Fuchsia e Saffron). */
+const PLAYABLE_CITIES = new Set<number>([0, 1, 2, 3, 4, 5])
 
 export function CitySelectScreen({ onChoose }: { onChoose: (cityIndex: number) => void }) {
   return (
@@ -48,7 +48,10 @@ export function CitySelectScreen({ onChoose }: { onChoose: (cityIndex: number) =
         })}
       </div>
 
-      <Textbox>Pewter, Cerulean e Vermilion estão prontas. As demais cidades de Kanto chegam em breve.</Textbox>
+      <Textbox>
+        Pewter, Cerulean, Vermilion, Celadon, Fuchsia e Saffron estão prontas. As demais cidades de Kanto
+        chegam em breve.
+      </Textbox>
     </div>
   )
 }
