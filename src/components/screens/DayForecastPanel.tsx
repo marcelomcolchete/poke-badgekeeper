@@ -54,6 +54,7 @@ export function DayForecastPanel({ state }: { state: GameState }) {
     city,
     rainDelta,
     stormDelta,
+    0, // extraHeatChancePercent — preenchido na Task 9
     ownTempoCap,
   ).forecast
   const rainChance = rainAtLeastOnceChance(forecast.rainChancePercent, forecast.potentialRainCount)

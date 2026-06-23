@@ -192,3 +192,23 @@ describe('storm — runtime e composição', () => {
     expect(w.forecast.stormChancePercent).toBe(0)
   })
 })
+
+describe('buildDayWeather — Calor (Celadon)', () => {
+  const CELADON = getCity(3)
+  it('inclui janelas de calor e a previsão de calor', () => {
+    const s = buildDayWeather(7, 9, CELADON, 0, 0, 100) // extraHeat 100% força ocorrência
+    expect(s.heat.length).toBeGreaterThan(0)
+    expect(s.forecast.heatChancePercent).toBeGreaterThan(0)
+    expect(s.forecast.potentialHeatCount).toBe(maxStormTimes(9)) // mesma curva
+  })
+  it('Own Tempo (cap total) corta o calor por último: chuva → tempestade → calor', () => {
+    // cap = 1 evento no dia: a chuva/tempestade consomem o orçamento e o calor fica sem slot.
+    const s = buildDayWeather(7, 9, CELADON, 100, 100, 100, 1)
+    expect(s.rain.length + s.storms.length + s.heat.length).toBeLessThanOrEqual(1)
+    expect(s.heat.length).toBe(0)
+  })
+  it('cidade sem calor não ganha heat', () => {
+    const s = buildDayWeather(7, 9, getCity(2), 0, 0, 100)
+    expect(s.heat).toEqual([])
+  })
+})

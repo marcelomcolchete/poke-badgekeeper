@@ -146,6 +146,7 @@ export function setupDay(s: GameState): void {
     city,
     rainDelta,
     stormDelta,
+    0, // extraHeatChancePercent — preenchido na Task 9 (Cloud Nine/Overcoat)
     ownTempoCap,
   )
   applyForewarn(s)

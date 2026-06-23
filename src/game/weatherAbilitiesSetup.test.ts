@@ -224,8 +224,8 @@ describe('Own Tempo — event cap (non-stacking)', () => {
 describe('buildDayWeather with deltas and cap', () => {
   it('is deterministic with new params', () => {
     const city = getCity(2)
-    const a = buildDayWeather(42, 8, city, 10, -10, 2)
-    const b = buildDayWeather(42, 8, city, 10, -10, 2)
+    const a = buildDayWeather(42, 8, city, 10, -10, 0, 2)
+    const b = buildDayWeather(42, 8, city, 10, -10, 0, 2)
     expect(a).toEqual(b)
   })
 
@@ -233,7 +233,7 @@ describe('buildDayWeather with deltas and cap', () => {
     const city = getCity(2) // Vermilion
     // Try many seeds to ensure the cap actually works
     for (let seed = 1; seed <= 20; seed++) {
-      const w = buildDayWeather(seed, 9, city, 0, 0, 1)
+      const w = buildDayWeather(seed, 9, city, 0, 0, 0, 1)
       expect(w.rain.length + w.storms.length).toBeLessThanOrEqual(1)
     }
   })
@@ -241,7 +241,7 @@ describe('buildDayWeather with deltas and cap', () => {
   it('maxWeatherEvents=2 caps total rain+storm to 2', () => {
     const city = getCity(2)
     for (let seed = 1; seed <= 20; seed++) {
-      const w = buildDayWeather(seed, 9, city, 0, 0, 2)
+      const w = buildDayWeather(seed, 9, city, 0, 0, 0, 2)
       expect(w.rain.length + w.storms.length).toBeLessThanOrEqual(2)
     }
   })
