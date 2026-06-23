@@ -14,10 +14,9 @@ import { createPokemon } from '../engine/leveling.ts'
 import { travelRoute } from '../engine/missions.ts'
 import { graphWithTunnels } from '../engine/pathfinding.ts'
 import { planWeatherLeg } from '../engine/weatherTravel.ts'
-import { teamHasSwiftSwim, teamSurfs, teamTravelSpeedMultiplier } from '../engine/secretEffects.ts'
-import { rainTravelMs } from '../engine/rainSpeed.ts'
-import { isRaining } from '../engine/weather.ts'
-import { EXPLORATION_XP, SWIFT_SWIM_RAIN_BONUS } from '../engine/balance.ts'
+import { teamSurfs } from '../engine/secretEffects.ts'
+import { instantWeatherSpeed, weatherTravelMs } from '../engine/rainSpeed.ts'
+import { EXPLORATION_XP } from '../engine/balance.ts'
 import { applyXpGains } from './itemFlow.ts'
 import { createRng } from '../engine/rng.ts'
 import { shinyChance, shinyForChance } from '../engine/shiny.ts'
@@ -50,7 +49,7 @@ export function startSearch(s: GameState, searcherId: string, spotIndex: number)
   // "viagem instantânea" de caminho vazio (espelha acceptMission). Voo/Sniper nunca dão [].
   if (path.length === 0) return
   const now = s.clock.dayElapsedMs
-  const oneWay = rainTravelMs(s.weather, now, distance, [searcher], s.runItems, s.today.electrified)
+  const oneWay = weatherTravelMs(s.weather, now, distance, [searcher], s.runItems, s.today.electrified)
   const arriveAtMs = now + oneWay
   // Fast Ball: a busca é resolvida na hora em que o Pokémon chega na área (sem tempo de busca).
   const instant = s.runItems.includes('fast-ball')
@@ -93,11 +92,9 @@ function applySearchWeatherHold(s: GameState, search: CaptureSearch, nowMs: numb
   const city = getCity(s.run.cityIndex)
   const graph = graphWithTunnels(city.graph, s.today.digTunnels)
   const baseLeg = search.reroutePath ?? search.path
-  // Velocidade efetiva AGORA (base + Swift Swim se chovendo); o extraMs do desvio é linear a essa
+  // Velocidade efetiva AGORA (base + Swift Swim se chovendo, ou reduzida pelo calor); o extraMs do desvio é linear a essa
   // taxa, enquanto a chegada-base veio do integrador (rainSpeed) — aproximação consciente (ver plano).
-  const speedMult =
-    teamTravelSpeedMultiplier(team, s.runItems, s.today.electrified) +
-    (teamHasSwiftSwim(team) && isRaining(s.weather, nowMs) ? SWIFT_SWIM_RAIN_BONUS : 0)
+  const speedMult = instantWeatherSpeed(s.weather, nowMs, team, s.runItems, s.today.electrified)
   const plan = planWeatherLeg({
     graph,
     weather: s.weather,
@@ -181,7 +178,7 @@ function startReturn(s: GameState, searcherId: string, spotIndex: number, captur
   // (ex.: voltar de 'k' por k→t→u) o caminho/tempo da volta diferem da ida (PLAN §3.1).
   const { flying, surfing, path, distance } = travelRoute(graph, node, city.siteNodes.gym, [searcher], s.runItems)
   const now = s.clock.dayElapsedMs
-  const oneWay = rainTravelMs(s.weather, now, distance, [searcher], s.runItems, s.today.electrified)
+  const oneWay = weatherTravelMs(s.weather, now, distance, [searcher], s.runItems, s.today.electrified)
   replaceMon(s, { ...searcher, status: 'returning' })
   s.captureReturns.push({
     searcherId,
@@ -218,11 +215,9 @@ function applyReturnWeatherHold(s: GameState, ret: CaptureReturn, nowMs: number)
   // `path` é ponto→ginásio (volta real); saves antigos guardavam ginásio→ponto (detecta e inverte).
   const back = ret.path[0] === ret.node ? ret.path : [...ret.path].reverse()
   const baseLeg = ret.reroutePath ?? back
-  // Velocidade efetiva AGORA (base + Swift Swim se chovendo); o extraMs do desvio é linear a essa
+  // Velocidade efetiva AGORA (base + Swift Swim se chovendo, ou reduzida pelo calor); o extraMs do desvio é linear a essa
   // taxa, enquanto a chegada-base veio do integrador (rainSpeed) — aproximação consciente (ver plano).
-  const speedMult =
-    teamTravelSpeedMultiplier(team, s.runItems, s.today.electrified) +
-    (teamHasSwiftSwim(team) && isRaining(s.weather, nowMs) ? SWIFT_SWIM_RAIN_BONUS : 0)
+  const speedMult = instantWeatherSpeed(s.weather, nowMs, team, s.runItems, s.today.electrified)
   const plan = planWeatherLeg({
     graph,
     weather: s.weather,

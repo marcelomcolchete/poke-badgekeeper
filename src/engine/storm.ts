@@ -17,7 +17,8 @@ import { segmentLength } from './pathfinding.ts'
 import { weatherChanceForDay, puddleLevelAt, puddleNodePool, type RainEvent, WEATHER_FIRST_ELIGIBLE_DAY, maxRainTimes } from './weather.ts'
 import type { WeatherSchedule } from './weather.ts'
 import { buildWeatherSchedule } from './weather.ts'
-import { cityHasStorm, cityStormChance } from '../data/cityWeather.ts'
+import { cityHasStorm, cityStormChance, cityHasHeat } from '../data/cityWeather.ts'
+import { buildHeat, heatChanceForDay, maxHeatTimes } from './heat.ts'
 import {
   STRIKE_RADIUS,
   STRIKE_RADIUS_ON_WATER,
@@ -228,15 +229,16 @@ export function strikesResolvingBetween(
 }
 
 /**
- * Schedule climático completo do dia (chuva + tempestade), reprodutível por (seed, day, city).
- * A tempestade só entra se a cidade a tem; os raios usam os eventos de chuva para encadear nas
- * poças. Substitui chamadas diretas a buildWeatherSchedule no setup/forecast.
+ * Schedule climático completo do dia (chuva + tempestade + calor), reprodutível por (seed, day, city).
+ * A tempestade só entra se a cidade a tem; o calor só entra se a cidade o tem.
+ * Orçamento (Own Tempo): chuva → tempestade → calor.
  *
  * @param extraRainChancePercent - pp delta aplicado à chance de chuva (positivo = mais chuva).
  * @param extraStormChancePercent - pp delta aplicado à chance de tempestade (negativo = menos).
+ * @param extraHeatChancePercent - pp delta aplicado à chance de calor.
  * @param maxWeatherEvents - teto de eventos climáticos TOTAIS do dia (Own Tempo). Se informado (>0),
- *   as chuvas recebem slots primeiro até o limite; as tempestades (próprias E acopladas) usam o
- *   orçamento restante e PARAM quando ele se esgota. 0 = sem cap.
+ *   as chuvas recebem slots primeiro até o limite; as tempestades usam o restante; o calor usa
+ *   o restante após chuva+tempestade. 0 = sem cap.
  */
 export function buildDayWeather(
   seed: number,
@@ -244,22 +246,40 @@ export function buildDayWeather(
   city: CityData,
   extraRainChancePercent = 0,
   extraStormChancePercent = 0,
+  extraHeatChancePercent = 0,
   maxWeatherEvents = 0,
 ): WeatherSchedule {
-  // Aplica o cap de Own Tempo: chuvas recebem slots primeiro, tempestades usam o restante.
+  // Orçamento (Own Tempo): chuvas recebem slots primeiro; tempestade e depois calor usam o restante.
   const base = buildWeatherSchedule(seed, day, city, extraRainChancePercent, maxWeatherEvents > 0 ? maxWeatherEvents : 0)
-  if (!cityHasStorm(city.index)) return base
-  // Cap de tempestades = orçamento restante após as chuvas efetivas (undefined = sem cap).
-  const stormCap: number | undefined =
-    maxWeatherEvents > 0 ? Math.max(0, maxWeatherEvents - base.rain.length) : undefined
-  const storms = buildStorms(seed, day, city, base.rain, extraStormChancePercent, stormCap)
+
+  let withStorm = base
+  if (cityHasStorm(city.index)) {
+    const stormCap: number | undefined =
+      maxWeatherEvents > 0 ? Math.max(0, maxWeatherEvents - base.rain.length) : undefined
+    const storms = buildStorms(seed, day, city, base.rain, extraStormChancePercent, stormCap)
+    withStorm = {
+      ...base,
+      storms,
+      forecast: {
+        ...base.forecast,
+        stormChancePercent: clamp(stormChanceForDay(seed, day, city.index) + extraStormChancePercent, 0, 100),
+        potentialStormCount: maxStormTimes(day),
+      },
+    }
+  }
+
+  if (!cityHasHeat(city.index)) return withStorm
+  // Calor usa o orçamento restante após chuva + tempestade (undefined = sem cap; número = cap, 0 ok).
+  const heatCap: number | undefined =
+    maxWeatherEvents > 0 ? Math.max(0, maxWeatherEvents - withStorm.rain.length - withStorm.storms.length) : undefined
+  const heat = buildHeat(seed, day, city, extraHeatChancePercent, heatCap)
   return {
-    ...base,
-    storms,
+    ...withStorm,
+    heat,
     forecast: {
-      ...base.forecast,
-      stormChancePercent: clamp(stormChanceForDay(seed, day, city.index) + extraStormChancePercent, 0, 100),
-      potentialStormCount: maxStormTimes(day),
+      ...withStorm.forecast,
+      heatChancePercent: clamp(heatChanceForDay(seed, day, city.index) + extraHeatChancePercent, 0, 100),
+      potentialHeatCount: maxHeatTimes(day),
     },
   }
 }

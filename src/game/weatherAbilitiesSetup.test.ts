@@ -219,13 +219,58 @@ describe('Own Tempo — event cap (non-stacking)', () => {
   })
 })
 
+// ---- Calor (Celadon) — Cloud Nine / Overcoat reduzem heatChancePercent ------------------
+
+/** Estado em Celadon (dia 9) com um roster dado, pronto para setupDay. */
+function heatDayState(mons: ReturnType<typeof createPokemon>[]) {
+  const s = createInitialState(7)
+  s.run.cityIndex = 3 // Celadon (has heat)
+  s.run.day = 9
+  s.roster = mons
+  return s
+}
+
+describe('Calor — Cloud Nine / Overcoat reduzem heatChancePercent em Celadon', () => {
+  it('Cloud Nine L1 reduz a chance de calor vs baseline', () => {
+    const base = heatDayState([plainMon('p1')])
+    setupDay(base)
+    const cn = heatDayState([cloudNineMon('p1', 1)])
+    setupDay(cn)
+    expect(cn.weather.forecast.heatChancePercent).toBeLessThan(base.weather.forecast.heatChancePercent)
+  })
+
+  it('Cloud Nine L2 reduz a chance de calor vs baseline', () => {
+    const base = heatDayState([plainMon('p1')])
+    setupDay(base)
+    const cn = heatDayState([cloudNineMon('p1', 2)])
+    setupDay(cn)
+    expect(cn.weather.forecast.heatChancePercent).toBeLessThan(base.weather.forecast.heatChancePercent)
+  })
+
+  it('Overcoat L1 reduz a chance de calor vs baseline', () => {
+    const base = heatDayState([plainMon('p1')])
+    setupDay(base)
+    const oc = heatDayState([overcoatMon('p1', 1)])
+    setupDay(oc)
+    expect(oc.weather.forecast.heatChancePercent).toBeLessThan(base.weather.forecast.heatChancePercent)
+  })
+
+  it('Overcoat L2 reduz a chance de calor vs baseline', () => {
+    const base = heatDayState([plainMon('p1')])
+    setupDay(base)
+    const oc = heatDayState([overcoatMon('p1', 2)])
+    setupDay(oc)
+    expect(oc.weather.forecast.heatChancePercent).toBeLessThan(base.weather.forecast.heatChancePercent)
+  })
+})
+
 // ---- buildDayWeather signature checks ---------------------------------------------------
 
 describe('buildDayWeather with deltas and cap', () => {
   it('is deterministic with new params', () => {
     const city = getCity(2)
-    const a = buildDayWeather(42, 8, city, 10, -10, 2)
-    const b = buildDayWeather(42, 8, city, 10, -10, 2)
+    const a = buildDayWeather(42, 8, city, 10, -10, 0, 2)
+    const b = buildDayWeather(42, 8, city, 10, -10, 0, 2)
     expect(a).toEqual(b)
   })
 
@@ -233,7 +278,7 @@ describe('buildDayWeather with deltas and cap', () => {
     const city = getCity(2) // Vermilion
     // Try many seeds to ensure the cap actually works
     for (let seed = 1; seed <= 20; seed++) {
-      const w = buildDayWeather(seed, 9, city, 0, 0, 1)
+      const w = buildDayWeather(seed, 9, city, 0, 0, 0, 1)
       expect(w.rain.length + w.storms.length).toBeLessThanOrEqual(1)
     }
   })
@@ -241,7 +286,7 @@ describe('buildDayWeather with deltas and cap', () => {
   it('maxWeatherEvents=2 caps total rain+storm to 2', () => {
     const city = getCity(2)
     for (let seed = 1; seed <= 20; seed++) {
-      const w = buildDayWeather(seed, 9, city, 0, 0, 2)
+      const w = buildDayWeather(seed, 9, city, 0, 0, 0, 2)
       expect(w.rain.length + w.storms.length).toBeLessThanOrEqual(2)
     }
   })

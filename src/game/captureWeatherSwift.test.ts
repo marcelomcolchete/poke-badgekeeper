@@ -14,7 +14,8 @@ const DRY = graphWithoutSurf(CERULEAN.graph)
 const rainAllDay: WeatherSchedule = {
   rain: [{ startMs: 0, endMs: DAY_LENGTH_MS, puddles: [] }],
   storms: [],
-  forecast: { rainChancePercent: 100, rainMmPerHour: 30, potentialRainCount: 1, stormChancePercent: 0, potentialStormCount: 0 },
+  heat: [],
+  forecast: { rainChancePercent: 100, rainMmPerHour: 30, potentialRainCount: 1, stormChancePercent: 0, potentialStormCount: 0, heatChancePercent: 0, potentialHeatCount: 0 },
 }
 
 // Área de grama alcançável a pé a partir do ginásio.

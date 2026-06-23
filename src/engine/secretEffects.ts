@@ -19,6 +19,8 @@ import {
   ANALYTIC_STUDY_MULT_L2,
   BATTLE_ARMOR_MISSION_MULT_L1,
   BATTLE_ARMOR_MISSION_MULT_L2,
+  CHLOROPHYLL_HEAT_BONUS_L1,
+  CHLOROPHYLL_HEAT_BONUS_L2,
   DRY_SKIN_MISSION_BONUS_L2,
   ELECTIRIZER_MISSION_BONUS,
   EVIOLITE_MISSION_MULT,
@@ -65,6 +67,7 @@ import {
 import { applyDamage, effectiveAttr, mapAttrs } from './attributes.ts'
 import { itemMissionMultiplier, itemTravelSpeedMultiplier, notFinalEvolution } from './itemEffects.ts'
 import { isRaining, type WeatherSchedule } from './weather.ts'
+import { isHot } from './heat.ts'
 
 export type SecretRuntimeMap = Record<string, SecretRuntime>
 
@@ -201,6 +204,26 @@ export function hasThickFat(p: Pokemon): boolean {
 export function hasIceBody(p: Pokemon): boolean {
   return hasSecret(p, 'sa-ice-body')
 }
+export function hasChlorophyll(p: Pokemon): boolean {
+  return hasSecret(p, 'sa-chlorophyll')
+}
+
+/** Imune ao slowdown de calor (nível de time): Ice Body, Clear Body (≥1) ou Chlorophyll. */
+export function teamImmuneToHeat(team: readonly Pokemon[]): boolean {
+  return team.some((p) => hasIceBody(p) || hasClearBody(p) || hasChlorophyll(p))
+}
+
+/** Bônus ADITIVO de velocidade do time no calor (Chlorophyll): 0, +2 (L1) ou +3 (L2). */
+export function teamHeatSpeedBonus(team: readonly Pokemon[]): number {
+  let bonus = 0
+  for (const p of team) {
+    const lv = secretLevelOf(p, 'sa-chlorophyll')
+    if (lv === 2) bonus = Math.max(bonus, CHLOROPHYLL_HEAT_BONUS_L2)
+    else if (lv === 1) bonus = Math.max(bonus, CHLOROPHYLL_HEAT_BONUS_L1)
+  }
+  return bonus
+}
+
 export function hasPressure(p: Pokemon): boolean {
   return hasSecret(p, 'sa-pressure')
 }
@@ -389,6 +412,15 @@ export function missionAttrMultiplier(p: Pokemon, ctx: MissionSecretCtx): number
   ) {
     mult *= 1 + DRY_SKIN_MISSION_BONUS_L2
   }
+  // Dry Skin L2: −25% de atributos em missão enquanto QUENTE (espelha o +25% da chuva).
+  if (
+    secretLevelOf(p, 'sa-dry-skin') === 2 &&
+    ctx.weather !== undefined &&
+    ctx.nowMs !== undefined &&
+    isHot(ctx.weather.heat, ctx.nowMs)
+  ) {
+    mult *= 1 - DRY_SKIN_MISSION_BONUS_L2
+  }
   if (hasHustle(p)) {
     const lvl = secretLevelOf(p, 'sa-hustle')
     mult *= lvl === 2 ? HUSTLE_MISSION_MULT_L2 : HUSTLE_MISSION_MULT_L1
@@ -485,7 +517,8 @@ export function teamIsSpeedy(
 ): boolean {
   return (
     teamTravelSpeedMultiplier(team, runItems) > 1 ||
-    (teamHasSwiftSwim(team) && isRaining(weather, nowMs))
+    (teamHasSwiftSwim(team) && isRaining(weather, nowMs)) ||
+    (teamHeatSpeedBonus(team) > 0 && isHot(weather.heat, nowMs))
   )
 }
 

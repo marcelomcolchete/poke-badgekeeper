@@ -122,16 +122,18 @@ export function setupDay(s: GameState): void {
   // Clima do dia (chuva + tempestade): pré-computado e reprodutível por (seed, dia, cidade).
   // rainDelta = Σ cloudNineRainPP(level) − Σ overcoatPP(level)
   // stormDelta = −Σ cloudNineOtherPP(level) − Σ overcoatPP(level)
+  // heatDelta = −Σ cloudNineOtherPP(level) − Σ overcoatPP(level)
   // ownTempoCap: strictest (lowest) cap among Own Tempo holders; 0 = no cap
   let rainDelta = 0
   let stormDelta = 0
+  let heatDelta = 0
   for (const p of s.roster) {
     const cnLevel = secretLevelOf(p, 'sa-cloud-nine')
-    if (cnLevel === 2) { rainDelta += CLOUD_NINE_RAIN_PP_L2; stormDelta -= CLOUD_NINE_OTHER_PP_L2 }
-    else if (cnLevel === 1) { rainDelta += CLOUD_NINE_RAIN_PP_L1; stormDelta -= CLOUD_NINE_OTHER_PP_L1 }
+    if (cnLevel === 2) { rainDelta += CLOUD_NINE_RAIN_PP_L2; stormDelta -= CLOUD_NINE_OTHER_PP_L2; heatDelta -= CLOUD_NINE_OTHER_PP_L2 }
+    else if (cnLevel === 1) { rainDelta += CLOUD_NINE_RAIN_PP_L1; stormDelta -= CLOUD_NINE_OTHER_PP_L1; heatDelta -= CLOUD_NINE_OTHER_PP_L1 }
     const ocLevel = secretLevelOf(p, 'sa-overcoat')
-    if (ocLevel === 2) { rainDelta -= OVERCOAT_PP_L2; stormDelta -= OVERCOAT_PP_L2 }
-    else if (ocLevel === 1) { rainDelta -= OVERCOAT_PP_L1; stormDelta -= OVERCOAT_PP_L1 }
+    if (ocLevel === 2) { rainDelta -= OVERCOAT_PP_L2; stormDelta -= OVERCOAT_PP_L2; heatDelta -= OVERCOAT_PP_L2 }
+    else if (ocLevel === 1) { rainDelta -= OVERCOAT_PP_L1; stormDelta -= OVERCOAT_PP_L1; heatDelta -= OVERCOAT_PP_L1 }
   }
   // Own Tempo: non-stacking, use strictest cap (L2=1 < L1=2; if both, L2 wins)
   let ownTempoCap = 0
@@ -146,6 +148,7 @@ export function setupDay(s: GameState): void {
     city,
     rainDelta,
     stormDelta,
+    heatDelta,
     ownTempoCap,
   )
   applyForewarn(s)

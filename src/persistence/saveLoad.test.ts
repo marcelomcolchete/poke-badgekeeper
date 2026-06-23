@@ -161,6 +161,30 @@ describe('saveLoad (PLAN §5)', () => {
     expect(loaded.today.secretUnlock).toBeNull()
   })
 
+  it('migra v37 → v38: weather.heat = [] e previsão de calor zerada', () => {
+    const base = autoSeedRun(42) as unknown as Record<string, unknown>
+    // Simula save v37: weather sem heat, forecast sem campos de calor.
+    const weatherV37 = {
+      ...(base.weather as Record<string, unknown>),
+    }
+    delete (weatherV37 as Record<string, unknown>).heat
+    const forecastV37 = { ...(weatherV37.forecast as Record<string, unknown>) }
+    delete forecastV37.heatChancePercent
+    delete forecastV37.potentialHeatCount
+    weatherV37.forecast = forecastV37
+    const v37 = {
+      version: 37,
+      savedAtMs: 0,
+      state: { ...base, weather: weatherV37 },
+    }
+    localStorage.setItem(SAVE_KEY, JSON.stringify(v37))
+    const loaded = loadGame()
+    expect(loaded).not.toBeNull()
+    expect(loaded!.weather.heat).toEqual([])
+    expect(loaded!.weather.forecast.heatChancePercent).toBe(0)
+    expect(loaded!.weather.forecast.potentialHeatCount).toBe(0)
+  })
+
   it('clearSave remove o save', () => {
     saveGame(autoSeedRun(1), 0)
     clearSave()

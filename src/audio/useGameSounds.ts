@@ -12,6 +12,8 @@ import { strikesResolvingBetween } from '../engine/storm.ts'
 import type { StormEvent } from '../engine/storm.ts'
 import { playSound } from './sounds.ts'
 import { startRain, stopRain } from './rainPlayer.ts'
+import { startHeat, stopHeat } from './heatPlayer.ts'
+import { isHot } from '../engine/heat.ts'
 import { playThunder } from './thunderPlayer.ts'
 
 /**
@@ -40,6 +42,7 @@ export function useGameSounds(state: GameState): void {
   const pendingTotal = useRef(0)
   const warnedIds = useRef<Set<string>>(new Set())
   const raining = useRef(false)
+  const hot = useRef(false)
   const prevStormMs = useRef(0)
   const theftWarned = useRef(false)
   const theftAnnounced = useRef(false)
@@ -102,6 +105,12 @@ export function useGameSounds(state: GameState): void {
     else if (!isRain && raining.current) stopRain()
     raining.current = isRain
 
+    // 5b) Som de calor em loop: toca enquanto há janela de calor ativa na fase Dia (heatPlayer).
+    const isHotNow = state.run.phase === 'DAY' && isHot(state.weather.heat, now)
+    if (isHotNow && !hot.current) startHeat()
+    else if (!isHotNow && hot.current) stopHeat()
+    hot.current = isHotNow
+
     // 6) Som de raio: um trovão (thunderN sorteado) por janela em que um raio impacta na fase Dia.
     //    Mesma janela (prevMs, now] do dano (engine/stormFlow), então o áudio segue o impacto.
     if (!first && shouldThunder(state.weather.storms, prevStormMs.current, now, state.run.phase)) {
@@ -131,8 +140,8 @@ export function useGameSounds(state: GameState): void {
     ready.current = true
   }, [state])
 
-  // Sai da fase Dia / desmonta: garante que a chuva pare.
-  useEffect(() => () => stopRain(), [])
+  // Sai da fase Dia / desmonta: garante que a chuva e o calor parem.
+  useEffect(() => () => { stopRain(); stopHeat() }, [])
 }
 
 function playResult(result: MissionResult): void {

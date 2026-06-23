@@ -378,6 +378,17 @@ export const STORM_EVENT_MIN_MS = 15_000
 export const STORM_EVENT_MAX_MS = 30_000
 /** Folga mínima entre tempestades PRÓPRIAS (as acopladas à chuva podem sobrepor). */
 export const STORM_GAP_MS = 4_000
+
+// ---- Calor (slowdown) — efeito climático de Celadon ---------------------------------
+/** Calor: duração de um evento (ms de jogo) e folga entre eventos. */
+export const HEAT_EVENT_MIN_MS = 30_000
+export const HEAT_EVENT_MAX_MS = 60_000
+export const HEAT_GAP_MS = 4_000
+/** Calor: fator multiplicativo da velocidade de viagem enquanto quente (0.2 = −80%). */
+export const HEAT_SLOW_FACTOR = 0.2
+/** Chlorophyll: bônus ADITIVO de velocidade do time no calor (espelha SWIFT_SWIM_RAIN_BONUS). */
+export const CHLOROPHYLL_HEAT_BONUS_L1 = 2
+export const CHLOROPHYLL_HEAT_BONUS_L2 = 3
 /** Aviso vermelho antes do impacto do raio. */
 export const STRIKE_WARNING_MS = 5_000
 /** Raio do efeito (fração da largura do mapa): padrão, quando o centro já é água, e secundário. */

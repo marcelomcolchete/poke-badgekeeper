@@ -23,8 +23,8 @@ import { secretLevelOf } from '../../data/secretAbilities.ts'
 import { theftChanceLabel } from '../../engine/theft.ts'
 import styles from './DayForecastPanel.module.css'
 
-const EFFECT_ICON: Record<WeatherEffectKind, string> = { rain: '🌧️', storm: '⛈️' }
-const EFFECT_NAME: Record<WeatherEffectKind, string> = { rain: 'Chuva', storm: 'Tempestade' }
+const EFFECT_ICON: Record<WeatherEffectKind, string> = { rain: '🌧️', storm: '⛈️', heat: '🔥' }
+const EFFECT_NAME: Record<WeatherEffectKind, string> = { rain: 'Chuva', storm: 'Tempestade', heat: 'Calor' }
 
 export function DayForecastPanel({ state }: { state: GameState }) {
   const city = getCity(state.run.cityIndex)
@@ -34,13 +34,14 @@ export function DayForecastPanel({ state }: { state: GameState }) {
   // de Cloud Nine / Overcoat / Own Tempo — assim a % "bate com o que vai acontecer".
   let rainDelta = 0
   let stormDelta = 0
+  let heatDelta = 0
   for (const p of state.roster) {
     const cnLevel = secretLevelOf(p, 'sa-cloud-nine')
-    if (cnLevel === 2) { rainDelta += CLOUD_NINE_RAIN_PP_L2; stormDelta -= CLOUD_NINE_OTHER_PP_L2 }
-    else if (cnLevel === 1) { rainDelta += CLOUD_NINE_RAIN_PP_L1; stormDelta -= CLOUD_NINE_OTHER_PP_L1 }
+    if (cnLevel === 2) { rainDelta += CLOUD_NINE_RAIN_PP_L2; stormDelta -= CLOUD_NINE_OTHER_PP_L2; heatDelta -= CLOUD_NINE_OTHER_PP_L2 }
+    else if (cnLevel === 1) { rainDelta += CLOUD_NINE_RAIN_PP_L1; stormDelta -= CLOUD_NINE_OTHER_PP_L1; heatDelta -= CLOUD_NINE_OTHER_PP_L1 }
     const ocLevel = secretLevelOf(p, 'sa-overcoat')
-    if (ocLevel === 2) { rainDelta -= OVERCOAT_PP_L2; stormDelta -= OVERCOAT_PP_L2 }
-    else if (ocLevel === 1) { rainDelta -= OVERCOAT_PP_L1; stormDelta -= OVERCOAT_PP_L1 }
+    if (ocLevel === 2) { rainDelta -= OVERCOAT_PP_L2; stormDelta -= OVERCOAT_PP_L2; heatDelta -= OVERCOAT_PP_L2 }
+    else if (ocLevel === 1) { rainDelta -= OVERCOAT_PP_L1; stormDelta -= OVERCOAT_PP_L1; heatDelta -= OVERCOAT_PP_L1 }
   }
   let ownTempoCap = 0
   if (state.roster.some((p) => hasOwnTempo(p) && secretLevelOf(p, 'sa-own-tempo') === 2)) {
@@ -54,10 +55,12 @@ export function DayForecastPanel({ state }: { state: GameState }) {
     city,
     rainDelta,
     stormDelta,
+    heatDelta,
     ownTempoCap,
   ).forecast
   const rainChance = rainAtLeastOnceChance(forecast.rainChancePercent, forecast.potentialRainCount)
   const stormChance = rainAtLeastOnceChance(forecast.stormChancePercent, forecast.potentialStormCount)
+  const heatChance = rainAtLeastOnceChance(forecast.heatChancePercent, forecast.potentialHeatCount)
 
   const missions = missionsForDay(state.run.day)
   const defenses = defensesForDay(state.run.day)
@@ -71,9 +74,15 @@ export function DayForecastPanel({ state }: { state: GameState }) {
         <span className={styles.subTitle}>PREVISÃO DO TEMPO</span>
         <div className={styles.effects}>
           {/* Cada WeatherEffectKind tem a sua própria chance combinada. */}
-          {weather && (rainChance > 0 || stormChance > 0) ? (
+          {weather && (rainChance > 0 || stormChance > 0 || heatChance > 0) ? (
             weather.effects.map((effect) =>
-              effect.kind === 'rain' && rainChance > 0 ? (
+              effect.kind === 'heat' && heatChance > 0 ? (
+                <div key="heat" className={styles.effect}>
+                  <span className={styles.effectIcon} aria-hidden="true">{EFFECT_ICON.heat}</span>
+                  <span className={styles.effectName}>{EFFECT_NAME.heat}</span>
+                  <span className={styles.effectChance}>{heatChance}%</span>
+                </div>
+              ) : effect.kind === 'rain' && rainChance > 0 ? (
                 <div key="rain" className={styles.effect}>
                   <span className={styles.effectIcon} aria-hidden="true">
                     {EFFECT_ICON.rain}

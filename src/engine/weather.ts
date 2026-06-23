@@ -66,6 +66,12 @@ export interface RainEvent {
   puddles: PuddleSpec[]
 }
 
+/** Uma janela de calor: intervalo [startMs, endMs] (sem sub-objetos — calor não tem poça/raio). */
+export interface HeatEvent {
+  startMs: number
+  endMs: number
+}
+
 /** Previsão do dia exibida na manhã (acima do mercado). */
 export interface WeatherForecast {
   /** Chance de chuva do dia (0–100). */
@@ -78,6 +84,10 @@ export interface WeatherForecast {
   stormChancePercent: number
   /** Quantas tempestades PRÓPRIAS podem cair hoje (0–4). */
   potentialStormCount: number
+  /** Chance de calor do dia (0–100). 0 se a cidade não tem calor. */
+  heatChancePercent: number
+  /** Quantas janelas de calor podem ocorrer hoje (0–6). */
+  potentialHeatCount: number
 }
 
 /** Agenda climática do dia, pré-computada em setupDay e guardada em s.weather. */
@@ -86,6 +96,8 @@ export interface WeatherSchedule {
   rain: RainEvent[]
   /** Eventos de tempestade do dia (raios), ordenados por startMs. Vazio se não há tempestade. */
   storms: StormEvent[]
+  /** Janelas de calor do dia (slowdown), ordenadas por startMs. Vazio se não há calor. */
+  heat: HeatEvent[]
   forecast: WeatherForecast
 }
 
@@ -94,12 +106,15 @@ export function emptyWeatherSchedule(): WeatherSchedule {
   return {
     rain: [],
     storms: [],
+    heat: [],
     forecast: {
       rainChancePercent: 0,
       rainMmPerHour: 0,
       potentialRainCount: 0,
       stormChancePercent: 0,
       potentialStormCount: 0,
+      heatChancePercent: 0,
+      potentialHeatCount: 0,
     },
   }
 }
@@ -210,6 +225,8 @@ export function buildWeatherSchedule(
     potentialRainCount: maxTimes,
     stormChancePercent: 0,
     potentialStormCount: 0,
+    heatChancePercent: 0,
+    potentialHeatCount: 0,
   }
 
   const rng = createRng(deriveSeed(seed, day, WEATHER_SEED_SALT))
@@ -230,7 +247,7 @@ export function buildWeatherSchedule(
     cursor = end + RAIN_GAP_MS
   }
   rain.sort((a, b) => a.startMs - b.startMs)
-  return { rain, storms: [], forecast }
+  return { rain, storms: [], heat: [], forecast }
 }
 
 // ---- Derivações puras (consumidas pela UI e pelo missionFlow) --------------------------

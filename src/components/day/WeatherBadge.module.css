@@ -30,3 +30,19 @@
     box-shadow: 0 2px 10px rgba(79, 134, 214, 0.85);
   }
 }
+
+/* Calor: halo laranja-âmbar e pulso quente. */
+.heat {
+  background: radial-gradient(circle at 50% 35%, #e8940a 0%, var(--c-hud-bg) 75%);
+  animation: heatPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes heatPulse {
+  0%,
+  100% {
+    box-shadow: 0 2px 6px rgba(8, 26, 14, 0.45);
+  }
+  50% {
+    box-shadow: 0 2px 12px rgba(232, 148, 10, 0.85);
+  }
+}
