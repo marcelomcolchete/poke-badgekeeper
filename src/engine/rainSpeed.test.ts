@@ -1,14 +1,20 @@
 import { describe, expect, it } from 'vitest'
 import { makeMon } from './testkit.ts'
 import { graphTravelMs } from './missions.ts'
-import { SWIFT_SWIM_RAIN_BONUS } from './balance.ts'
-import { rainTravelMs } from './rainSpeed.ts'
+import { SWIFT_SWIM_RAIN_BONUS, HEAT_SLOW_FACTOR } from './balance.ts'
+import { weatherTravelMs, instantWeatherSpeed } from './rainSpeed.ts'
 import { teamTravelSpeedMultiplier } from './secretEffects.ts'
 import { emptyWeatherSchedule, type WeatherSchedule } from './weather.ts'
 
 // Omanyte (138) par = ['sa-swift-swim','sa-shell-armor']; Swift Swim no slot 0. Mesma espécie sem habilidade = base.
 const swimmer = () => makeMon({ speciesId: 138, secretPicks: [{ slot: 0, level: 1 }] })
 const plain = () => makeMon({ speciesId: 138, secretPicks: [] })
+
+// Bulbasaur(1) Chlorophyll slot 0; Tentacool(72) Clear Body slot 0; Pidgey(16) sem habilidade.
+const chloro = () => makeMon({ speciesId: 1, secretPicks: [{ slot: 0, level: 1 }] })
+const clearBody = () => makeMon({ speciesId: 72, secretPicks: [{ slot: 0, level: 1 }] })
+const noone = () => makeMon({ speciesId: 16, secretPicks: [] })
+
 const DIST = 100
 
 /** Chuva cobrindo um intervalo [0, endMs] (sem poças — só a janela do evento). */
@@ -21,22 +27,30 @@ function rainUntil(endMs: number): WeatherSchedule {
   }
 }
 
-describe('rainTravelMs', () => {
+/** Calor cobrindo [0, endMs]. */
+function heatUntil(endMs: number): WeatherSchedule {
+  return {
+    rain: [], storms: [], heat: [{ startMs: 0, endMs }],
+    forecast: { rainChancePercent: 0, rainMmPerHour: 0, potentialRainCount: 0, stormChancePercent: 0, potentialStormCount: 0, heatChancePercent: 100, potentialHeatCount: 1 },
+  }
+}
+
+describe('weatherTravelMs — Swift Swim (regressão)', () => {
   it('sem chuva → idêntico ao tempo linear (graphTravelMs com a base)', () => {
     const team = [swimmer()]
-    expect(rainTravelMs(emptyWeatherSchedule(), 0, DIST, team)).toBeCloseTo(
+    expect(weatherTravelMs(emptyWeatherSchedule(), 0, DIST, team)).toBeCloseTo(
       graphTravelMs(DIST, team, 1), // base = 1 (HP cheio, sem Fly/Lagging)
     )
   })
 
   it('time SEM Swift Swim ignora a chuva', () => {
     const team = [plain()]
-    expect(rainTravelMs(rainUntil(1_000_000), 0, DIST, team)).toBeCloseTo(graphTravelMs(DIST, team, 1))
+    expect(weatherTravelMs(rainUntil(1_000_000), 0, DIST, team)).toBeCloseTo(graphTravelMs(DIST, team, 1))
   })
 
   it('chuva o trajeto todo → velocidade ×3 (1/3 do tempo)', () => {
     const team = [swimmer()]
-    expect(rainTravelMs(rainUntil(1_000_000), 0, DIST, team)).toBeCloseTo(
+    expect(weatherTravelMs(rainUntil(1_000_000), 0, DIST, team)).toBeCloseTo(
       graphTravelMs(DIST, team, 1 + SWIFT_SWIM_RAIN_BONUS),
     )
   })
@@ -46,11 +60,11 @@ describe('rainTravelMs', () => {
     const need = graphTravelMs(DIST, team, 1) // "progresso" total a multiplicador 1
     const rainMs = Math.floor(need / 10) // chuva curta: cabe inteira no início (need > 3·rainMs)
     // Durante a chuva cobre rainMs·3 do progresso; o resto a ×1. Tempo = rainMs + (need − 3·rainMs).
-    expect(rainTravelMs(rainUntil(rainMs), 0, DIST, team)).toBeCloseTo(need - 2 * rainMs)
+    expect(weatherTravelMs(rainUntil(rainMs), 0, DIST, team)).toBeCloseTo(need - 2 * rainMs)
   })
 
   it('distância zero → tempo zero (ex.: Sniper)', () => {
-    expect(rainTravelMs(rainUntil(1_000_000), 0, 0, [swimmer()])).toBe(0)
+    expect(weatherTravelMs(rainUntil(1_000_000), 0, 0, [swimmer()])).toBe(0)
   })
 
   it('sem chuva com multiplicador base ≠ 1 (Weak Armor) → ainda igual ao linear', () => {
@@ -59,8 +73,42 @@ describe('rainTravelMs', () => {
     const team = [makeMon({ speciesId: 95, secretPicks: [{ slot: 1, level: 1 }], maxHp: 10, currentHp: 7 })]
     const baseMult = teamTravelSpeedMultiplier(team, [])
     expect(baseMult).toBeGreaterThan(1) // garante que o caso realmente testa base ≠ 1
-    expect(rainTravelMs(emptyWeatherSchedule(), 0, DIST, team)).toBeCloseTo(
+    expect(weatherTravelMs(emptyWeatherSchedule(), 0, DIST, team)).toBeCloseTo(
       graphTravelMs(DIST, team, baseMult),
     )
+  })
+})
+
+describe('weatherTravelMs — Calor', () => {
+  it('time normal: calor o trajeto todo → ×0.2 (5× o tempo linear)', () => {
+    const team = [noone()]
+    const need = graphTravelMs(DIST, team, 1)
+    expect(weatherTravelMs(heatUntil(1_000_000), 0, DIST, team)).toBeCloseTo(need / HEAT_SLOW_FACTOR)
+  })
+  it('imune (Clear Body): calor não afeta → tempo linear', () => {
+    const team = [clearBody()]
+    expect(weatherTravelMs(heatUntil(1_000_000), 0, DIST, team)).toBeCloseTo(graphTravelMs(DIST, team, 1))
+  })
+  it('Chlorophyll: imune + bônus → ×(1+2)=×3 (1/3 do tempo)', () => {
+    const team = [chloro()]
+    expect(weatherTravelMs(heatUntil(1_000_000), 0, DIST, team)).toBeCloseTo(graphTravelMs(DIST, team, 3))
+  })
+  it('calor parcial (time normal): ×0.2 enquanto quente, base depois', () => {
+    const team = [noone()]
+    const need = graphTravelMs(DIST, team, 1)
+    const hotMs = Math.floor(need / 10) // janela curta no início
+    // Durante o calor cobre hotMs·0.2 do progresso; resto a ×1. Tempo = hotMs + (need − 0.2·hotMs).
+    expect(weatherTravelMs(heatUntil(hotMs), 0, DIST, team)).toBeCloseTo(need + 0.8 * hotMs)
+  })
+})
+
+describe('instantWeatherSpeed', () => {
+  it('time normal quente → base × 0.2', () => {
+    const team = [noone()]
+    expect(instantWeatherSpeed(heatUntil(1000), 500, team)).toBeCloseTo(teamTravelSpeedMultiplier(team, []) * HEAT_SLOW_FACTOR)
+  })
+  it('fora do calor → base', () => {
+    const team = [noone()]
+    expect(instantWeatherSpeed(heatUntil(1000), 2000, team)).toBeCloseTo(teamTravelSpeedMultiplier(team, []))
   })
 })

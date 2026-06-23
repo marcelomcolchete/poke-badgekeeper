@@ -15,7 +15,7 @@ import { travelRoute } from '../engine/missions.ts'
 import { graphWithTunnels } from '../engine/pathfinding.ts'
 import { planWeatherLeg } from '../engine/weatherTravel.ts'
 import { teamHasSwiftSwim, teamSurfs, teamTravelSpeedMultiplier } from '../engine/secretEffects.ts'
-import { rainTravelMs } from '../engine/rainSpeed.ts'
+import { weatherTravelMs } from '../engine/rainSpeed.ts'
 import { isRaining } from '../engine/weather.ts'
 import { EXPLORATION_XP, SWIFT_SWIM_RAIN_BONUS } from '../engine/balance.ts'
 import { applyXpGains } from './itemFlow.ts'
@@ -50,7 +50,7 @@ export function startSearch(s: GameState, searcherId: string, spotIndex: number)
   // "viagem instantânea" de caminho vazio (espelha acceptMission). Voo/Sniper nunca dão [].
   if (path.length === 0) return
   const now = s.clock.dayElapsedMs
-  const oneWay = rainTravelMs(s.weather, now, distance, [searcher], s.runItems, s.today.electrified)
+  const oneWay = weatherTravelMs(s.weather, now, distance, [searcher], s.runItems, s.today.electrified)
   const arriveAtMs = now + oneWay
   // Fast Ball: a busca é resolvida na hora em que o Pokémon chega na área (sem tempo de busca).
   const instant = s.runItems.includes('fast-ball')
@@ -181,7 +181,7 @@ function startReturn(s: GameState, searcherId: string, spotIndex: number, captur
   // (ex.: voltar de 'k' por k→t→u) o caminho/tempo da volta diferem da ida (PLAN §3.1).
   const { flying, surfing, path, distance } = travelRoute(graph, node, city.siteNodes.gym, [searcher], s.runItems)
   const now = s.clock.dayElapsedMs
-  const oneWay = rainTravelMs(s.weather, now, distance, [searcher], s.runItems, s.today.electrified)
+  const oneWay = weatherTravelMs(s.weather, now, distance, [searcher], s.runItems, s.today.electrified)
   replaceMon(s, { ...searcher, status: 'returning' })
   s.captureReturns.push({
     searcherId,

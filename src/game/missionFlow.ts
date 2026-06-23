@@ -40,7 +40,7 @@ import {
   type MissionSecretCtx,
 } from '../engine/secretEffects.ts'
 import { secretLevelOf } from '../data/secretAbilities.ts'
-import { rainTravelMs } from '../engine/rainSpeed.ts'
+import { weatherTravelMs } from '../engine/rainSpeed.ts'
 import { isRaining } from '../engine/weather.ts'
 import { graphWithTunnels } from '../engine/pathfinding.ts'
 import { planWeatherLeg } from '../engine/weatherTravel.ts'
@@ -116,7 +116,7 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
   // já bloqueia, mas a guarda evita uma viagem instantânea por engano. Voo/Sniper nunca dão [].
   if (outbound.path.length === 0) return
   const inbound = travelRoute(graph, mission.node, city.siteNodes.gym, team, s.runItems)
-  const outMs = rainTravelMs(s.weather, now, outbound.distance, team, s.runItems, s.today.electrified)
+  const outMs = weatherTravelMs(s.weather, now, outbound.distance, team, s.runItems, s.today.electrified)
   // Sniper L1: dobra a duração de execução (atua do ginásio, mas demora mais). L2 normal.
   const baseExecution = executionMs(team, template.baseExecutionMs)
   const sniperL1 = team.length === 1 && hasSniper(team[0]!) && secretLevelOf(team[0]!, 'sa-sniper') === 1
@@ -144,7 +144,7 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
   mission.arriveAtMs = now + outMs
   mission.resolveAtMs = mission.arriveAtMs + execution
   mission.returnEndsAtMs =
-    mission.resolveAtMs + rainTravelMs(s.weather, mission.resolveAtMs, inbound.distance, team, s.runItems, s.today.electrified)
+    mission.resolveAtMs + weatherTravelMs(s.weather, mission.resolveAtMs, inbound.distance, team, s.runItems, s.today.electrified)
   mission.pSuccess = missionSuccessProbabilityCtx(ctx, mission.requirement)
   // Natural Cure: recupera vida ao sair em missão (L1 +2; L2 cura total); demais só viajam.
   // Dry Skin: se chovendo agora, cura ceil(25% maxHp) ao despachar (L1 e L2).
