@@ -23,8 +23,8 @@ import { secretLevelOf } from '../../data/secretAbilities.ts'
 import { theftChanceLabel } from '../../engine/theft.ts'
 import styles from './DayForecastPanel.module.css'
 
-const EFFECT_ICON: Record<WeatherEffectKind, string> = { rain: '🌧️', storm: '⛈️' }
-const EFFECT_NAME: Record<WeatherEffectKind, string> = { rain: 'Chuva', storm: 'Tempestade' }
+const EFFECT_ICON: Record<WeatherEffectKind, string> = { rain: '🌧️', storm: '⛈️', heat: '🔥' }
+const EFFECT_NAME: Record<WeatherEffectKind, string> = { rain: 'Chuva', storm: 'Tempestade', heat: 'Calor' }
 
 export function DayForecastPanel({ state }: { state: GameState }) {
   const city = getCity(state.run.cityIndex)

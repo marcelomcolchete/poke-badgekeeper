@@ -4,7 +4,7 @@
 // aqui e tratar o `kind` em engine/weather.ts.
 
 /** Tipos de efeito climático conhecidos. Futuro: 'sun' | 'sandstorm' | 'snow' … */
-export type WeatherEffectKind = 'rain' | 'storm'
+export type WeatherEffectKind = 'rain' | 'storm' | 'heat'
 
 /** Parâmetros da chance de um efeito: piso cresce por dia até travar no teto (regime do infinito). */
 export interface WeatherChanceFormula {
@@ -28,7 +28,13 @@ export interface StormEffectConfig {
   chance: WeatherChanceFormula
 }
 
-export type WeatherEffectConfig = RainEffectConfig | StormEffectConfig
+/** Efeito de Calor: janela quente que reduz a velocidade de viagem — ver engine/heat.ts. */
+export interface HeatEffectConfig {
+  kind: 'heat'
+  chance: WeatherChanceFormula
+}
+
+export type WeatherEffectConfig = RainEffectConfig | StormEffectConfig | HeatEffectConfig
 
 export interface CityWeather {
   /** Efeitos possíveis nesta cidade, na ordem de exibição da previsão. */
@@ -44,6 +50,14 @@ const CITY_WEATHER: Record<number, CityWeather> = {
     effects: [
       { kind: 'rain', chance: { pisoBase: 15, pisoPorDia: 2, teto: 60 } },
       { kind: 'storm', chance: { pisoBase: 20, pisoPorDia: 1, teto: 50 } },
+    ],
+  },
+  // Celadon (Grama/Inseto): calor + chuva + tempestade (na ordem da previsão).
+  3: {
+    effects: [
+      { kind: 'heat', chance: { pisoBase: 20, pisoPorDia: 1, teto: 50 } },
+      { kind: 'rain', chance: { pisoBase: 10, pisoPorDia: 1, teto: 40 } },
+      { kind: 'storm', chance: { pisoBase: 5, pisoPorDia: 1, teto: 20 } },
     ],
   },
 }
@@ -72,5 +86,16 @@ export function cityRainChance(cityIndex: number): WeatherChanceFormula | null {
 /** Fórmula de chance de Tempestade da cidade, ou null se ela não tem o efeito. */
 export function cityStormChance(cityIndex: number): WeatherChanceFormula | null {
   const e = getCityWeather(cityIndex)?.effects.find((x) => x.kind === 'storm')
+  return e ? e.chance : null
+}
+
+/** A cidade tem o efeito de Calor habilitado? */
+export function cityHasHeat(cityIndex: number): boolean {
+  return getCityWeather(cityIndex)?.effects.some((e) => e.kind === 'heat') ?? false
+}
+
+/** Fórmula de chance de Calor da cidade, ou null se ela não tem o efeito. */
+export function cityHeatChance(cityIndex: number): WeatherChanceFormula | null {
+  const e = getCityWeather(cityIndex)?.effects.find((x) => x.kind === 'heat')
   return e ? e.chance : null
 }

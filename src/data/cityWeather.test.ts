@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cityHasRain, cityHasStorm, cityRainChance, cityStormChance, getCityWeather } from './cityWeather.ts'
+import { cityHasHeat, cityHasRain, cityHasStorm, cityHeatChance, cityRainChance, cityStormChance, getCityWeather } from './cityWeather.ts'
 
 describe('cityWeather — Tempestade', () => {
   it('Vermilion (índice 2) tem chuva E tempestade', () => {
@@ -32,5 +32,28 @@ describe('cityWeather — fórmula de chance por cidade/efeito', () => {
   it('cidade sem clima (0): ambos null', () => {
     expect(cityRainChance(0)).toBeNull()
     expect(cityStormChance(0)).toBeNull()
+  })
+})
+
+describe('cityWeather — Calor (Celadon)', () => {
+  it('Celadon (índice 3) tem calor, chuva e tempestade', () => {
+    expect(cityHasHeat(3)).toBe(true)
+    expect(cityHasRain(3)).toBe(true)
+    expect(cityHasStorm(3)).toBe(true)
+  })
+
+  it('Celadon (3): fórmulas do pedido', () => {
+    expect(cityHeatChance(3)).toEqual({ pisoBase: 20, pisoPorDia: 1, teto: 50 })
+    expect(cityRainChance(3)).toEqual({ pisoBase: 10, pisoPorDia: 1, teto: 40 })
+    expect(cityStormChance(3)).toEqual({ pisoBase: 5, pisoPorDia: 1, teto: 20 })
+  })
+
+  it('Celadon lista os efeitos na ordem calor → chuva → tempestade', () => {
+    expect(getCityWeather(3)!.effects.map((e) => e.kind)).toEqual(['heat', 'rain', 'storm'])
+  })
+
+  it('cidades sem calor retornam null/false', () => {
+    expect(cityHasHeat(1)).toBe(false)
+    expect(cityHeatChance(2)).toBeNull()
   })
 })
