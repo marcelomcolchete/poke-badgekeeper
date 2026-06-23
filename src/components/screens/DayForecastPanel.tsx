@@ -34,13 +34,14 @@ export function DayForecastPanel({ state }: { state: GameState }) {
   // de Cloud Nine / Overcoat / Own Tempo — assim a % "bate com o que vai acontecer".
   let rainDelta = 0
   let stormDelta = 0
+  let heatDelta = 0
   for (const p of state.roster) {
     const cnLevel = secretLevelOf(p, 'sa-cloud-nine')
-    if (cnLevel === 2) { rainDelta += CLOUD_NINE_RAIN_PP_L2; stormDelta -= CLOUD_NINE_OTHER_PP_L2 }
-    else if (cnLevel === 1) { rainDelta += CLOUD_NINE_RAIN_PP_L1; stormDelta -= CLOUD_NINE_OTHER_PP_L1 }
+    if (cnLevel === 2) { rainDelta += CLOUD_NINE_RAIN_PP_L2; stormDelta -= CLOUD_NINE_OTHER_PP_L2; heatDelta -= CLOUD_NINE_OTHER_PP_L2 }
+    else if (cnLevel === 1) { rainDelta += CLOUD_NINE_RAIN_PP_L1; stormDelta -= CLOUD_NINE_OTHER_PP_L1; heatDelta -= CLOUD_NINE_OTHER_PP_L1 }
     const ocLevel = secretLevelOf(p, 'sa-overcoat')
-    if (ocLevel === 2) { rainDelta -= OVERCOAT_PP_L2; stormDelta -= OVERCOAT_PP_L2 }
-    else if (ocLevel === 1) { rainDelta -= OVERCOAT_PP_L1; stormDelta -= OVERCOAT_PP_L1 }
+    if (ocLevel === 2) { rainDelta -= OVERCOAT_PP_L2; stormDelta -= OVERCOAT_PP_L2; heatDelta -= OVERCOAT_PP_L2 }
+    else if (ocLevel === 1) { rainDelta -= OVERCOAT_PP_L1; stormDelta -= OVERCOAT_PP_L1; heatDelta -= OVERCOAT_PP_L1 }
   }
   let ownTempoCap = 0
   if (state.roster.some((p) => hasOwnTempo(p) && secretLevelOf(p, 'sa-own-tempo') === 2)) {
@@ -54,7 +55,7 @@ export function DayForecastPanel({ state }: { state: GameState }) {
     city,
     rainDelta,
     stormDelta,
-    0, // extraHeatChancePercent — preenchido na Task 9
+    heatDelta,
     ownTempoCap,
   ).forecast
   const rainChance = rainAtLeastOnceChance(forecast.rainChancePercent, forecast.potentialRainCount)

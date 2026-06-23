@@ -219,6 +219,51 @@ describe('Own Tempo — event cap (non-stacking)', () => {
   })
 })
 
+// ---- Calor (Celadon) — Cloud Nine / Overcoat reduzem heatChancePercent ------------------
+
+/** Estado em Celadon (dia 9) com um roster dado, pronto para setupDay. */
+function heatDayState(mons: ReturnType<typeof createPokemon>[]) {
+  const s = createInitialState(7)
+  s.run.cityIndex = 3 // Celadon (has heat)
+  s.run.day = 9
+  s.roster = mons
+  return s
+}
+
+describe('Calor — Cloud Nine / Overcoat reduzem heatChancePercent em Celadon', () => {
+  it('Cloud Nine L1 reduz a chance de calor vs baseline', () => {
+    const base = heatDayState([plainMon('p1')])
+    setupDay(base)
+    const cn = heatDayState([cloudNineMon('p1', 1)])
+    setupDay(cn)
+    expect(cn.weather.forecast.heatChancePercent).toBeLessThan(base.weather.forecast.heatChancePercent)
+  })
+
+  it('Cloud Nine L2 reduz a chance de calor vs baseline', () => {
+    const base = heatDayState([plainMon('p1')])
+    setupDay(base)
+    const cn = heatDayState([cloudNineMon('p1', 2)])
+    setupDay(cn)
+    expect(cn.weather.forecast.heatChancePercent).toBeLessThan(base.weather.forecast.heatChancePercent)
+  })
+
+  it('Overcoat L1 reduz a chance de calor vs baseline', () => {
+    const base = heatDayState([plainMon('p1')])
+    setupDay(base)
+    const oc = heatDayState([overcoatMon('p1', 1)])
+    setupDay(oc)
+    expect(oc.weather.forecast.heatChancePercent).toBeLessThan(base.weather.forecast.heatChancePercent)
+  })
+
+  it('Overcoat L2 reduz a chance de calor vs baseline', () => {
+    const base = heatDayState([plainMon('p1')])
+    setupDay(base)
+    const oc = heatDayState([overcoatMon('p1', 2)])
+    setupDay(oc)
+    expect(oc.weather.forecast.heatChancePercent).toBeLessThan(base.weather.forecast.heatChancePercent)
+  })
+})
+
 // ---- buildDayWeather signature checks ---------------------------------------------------
 
 describe('buildDayWeather with deltas and cap', () => {
