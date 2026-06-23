@@ -19,7 +19,6 @@ import {
   SPECIAL_XP_MULTIPLIER,
   STATIC_MOVE_CAP_L2,
   STATIC_MOVE_PER_SEC_L2,
-  SWIFT_SWIM_RAIN_BONUS,
 } from '../engine/balance.ts'
 import { goldForMart } from '../engine/economy.ts'
 import {
@@ -34,13 +33,11 @@ import {
   hasSniper,
   hasWaterAbsorb,
   sturdyAvailable,
-  teamHasSwiftSwim,
   teamSurfs,
-  teamTravelSpeedMultiplier,
   type MissionSecretCtx,
 } from '../engine/secretEffects.ts'
 import { secretLevelOf } from '../data/secretAbilities.ts'
-import { weatherTravelMs } from '../engine/rainSpeed.ts'
+import { instantWeatherSpeed, weatherTravelMs } from '../engine/rainSpeed.ts'
 import { isRaining } from '../engine/weather.ts'
 import { graphWithTunnels } from '../engine/pathfinding.ts'
 import { planWeatherLeg } from '../engine/weatherTravel.ts'
@@ -218,9 +215,7 @@ export function applyWeatherHold(s: GameState, mission: MissionInstance, nowMs: 
   // taxa instantânea, enquanto a chegada-base veio do integrador (rainSpeed) — aproximação
   // consciente: como o sprite interpola linear em [legStart, arriveAtMs], os extremos não
   // dessincronizam (ver "Notas de implementação" no plano da feature).
-  const speedMult =
-    teamTravelSpeedMultiplier(team, s.runItems, s.today.electrified) +
-    (teamHasSwiftSwim(team) && isRaining(s.weather, nowMs) ? SWIFT_SWIM_RAIN_BONUS : 0)
+  const speedMult = instantWeatherSpeed(s.weather, nowMs, team, s.runItems, s.today.electrified)
   const plan = planWeatherLeg({
     graph,
     weather: s.weather,
