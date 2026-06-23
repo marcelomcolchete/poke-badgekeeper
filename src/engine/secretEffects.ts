@@ -5,8 +5,10 @@
 // diário (flags) vem do
 // `SecretRuntime` por Pokémon (s.today.secretRuntime), atualizado pelos fluxos.
 
+import { ATTR_KEYS } from '../types/index.ts'
 import type { Attrs, AttrKey, Pokemon } from '../types/index.ts'
 import type { MissionTemplate } from '../data/types.ts'
+import type { Rng } from './rng.ts'
 import type { SecretRuntime } from './state.ts'
 import { hasSecret, secretLevelOf } from '../data/secretAbilities.ts'
 import { TEAM_ATTR_MAX } from './constants.ts'
@@ -51,6 +53,8 @@ import {
   SWARM_MISSION_MULT_L1,
   SWARM_MISSION_MULT_L2,
   LEAF_GUARD_GYM_DAMAGE_DIVISOR,
+  SPORE_ATTR_BONUS_FRACTION,
+  SPORE_ATTRS_COUNT_L2,
   VOLT_ABSORB_BONUS_L1,
   VOLT_ABSORB_BONUS_L2,
   WATER_ABSORB_MISSION_MULT_L1,
@@ -123,6 +127,21 @@ export function hasOvergrow(p: Pokemon): boolean {
 }
 export function hasSwarm(p: Pokemon): boolean {
   return hasSecret(p, 'sa-swarm')
+}
+
+/**
+ * Spore: incrementos de `dayBuffs` a aplicar no INÍCIO do dia. Sorteia 1 eixo (L1) ou 3 eixos
+ * distintos (L2) e dá +round(SPORE_ATTR_BONUS_FRACTION × base) em cada. Mapa vazio sem a habilidade.
+ * Puro; o `rng` deve ser determinístico (seed do dia) e o call site mescla em `p.dayBuffs`.
+ */
+export function sporeDayBuffs(p: Pokemon, rng: Rng): Partial<Record<AttrKey, number>> {
+  const level = secretLevelOf(p, 'sa-spore')
+  if (level < 1) return {}
+  const count = level === 2 ? SPORE_ATTRS_COUNT_L2 : 1
+  const axes = rng.shuffle(ATTR_KEYS).slice(0, count)
+  const out: Partial<Record<AttrKey, number>> = {}
+  for (const key of axes) out[key] = Math.round(SPORE_ATTR_BONUS_FRACTION * p.baseAttrs[key])
+  return out
 }
 export function hasTintedLens(p: Pokemon): boolean {
   return hasSecret(p, 'sa-tinted-lens')

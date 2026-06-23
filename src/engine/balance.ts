@@ -335,6 +335,10 @@ export const TINTED_LENS_BATTLE_MULT_L1 = 1.5
 export const TINTED_LENS_BATTLE_MULT_L2 = 2.0
 /** Leaf Guard L2: divisor do dano que o absorvedor toma no lugar de cada aliado na defesa (ceil). */
 export const LEAF_GUARD_GYM_DAMAGE_DIVISOR = 2
+/** Spore: fração do valor-BASE somada como buff do dia em cada eixo sorteado (+10%). */
+export const SPORE_ATTR_BONUS_FRACTION = 0.1
+/** Spore L2: quantos eixos distintos recebem o buff (L1 = 1). */
+export const SPORE_ATTRS_COUNT_L2 = 3
 /**
  * Static (NOVO, Fase 4): XP concedido por segundo que o time fica PARADO por raio ou poça.
  * 1 XP/s: 5s de paralisia → +5 XP.

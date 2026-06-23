@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { CityGraph } from '../data/types.ts'
-import { makeMon } from './testkit.ts'
+import { fixedRng, makeAttrs, makeMon } from './testkit.ts'
 import { getMissionTemplate } from '../data/missionTemplates.ts'
 import { DIG_TUNNEL_COST } from './balance.ts'
 import { graphWithTunnel, graphWithTunnels, pathDistance, shortestPath } from './pathfinding.ts'
@@ -23,6 +23,7 @@ import {
   missionEffectBreakdown,
   rivalryBattleBonus,
   rolloutBattleBonus,
+  sporeDayBuffs,
   sturdyAvailable,
   teamFlies,
   teamHasFly,
@@ -714,5 +715,26 @@ describe('Swarm (Inseto)', () => {
     const carrier = makeMon({ id: 'a', speciesId: 13, types: ['bug'], secretPicks: [{ slot: 1, level: 1 }] })
     const grassAlly = makeMon({ id: 'b', speciesId: 1, types: ['grass'] })
     expect(missionAttrMultiplier(carrier, ctxOf([carrier, grassAlly], PATRULHA))).toBeCloseTo(1)
+  })
+})
+
+describe('Spore — buff diário (sporeDayBuffs)', () => {
+  // Oddish(43): par = ['sa-chlorophyll','sa-spore'] → Spore slot 1.
+  // fixedRng.shuffle devolve a ordem original de ATTR_KEYS → eixos iniciais (batalha, ...).
+  it('L1 dá +10% do base em 1 eixo (o primeiro com fixedRng)', () => {
+    const mon = makeMon({ speciesId: 43, baseAttrs: makeAttrs({ batalha: 30 }), secretPicks: [{ slot: 1, level: 1 }] })
+    expect(sporeDayBuffs(mon, fixedRng(0))).toEqual({ batalha: 3 }) // round(0.10 × 30) = 3
+  })
+
+  it('L2 dá +10% em 3 eixos distintos', () => {
+    const mon = makeMon({ speciesId: 43, baseAttrs: makeAttrs({}, 20), secretPicks: [{ slot: 1, level: 2 }] })
+    const buffs = sporeDayBuffs(mon, fixedRng(0))
+    expect(Object.keys(buffs)).toHaveLength(3)
+    expect(Object.values(buffs).every((v) => v === 2)).toBe(true) // round(0.10 × 20) = 2
+  })
+
+  it('sem a habilidade, mapa vazio', () => {
+    const mon = makeMon({ speciesId: 43, baseAttrs: makeAttrs() })
+    expect(sporeDayBuffs(mon, fixedRng(0))).toEqual({})
   })
 })

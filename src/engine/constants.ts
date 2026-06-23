@@ -59,6 +59,9 @@ export const DIG_SEED_SALT = 0xd16
 /** Sub-seed do sorteio de treinadores do dia (defesa): ordena quais classes invadem hoje. */
 export const TRAINER_SEED_SALT = 0x713a
 
+/** Sub-seed do buff diário do Spore (Habilidade Secreta): sorteia os eixos do dia por portador. */
+export const SPORE_SEED_SALT = 0x53706f72 // 'Spor'
+
 /** Sub-seed do mercado da manhã: sorteia os 3 itens do dia (por seed+dia+cidade). */
 export const SHOP_SEED_SALT = 0x53686f70 // 'Shop'
 
