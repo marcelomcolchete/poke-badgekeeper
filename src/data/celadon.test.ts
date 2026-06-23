@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { graphWithoutSurf, shortestPath } from '../engine/pathfinding.ts'
+import {
+  graphWithoutSurf,
+  pathDistance,
+  pathUsesSurf,
+  shortestPath,
+  surfTravelDistance,
+} from '../engine/pathfinding.ts'
 import { getCity, nodesForCategory } from './cities.ts'
 
 const CELADON = getCity(3)
@@ -33,8 +39,8 @@ describe('Celadon (cidade 4)', () => {
     }
   })
 
-  it('marca o único ponto de Surf (n) como metadado do mapa', () => {
-    expect(graph.surfNodes).toEqual(['n'])
+  it('marca o ponto de água do atalho (nw) como metadado do mapa', () => {
+    expect(graph.surfNodes).toEqual(['nw'])
   })
 
   it('todos os sítios de missão existem no grafo', () => {
@@ -60,12 +66,21 @@ describe('Celadon (cidade 4)', () => {
     expect(graph.markers['j:mart']).not.toEqual(graph.markers['j:specialMission'])
   })
 
-  it('o mart de terra (j) é alcançável sem Surf; o mart de água (n) NÃO', () => {
+  it('o mart de terra (j) é alcançável sem Surf', () => {
     const dry = graphWithoutSurf(graph)
     expect(shortestPath(dry, siteNodes.gym, 'j').length, 'aa→j sem surf').toBeGreaterThan(0)
-    expect(shortestPath(dry, siteNodes.gym, 'n'), 'aa→n sem surf').toEqual([])
-    // Com o grafo completo (time com Surf), 'n' volta a ser alcançável.
-    expect(shortestPath(graph, siteNodes.gym, 'n').length, 'aa→n com surf').toBeGreaterThan(0)
+  })
+
+  it('o mart central (n) é alcançável a pé; o Surf é o atalho (cruza a água, anda menos)', () => {
+    const dry = graphWithoutSurf(graph)
+    const dryPath = shortestPath(dry, siteNodes.gym, 'n')
+    expect(dryPath.length, 'aa→n a pé (sem surf)').toBeGreaterThan(0) // dá pra chegar a pé
+    const surfPath = shortestPath(graph, siteNodes.gym, 'n')
+    expect(pathUsesSurf(graph, surfPath), 'o caminho ótimo até n cruza a água').toBe(true)
+    expect(
+      surfTravelDistance(graph, surfPath),
+      'com surf (água por baixo) anda menos que a pé por cima',
+    ).toBeLessThan(pathDistance(dry, dryPath))
   })
 
   it('todo sítio é alcançável do ginásio E tem volta ao ginásio', () => {

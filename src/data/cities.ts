@@ -437,8 +437,9 @@ const VERMILION_SITE_NODES: CitySiteNodes = {
 // Grafo calibrado sobre a arte anotada (mapa do chat). 37 pontos de PARADA a–al (sem 'w')
 // + 3 nós dedicados de exploração g31..g33 (áreas GRASS, sobre os retângulos). O ginásio é
 // 'aa'. Posições normalizadas (0–1) estimadas da arte — refináveis com o DEV picker do CityMap.
-// Novidades: DOIS marts (a missão de mart surge em 'j' OU 'n'); 'n' é ponto de água (Surf), então
-// o mart de 'n' fica atrás de água. DUAS Missões Especiais (SPEC1='j', SPEC2='r'). Sem mão única.
+// Novidades: DOIS marts (a missão de mart surge em 'j' OU 'n'). O mart central 'n' é alcançável a
+// pé pelo ponto de cima 'nu'; o Surf é um atalho que cruza a água 'nw' por baixo (anda menos).
+// DUAS Missões Especiais (SPEC1='j', SPEC2='r'). Sem mão única.
 const CELADON_NODES: Record<string, MapPos> = {
   a: { x: 0.108, y: 0.262 },
   b: { x: 0.342, y: 0.262 },
@@ -453,7 +454,9 @@ const CELADON_NODES: Record<string, MapPos> = {
   k: { x: 0.342, y: 0.354 },
   l: { x: 0.71, y: 0.35 },
   m: { x: 0.809, y: 0.35 },
-  n: { x: 0.446, y: 0.498 }, // (surf) — mart atrás de água
+  n: { x: 0.446, y: 0.498 }, // mart central — a pé por 'nu' (cima); atalho de Surf por 'nw' (baixo)
+  nu: { x: 0.446, y: 0.4 }, // chegada a pé do mart central (acima do prédio)
+  nw: { x: 0.446, y: 0.56 }, // (surf) travessia de água — atalho por baixo até 'n'
   o: { x: 0.108, y: 0.535 },
   p: { x: 0.158, y: 0.535 },
   q: { x: 0.342, y: 0.535 },
@@ -512,7 +515,10 @@ const CELADON_EDGES: [string, string][] = [
   ['u', 'v'],
   ['v', 'x'],
   ['x', 'y'],
-  ['n', 'x'],
+  ['c', 'nu'],
+  ['nu', 'n'],
+  ['x', 'nw'],
+  ['nw', 'n'],
   ['x', 'ab'],
   ['z', 'aa'],
   ['aa', 'ai'],
@@ -561,7 +567,7 @@ const CELADON_GRAPH: CityGraph = {
   nodes: CELADON_NODES,
   adj: buildAdjacency(CELADON_NODES, CELADON_EDGES),
   markers: CELADON_MARKERS,
-  surfNodes: ['n'],
+  surfNodes: ['nw'],
 }
 
 // Sítio → ponto do grafo (pop-ups da arte anotada de Celadon).
