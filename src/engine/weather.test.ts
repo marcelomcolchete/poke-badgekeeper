@@ -6,6 +6,7 @@ import {
   activeRainEvent,
   blockedNodesAt,
   buildWeatherSchedule,
+  emptyWeatherSchedule,
   isRaining,
   maxRainTimes,
   puddleLevelAt,
@@ -31,7 +32,7 @@ describe('elegibilidade de clima', () => {
     for (const day of [1, 2]) {
       const s = buildWeatherSchedule(12345, day, CERULEAN)
       expect(s.rain).toEqual([])
-      expect(s.forecast).toEqual({ rainChancePercent: 0, rainMmPerHour: 0, potentialRainCount: 0, stormChancePercent: 0, potentialStormCount: 0 })
+      expect(s.forecast).toEqual({ rainChancePercent: 0, rainMmPerHour: 0, potentialRainCount: 0, stormChancePercent: 0, potentialStormCount: 0, heatChancePercent: 0, potentialHeatCount: 0 })
     }
   })
 
@@ -237,7 +238,8 @@ describe('derivações de bloqueio', () => {
       },
     ],
     storms: [],
-    forecast: { rainChancePercent: 40, rainMmPerHour: 24, potentialRainCount: 2, stormChancePercent: 0, potentialStormCount: 0 },
+    heat: [],
+    forecast: { rainChancePercent: 40, rainMmPerHour: 24, potentialRainCount: 2, stormChancePercent: 0, potentialStormCount: 0, heatChancePercent: 0, potentialHeatCount: 0 },
   }
 
   it('activeRainEvent/isRaining seguem a janela do evento', () => {
@@ -278,5 +280,14 @@ describe('rainAtLeastOnceChance (chance de ao menos uma pancada)', () => {
 
   it('uma única pancada devolve a própria chance (arredondada)', () => {
     expect(rainAtLeastOnceChance(37, 1)).toBe(37)
+  })
+})
+
+describe('emptyWeatherSchedule (calor)', () => {
+  it('emptyWeatherSchedule inclui heat vazio e previsão de calor zerada', () => {
+    const s = emptyWeatherSchedule()
+    expect(s.heat).toEqual([])
+    expect(s.forecast.heatChancePercent).toBe(0)
+    expect(s.forecast.potentialHeatCount).toBe(0)
   })
 })

@@ -16,7 +16,8 @@ function rainUntil(endMs: number): WeatherSchedule {
   return {
     rain: [{ startMs: 0, endMs, puddles: [] }],
     storms: [],
-    forecast: { rainChancePercent: 100, rainMmPerHour: 30, potentialRainCount: 1, stormChancePercent: 0, potentialStormCount: 0 },
+    heat: [],
+    forecast: { rainChancePercent: 100, rainMmPerHour: 30, potentialRainCount: 1, stormChancePercent: 0, potentialStormCount: 0, heatChancePercent: 0, potentialHeatCount: 0 },
   }
 }
 

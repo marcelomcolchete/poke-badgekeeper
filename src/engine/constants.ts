@@ -86,6 +86,11 @@ export const WEATHER_CHANCE_SALT = 0x52436863 // 'RChc'
 /** Salt do SORTEIO da chance de tempestade — distinto do agendamento e da chuva. */
 export const STORM_CHANCE_SALT = 0x53436863 // 'SChc'
 
+/** Sub-seed do Calor: agenda própria do dia (independe de chuva/tempestade). */
+export const HEAT_SEED_SALT = 0x48656174 // 'Heat'
+/** Salt do SORTEIO da chance de Calor — distinto do agendamento e dos demais efeitos. */
+export const HEAT_CHANCE_SALT = 0x48436863 // 'HChc'
+
 /** Sub-seed do Evento de Roubo Rocket: rolagem da chance/alvo/nós/esquadrão por dia. */
 export const THEFT_SEED_SALT = 0x54686566 // 'Thef'
 

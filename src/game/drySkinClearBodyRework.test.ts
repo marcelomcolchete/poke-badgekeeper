@@ -29,24 +29,30 @@ import { travelerPositionsAt } from '../engine/travelerPositions.ts'
 const rainAllDay: WeatherSchedule = {
   rain: [{ startMs: 0, endMs: 200_000, puddles: [] }],
   storms: [],
+  heat: [],
   forecast: {
     rainChancePercent: 100,
     rainMmPerHour: 30,
     potentialRainCount: 1,
     stormChancePercent: 0,
     potentialStormCount: 0,
+    heatChancePercent: 0,
+    potentialHeatCount: 0,
   },
 }
 
 const drySchedule: WeatherSchedule = {
   rain: [],
   storms: [],
+  heat: [],
   forecast: {
     rainChancePercent: 0,
     rainMmPerHour: 0,
     potentialRainCount: 0,
     stormChancePercent: 0,
     potentialStormCount: 0,
+    heatChancePercent: 0,
+    potentialHeatCount: 0,
   },
 }
 
