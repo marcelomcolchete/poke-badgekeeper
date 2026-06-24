@@ -896,6 +896,120 @@ const CINNABAR_SITE_NODES: CitySiteNodes = {
   green: ['g31', 'g32'], // GRASS ×2 (g32 atrás d'água, só por Surf)
 }
 
+// ============================ Viridian (8.png) ============================
+// Grafo calibrado sobre a arte anotada (mapa do chat). 27 pontos de PARADA a–ab (sem 'w')
+// + 3 nós dedicados de exploração g31/g32/g33 (áreas GRASS). O ginásio é 'f'. Posições
+// normalizadas (0–1) estimadas da arte — refináveis com o DEV picker do CityMap. Novidades:
+// 'v' é ponto de Surf (no laguinho) e hospeda a Missão Especial — SPEC fica atrás d'água
+// (acesso só por Surf, via 'n'/'x' — arestas brancas). Mão única f→j (vai mas não volta). O
+// GRASS inferior-direito (g33) tem 4 acessos (t, r, u, aa).
+const VIRIDIAN_NODES: Record<string, MapPos> = {
+  a: { x: 0.634, y: 0.041 },
+  b: { x: 0.844, y: 0.041 },
+  c: { x: 0.447, y: 0.116 },
+  d: { x: 0.634, y: 0.116 },
+  e: { x: 0.634, y: 0.261 },
+  f: { x: 0.761, y: 0.261 },
+  g: { x: 0.844, y: 0.261 },
+  h: { x: 0.447, y: 0.371 },
+  i: { x: 0.531, y: 0.371 },
+  j: { x: 0.761, y: 0.371 },
+  k: { x: 0.185, y: 0.535 },
+  l: { x: 0.302, y: 0.535 },
+  m: { x: 0.447, y: 0.535 },
+  n: { x: 0.302, y: 0.643 },
+  o: { x: 0.447, y: 0.643 },
+  p: { x: 0.531, y: 0.643 },
+  q: { x: 0.648, y: 0.643 },
+  r: { x: 0.749, y: 0.643 },
+  s: { x: 0.844, y: 0.643 },
+  t: { x: 0.648, y: 0.755 },
+  u: { x: 0.844, y: 0.755 },
+  v: { x: 0.302, y: 0.87 }, // (surf) — laguinho; hospeda a Missão Especial
+  x: { x: 0.447, y: 0.87 },
+  y: { x: 0.544, y: 0.87 },
+  z: { x: 0.648, y: 0.87 },
+  aa: { x: 0.749, y: 0.87 },
+  ab: { x: 0.844, y: 0.87 },
+  // Áreas de exploração (GRASS): nós dedicados sobre os retângulos, ligados ao(s) ponto(s) de acesso.
+  g31: { x: 0.447, y: 0.042 }, // GRASS topo (acesso 'c')
+  g32: { x: 0.046, y: 0.535 }, // GRASS esquerda (acesso 'k')
+  g33: { x: 0.749, y: 0.752 }, // GRASS inferior-dir (acesso 't', 'r', 'u', 'aa')
+}
+
+// Arestas NÃO-direcionadas (ligam os dois sentidos). A mão única f→j fica em DIRECTED.
+const VIRIDIAN_EDGES: [string, string][] = [
+  ['a', 'b'],
+  ['a', 'd'],
+  ['b', 'g'],
+  ['c', 'd'],
+  ['c', 'h'],
+  ['d', 'e'],
+  ['e', 'f'],
+  ['f', 'g'],
+  ['h', 'i'],
+  ['h', 'm'],
+  ['i', 'j'],
+  ['k', 'l'],
+  ['l', 'm'],
+  ['l', 'n'],
+  ['m', 'o'],
+  ['n', 'o'],
+  ['n', 'v'], // branca (surf)
+  ['o', 'p'],
+  ['o', 'x'],
+  ['p', 'q'],
+  ['q', 'r'],
+  ['q', 't'],
+  ['r', 's'],
+  ['s', 'u'],
+  ['t', 'z'],
+  ['u', 'ab'],
+  ['v', 'x'], // branca (surf)
+  ['x', 'y'],
+  ['y', 'z'],
+  ['z', 'aa'],
+  ['aa', 'ab'],
+  // acesso às áreas de exploração (uma aresta por seta roxa do GRASS)
+  ['c', 'g31'],
+  ['k', 'g32'],
+  ['t', 'g33'],
+  ['r', 'g33'],
+  ['u', 'g33'],
+  ['aa', 'g33'],
+]
+
+// Arestas de MÃO ÚNICA: vai mas não volta (f→j; 'j' não lista 'f').
+const VIRIDIAN_DIRECTED_EDGES: [string, string][] = [['f', 'j']]
+
+// Âncoras de EXIBIÇÃO: o popup aparece SOBRE o retângulo da arte (distinto da letra de parada).
+// Nenhuma letra hospeda mais de um pop-up aqui, então todas as chaves são simples.
+const VIRIDIAN_MARKERS: Record<string, MapPos> = {
+  f: { x: 0.776, y: 0.118 }, // GYM (sobre o ginásio)
+  y: { x: 0.544, y: 0.702 }, // CP — centro (sobre o P.C)
+  r: { x: 0.761, y: 0.481 }, // MART (sobre o prédio)
+  v: { x: 0.185, y: 0.767 }, // SPEC1 (sobre o retângulo laranja, à esq. do laguinho)
+  i: { x: 0.534, y: 0.206 }, // HOUSE (topo)
+  p: { x: 0.534, y: 0.461 }, // HOUSE (meio)
+}
+
+const VIRIDIAN_GRAPH: CityGraph = {
+  nodes: VIRIDIAN_NODES,
+  adj: buildAdjacency(VIRIDIAN_NODES, VIRIDIAN_EDGES, VIRIDIAN_DIRECTED_EDGES),
+  markers: VIRIDIAN_MARKERS,
+  surfNodes: ['v'],
+}
+
+// Sítio → ponto do grafo (pop-ups da arte anotada de Viridian).
+const VIRIDIAN_SITE_NODES: CitySiteNodes = {
+  gym: 'f', // GYM
+  center: 'y', // CP
+  mart: ['r'], // MART
+  specialMission: ['v'], // SPEC1 — ponto único, atrás d'água (só por Surf)
+  houses: ['i', 'p'], // HOUSE ×2
+  green: ['g31', 'g32', 'g33'], // GRASS ×3 (g33 com 4 acessos)
+}
+
 interface CitySeed {
   name: string
   primaryType: CityData['primaryType']
@@ -1003,6 +1117,8 @@ const SEEDS: CitySeed[] = [
       { speciesId: 33, level: 3 }, // Nidorino
       { speciesId: 52, level: 1 }, // Meowth
     ],
+    graph: VIRIDIAN_GRAPH,
+    siteNodes: VIRIDIAN_SITE_NODES,
     trainers: VIRIDIAN_TRAINERS,
   },
 ]
