@@ -11,6 +11,8 @@ import { expireDefense, penalizeUndefendedGym, spawnDefense } from './defenseFlo
 import { advanceCaptureReturn, advanceSearch } from './captureFlow.ts'
 import { finalizeDay } from './phaseFlow.ts'
 import { processStorms } from './stormFlow.ts'
+import { processSnow } from './snowFlow.ts'
+import { applySandDetours } from './sandFlow.ts'
 import { processTheft } from './theftFlow.ts'
 
 /** Status de Pokémon que ainda estão "fora" do ginásio (impedem o fim do dia). */
@@ -32,6 +34,10 @@ export function tick(s: GameState, deltaMs: number): void {
   processSearches(s, now)
 
   processTheft(s, now)
+  // Clima de runtime: a areia define o CAMINHO (desvio pelo ponto perdido); a nevasca age na
+  // VELOCIDADE/freeze sobre ele. Ordem: areia → nevasca → tempestade.
+  applySandDetours(s, now)
+  processSnow(s, prevMs, now)
   processStorms(s, prevMs, now)
 
   // Time inteiro desmaiado no dia = derrota imediata (sem ninguém para lutar/agir).

@@ -253,6 +253,8 @@ export function advanceMission(s: GameState, mission: MissionInstance, nowMs: nu
     mission.status = 'inProgress'
     mission.reroutePath = undefined // a ida acabou; a volta replaneja do zero
     mission.weatherHold = undefined
+    mission.snow = undefined // chegou no destino → zera os stacks de gelo (reset por perna)
+    mission.sandDetour = undefined // a ida acabou; a volta decide o desvio do zero
     for (const p of teamOf(s, mission.teamIds)) replaceMon(s, { ...p, status: 'onMission' })
   }
   if (mission.status === 'inProgress' && mission.resolveAtMs !== null && nowMs >= mission.resolveAtMs) {
@@ -377,6 +379,8 @@ export function freeOnReturn(s: GameState, mission: MissionInstance): void {
     replaceMon(s, settleFaintTracked(s, mon))
   }
   mission.status = 'resolved'
+  mission.snow = undefined
+  mission.sandDetour = undefined
 }
 
 /**
