@@ -817,6 +817,85 @@ const SAFFRON_SITE_NODES: CitySiteNodes = {
   green: ['g31', 'g32', 'g33'], // GRASS ×3 (exploração/captura)
 }
 
+// ============================ Cinnabar (7.png) ============================
+// A cidade mais simples: 15 pontos de PARADA a–p (sem 'l') + 2 nós dedicados de exploração
+// g31/g32 (áreas GRASS). O ginásio é 'e'. Posições normalizadas (0–1) estimadas da arte —
+// refináveis com o DEV picker do CityMap. TRÊS pontos de Surf na coluna de água à esquerda
+// (b, i, k); o GRASS esquerdo (g32) fica atrás d'água (acesso só por 'i'). Sem mãos únicas.
+// Estrutura em anel: c–d–e–g–h–p–o–n–m–j no miolo; a coluna b–i–k liga por Surf.
+const CINNABAR_NODES: Record<string, MapPos> = {
+  a: { x: 0.582, y: 0.149 },
+  b: { x: 0.151, y: 0.36 }, // (surf)
+  c: { x: 0.348, y: 0.36 },
+  d: { x: 0.582, y: 0.356 },
+  e: { x: 0.853, y: 0.36 },
+  f: { x: 0.582, y: 0.478 },
+  g: { x: 0.853, y: 0.478 },
+  h: { x: 0.907, y: 0.478 },
+  i: { x: 0.151, y: 0.76 }, // (surf)
+  j: { x: 0.358, y: 0.76 },
+  k: { x: 0.151, y: 0.938 }, // (surf)
+  m: { x: 0.358, y: 0.938 },
+  n: { x: 0.603, y: 0.938 },
+  o: { x: 0.794, y: 0.938 },
+  p: { x: 0.907, y: 0.938 },
+  // Áreas de exploração (GRASS): nós dedicados sobre os retângulos, ligados ao ponto de acesso.
+  g31: { x: 0.582, y: 0.046 }, // GRASS topo (acesso 'a')
+  g32: { x: 0.061, y: 0.761 }, // GRASS esquerda (acesso 'i' — atrás d'água, só por Surf)
+}
+
+// Arestas NÃO-direcionadas (ligam os dois sentidos). Todas bidirecionais (sem mão única).
+const CINNABAR_EDGES: [string, string][] = [
+  ['a', 'd'],
+  ['b', 'c'],
+  ['b', 'i'],
+  ['c', 'd'],
+  ['d', 'e'],
+  ['d', 'f'],
+  ['e', 'g'],
+  ['f', 'g'],
+  ['g', 'h'],
+  ['h', 'p'],
+  ['i', 'j'],
+  ['i', 'k'],
+  ['j', 'm'],
+  ['k', 'm'],
+  ['m', 'n'],
+  ['n', 'o'],
+  ['o', 'p'],
+  // acesso às áreas de exploração (uma aresta por seta roxa do GRASS)
+  ['a', 'g31'],
+  ['i', 'g32'],
+]
+
+// Âncoras de EXIBIÇÃO: o popup aparece SOBRE o retângulo da arte (distinto da letra de parada).
+// Nenhuma letra hospeda mais de um pop-up aqui, então todas as chaves são simples. As 3 casas
+// compartilham a parada 'c', então o marcador 'c' fica sobre os prédios de casa (topo).
+const CINNABAR_MARKERS: Record<string, MapPos> = {
+  e: { x: 0.853, y: 0.107 }, // GYM (sobre o ginásio)
+  c: { x: 0.348, y: 0.15 }, // HOUSE ×3 (sobre os prédios, topo)
+  n: { x: 0.603, y: 0.618 }, // CP — centro (sobre o P.C)
+  o: { x: 0.794, y: 0.652 }, // MART (sobre o prédio)
+  j: { x: 0.358, y: 0.5 }, // SPEC1 (sobre o prédio laranja)
+}
+
+const CINNABAR_GRAPH: CityGraph = {
+  nodes: CINNABAR_NODES,
+  adj: buildAdjacency(CINNABAR_NODES, CINNABAR_EDGES),
+  markers: CINNABAR_MARKERS,
+  surfNodes: ['b', 'i', 'k'],
+}
+
+// Sítio → ponto do grafo (pop-ups da arte anotada de Cinnabar).
+const CINNABAR_SITE_NODES: CitySiteNodes = {
+  gym: 'e', // GYM
+  center: 'n', // CP
+  mart: ['o'], // MART
+  specialMission: ['j'], // SPEC1 — ponto especial único
+  houses: ['c'], // HOUSE ×3 → mesma parada 'c' (uma entrada)
+  green: ['g31', 'g32'], // GRASS ×2 (g32 atrás d'água, só por Surf)
+}
+
 interface CitySeed {
   name: string
   primaryType: CityData['primaryType']
@@ -912,6 +991,8 @@ const SEEDS: CitySeed[] = [
       { speciesId: 58, level: 3 }, // Growlithe
       { speciesId: 147, level: 1 }, // Dratini
     ],
+    graph: CINNABAR_GRAPH,
+    siteNodes: CINNABAR_SITE_NODES,
     trainers: CINNABAR_TRAINERS,
   },
   {
