@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cityHasHeat, cityHasRain, cityHasStorm, cityHeatChance, cityRainChance, cityStormChance, getCityWeather } from './cityWeather.ts'
+import { cityHasHeat, cityHasRain, cityHasStorm, cityHasSnow, cityHasSand, cityHeatChance, cityRainChance, cityStormChance, citySnowChance, citySandChance, getCityWeather } from './cityWeather.ts'
 
 describe('cityWeather — Tempestade', () => {
   it('Vermilion (índice 2) tem chuva E tempestade', () => {
@@ -55,5 +55,43 @@ describe('cityWeather — Calor (Celadon)', () => {
   it('cidades sem calor retornam null/false', () => {
     expect(cityHasHeat(1)).toBe(false)
     expect(cityHeatChance(2)).toBeNull()
+  })
+})
+
+describe('cityWeather — Nevasca e Tempestade de areia (cidades novas)', () => {
+  it('Fuchsia (4): chuva, sandstorm, calor — nessa ordem', () => {
+    expect(getCityWeather(4)!.effects.map((e) => e.kind)).toEqual(['rain', 'sandstorm', 'heat'])
+    expect(cityRainChance(4)).toEqual({ pisoBase: 20, pisoPorDia: 1, teto: 50 })
+    expect(citySandChance(4)).toEqual({ pisoBase: 15, pisoPorDia: 1, teto: 45 })
+    expect(cityHeatChance(4)).toEqual({ pisoBase: 12, pisoPorDia: 1, teto: 35 })
+  })
+
+  it('Saffron (5): snowstorm dominante, depois chuva e tempestade', () => {
+    expect(getCityWeather(5)!.effects.map((e) => e.kind)).toEqual(['snowstorm', 'rain', 'storm'])
+    expect(citySnowChance(5)).toEqual({ pisoBase: 25, pisoPorDia: 1, teto: 60 })
+    expect(cityRainChance(5)).toEqual({ pisoBase: 12, pisoPorDia: 1, teto: 40 })
+    expect(cityStormChance(5)).toEqual({ pisoBase: 8, pisoPorDia: 1, teto: 30 })
+  })
+
+  it('Cinnabar (6): calor dominante, tempestade e sandstorm', () => {
+    expect(getCityWeather(6)!.effects.map((e) => e.kind)).toEqual(['heat', 'storm', 'sandstorm'])
+    expect(cityHeatChance(6)).toEqual({ pisoBase: 30, pisoPorDia: 1, teto: 65 })
+    expect(citySandChance(6)).toEqual({ pisoBase: 10, pisoPorDia: 1, teto: 35 })
+  })
+
+  it('Viridian (7): sandstorm dominante + chuva/tempestade/snowstorm', () => {
+    expect(getCityWeather(7)!.effects.map((e) => e.kind)).toEqual(['sandstorm', 'rain', 'storm', 'snowstorm'])
+    expect(cityHasSnow(7)).toBe(true)
+    expect(cityHasSand(7)).toBe(true)
+    expect(citySandChance(7)).toEqual({ pisoBase: 25, pisoPorDia: 1, teto: 60 })
+    expect(citySnowChance(7)).toEqual({ pisoBase: 8, pisoPorDia: 1, teto: 28 })
+  })
+
+  it('Pewter (0) permanece sem clima; Cerulean (1) sem nevasca/areia', () => {
+    expect(getCityWeather(0)).toBeNull()
+    expect(cityHasSnow(1)).toBe(false)
+    expect(cityHasSand(1)).toBe(false)
+    expect(citySnowChance(1)).toBeNull()
+    expect(citySandChance(2)).toBeNull()
   })
 })

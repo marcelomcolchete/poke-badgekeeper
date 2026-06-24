@@ -393,6 +393,29 @@ export const STRIKE_DAMAGE = 1
 export const STRIKE_MIN_PER_STORM = 1
 /** Paralyze: tempo de congelamento do sprite e multiplicador de Batalha em batalhas 1v1. */
 export const PARALYZE_STUN_MS = 5_000
+
+// ---- Nevasca (Snowstorm) — efeito climático de Saffron/Viridian ---------------------
+/** Duração de um evento de nevasca (ms de jogo) e folga entre eventos. */
+export const SNOW_EVENT_MIN_MS = 40_000
+export const SNOW_EVENT_MAX_MS = 70_000
+export const SNOW_GAP_MS = 4_000
+/** A cada 2s viajando sob nevasca, +1 stack de gelo. */
+export const SNOW_STACK_INTERVAL_MS = 2_000
+/** Velocidade = SNOW_SLOW_PER_STACK^stacks (composto). */
+export const SNOW_SLOW_PER_STACK = 0.8
+/** No 5º stack o time congela (parada dura + dano; voador morre). */
+export const SNOW_MAX_STACKS = 5
+/** Dano por tique de congelamento (não-voador). */
+export const SNOW_FREEZE_DAMAGE = 1
+export const SNOW_FREEZE_DAMAGE_INTERVAL_MS = 2_000
+/** Descongela este tempo após a janela de nevasca acabar. */
+export const SNOW_THAW_MS = 2_000
+
+// ---- Tempestade de areia (Sandstorm) — Fuchsia/Cinnabar/Viridian --------------------
+/** Duração de um evento de areia (ms de jogo) e folga entre eventos. */
+export const SAND_EVENT_MIN_MS = 30_000
+export const SAND_EVENT_MAX_MS = 60_000
+export const SAND_GAP_MS = 4_000
 export const PARALYZE_BATTLE_MULT = 0.5
 /** Volt Absorb: bônus de movimento E atributos ao ser atingido por um raio (por nível). */
 export const VOLT_ABSORB_BONUS_L1 = 0.30
