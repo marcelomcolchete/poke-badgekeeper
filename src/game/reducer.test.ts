@@ -222,7 +222,7 @@ describe('fluxo de defesa (PLAN §4.4/§4.6)', () => {
     expect(s.today.xpEarned).toBe(xpEarnedOnce)
   })
 
-  it('o XP de ginásio escala com o poder de cada desafiante derrotado (teto 30)', () => {
+  it('o XP de ginásio é o poder de Batalha cheio de cada desafiante derrotado', () => {
     // Desafiantes normais (sem vantagem de tipo) com poderes 20 e 40; o defensor forte vence ambos.
     const enemies: EnemyUnit[] = [
       { battle: 20, types: ['normal'] },
@@ -234,9 +234,9 @@ describe('fluxo de defesa (PLAN §4.4/§4.6)', () => {
     expect(s.defenses[0]?.status).toBe('won')
 
     s = reducer(s, { type: 'COMPLETE_DEFENSE', defenseId: 'd1' })
-    // 0,5×20 + 0,5×40 = 10 + 20 = 30.
+    // Batalha cheia: 20 + 40 = 60 (sem ×0,5, sem teto).
     expect(s.today.xpEarned).toBe(gymWinXp(20) + gymWinXp(40))
-    expect(s.today.xpEarned).toBe(30)
+    expect(s.today.xpEarned).toBe(60)
   })
 
   it('esquadrão vazio é rejeitado', () => {

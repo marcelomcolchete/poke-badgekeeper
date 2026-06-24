@@ -10,7 +10,7 @@ import { getSpecies } from '../data/pokemon/index.ts'
 import { rollGender } from './gender.ts'
 import { HEARTS_START, HP_MIN, IV_MAX, IV_MIN, LEVEL_MAX, LEVEL_MIN } from './constants.ts'
 import { heartXpMultiplier } from './hearts.ts'
-import { RARITY_XP_RATE, XP_TO_NEXT_BASE } from './balance.ts'
+import { RARITY_XP_RATE, XP_TO_NEXT } from './balance.ts'
 import { mapAttrs, maxHpOf, recomputeMaxHp, zeroAttrs } from './attributes.ts'
 import { ivForRankCenter, ivForRankIndex, RANKS, sampleTargetRank, targetRankAxes } from './ranking.ts'
 import { clamp } from './math.ts'
@@ -18,7 +18,7 @@ import { clamp } from './math.ts'
 /** XP para subir do nível `level` → `level+1`; Infinity no nível máximo (PLAN §4.1). */
 export function xpToNext(level: number): number {
   if (level >= LEVEL_MAX) return Infinity
-  return XP_TO_NEXT_BASE * level
+  return XP_TO_NEXT[level - 1] ?? Infinity
 }
 
 export function totalAllocated(p: Pokemon): number {

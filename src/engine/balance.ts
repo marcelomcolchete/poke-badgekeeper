@@ -26,8 +26,8 @@ export const RARITY_XP_RATE: Record<Rarity, number> = {
   legend: 0.5,
 }
 
-/** XP §4.1: XP para subir do nível L → L+1 = base × L. */
-export const XP_TO_NEXT_BASE = 100
+/** XP §4.1: XP para subir do nível L → L+1 (índice = L − 1). Nível 10 é o topo (Infinity). */
+export const XP_TO_NEXT = [100, 300, 500, 700, 900, 1100, 1300, 1500, 2000] as const
 
 /** Missões §4.3: fator de tempo de viagem com a passiva Run Away. */
 export const RUN_AWAY_TRAVEL_FACTOR = 0.5
@@ -160,14 +160,6 @@ export const MISSION_XP_POOL = 240
 
 /** XP fixo concedido ao explorador ao concluir uma exploração (capturando OU recusando). */
 export const EXPLORATION_XP = 100
-
-/**
- * Leveling §4.4: XP por duelo VENCIDO numa defesa de ginásio escala com o poder de
- * Batalha do desafiante derrotado — 0,5 por ponto, com teto de 30 por vitória. Como a
- * Batalha do inimigo é capada em ATTR_MAX (60), o teto casa: 0,5 × 60 = 30.
- */
-export const GYM_XP_PER_BATTLE_POWER = 0.5
-export const GYM_XP_CAP_PER_WIN = 30
 
 /**
  * Pool ponderado das categorias sorteadas a cada dia (Rocket é especial, fora daqui).

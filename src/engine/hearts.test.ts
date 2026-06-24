@@ -10,16 +10,27 @@ describe('heartsOf — corações efetivos', () => {
   })
 })
 
-describe('heartXpMultiplier — +10% por coração, teto +50%', () => {
-  it('escala linear até 5 corações', () => {
-    expect(heartXpMultiplier(0)).toBe(1)
-    expect(heartXpMultiplier(2)).toBeCloseTo(1.2)
-    expect(heartXpMultiplier(5)).toBeCloseTo(1.5)
-    expect(heartXpMultiplier(undefined)).toBeCloseTo(1.2) // padrão 2
+describe('heartXpMultiplier — curva 2^(c−3)', () => {
+  it('bate exato nos 6 pontos inteiros', () => {
+    expect(heartXpMultiplier(0)).toBeCloseTo(1 / 8)
+    expect(heartXpMultiplier(1)).toBeCloseTo(1 / 4)
+    expect(heartXpMultiplier(2)).toBeCloseTo(1 / 2)
+    expect(heartXpMultiplier(3)).toBeCloseTo(1)
+    expect(heartXpMultiplier(4)).toBeCloseTo(2)
+    expect(heartXpMultiplier(5)).toBeCloseTo(4)
   })
 
-  it('não passa de +50% mesmo acima do teto', () => {
-    expect(heartXpMultiplier(99)).toBeCloseTo(1.5)
+  it('padrão (ausente = 2 corações) rende metade da XP', () => {
+    expect(heartXpMultiplier(undefined)).toBeCloseTo(1 / 2)
+  })
+
+  it('interpola os meios-corações geometricamente', () => {
+    expect(heartXpMultiplier(2.5)).toBeCloseTo(Math.SQRT1_2) // ≈0,707
+    expect(heartXpMultiplier(4.5)).toBeCloseTo(2 * Math.SQRT2) // ≈2,83
+  })
+
+  it('satura no teto de 5 corações (×4) acima do limite', () => {
+    expect(heartXpMultiplier(99)).toBeCloseTo(4)
   })
 })
 

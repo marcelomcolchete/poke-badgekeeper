@@ -129,14 +129,12 @@ export const STARS_HIRE_THRESHOLD = 3
 
 /**
  * Corações por Pokémon: 0 a 5, passo de 0,5. Novos Pokémon (capturados/escolhidos) começam com 2.
- * Cada coração rende +10% de XP ganho, até o teto de +50% (5 corações).
+ * O multiplicador de XP segue a curva 2^(coração − 3) (ver engine/hearts.ts).
  */
 export const HEARTS_MIN = 0
 export const HEARTS_MAX = 5
 export const HEARTS_START = 2
 export const HEARTS_STEP = 0.5
-export const HEARTS_XP_PER = 0.1
-export const HEARTS_XP_MAX_BONUS = 0.5
 
 /** Defesa: vantagem de tipo ×1,5, desvantagem ×0,5; perdedor de cada duelo perde HP (PLAN §4.4). */
 export const TYPE_ADVANTAGE_MULT = 1.5
