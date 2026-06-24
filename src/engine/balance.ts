@@ -26,8 +26,8 @@ export const RARITY_XP_RATE: Record<Rarity, number> = {
   legend: 0.5,
 }
 
-/** XP §4.1: XP para subir do nível L → L+1 = base × L. */
-export const XP_TO_NEXT_BASE = 100
+/** XP §4.1: XP para subir do nível L → L+1 (índice = L − 1). Nível 10 é o topo (Infinity). */
+export const XP_TO_NEXT = [100, 300, 500, 700, 900, 1100, 1300, 1500, 2000] as const
 
 /** Missões §4.3: fator de tempo de viagem com a passiva Run Away. */
 export const RUN_AWAY_TRAVEL_FACTOR = 0.5

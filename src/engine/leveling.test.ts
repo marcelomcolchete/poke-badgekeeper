@@ -21,6 +21,13 @@ import { ATTR_KEYS } from '../types/index.ts'
 const rng = () => createRng(2024)
 
 describe('xpToNext', () => {
+  it('segue a tabela de XP por nível', () => {
+    expect(xpToNext(1)).toBe(100)
+    expect(xpToNext(2)).toBe(300)
+    expect(xpToNext(5)).toBe(900)
+    expect(xpToNext(9)).toBe(2000)
+  })
+
   it('é crescente e Infinity no nível máximo', () => {
     expect(xpToNext(1)).toBeLessThan(xpToNext(2))
     expect(xpToNext(LEVEL_MAX)).toBe(Infinity)
