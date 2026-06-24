@@ -24,8 +24,6 @@ import {
   DEFENSE_SQUAD_MAX,
   DEFENSE_SQUAD_MAX_SQRT_BASE,
   DEFENSE_SQUAD_MIN_SLOPE,
-  GYM_XP_CAP_PER_WIN,
-  GYM_XP_PER_BATTLE_POWER,
   MEDAL_FULL_DAY,
   MEDAL_OPEN_CHANCE,
   MEDAL_OPEN_DAY,
@@ -107,11 +105,11 @@ export function duelWinProbability(attackerBattleEff: number, defenderBattleEff:
 }
 
 /**
- * XP por duelo vencido = 0,5 × poder de Batalha do desafiante derrotado, com teto de 30
- * (§4.4, ajuste). Recompensa derrubar inimigos mais fortes; desafiantes fracos rendem pouco.
+ * XP por duelo vencido = poder de Batalha CHEIO do desafiante derrotado (§4.4, ajuste).
+ * Sem fator e sem teto: derrubar um inimigo de 90 de Batalha rende 90 de XP.
  */
 export function gymWinXp(enemyBattle: number): number {
-  return Math.min(GYM_XP_CAP_PER_WIN, Math.round(GYM_XP_PER_BATTLE_POWER * enemyBattle))
+  return Math.round(enemyBattle)
 }
 
 /**

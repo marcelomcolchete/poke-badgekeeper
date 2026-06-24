@@ -29,19 +29,19 @@ describe('canDefend', () => {
   })
 })
 
-describe('gymWinXp (PLAN §4.4, ajuste)', () => {
-  it('rende 0,5 de XP por ponto de poder do desafiante', () => {
-    expect(gymWinXp(20)).toBe(10)
-    expect(gymWinXp(40)).toBe(20)
+describe('gymWinXp — poder de Batalha cheio do desafiante derrotado', () => {
+  it('rende a Batalha cheia (sem ×0,5, sem teto)', () => {
+    expect(gymWinXp(20)).toBe(20)
+    expect(gymWinXp(40)).toBe(40)
+    expect(gymWinXp(90)).toBe(90)
   })
 
-  it('teto de 30 (poder máximo capado em ATTR_MAX = 60 → 0,5×60 = 30)', () => {
-    expect(gymWinXp(ATTR_MAX)).toBe(30)
-    expect(gymWinXp(200)).toBe(30)
+  it('não satura em valores altos', () => {
+    expect(gymWinXp(200)).toBe(200)
   })
 
-  it('arredonda o valor parcial', () => {
-    expect(gymWinXp(15)).toBe(8) // 7,5 → 8
+  it('arredonda valores fracionários', () => {
+    expect(gymWinXp(15.4)).toBe(15)
   })
 })
 

@@ -162,14 +162,6 @@ export const MISSION_XP_POOL = 240
 export const EXPLORATION_XP = 100
 
 /**
- * Leveling §4.4: XP por duelo VENCIDO numa defesa de ginásio escala com o poder de
- * Batalha do desafiante derrotado — 0,5 por ponto, com teto de 30 por vitória. Como a
- * Batalha do inimigo é capada em ATTR_MAX (60), o teto casa: 0,5 × 60 = 30.
- */
-export const GYM_XP_PER_BATTLE_POWER = 0.5
-export const GYM_XP_CAP_PER_WIN = 30
-
-/**
  * Pool ponderado das categorias sorteadas a cada dia (Rocket é especial, fora daqui).
  * As CASAS geram os 6 tipos normais; centro/mart geram as especiais. As áreas verdes NÃO
  * geram mais missão — são exclusivamente spots de captura (3.x). Centro (Pokecenter) e mart
