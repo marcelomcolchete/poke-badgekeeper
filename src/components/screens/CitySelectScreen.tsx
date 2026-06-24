@@ -1,13 +1,13 @@
-// Tela inicial: escolha da cidade de Kanto (PLAN §3). As cidades com mapa calibrado
-// ficam jogáveis; as demais ficam como "Em breve" (desabilitadas).
+// Tela inicial: escolha da cidade de Kanto (PLAN §3). Todas as 8 cidades estão
+// calibradas e jogáveis.
 
 import { CITIES } from '../../data/cities.ts'
 import { TypeBadge } from '../common/TypeBadge.tsx'
 import { Textbox } from '../Textbox/Textbox.tsx'
 import styles from './CitySelectScreen.module.css'
 
-/** Cidades com conteúdo pronto (Pewter, Cerulean, Vermilion, Celadon, Fuchsia e Saffron). */
-const PLAYABLE_CITIES = new Set<number>([0, 1, 2, 3, 4, 5])
+/** Cidades com conteúdo pronto (todas as 8 de Kanto). */
+const PLAYABLE_CITIES = new Set<number>([0, 1, 2, 3, 4, 5, 6, 7])
 
 export function CitySelectScreen({ onChoose }: { onChoose: (cityIndex: number) => void }) {
   return (
@@ -48,10 +48,7 @@ export function CitySelectScreen({ onChoose }: { onChoose: (cityIndex: number) =
         })}
       </div>
 
-      <Textbox>
-        Pewter, Cerulean, Vermilion, Celadon, Fuchsia e Saffron estão prontas. As demais cidades de Kanto
-        chegam em breve.
-      </Textbox>
+      <Textbox>As 8 cidades de Kanto estão prontas. Escolha por onde começar.</Textbox>
     </div>
   )
 }
