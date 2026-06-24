@@ -475,3 +475,34 @@
   0%, 100% { transform: translate(-50%, -50%) scale(1); }
   50% { transform: translate(-50%, -50%) scale(1.12); }
 }
+
+/* Tinta climática sobre o palco (cobre a arte; não captura cliques). */
+.snowTint,
+.sandTint {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Nevasca: véu gelo-ciano frio. */
+.snowTint {
+  background: radial-gradient(circle at 50% 30%, rgba(200, 235, 248, 0.28) 0%, rgba(150, 205, 230, 0.16) 100%);
+  animation: snowTintPulse 5s ease-in-out infinite;
+}
+
+@keyframes snowTintPulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+/* Tempestade de areia: véu âmbar-areia seco. */
+.sandTint {
+  background: radial-gradient(circle at 50% 60%, rgba(214, 178, 110, 0.30) 0%, rgba(170, 130, 70, 0.18) 100%);
+  animation: sandTintPulse 4s ease-in-out infinite;
+}
+
+@keyframes sandTintPulse {
+  0%, 100% { opacity: 0.75; }
+  50% { opacity: 1; }
+}

@@ -46,3 +46,35 @@
     box-shadow: 0 2px 12px rgba(232, 148, 10, 0.85);
   }
 }
+
+/* Nevasca: halo gelo-ciano e pulso frio. */
+.snowstorm {
+  background: radial-gradient(circle at 50% 35%, #a9e2f3 0%, var(--c-hud-bg) 75%);
+  animation: snowPulse 2.6s ease-in-out infinite;
+}
+
+@keyframes snowPulse {
+  0%,
+  100% {
+    box-shadow: 0 2px 6px rgba(8, 26, 14, 0.45);
+  }
+  50% {
+    box-shadow: 0 2px 12px rgba(169, 226, 243, 0.9);
+  }
+}
+
+/* Tempestade de areia: halo âmbar-areia e pulso seco. */
+.sandstorm {
+  background: radial-gradient(circle at 50% 35%, #d9b066 0%, var(--c-hud-bg) 75%);
+  animation: sandPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes sandPulse {
+  0%,
+  100% {
+    box-shadow: 0 2px 6px rgba(8, 26, 14, 0.45);
+  }
+  50% {
+    box-shadow: 0 2px 12px rgba(217, 176, 102, 0.85);
+  }
+}

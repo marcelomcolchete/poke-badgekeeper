@@ -13,7 +13,11 @@ import type { StormEvent } from '../engine/storm.ts'
 import { playSound } from './sounds.ts'
 import { startRain, stopRain } from './rainPlayer.ts'
 import { startHeat, stopHeat } from './heatPlayer.ts'
+import { startSnow, stopSnow } from './snowPlayer.ts'
+import { startSand, stopSand } from './sandPlayer.ts'
 import { isHot } from '../engine/heat.ts'
+import { isSnowing } from '../engine/snow.ts'
+import { isSanding } from '../engine/sand.ts'
 import { playThunder } from './thunderPlayer.ts'
 
 /**
@@ -43,6 +47,8 @@ export function useGameSounds(state: GameState): void {
   const warnedIds = useRef<Set<string>>(new Set())
   const raining = useRef(false)
   const hot = useRef(false)
+  const snowing = useRef(false)
+  const sanding = useRef(false)
   const prevStormMs = useRef(0)
   const theftWarned = useRef(false)
   const theftAnnounced = useRef(false)
@@ -111,6 +117,18 @@ export function useGameSounds(state: GameState): void {
     else if (!isHotNow && hot.current) stopHeat()
     hot.current = isHotNow
 
+    // 5c) Som de nevasca em loop (snowPlayer).
+    const isSnowNow = state.run.phase === 'DAY' && isSnowing(state.weather.snow, now)
+    if (isSnowNow && !snowing.current) startSnow()
+    else if (!isSnowNow && snowing.current) stopSnow()
+    snowing.current = isSnowNow
+
+    // 5d) Som de tempestade de areia em loop (sandPlayer).
+    const isSandNow = state.run.phase === 'DAY' && isSanding(state.weather.sand, now)
+    if (isSandNow && !sanding.current) startSand()
+    else if (!isSandNow && sanding.current) stopSand()
+    sanding.current = isSandNow
+
     // 6) Som de raio: um trovão (thunderN sorteado) por janela em que um raio impacta na fase Dia.
     //    Mesma janela (prevMs, now] do dano (engine/stormFlow), então o áudio segue o impacto.
     if (!first && shouldThunder(state.weather.storms, prevStormMs.current, now, state.run.phase)) {
@@ -141,7 +159,7 @@ export function useGameSounds(state: GameState): void {
   }, [state])
 
   // Sai da fase Dia / desmonta: garante que a chuva e o calor parem.
-  useEffect(() => () => { stopRain(); stopHeat() }, [])
+  useEffect(() => () => { stopRain(); stopHeat(); stopSnow(); stopSand() }, [])
 }
 
 function playResult(result: MissionResult): void {
