@@ -111,7 +111,8 @@ describe('createPokemon — rank pela Percepção do explorador (searcherPercept
 
 describe('pendingPoints / allocatePoint', () => {
   it('level-up gera pontos pendentes que o jogador aloca', () => {
-    const lvl1 = createPokemon({ id: 'p', speciesId: 19, level: 1, rng: rng() })
+    // hearts: 3 = multiplicador de XP neutro (×1) — isola a lógica de nível do bônus de afinidade.
+    const lvl1 = { ...createPokemon({ id: 'p', speciesId: 19, level: 1, rng: rng() }), hearts: 3 }
     const { pokemon, levelsGained } = addXp(lvl1, xpToNext(1) + xpToNext(2))
     expect(levelsGained).toBe(2)
     expect(pendingPoints(pokemon)).toBe(2)
@@ -127,7 +128,7 @@ describe('pendingPoints / allocatePoint', () => {
   })
 
   it('alocar em Resistência aumenta o HP máximo', () => {
-    const base = createPokemon({ id: 'r', speciesId: 7, level: 1, rng: rng() }) // Squirtle (evolui no 3)
+    const base = { ...createPokemon({ id: 'r', speciesId: 7, level: 1, rng: rng() }), hearts: 3 } // Squirtle (evolui no 3); hearts 3 = XP neutra
     // XP ajustado pela taxa de raridade da espécie p/ garantir o nível 2 (1 ponto pendente).
     const leveled = addXp(base, Math.ceil(xpToNext(1) / rarityXpRate(7))).pokemon
     const before = leveled.maxHp
@@ -143,8 +144,9 @@ describe('XP por raridade (PLAN §4.5)', () => {
   })
 
   it('o mesmo XP rende menos progresso para um Pokémon mais raro', () => {
-    const common = createPokemon({ id: 'c', speciesId: 19, level: 1, rng: rng() }) // Rattata, comum (1.0)
-    const legend = createPokemon({ id: 'l', speciesId: 150, level: 1, rng: rng() }) // Mewtwo, lendário (0.5)
+    // hearts: 3 (XP neutra) nos dois — a diferença observada vem só da taxa de raridade.
+    const common = { ...createPokemon({ id: 'c', speciesId: 19, level: 1, rng: rng() }), hearts: 3 } // Rattata, comum (1.0)
+    const legend = { ...createPokemon({ id: 'l', speciesId: 150, level: 1, rng: rng() }), hearts: 3 } // Mewtwo, lendário (0.5)
     expect(addXp(common, xpToNext(1)).levelsGained).toBeGreaterThan(
       addXp(legend, xpToNext(1)).levelsGained,
     )
@@ -153,13 +155,13 @@ describe('XP por raridade (PLAN §4.5)', () => {
 
 describe('addXp e nível máximo', () => {
   it('não passa do nível 10 por mais XP que receba', () => {
-    const mon = createPokemon({ id: 'm', speciesId: 1, level: 1, rng: rng() })
+    const mon = { ...createPokemon({ id: 'm', speciesId: 1, level: 1, rng: rng() }), hearts: 3 }
     const { pokemon } = addXp(mon, 1_000_000)
     expect(pokemon.level).toBe(LEVEL_MAX)
   })
 
   it('XP negativo/zero não altera o nível', () => {
-    const mon = createPokemon({ id: 'm', speciesId: 1, level: 3, rng: rng() })
+    const mon = { ...createPokemon({ id: 'm', speciesId: 1, level: 3, rng: rng() }), hearts: 3 }
     expect(addXp(mon, 0).pokemon.level).toBe(3)
     expect(addXp(mon, -50).pokemon.level).toBe(3)
   })
@@ -167,7 +169,7 @@ describe('addXp e nível máximo', () => {
 
 describe('evolução (PLAN §4.1.1)', () => {
   it('evolui ao atingir o nível de evolução, preservando nível/XP/alocações', () => {
-    const bulba = createPokemon({ id: 'b', speciesId: 1, level: 1, rng: rng() })
+    const bulba = { ...createPokemon({ id: 'b', speciesId: 1, level: 1, rng: rng() }), hearts: 3 } // hearts 3 = XP neutra
     // XP efetivo p/ chegar ao nível 4, ajustado pela taxa de raridade da espécie.
     const need = Math.ceil((xpToNext(1) + xpToNext(2) + xpToNext(3)) / rarityXpRate(1))
     const { pokemon } = addXp(bulba, need)

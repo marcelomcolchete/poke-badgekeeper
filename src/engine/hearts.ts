@@ -1,15 +1,9 @@
 // Corações de afinidade por Pokémon (0–5, passo 0,5). Puro: só números.
-// Cada coração rende +10% de XP ganho, até o teto de +50% (5 corações). No fim do dia o Pokémon
-// ganha/perde corações conforme o desempenho (ver dailyHeartDelta).
+// O multiplicador de XP segue a curva 2^(c−3): 0♥=⅛, 1♥=¼, 2♥=½, 3♥=1, 4♥=2, 5♥=4
+// (meios-corações interpolam geometricamente). No fim do dia o Pokémon ganha/perde
+// corações conforme o desempenho (ver dailyHeartDelta).
 
-import {
-  HEARTS_MAX,
-  HEARTS_MIN,
-  HEARTS_START,
-  HEARTS_STEP,
-  HEARTS_XP_MAX_BONUS,
-  HEARTS_XP_PER,
-} from './constants.ts'
+import { HEARTS_MAX, HEARTS_MIN, HEARTS_START, HEARTS_STEP } from './constants.ts'
 import { clamp, roundToStep } from './math.ts'
 
 /** Corações efetivos de um Pokémon (ausente = HEARTS_START), capados em [0, 5]. */
@@ -17,9 +11,9 @@ export function heartsOf(hearts: number | undefined): number {
   return clamp(hearts ?? HEARTS_START, HEARTS_MIN, HEARTS_MAX)
 }
 
-/** Multiplicador de XP pelos corações: 1 + 10%/coração, teto +50%. */
+/** Multiplicador de XP pelos corações: 2^(c−3). 3♥ = neutro (×1); 5♥ = ×4; 0♥ = ⅛. */
 export function heartXpMultiplier(hearts: number | undefined): number {
-  return 1 + Math.min(HEARTS_XP_MAX_BONUS, heartsOf(hearts) * HEARTS_XP_PER)
+  return 2 ** (heartsOf(hearts) - 3)
 }
 
 /**
