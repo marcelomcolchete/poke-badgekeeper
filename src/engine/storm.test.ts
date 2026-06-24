@@ -13,6 +13,7 @@ import {
   strikesResolvingBetween,
   buildDayWeather,
 } from './storm.ts'
+import { maxSnowTimes } from './snow.ts'
 import { getCity } from '../data/cities.ts'
 import { STRIKE_WARNING_MS } from './balance.ts'
 import type { CityData } from '../data/types.ts'
@@ -204,12 +205,50 @@ describe('buildDayWeather — Calor (Celadon)', () => {
   })
   it('Own Tempo (cap total) corta o calor por último: chuva → tempestade → calor', () => {
     // cap = 1 evento no dia: a chuva/tempestade consomem o orçamento e o calor fica sem slot.
-    const s = buildDayWeather(7, 9, CELADON, 100, 100, 100, 1)
+    const s = buildDayWeather(7, 9, CELADON, 100, 100, 100, 0, 0, 1)
     expect(s.rain.length + s.storms.length + s.heat.length).toBeLessThanOrEqual(1)
     expect(s.heat.length).toBe(0)
   })
   it('cidade sem calor não ganha heat', () => {
     const s = buildDayWeather(7, 9, getCity(2), 0, 0, 100)
     expect(s.heat).toEqual([])
+  })
+})
+
+describe('buildDayWeather — Nevasca e Areia', () => {
+  it('preenche a previsão de snow/sand em Viridian (independe da colocação das janelas)', () => {
+    const city = getCity(7)
+    const w = buildDayWeather(99, 12, city, 0, 0, 0, 100, 100)
+    expect(Array.isArray(w.snow)).toBe(true)
+    expect(Array.isArray(w.sand)).toBe(true)
+    expect(w.forecast.sandstormChancePercent).toBeGreaterThan(0)
+    expect(w.forecast.snowstormChancePercent).toBeGreaterThan(0)
+    expect(w.forecast.potentialSnowstormCount).toBe(maxSnowTimes(12))
+  })
+
+  it('com chance forçada, ALGUM dia/seed produz janelas de snow e sand', () => {
+    const city = getCity(7)
+    let snowSeen = false
+    let sandSeen = false
+    for (let seed = 1; seed <= 40 && !(snowSeen && sandSeen); seed++) {
+      const w = buildDayWeather(seed, 5, city, 0, 0, 0, 100, 100) // dia 5 → poucas janelas, cabem
+      if (w.snow.length > 0) snowSeen = true
+      if (w.sand.length > 0) sandSeen = true
+    }
+    expect(snowSeen).toBe(true)
+    expect(sandSeen).toBe(true)
+  })
+
+  it('orçamento Own Tempo: snow/sand entram por último (cap total respeitado)', () => {
+    const city = getCity(7) // 4 efeitos
+    const w = buildDayWeather(99, 30, city, 100, 100, 100, 100, 100, 2)
+    const total = w.rain.length + w.storms.length + w.heat.length + w.snow.length + w.sand.length
+    expect(total).toBeLessThanOrEqual(2)
+  })
+
+  it('cidade sem snow/sand não os ganha', () => {
+    const w = buildDayWeather(7, 9, getCity(1), 0, 0, 0, 100, 100) // Cerulean: só chuva
+    expect(w.snow).toEqual([])
+    expect(w.sand).toEqual([])
   })
 })

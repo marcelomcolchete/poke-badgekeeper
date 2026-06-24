@@ -17,8 +17,10 @@ import { segmentLength } from './pathfinding.ts'
 import { weatherChanceForDay, puddleLevelAt, puddleNodePool, type RainEvent, WEATHER_FIRST_ELIGIBLE_DAY, maxRainTimes } from './weather.ts'
 import type { WeatherSchedule } from './weather.ts'
 import { buildWeatherSchedule } from './weather.ts'
-import { cityHasStorm, cityStormChance, cityHasHeat } from '../data/cityWeather.ts'
+import { cityHasStorm, cityStormChance, cityHasHeat, cityHasSnow, cityHasSand } from '../data/cityWeather.ts'
 import { buildHeat, heatChanceForDay, maxHeatTimes } from './heat.ts'
+import { buildSnow, snowChanceForDay, maxSnowTimes } from './snow.ts'
+import { buildSand, sandChanceForDay, maxSandTimes } from './sand.ts'
 import {
   STRIKE_RADIUS,
   STRIKE_RADIUS_ON_WATER,
@@ -247,41 +249,70 @@ export function buildDayWeather(
   extraRainChancePercent = 0,
   extraStormChancePercent = 0,
   extraHeatChancePercent = 0,
+  extraSnowChancePercent = 0,
+  extraSandChancePercent = 0,
   maxWeatherEvents = 0,
 ): WeatherSchedule {
-  // Orçamento (Own Tempo): chuvas recebem slots primeiro; tempestade e depois calor usam o restante.
-  const base = buildWeatherSchedule(seed, day, city, extraRainChancePercent, maxWeatherEvents > 0 ? maxWeatherEvents : 0)
+  // Orçamento (Own Tempo) — precedência: chuva → tempestade → calor → nevasca → areia.
+  // Cada efeito recebe o teto restante após os anteriores (undefined = sem cap; número = cap, 0 ok).
+  const cap = (used: number): number | undefined =>
+    maxWeatherEvents > 0 ? Math.max(0, maxWeatherEvents - used) : undefined
 
-  let withStorm = base
+  let w = buildWeatherSchedule(seed, day, city, extraRainChancePercent, maxWeatherEvents > 0 ? maxWeatherEvents : 0)
+
   if (cityHasStorm(city.index)) {
-    const stormCap: number | undefined =
-      maxWeatherEvents > 0 ? Math.max(0, maxWeatherEvents - base.rain.length) : undefined
-    const storms = buildStorms(seed, day, city, base.rain, extraStormChancePercent, stormCap)
-    withStorm = {
-      ...base,
+    const storms = buildStorms(seed, day, city, w.rain, extraStormChancePercent, cap(w.rain.length))
+    w = {
+      ...w,
       storms,
       forecast: {
-        ...base.forecast,
+        ...w.forecast,
         stormChancePercent: clamp(stormChanceForDay(seed, day, city.index) + extraStormChancePercent, 0, 100),
         potentialStormCount: maxStormTimes(day),
       },
     }
   }
 
-  if (!cityHasHeat(city.index)) return withStorm
-  // Calor usa o orçamento restante após chuva + tempestade (undefined = sem cap; número = cap, 0 ok).
-  const heatCap: number | undefined =
-    maxWeatherEvents > 0 ? Math.max(0, maxWeatherEvents - withStorm.rain.length - withStorm.storms.length) : undefined
-  const heat = buildHeat(seed, day, city, extraHeatChancePercent, heatCap)
-  return {
-    ...withStorm,
-    heat,
-    forecast: {
-      ...withStorm.forecast,
-      heatChancePercent: clamp(heatChanceForDay(seed, day, city.index) + extraHeatChancePercent, 0, 100),
-      potentialHeatCount: maxHeatTimes(day),
-    },
+  if (cityHasHeat(city.index)) {
+    const heat = buildHeat(seed, day, city, extraHeatChancePercent, cap(w.rain.length + w.storms.length))
+    w = {
+      ...w,
+      heat,
+      forecast: {
+        ...w.forecast,
+        heatChancePercent: clamp(heatChanceForDay(seed, day, city.index) + extraHeatChancePercent, 0, 100),
+        potentialHeatCount: maxHeatTimes(day),
+      },
+    }
   }
+
+  if (cityHasSnow(city.index)) {
+    const snow = buildSnow(seed, day, city, extraSnowChancePercent, cap(w.rain.length + w.storms.length + w.heat.length))
+    w = {
+      ...w,
+      snow,
+      forecast: {
+        ...w.forecast,
+        snowstormChancePercent: clamp(snowChanceForDay(seed, day, city.index) + extraSnowChancePercent, 0, 100),
+        potentialSnowstormCount: maxSnowTimes(day),
+      },
+    }
+  }
+
+  if (cityHasSand(city.index)) {
+    const sand = buildSand(seed, day, city, extraSandChancePercent, cap(w.rain.length + w.storms.length + w.heat.length + w.snow.length))
+    w = {
+      ...w,
+      sand,
+      forecast: {
+        ...w.forecast,
+        sandstormChancePercent: clamp(sandChanceForDay(seed, day, city.index) + extraSandChancePercent, 0, 100),
+        potentialSandstormCount: maxSandTimes(day),
+      },
+    }
+  }
+
+  return w
 }
 
 // ---- Geometria do raio -----------------------------------------------------------------

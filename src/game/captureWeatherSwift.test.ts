@@ -15,7 +15,7 @@ const rainAllDay: WeatherSchedule = {
   rain: [{ startMs: 0, endMs: DAY_LENGTH_MS, puddles: [] }],
   storms: [],
   heat: [],
-  forecast: { rainChancePercent: 100, rainMmPerHour: 30, potentialRainCount: 1, stormChancePercent: 0, potentialStormCount: 0, heatChancePercent: 0, potentialHeatCount: 0 },
+  snow: [], sand: [], forecast: { rainChancePercent: 100, rainMmPerHour: 30, potentialRainCount: 1, stormChancePercent: 0, potentialStormCount: 0, heatChancePercent: 0, potentialHeatCount: 0, snowstormChancePercent: 0, potentialSnowstormCount: 0, sandstormChancePercent: 0, potentialSandstormCount: 0 },
 }
 
 // Área de grama alcançável a pé a partir do ginásio.

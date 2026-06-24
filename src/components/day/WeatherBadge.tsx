@@ -4,9 +4,9 @@
 import type { WeatherEffectKind } from '../../data/cityWeather.ts'
 import styles from './WeatherBadge.module.css'
 
-const WEATHER_ICON: Record<WeatherEffectKind, string> = { rain: '🌧️', storm: '⛈️', heat: '🔥' }
+const WEATHER_ICON: Record<WeatherEffectKind, string> = { rain: '🌧️', storm: '⛈️', heat: '🔥', snowstorm: '❄️', sandstorm: '🌪️' }
 
-const WEATHER_LABEL: Record<WeatherEffectKind, string> = { rain: 'Chovendo', storm: 'Tempestade', heat: 'Calor' }
+const WEATHER_LABEL: Record<WeatherEffectKind, string> = { rain: 'Chovendo', storm: 'Tempestade', heat: 'Calor', snowstorm: 'Nevasca', sandstorm: 'Tempestade de areia' }
 
 export function WeatherBadge({ kind }: { kind: WeatherEffectKind }) {
   return (
