@@ -137,6 +137,14 @@ export interface MissionInstance {
    */
   paralyzeHold?: { pos: MapPos; untilMs: number }
   /**
+   * Nevasca (Snowstorm): estado de gelo da perna atual. `stacks` 0..5 (composto ×0,8); `exposureMs`
+   * é o tempo viajado sob nevasca que gera os stacks; ao chegar a 5, `frozenAtMs`/`thawAtMs` marcam
+   * o congelamento e `lastDrainMs` o último −1 HP. Limpo ao chegar no destino da perna e ao descongelar.
+   */
+  snow?: { stacks: number; exposureMs: number; frozenAtMs?: number; lastDrainMs?: number; thawAtMs?: number }
+  /** Sandstorm: marca que `reroutePath` é um desvio de areia (para recálculo reto ao acabar). */
+  sandDetour?: { lostNode: string }
+  /**
    * Electirizer: cargas de bônus (raios sofridos) por Pokémon, FIXADAS no despacho e consumidas
    * nesta missão — `id → nº de raios`. Cada carga vale +50% no sucesso. Ausente = sem bônus.
    */
@@ -264,6 +272,10 @@ export interface CaptureSearch {
    * acertou; `untilMs` é quando descongela. Ausente = sem paralisia em curso.
    */
   paralyzeHold?: { pos: MapPos; untilMs: number }
+  /** Nevasca: estado de gelo da perna (ver MissionInstance.snow). */
+  snow?: { stacks: number; exposureMs: number; frozenAtMs?: number; lastDrainMs?: number; thawAtMs?: number }
+  /** Sandstorm: marca que `reroutePath` é um desvio de areia. */
+  sandDetour?: { lostNode: string }
 }
 
 /** Procurador voltando ao ginásio após capturar/dispensar — só fica idle ao chegar (PLAN §4.5). */
@@ -291,6 +303,10 @@ export interface CaptureReturn {
    * acertou; `untilMs` é quando descongela. Ausente = sem paralisia em curso.
    */
   paralyzeHold?: { pos: MapPos; untilMs: number }
+  /** Nevasca: estado de gelo da perna (ver MissionInstance.snow). */
+  snow?: { stacks: number; exposureMs: number; frozenAtMs?: number; lastDrainMs?: number; thawAtMs?: number }
+  /** Sandstorm: marca que `reroutePath` é um desvio de areia. */
+  sandDetour?: { lostNode: string }
 }
 
 /** Encontro pronto: 3 candidatos para o jogador decidir (capturar / voltar / seguir) — PLAN §4.5. */

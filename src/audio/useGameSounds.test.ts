@@ -7,6 +7,8 @@ import { STARS_START, STARTING_GOLD, DAY_LENGTH_MS } from '../engine/constants.t
 import { THEFT_CHANCE_START } from '../engine/balance.ts'
 import { shouldThunder, useGameSounds } from './useGameSounds.ts'
 import { startHeat, stopHeat } from './heatPlayer.ts'
+import { startSnow, stopSnow } from './snowPlayer.ts'
+import { startSand, stopSand } from './sandPlayer.ts'
 
 // ---------------------------------------------------------------------------
 // Mocks para os testes do hook useGameSounds (ambiente node, sem DOM)
@@ -15,6 +17,8 @@ import { startHeat, stopHeat } from './heatPlayer.ts'
 // Mocks dos players de áudio: vi.mock é hoisted, declarado antes dos imports que os usam.
 vi.mock('./rainPlayer.ts', () => ({ startRain: vi.fn(), stopRain: vi.fn() }))
 vi.mock('./heatPlayer.ts', () => ({ startHeat: vi.fn(), stopHeat: vi.fn() }))
+vi.mock('./snowPlayer.ts', () => ({ startSnow: vi.fn(), stopSnow: vi.fn() }))
+vi.mock('./sandPlayer.ts', () => ({ startSand: vi.fn(), stopSand: vi.fn() }))
 
 // Mock mínimo do React para testar o hook useGameSounds em ambiente node.
 // vi.hoisted é necessário para que _reactMockState seja disponível dentro do factory de vi.mock
@@ -41,7 +45,12 @@ vi.mock('react', async (importOriginal) => {
 })
 
 /** Estado mínimo de GameState em fase DAY com heat schedule. */
-function makeDayState(dayElapsedMs: number, heatWindows: { startMs: number; endMs: number }[]): GameState {
+function makeDayState(
+  dayElapsedMs: number,
+  heatWindows: { startMs: number; endMs: number }[],
+  snowWindows: { startMs: number; endMs: number }[] = [],
+  sandWindows: { startMs: number; endMs: number }[] = [],
+): GameState {
   return {
     run: { cityIndex: 0, day: 3, seed: 1, phase: 'DAY', ballLevel: 0, theftChance: THEFT_CHANCE_START, specialChances: [] },
     clock: { dayElapsedMs, dayLengthMs: DAY_LENGTH_MS, speed: 1 },
@@ -63,7 +72,7 @@ function makeDayState(dayElapsedMs: number, heatWindows: { startMs: number; endM
     electirizerCharges: {},
     today: emptyTally(),
     lifetime: emptyLifetime(),
-    weather: { ...emptyWeatherSchedule(), heat: heatWindows },
+    weather: { ...emptyWeatherSchedule(), heat: heatWindows, snow: snowWindows, sand: sandWindows },
     history: [],
     nextId: 1,
     rngCursor: 0,
@@ -186,5 +195,39 @@ describe('useGameSounds — som de Calor', () => {
     }
     simulateTick(nonDayState)
     expect(vi.mocked(startHeat)).not.toHaveBeenCalled()
+  })
+})
+
+describe('useGameSounds — som de Nevasca e Areia', () => {
+  const WINDOW = [{ startMs: 0, endMs: 10_000 }]
+
+  beforeEach(() => {
+    _reactMockState.refs = []
+    _reactMockState.idx = 0
+    vi.mocked(startSnow).mockClear(); vi.mocked(stopSnow).mockClear()
+    vi.mocked(startSand).mockClear(); vi.mocked(stopSand).mockClear()
+  })
+
+  it('startSnow/stopSnow ao entrar e sair da janela de nevasca (fase DAY)', () => {
+    simulateTick(makeDayState(5_000, [], WINDOW))
+    expect(vi.mocked(startSnow)).toHaveBeenCalledTimes(1)
+    vi.mocked(startSnow).mockClear()
+    simulateTick(makeDayState(11_000, [], WINDOW))
+    expect(vi.mocked(stopSnow)).toHaveBeenCalledTimes(1)
+  })
+
+  it('startSand/stopSand ao entrar e sair da janela de areia (fase DAY)', () => {
+    simulateTick(makeDayState(5_000, [], [], WINDOW))
+    expect(vi.mocked(startSand)).toHaveBeenCalledTimes(1)
+    vi.mocked(startSand).mockClear()
+    simulateTick(makeDayState(11_000, [], [], WINDOW))
+    expect(vi.mocked(stopSand)).toHaveBeenCalledTimes(1)
+  })
+
+  it('não toca em fase não-DAY', () => {
+    const base = makeDayState(5_000, [], WINDOW, WINDOW)
+    simulateTick({ ...base, run: { ...base.run, phase: 'MORNING' } })
+    expect(vi.mocked(startSnow)).not.toHaveBeenCalled()
+    expect(vi.mocked(startSand)).not.toHaveBeenCalled()
   })
 })

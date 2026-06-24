@@ -520,6 +520,33 @@ function migrate(file: Partial<SaveFile>): SaveFile | null {
     version = 38
   }
 
+  // v38 → v39: efeitos Nevasca + Tempestade de areia. weather ganha snow/sand + 4 campos de
+  // previsão; recalculado no próximo setupDay. Aqui só garante a estrutura para saves no meio do dia
+  // (os campos de container snow/sandDetour são opcionais → ficam undefined até o runtime recriá-los).
+  if (version === 38) {
+    const weather = state.weather as Record<string, unknown> | undefined
+    const forecast = (weather?.forecast as Record<string, unknown> | undefined) ?? {}
+    state = {
+      ...state,
+      weather:
+        weather && typeof weather === 'object'
+          ? {
+              ...weather,
+              snow: Array.isArray(weather.snow) ? weather.snow : [],
+              sand: Array.isArray(weather.sand) ? weather.sand : [],
+              forecast: {
+                snowstormChancePercent: 0,
+                potentialSnowstormCount: 0,
+                sandstormChancePercent: 0,
+                potentialSandstormCount: 0,
+                ...forecast,
+              },
+            }
+          : weather,
+    } as typeof state
+    version = 39
+  }
+
   if (version !== SAVE_VERSION) return null
   return { version, savedAtMs: (file as SaveFile).savedAtMs, state } as unknown as SaveFile
 }

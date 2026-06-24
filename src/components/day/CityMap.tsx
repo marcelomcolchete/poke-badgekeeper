@@ -20,6 +20,8 @@ import { pokemonSpritePath } from '../../data/pokemon/index.ts'
 import { graphWithTunnels } from '../../engine/pathfinding.ts'
 import { shinyChance, spotHasShinyChance } from '../../engine/shiny.ts'
 import { activePuddlesAt } from '../../engine/weather.ts'
+import { isSnowing } from '../../engine/snow.ts'
+import { isSanding } from '../../engine/sand.ts'
 import { activeStrikeCirclesAt } from '../../engine/storm.ts'
 import { teamIsSpeedy } from '../../engine/secretEffects.ts'
 import { clamp } from '../../engine/math.ts'
@@ -98,6 +100,9 @@ export function CityMap({ state, onMission, onDefense, onSpot, onTheft }: Props)
         <PuddleOverlay graph={graph} puddles={activePuddlesAt(state.weather, now)} />
 
         <StormOverlay strikes={activeStrikeCirclesAt(state.weather.storms, now)} />
+
+        {isSnowing(state.weather.snow, now) && <div className={styles.snowTint} aria-hidden="true" />}
+        {isSanding(state.weather.sand, now) && <div className={styles.sandTint} aria-hidden="true" />}
 
         {activeDefense && (
           <div className={styles.anchor} style={posStyle(markerPos(graph, city.siteNodes.gym, 'gym'))}>

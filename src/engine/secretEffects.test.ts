@@ -451,9 +451,9 @@ describe('teamIsSpeedy (aura de velocidade ao vivo)', () => {
     rain: [{ startMs: 0, endMs: 100_000, puddles: [] }],
     storms: [],
     heat: [],
-    forecast: { rainChancePercent: 100, rainMmPerHour: 30, potentialRainCount: 1, stormChancePercent: 0, potentialStormCount: 0, heatChancePercent: 0, potentialHeatCount: 0 },
+    snow: [], sand: [], forecast: { rainChancePercent: 100, rainMmPerHour: 30, potentialRainCount: 1, stormChancePercent: 0, potentialStormCount: 0, heatChancePercent: 0, potentialHeatCount: 0, snowstormChancePercent: 0, potentialSnowstormCount: 0, sandstormChancePercent: 0, potentialSandstormCount: 0 },
   }
-  const dry = { rain: [], storms: [], heat: [], forecast: { rainChancePercent: 0, rainMmPerHour: 0, potentialRainCount: 0, stormChancePercent: 0, potentialStormCount: 0, heatChancePercent: 0, potentialHeatCount: 0 } }
+  const dry = { rain: [], storms: [], heat: [], snow: [], sand: [], forecast: { rainChancePercent: 0, rainMmPerHour: 0, potentialRainCount: 0, stormChancePercent: 0, potentialStormCount: 0, heatChancePercent: 0, potentialHeatCount: 0, snowstormChancePercent: 0, potentialSnowstormCount: 0, sandstormChancePercent: 0, potentialSandstormCount: 0 } }
 
   it('Swift Swim acende a aura SÓ enquanto chove', () => {
     // Omanyte(138): slot0=swift-swim
@@ -475,7 +475,7 @@ describe('teamIsSpeedy (aura de velocidade ao vivo)', () => {
     const hotNow = {
       rain: [], storms: [],
       heat: [{ startMs: 0, endMs: 1_000_000 }],
-      forecast: { rainChancePercent: 0, rainMmPerHour: 0, potentialRainCount: 0, stormChancePercent: 0, potentialStormCount: 0, heatChancePercent: 100, potentialHeatCount: 1 },
+      snow: [], sand: [], forecast: { rainChancePercent: 0, rainMmPerHour: 0, potentialRainCount: 0, stormChancePercent: 0, potentialStormCount: 0, heatChancePercent: 100, potentialHeatCount: 1, snowstormChancePercent: 0, potentialSnowstormCount: 0, sandstormChancePercent: 0, potentialSandstormCount: 0 },
     }
     expect(teamIsSpeedy([bulba], [], hotNow, 5_000)).toBe(true)  // dentro da janela de calor
     expect(teamIsSpeedy([bulba], [], hotNow, 2_000_000)).toBe(false) // após o fim do calor
@@ -630,13 +630,13 @@ describe('Swift Swim L2: bônus de missão na chuva (+30%)', () => {
     rain: [{ startMs: 0, endMs: 100_000, puddles: [] }],
     storms: [],
     heat: [],
-    forecast: { rainChancePercent: 100, rainMmPerHour: 30, potentialRainCount: 1, stormChancePercent: 0, potentialStormCount: 0, heatChancePercent: 0, potentialHeatCount: 0 },
+    snow: [], sand: [], forecast: { rainChancePercent: 100, rainMmPerHour: 30, potentialRainCount: 1, stormChancePercent: 0, potentialStormCount: 0, heatChancePercent: 0, potentialHeatCount: 0, snowstormChancePercent: 0, potentialSnowstormCount: 0, sandstormChancePercent: 0, potentialSandstormCount: 0 },
   }
   const drySchedule: import('./weather.ts').WeatherSchedule = {
     rain: [],
     storms: [],
     heat: [],
-    forecast: { rainChancePercent: 0, rainMmPerHour: 0, potentialRainCount: 0, stormChancePercent: 0, potentialStormCount: 0, heatChancePercent: 0, potentialHeatCount: 0 },
+    snow: [], sand: [], forecast: { rainChancePercent: 0, rainMmPerHour: 0, potentialRainCount: 0, stormChancePercent: 0, potentialStormCount: 0, heatChancePercent: 0, potentialHeatCount: 0, snowstormChancePercent: 0, potentialSnowstormCount: 0, sandstormChancePercent: 0, potentialSandstormCount: 0 },
   }
 
   it('Swift Swim L2: +30% atributos enquanto chove', () => {

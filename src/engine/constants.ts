@@ -91,6 +91,15 @@ export const HEAT_SEED_SALT = 0x48656174 // 'Heat'
 /** Salt do SORTEIO da chance de Calor — distinto do agendamento e dos demais efeitos. */
 export const HEAT_CHANCE_SALT = 0x48436863 // 'HChc'
 
+/** Sub-seed da Nevasca: agenda própria do dia (independe dos demais efeitos). */
+export const SNOW_SEED_SALT = 0x536e6f77 // 'Snow'
+/** Salt do SORTEIO da chance de Nevasca. */
+export const SNOW_CHANCE_SALT = 0x4e436863 // 'NChc'
+/** Sub-seed da Tempestade de areia: agenda própria + sorteio do nó "perdido". */
+export const SAND_SEED_SALT = 0x53616e64 // 'Sand'
+/** Salt do SORTEIO da chance de Tempestade de areia. */
+export const SAND_CHANCE_SALT = 0x44436863 // 'DChc'
+
 /** Sub-seed do Evento de Roubo Rocket: rolagem da chance/alvo/nós/esquadrão por dia. */
 export const THEFT_SEED_SALT = 0x54686566 // 'Thef'
 
@@ -238,5 +247,5 @@ export const DRAFT_CHOICES = 3
  * v38: efeito Calor. WeatherSchedule ganha `heat` e a previsão ganha heatChancePercent/
  * potentialHeatCount. A migração inicia heat vazio e a previsão de calor zerada (recalculados no
  * próximo setupDay). */
-export const SAVE_VERSION = 38
+export const SAVE_VERSION = 39
 export const SAVE_KEY = 'poke-badgekeeper:save'

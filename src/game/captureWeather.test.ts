@@ -21,7 +21,7 @@ function puddleOn(node: string, eventEndMs = 20_000, endMs = 25_000): WeatherSch
     rain: [{ startMs: 0, endMs: eventEndMs, puddles: [{ node, startMs: 0, eventEndMs, endMs }] }],
     storms: [],
     heat: [],
-    forecast: { rainChancePercent: 40, rainMmPerHour: 24, potentialRainCount: 2, stormChancePercent: 0, potentialStormCount: 0, heatChancePercent: 0, potentialHeatCount: 0 },
+    snow: [], sand: [], forecast: { rainChancePercent: 40, rainMmPerHour: 24, potentialRainCount: 2, stormChancePercent: 0, potentialStormCount: 0, heatChancePercent: 0, potentialHeatCount: 0, snowstormChancePercent: 0, potentialSnowstormCount: 0, sandstormChancePercent: 0, potentialSandstormCount: 0 },
   }
 }
 

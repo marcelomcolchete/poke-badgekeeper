@@ -185,6 +185,27 @@ describe('saveLoad (PLAN §5)', () => {
     expect(loaded!.weather.forecast.potentialHeatCount).toBe(0)
   })
 
+  it('migra v38 → v39: weather.snow/sand = [] e previsão de nevasca/areia zerada', () => {
+    const base = autoSeedRun(42) as unknown as Record<string, unknown>
+    const weatherV38 = { ...(base.weather as Record<string, unknown>) }
+    delete (weatherV38 as Record<string, unknown>).snow
+    delete (weatherV38 as Record<string, unknown>).sand
+    const forecastV38 = { ...(weatherV38.forecast as Record<string, unknown>) }
+    delete forecastV38.snowstormChancePercent
+    delete forecastV38.potentialSnowstormCount
+    delete forecastV38.sandstormChancePercent
+    delete forecastV38.potentialSandstormCount
+    weatherV38.forecast = forecastV38
+    const v38 = { version: 38, savedAtMs: 0, state: { ...base, weather: weatherV38 } }
+    localStorage.setItem(SAVE_KEY, JSON.stringify(v38))
+    const loaded = loadGame()
+    expect(loaded).not.toBeNull()
+    expect(loaded!.weather.snow).toEqual([])
+    expect(loaded!.weather.sand).toEqual([])
+    expect(loaded!.weather.forecast.snowstormChancePercent).toBe(0)
+    expect(loaded!.weather.forecast.sandstormChancePercent).toBe(0)
+  })
+
   it('clearSave remove o save', () => {
     saveGame(autoSeedRun(1), 0)
     clearSave()

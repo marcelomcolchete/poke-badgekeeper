@@ -123,6 +123,8 @@ export function advanceSearch(s: GameState, search: CaptureSearch, nowMs: number
   if (search.phase === 'traveling') applySearchWeatherHold(s, search, nowMs)
   if (search.phase === 'traveling' && nowMs >= search.arriveAtMs) {
     search.phase = 'searching'
+    search.snow = undefined // chegou na área → zera os stacks de gelo
+    search.sandDetour = undefined
     const searcher = findMon(s, search.searcherId)
     if (searcher) replaceMon(s, { ...searcher, status: 'onMission' })
   }

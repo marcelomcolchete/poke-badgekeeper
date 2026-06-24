@@ -23,7 +23,7 @@ function rainUntil(endMs: number): WeatherSchedule {
     rain: [{ startMs: 0, endMs, puddles: [] }],
     storms: [],
     heat: [],
-    forecast: { rainChancePercent: 100, rainMmPerHour: 30, potentialRainCount: 1, stormChancePercent: 0, potentialStormCount: 0, heatChancePercent: 0, potentialHeatCount: 0 },
+    snow: [], sand: [], forecast: { rainChancePercent: 100, rainMmPerHour: 30, potentialRainCount: 1, stormChancePercent: 0, potentialStormCount: 0, heatChancePercent: 0, potentialHeatCount: 0, snowstormChancePercent: 0, potentialSnowstormCount: 0, sandstormChancePercent: 0, potentialSandstormCount: 0 },
   }
 }
 
@@ -31,7 +31,7 @@ function rainUntil(endMs: number): WeatherSchedule {
 function heatUntil(endMs: number): WeatherSchedule {
   return {
     rain: [], storms: [], heat: [{ startMs: 0, endMs }],
-    forecast: { rainChancePercent: 0, rainMmPerHour: 0, potentialRainCount: 0, stormChancePercent: 0, potentialStormCount: 0, heatChancePercent: 100, potentialHeatCount: 1 },
+    snow: [], sand: [], forecast: { rainChancePercent: 0, rainMmPerHour: 0, potentialRainCount: 0, stormChancePercent: 0, potentialStormCount: 0, heatChancePercent: 100, potentialHeatCount: 1, snowstormChancePercent: 0, potentialSnowstormCount: 0, sandstormChancePercent: 0, potentialSandstormCount: 0 },
   }
 }
 

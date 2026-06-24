@@ -18,6 +18,11 @@ import { DAY_LENGTH_MS, WEATHER_SEED_SALT, WEATHER_CHANCE_SALT } from './constan
 import { cityHasRain, cityRainChance, type WeatherChanceFormula } from '../data/cityWeather.ts'
 import { clamp, lerp } from './math.ts'
 import type { StormEvent } from './storm.ts'
+import type { SnowEvent } from './snow.ts'
+import type { SandEvent } from './sand.ts'
+
+export type { SnowEvent } from './snow.ts'
+export type { SandEvent } from './sand.ts'
 
 // ---- Constantes estruturais da chuva ---------------------------------------------------
 
@@ -88,6 +93,14 @@ export interface WeatherForecast {
   heatChancePercent: number
   /** Quantas janelas de calor podem ocorrer hoje (0–6). */
   potentialHeatCount: number
+  /** Chance de nevasca do dia (0–100). 0 se a cidade não tem nevasca. */
+  snowstormChancePercent: number
+  /** Quantas janelas de nevasca podem ocorrer hoje (0–6). */
+  potentialSnowstormCount: number
+  /** Chance de tempestade de areia do dia (0–100). 0 se a cidade não tem o efeito. */
+  sandstormChancePercent: number
+  /** Quantas janelas de tempestade de areia podem ocorrer hoje (0–6). */
+  potentialSandstormCount: number
 }
 
 /** Agenda climática do dia, pré-computada em setupDay e guardada em s.weather. */
@@ -98,6 +111,10 @@ export interface WeatherSchedule {
   storms: StormEvent[]
   /** Janelas de calor do dia (slowdown), ordenadas por startMs. Vazio se não há calor. */
   heat: HeatEvent[]
+  /** Janelas de nevasca do dia (slowdown/freeze), ordenadas por startMs. Vazio se não há nevasca. */
+  snow: SnowEvent[]
+  /** Janelas de tempestade de areia (desvio), ordenadas por startMs. Vazio se não há areia. */
+  sand: SandEvent[]
   forecast: WeatherForecast
 }
 
@@ -107,6 +124,8 @@ export function emptyWeatherSchedule(): WeatherSchedule {
     rain: [],
     storms: [],
     heat: [],
+    snow: [],
+    sand: [],
     forecast: {
       rainChancePercent: 0,
       rainMmPerHour: 0,
@@ -115,6 +134,10 @@ export function emptyWeatherSchedule(): WeatherSchedule {
       potentialStormCount: 0,
       heatChancePercent: 0,
       potentialHeatCount: 0,
+      snowstormChancePercent: 0,
+      potentialSnowstormCount: 0,
+      sandstormChancePercent: 0,
+      potentialSandstormCount: 0,
     },
   }
 }
@@ -227,6 +250,10 @@ export function buildWeatherSchedule(
     potentialStormCount: 0,
     heatChancePercent: 0,
     potentialHeatCount: 0,
+    snowstormChancePercent: 0,
+    potentialSnowstormCount: 0,
+    sandstormChancePercent: 0,
+    potentialSandstormCount: 0,
   }
 
   const rng = createRng(deriveSeed(seed, day, WEATHER_SEED_SALT))
@@ -247,7 +274,7 @@ export function buildWeatherSchedule(
     cursor = end + RAIN_GAP_MS
   }
   rain.sort((a, b) => a.startMs - b.startMs)
-  return { rain, storms: [], heat: [], forecast }
+  return { rain, storms: [], heat: [], snow: [], sand: [], forecast }
 }
 
 // ---- Derivações puras (consumidas pela UI e pelo missionFlow) --------------------------
