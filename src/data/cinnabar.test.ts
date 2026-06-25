@@ -11,7 +11,7 @@ describe('Cinnabar (cidade 7)', () => {
     expect([CINNABAR.primaryType, CINNABAR.secondaryType]).toEqual(['fire', 'fighting'])
     expect(CINNABAR.starters).toEqual([
       { speciesId: 58, level: 3 },
-      { speciesId: 147, level: 1 },
+      { speciesId: 77, level: 1 },
     ])
   })
 

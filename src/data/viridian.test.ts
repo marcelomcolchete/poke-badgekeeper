@@ -13,8 +13,8 @@ describe('Viridian (cidade 8)', () => {
     expect(VIRIDIAN.name).toBe('Viridian')
     expect([VIRIDIAN.primaryType, VIRIDIAN.secondaryType]).toEqual(['ground', 'normal'])
     expect(VIRIDIAN.starters).toEqual([
-      { speciesId: 33, level: 3 },
-      { speciesId: 52, level: 1 },
+      { speciesId: 52, level: 3 },
+      { speciesId: 32, level: 1 },
     ])
   })
 

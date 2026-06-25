@@ -11,7 +11,7 @@ describe('Saffron (cidade 6)', () => {
     expect([SAFFRON.primaryType, SAFFRON.secondaryType]).toEqual(['psychic', 'ghost'])
     expect(SAFFRON.starters).toEqual([
       { speciesId: 63, level: 3 },
-      { speciesId: 92, level: 1 },
+      { speciesId: 79, level: 1 },
     ])
   })
 

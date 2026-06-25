@@ -1067,7 +1067,7 @@ const SEEDS: CitySeed[] = [
     secondaryType: 'bug',
     starters: [
       { speciesId: 44, level: 3 }, // Gloom
-      { speciesId: 1, level: 1 }, // Bulbasaur
+      { speciesId: 48, level: 1 }, // Venonat
     ],
     graph: CELADON_GRAPH,
     siteNodes: CELADON_SITE_NODES,
@@ -1091,7 +1091,7 @@ const SEEDS: CitySeed[] = [
     secondaryType: 'ghost',
     starters: [
       { speciesId: 63, level: 3 }, // Abra
-      { speciesId: 92, level: 1 }, // Gastly
+      { speciesId: 79, level: 1 }, // Slowpoke
     ],
     graph: SAFFRON_GRAPH,
     siteNodes: SAFFRON_SITE_NODES,
@@ -1103,7 +1103,7 @@ const SEEDS: CitySeed[] = [
     secondaryType: 'fighting',
     starters: [
       { speciesId: 58, level: 3 }, // Growlithe
-      { speciesId: 147, level: 1 }, // Dratini
+      { speciesId: 77, level: 1 }, // Ponyta
     ],
     graph: CINNABAR_GRAPH,
     siteNodes: CINNABAR_SITE_NODES,
@@ -1114,8 +1114,8 @@ const SEEDS: CitySeed[] = [
     primaryType: 'ground',
     secondaryType: 'normal',
     starters: [
-      { speciesId: 33, level: 3 }, // Nidorino
-      { speciesId: 52, level: 1 }, // Meowth
+      { speciesId: 52, level: 3 }, // Meowth
+      { speciesId: 32, level: 1 }, // Nidoran♂
     ],
     graph: VIRIDIAN_GRAPH,
     siteNodes: VIRIDIAN_SITE_NODES,

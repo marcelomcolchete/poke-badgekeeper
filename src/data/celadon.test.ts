@@ -17,7 +17,7 @@ describe('Celadon (cidade 4)', () => {
     expect([CELADON.primaryType, CELADON.secondaryType]).toEqual(['grass', 'bug'])
     expect(CELADON.starters).toEqual([
       { speciesId: 44, level: 3 },
-      { speciesId: 1, level: 1 },
+      { speciesId: 48, level: 1 },
     ])
   })
 
