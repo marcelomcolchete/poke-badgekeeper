@@ -4,7 +4,6 @@
 import type { Attrs, Pokemon } from '../types/index.ts'
 import type { Rng } from './rng.ts'
 import { maxHpOf, zeroAttrs } from './attributes.ts'
-import { getSpecies } from '../data/pokemon/index.ts'
 
 /**
  * Rng-stub determinístico: `bool(p)` devolve `sample < p`. Use sample=0 para forçar
@@ -36,13 +35,12 @@ export function makeAttrs(overrides: Partial<Attrs> = {}, fill = 20): Attrs {
 
 /** Pokémon de teste com defaults sãos; HP derivado se não for informado. */
 export function makeMon(overrides: Partial<Pokemon> = {}): Pokemon {
-  const speciesId = overrides.speciesId ?? 1
   const draft: Pokemon = {
     id: overrides.id ?? 'p1',
-    speciesId,
+    speciesId: overrides.speciesId ?? 1,
     level: overrides.level ?? 1,
     xp: overrides.xp ?? 0,
-    types: overrides.types ?? getSpecies(speciesId).types,
+    types: overrides.types ?? ['normal'],
     baseAttrs: overrides.baseAttrs ?? makeAttrs(),
     ivs: overrides.ivs ?? zeroAttrs(),
     allocations: overrides.allocations ?? zeroAttrs(),
