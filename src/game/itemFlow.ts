@@ -5,7 +5,7 @@
 
 import type { GameState } from '../engine/state.ts'
 import type { Rng } from '../engine/rng.ts'
-import { EXP_SHARE_RATE } from '../engine/balance.ts'
+import { EVERSTONE_XP_MULT, EXP_SHARE_RATE } from '../engine/balance.ts'
 import { addXp } from '../engine/leveling.ts'
 import { findMon, replaceMon } from './runtime.ts'
 
@@ -27,9 +27,11 @@ export function applyXpGains(s: GameState, baseGains: Map<string, number>, rng: 
       }
     }
   }
+  const everstone = s.runItems.includes('everstone')
+  const mult = everstone ? EVERSTONE_XP_MULT : 1
   for (const [id, xp] of total) {
     if (xp <= 0) continue
     const mon = findMon(s, id)
-    if (mon) replaceMon(s, addXp(mon, xp, rng).pokemon)
+    if (mon) replaceMon(s, addXp(mon, Math.floor(xp * mult), rng, everstone).pokemon)
   }
 }

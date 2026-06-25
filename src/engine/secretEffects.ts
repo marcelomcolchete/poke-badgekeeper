@@ -47,6 +47,7 @@ import {
   ROLLOUT_START_L2,
   SHELL_ARMOR_DIVISOR_L1,
   SHELL_ARMOR_DIVISOR_L2,
+  SILVER_POWDER_SPEED_PER_BUG,
   SWIFT_SWIM_MISSION_BONUS_L2,
   TORRENT_MISSION_MULT_L1,
   TORRENT_MISSION_MULT_L2,
@@ -469,7 +470,8 @@ export function teamHasFly(team: readonly Pokemon[]): boolean {
  * O time VOA nesta tarefa? Voa em linha reta do ginásio até o ponto (caminho bem menor). Por
  * padrão o voador precisa estar SOZINHO; com Fly+ (sa-fly nível 2) o voo funciona com o time inteiro.
  */
-export function teamFlies(team: readonly Pokemon[]): boolean {
+export function teamFlies(team: readonly Pokemon[], runItems: readonly string[] = []): boolean {
+  if (runItems.includes('air-balloon')) return true
   if (!teamHasFly(team)) return false
   return team.length === 1 || team.some((p) => secretLevelOf(p, 'sa-fly') === 2)
 }
@@ -550,9 +552,13 @@ export function teamTravelSpeedMultiplier(
       speed += elecLevel === 2 ? VOLT_ABSORB_BONUS_L2 : VOLT_ABSORB_BONUS_L1
     }
   }
-  if (teamFlies(team)) speed += FLY_SPEED_BONUS
+  if (teamFlies(team, runItems)) speed += FLY_SPEED_BONUS
   // Quick Feet: +100% de velocidade quando despachado sozinho.
   if (teamHasQuickFeet(team)) speed += QUICK_FEET_SPEED_BONUS
+  // Silver Powder: +50% de velocidade por Pokémon inseto no esquadrão (acumula).
+  if (runItems.includes('silver-powder')) {
+    speed += SILVER_POWDER_SPEED_PER_BUG * team.filter((p) => p.types.includes('bug')).length
+  }
   // Lagging Tail: time mais lento nas viagens de missão (multiplicativo sobre a velocidade).
   speed *= itemTravelSpeedMultiplier(runItems)
   return Math.max(speed, 0.0001)

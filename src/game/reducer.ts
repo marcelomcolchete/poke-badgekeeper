@@ -21,6 +21,7 @@ import {
 } from './captureFlow.ts'
 import { allocatePoint, applyItem, buyBall, buyItem, useMoonStone, useRareCandy } from './marketFlow.ts'
 import { dispatchTheftChasers, resolveTheftBattle, completeTheftBattle } from './theftFlow.ts'
+import { dismissHatch } from './eggFlow.ts'
 
 export function reducer(state: GameState, action: GameAction): GameState {
   // Reinício total numa nova cidade: descarta o estado atual (não dobra no draft) — começo limpo.
@@ -102,6 +103,9 @@ export function reducer(state: GameState, action: GameAction): GameState {
       break
     case 'CHOOSE_SECRET':
       chooseSecretAbility(s, action.slot, action.level)
+      break
+    case 'DISMISS_HATCH':
+      dismissHatch(s)
       break
   }
   return s

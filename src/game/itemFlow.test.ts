@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../engine/state.ts'
+import { createPokemon } from '../engine/leveling.ts'
+import { createRng } from '../engine/rng.ts'
+import { getSpecies } from '../data/pokemon/index.ts'
 import { fixedRng, makeAttrs, makeMon } from '../engine/testkit.ts'
 import { reducer } from './reducer.ts'
 import { autoSeedRun } from './setup.ts'
@@ -239,6 +242,26 @@ describe('Fast Ball', () => {
     startSearch(fast, fast.roster[0]!.id, 0)
     const quick = fast.captureSearches[0]!
     expect(quick.readyAtMs).toBe(quick.arriveAtMs)
+  })
+})
+
+describe('Everstone', () => {
+  it('dobra o XP e impede a evolução natural', () => {
+    const base = createPokemon({ id: 'p1', speciesId: 1, level: 5, rng: createRng(1) }) // Bulbasaur evolui no 16
+    const s = createInitialState(1)
+    s.roster = [base]
+    s.runItems = ['everstone']
+    applyXpGains(s, new Map([['p1', 100000]]), createRng(1))
+    // Subiu de nível (XP dobrado) mas NÃO evoluiu (continua Bulbasaur, speciesId 1).
+    expect(s.roster[0]!.level).toBeGreaterThan(5)
+    expect(s.roster[0]!.speciesId).toBe(1)
+  })
+  it('sem Everstone, evolui normalmente', () => {
+    const base = createPokemon({ id: 'p1', speciesId: 1, level: 5, rng: createRng(1) })
+    const s = createInitialState(1)
+    s.roster = [base]
+    applyXpGains(s, new Map([['p1', 100000]]), createRng(1))
+    expect(getSpecies(s.roster[0]!.speciesId).evolvesTo === null || s.roster[0]!.speciesId !== 1).toBe(true)
   })
 })
 

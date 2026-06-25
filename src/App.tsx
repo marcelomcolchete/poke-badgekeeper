@@ -17,6 +17,7 @@ import { SummaryScreen } from './components/screens/SummaryScreen.tsx'
 import { EndGameScreen } from './components/screens/EndGameScreen.tsx'
 import { DayScreen } from './components/day/DayScreen.tsx'
 import { LevelUpModal } from './components/LevelUpModal/LevelUpModal.tsx'
+import { EggHatchModal } from './components/EggHatchModal/EggHatchModal.tsx'
 import { MuteButton } from './audio/MuteButton.tsx'
 import { useGameSounds } from './audio/useGameSounds.ts'
 import { playSound } from './audio/sounds.ts'
@@ -58,7 +59,7 @@ export default function App() {
   const levelingUp = needsSetup ? undefined : state.roster.find((p) => pendingPoints(p) > 0)
 
   // O relógio congela com qualquer painel aberto OU enquanto há level-up a distribuir.
-  useGameClock(state, dispatch, uiPaused || levelingUp !== undefined)
+  useGameClock(state, dispatch, uiPaused || levelingUp !== undefined || (state.pendingHatches?.length ?? 0) > 0)
 
   // Sons disparados por transições do estado (nova missão, sucesso/fracasso, level-up, aviso).
   useGameSounds(state)
@@ -119,6 +120,7 @@ export default function App() {
         </div>
       )}
       {levelingUp && <LevelUpModal pokemon={levelingUp} dispatch={dispatch} />}
+      {state.pendingHatches?.[0] && <EggHatchModal hatch={state.pendingHatches[0]} dispatch={dispatch} />}
     </div>
   )
 }

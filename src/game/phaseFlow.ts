@@ -25,6 +25,8 @@ import { expireMission, freeOnReturn, resolveMissionNow } from './missionFlow.ts
 import { expireDefense } from './defenseFlow.ts'
 import { setupDay, setupMorningShop } from './setup.ts'
 import { findMon, replaceMon } from './runtime.ts'
+import { incubateEggs } from './eggFlow.ts'
+import { grantDailyBerry } from './fertilizerFlow.ts'
 import {
   rollTheftAtDayOpen,
   resolveTheftBattle,
@@ -256,6 +258,8 @@ function startNextDay(s: GameState): void {
   s.run.phase = 'MORNING'
   s.rngCursor = 0
   healRoster(s)
+  incubateEggs(s) // incuba/eclode ovos na virada do dia
+  grantDailyBerry(s) // Fertilizer: 1 berry aleatória por dia
   s.missions = []
   s.defenses = []
   s.captureSearches = []

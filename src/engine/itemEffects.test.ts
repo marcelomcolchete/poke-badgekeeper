@@ -4,6 +4,7 @@ import {
   itemBattleMultiplier,
   itemMissionMultiplier,
   itemTravelSpeedMultiplier,
+  missionTypeItemMultiplier,
   notFinalEvolution,
 } from './itemEffects.ts'
 import { makeMon } from './testkit.ts'
@@ -63,9 +64,40 @@ describe('itemBattleMultiplier', () => {
   })
 })
 
+describe('itemBattleMultiplier — boosts por tipo novos', () => {
+  it('Grassy Seed: +50% para Grama', () => {
+    const grass = makeMon({ speciesId: BULBASAUR, types: ['grass', 'poison'] })
+    expect(itemBattleMultiplier(grass, ['grassy-seed'])).toBeCloseTo(1.5)
+  })
+  it('Black Sludge: +50% para Veneno', () => {
+    const poison = makeMon({ speciesId: BULBASAUR, types: ['grass', 'poison'] })
+    expect(itemBattleMultiplier(poison, ['black-sludge'])).toBeCloseTo(1.5)
+  })
+  it('não afeta tipos diferentes', () => {
+    const fireMon = makeMon({ speciesId: 4, types: ['fire'] })
+    expect(itemBattleMultiplier(fireMon, ['grassy-seed'])).toBe(1)
+    expect(itemBattleMultiplier(fireMon, ['charcoal'])).toBeCloseTo(1.5)
+  })
+})
+
 describe('itemTravelSpeedMultiplier', () => {
   it('Lagging Tail deixa 50% mais lento; sem ele = 1', () => {
     expect(itemTravelSpeedMultiplier([])).toBe(1)
     expect(itemTravelSpeedMultiplier(['lagging-tail'])).toBeCloseTo(0.5)
+  })
+})
+
+describe('missionTypeItemMultiplier', () => {
+  it('wise-glasses: +50% só em Ensino', () => {
+    expect(missionTypeItemMultiplier('ensino', ['wise-glasses'])).toBeCloseTo(1.5)
+    expect(missionTypeItemMultiplier('escolta', ['wise-glasses'])).toBe(1)
+  })
+  it('zoom-lens: +50% só em Escolta; wide-lens: só em Investigação', () => {
+    expect(missionTypeItemMultiplier('escolta', ['zoom-lens'])).toBeCloseTo(1.5)
+    expect(missionTypeItemMultiplier('investigacao', ['wide-lens'])).toBeCloseTo(1.5)
+    expect(missionTypeItemMultiplier('ensino', ['zoom-lens'])).toBe(1)
+  })
+  it('sem item = 1', () => {
+    expect(missionTypeItemMultiplier('ensino', [])).toBe(1)
   })
 })

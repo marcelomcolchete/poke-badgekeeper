@@ -6,7 +6,7 @@ import type { DefenseEvent, GameState } from '../engine/state.ts'
 import { markActive } from '../engine/state.ts'
 import { canDefend, gymWinXp, resolveDefense, type DefenseResolution } from '../engine/gymDefense.ts'
 import { hasBattleArmor, sturdyAvailable } from '../engine/secretEffects.ts'
-import { goldForDefense } from '../engine/economy.ts'
+import { applyGoldBonus, goldForDefense } from '../engine/economy.ts'
 import { damageForDay, STARS_MIN, STARS_STEP } from '../engine/constants.ts'
 import { applyDomainStars } from '../engine/approval.ts'
 import { createRng } from '../engine/rng.ts'
@@ -128,7 +128,7 @@ export function assignDefense(s: GameState, defenseId: string, squadIds: string[
   defense.xpApplied = false
 
   // Ouro é pago por participar da batalha, vencendo OU perdendo (PLAN §4.6, ajuste).
-  const gold = goldForDefense(squad)
+  const gold = applyGoldBonus(goldForDefense(squad), s.runItems)
   s.gold += gold
   s.today.goldEarned += gold
   s.today.defenseGold += gold

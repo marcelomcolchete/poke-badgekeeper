@@ -5,7 +5,7 @@
 import type { AttrKey } from '../types/index.ts'
 import { createRng, deriveSeed } from '../engine/rng.ts'
 import { SHOP_SEED_SALT } from '../engine/constants.ts'
-import { STAT_BUFF_AMOUNT } from '../engine/balance.ts'
+import { BIG_NUGGET_GOLD, STAT_BUFF_AMOUNT } from '../engine/balance.ts'
 import { BALL_MAX_LEVEL } from './balls.ts'
 import type { ItemData } from './types.ts'
 
@@ -21,6 +21,19 @@ function statItem(id: string, name: string, attr: AttrKey, label: string): ItemD
     description: `+${STAT_BUFF_AMOUNT} de ${label} para todo o time (só hoje).`,
     sprite: sprite(id),
     effect: { kind: 'statBuff', attr, amount: STAT_BUFF_AMOUNT },
+  }
+}
+
+/** Berry: cura 25% do HP e dá +2 PERMANENTE num atributo (uso único, alvo vivo). */
+function berryItem(id: string, name: string, attr: AttrKey, label: string): ItemData {
+  return {
+    id,
+    name,
+    type: 'consumable',
+    price: 100,
+    description: `Cura 25% do HP e dá +2 de ${label} (permanente) a um Pokémon.`,
+    sprite: sprite(id),
+    effect: { kind: 'berry', attr, healPct: 0.25, statAmount: 2 },
   }
 }
 
@@ -221,6 +234,165 @@ export const ITEMS: ItemData[] = [
     sprite: sprite('moon-stone'),
     effect: { kind: 'moonStone' },
   },
+  {
+    id: 'grassy-seed',
+    name: 'Grassy Seed',
+    type: 'passive',
+    price: 1000,
+    description: 'Pokémon do tipo Grama ganham +50% em batalhas.',
+    sprite: sprite('grassy-seed'),
+    effect: { kind: 'passive' },
+  },
+  {
+    id: 'black-sludge',
+    name: 'Black Sludge',
+    type: 'passive',
+    price: 1000,
+    description: 'Pokémon do tipo Venenoso ganham +50% em batalhas.',
+    sprite: sprite('black-sludge'),
+    effect: { kind: 'passive' },
+  },
+  {
+    id: 'twisted-spoon',
+    name: 'Twisted Spoon',
+    type: 'passive',
+    price: 1000,
+    description: 'Pokémon do tipo Psíquico ganham +50% em batalhas.',
+    sprite: sprite('twisted-spoon'),
+    effect: { kind: 'passive' },
+  },
+  {
+    id: 'charcoal',
+    name: 'Charcoal',
+    type: 'passive',
+    price: 1000,
+    description: 'Pokémon do tipo Fogo ganham +50% em batalhas.',
+    sprite: sprite('charcoal'),
+    effect: { kind: 'passive' },
+  },
+  {
+    id: 'wise-glasses',
+    name: 'Wise Glasses',
+    type: 'passive',
+    price: 1000,
+    description: '+50% de poder do time em missões de Ensino (estudo).',
+    sprite: sprite('wise-glasses'),
+    effect: { kind: 'passive' },
+  },
+  {
+    id: 'zoom-lens',
+    name: 'Zoom Lens',
+    type: 'passive',
+    price: 1000,
+    description: '+50% de poder do time em missões de Escolta.',
+    sprite: sprite('zoom-lens'),
+    effect: { kind: 'passive' },
+  },
+  {
+    id: 'wide-lens',
+    name: 'Wide Lens',
+    type: 'passive',
+    price: 1000,
+    description: '+50% de poder do time em missões de Investigação.',
+    sprite: sprite('wide-lens'),
+    effect: { kind: 'passive' },
+  },
+  {
+    id: 'amulet-coin',
+    name: 'Amulet Coin',
+    type: 'passive',
+    price: 800,
+    description: 'Receba +50% de ouro de todas as fontes.',
+    sprite: sprite('amulet-coin'),
+    effect: { kind: 'passive' },
+  },
+  {
+    id: 'big-nugget',
+    name: 'Big Nugget',
+    type: 'consumable',
+    price: 0,
+    description: 'Ao comprar, receba 200 de ouro na hora.',
+    sprite: sprite('big-nugget'),
+    effect: { kind: 'instantGold', amount: BIG_NUGGET_GOLD },
+  },
+  {
+    id: 'sticky-barb',
+    name: 'Sticky Barb',
+    type: 'passive',
+    price: 600,
+    description: 'Em cada duelo de defesa, seu Pokémon perde 1 de vida e o oponente perde 25% do poder.',
+    sprite: sprite('sticky-barb'),
+    effect: { kind: 'passive' },
+  },
+  {
+    id: 'full-incense',
+    name: 'Full Incense',
+    type: 'passive',
+    price: 800,
+    description: 'A exploração atrai +1 Pokémon (de 2 para 3 candidatos).',
+    sprite: sprite('full-incense'),
+    effect: { kind: 'passive' },
+  },
+  {
+    id: 'grip-claw',
+    name: 'Grip Claw',
+    type: 'passive',
+    price: 500,
+    description: 'Pokémon ganham +5 de poder em batalhas de defesa.',
+    sprite: sprite('grip-claw'),
+    effect: { kind: 'passive' },
+  },
+  berryItem('petaya-berry', 'Petaya Berry', 'batalha', 'Batalha'),
+  berryItem('leppa-berry', 'Leppa Berry', 'inteligencia', 'Inteligência'),
+  berryItem('golden-nanab-berry', 'Golden Nanab Berry', 'carisma', 'Carisma'),
+  berryItem('aguav-berry', 'Aguav Berry', 'agilidade', 'Agilidade'),
+  berryItem('sitrus-berry', 'Sitrus Berry', 'resistencia', 'Resistência'),
+  berryItem('rawst-berry', 'Rawst Berry', 'percepcao', 'Percepção'),
+  {
+    id: 'everstone',
+    name: 'Everstone',
+    type: 'passive',
+    price: 700,
+    description: 'Seus Pokémon não evoluem, mas ganham o dobro de experiência.',
+    sprite: sprite('everstone'),
+    effect: { kind: 'passive' },
+  },
+  {
+    id: 'poke-egg',
+    name: 'Poke Egg',
+    type: 'consumable',
+    price: 500,
+    description: 'Choca em 3 dias e revela um Pokémon de 1º estágio (rank B–S; pode ser shiny).',
+    sprite: sprite('poke-egg'),
+    effect: { kind: 'egg' },
+  },
+  {
+    id: 'air-balloon',
+    name: 'Air Balloon',
+    type: 'passive',
+    price: 1200,
+    description: 'Todo o time voa (rota direta) até o balão estourar, após 20–30 missões.',
+    sprite: sprite('air-balloon'),
+    effect: { kind: 'passive' },
+  },
+  {
+    id: 'silver-powder',
+    name: 'Silver Powder',
+    type: 'passive',
+    price: 800,
+    description: 'Pokémon do tipo Inseto viajam +50% mais rápido (acumula por inseto no esquadrão).',
+    sprite: sprite('silver-powder'),
+    effect: { kind: 'passive' },
+  },
+  {
+    id: 'fertilizer',
+    name: 'Fertilizer',
+    type: 'passive',
+    price: 400,
+    description: 'Todo dia você recebe uma berry aleatória.',
+    sprite: sprite('fertilizer'),
+    effect: { kind: 'passive' },
+  },
 ]
 
 const ITEMS_BY_ID: Map<string, ItemData> = new Map(ITEMS.map((i) => [i.id, i]))
@@ -256,13 +428,26 @@ export const GLOBAL_ITEM_IDS: string[] = [
   'premier-ball',
   'shiny-charm',
   'moon-stone',
+  'everstone',
+  'petaya-berry',
+  'leppa-berry',
+  'golden-nanab-berry',
+  'aguav-berry',
+  'sitrus-berry',
+  'rawst-berry',
+  'poke-egg',
 ]
 
-/** Itens EXTRAS por cidade (índice de CITIES): Pewter (0), Cerulean (1) e Vermilion (2). */
+/** Itens EXTRAS por cidade (índice de CITIES). */
 export const CITY_ITEM_IDS: Record<number, string[]> = {
   0: ['lagging-tail', 'thick-club', 'fossil-stone'],
   1: ['mystic-water', 'surfboard', 'fresh-water'],
   2: ['electirizer', 'dragon-fang', 'magnet'],
+  3: ['grassy-seed', 'fertilizer', 'silver-powder'],
+  4: ['black-sludge', 'big-nugget', 'sticky-barb'],
+  5: ['twisted-spoon', 'wise-glasses', 'full-incense'],
+  6: ['charcoal', 'zoom-lens', 'air-balloon'],
+  7: ['wide-lens', 'amulet-coin', 'grip-claw'],
 }
 
 /** Subconjunto do qual ao menos 1 item SEMPRE aparece no mercado (potion/revive/x_*). */

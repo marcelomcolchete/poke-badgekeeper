@@ -384,6 +384,14 @@ describe('viagem e voo', () => {
     const aero = makeMon({ speciesId: 142, secretPicks: [{ slot: 0, level: 1 }] })
     expect(teamTravelSpeedMultiplier([aero])).toBeCloseTo(1.5) // sozinho voa: +50%
   })
+
+  describe('teamFlies com air-balloon', () => {
+    it('time voa enquanto o air-balloon está na run', () => {
+      const mon = makeMon({ speciesId: 1 }) // sem habilidade Fly
+      expect(teamFlies([mon, mon, mon])).toBe(false)
+      expect(teamFlies([mon, mon, mon], ['air-balloon'])).toBe(true)
+    })
+  })
 })
 
 describe('Sturdy: 1×/dia', () => {
@@ -780,5 +788,16 @@ describe('habilidades de calor', () => {
     expect(hasChlorophyll(chloroL1())).toBe(true)
     expect(hasChlorophyll(chloroL2())).toBe(true)
     expect(hasChlorophyll(plain())).toBe(false)
+  })
+})
+
+describe('silver-powder', () => {
+  it('+50% de velocidade por inseto no esquadrão', () => {
+    const bug = makeMon({ speciesId: 10, types: ['bug'] })
+    const base = teamTravelSpeedMultiplier([bug], [])
+    const um = teamTravelSpeedMultiplier([bug], ['silver-powder'])
+    const dois = teamTravelSpeedMultiplier([bug, bug], ['silver-powder'])
+    expect(um).toBeCloseTo(base + 0.5)
+    expect(dois).toBeCloseTo(base + 1.0)
   })
 })

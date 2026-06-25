@@ -7,8 +7,8 @@ import type { AttrKey, Attrs, Pokemon } from '../types/index.ts'
 import type { GameState } from '../engine/state.ts'
 import { getItem } from '../data/items.ts'
 import { nextBall } from '../data/balls.ts'
-import { canAfford } from '../engine/economy.ts'
-import { LEVEL_MAX } from '../engine/constants.ts'
+import { applyGoldBonus, canAfford } from '../engine/economy.ts'
+import { AIR_BALLOON_USES_MAX, AIR_BALLOON_USES_MIN, LEVEL_MAX } from '../engine/constants.ts'
 import { heal, recomputeMaxHp } from '../engine/attributes.ts'
 import { getSpecies } from '../data/pokemon/index.ts'
 import {
@@ -17,7 +17,7 @@ import {
   evolveToLevel,
   pendingPoints,
 } from '../engine/leveling.ts'
-import { findMon, replaceMon, takeRng } from './runtime.ts'
+import { findMon, replaceMon, takeId, takeRng } from './runtime.ts'
 
 /** Marca um item como vendido hoje (vira "VENDIDO" no mercado — 1 compra por slot/dia). */
 function markSold(s: GameState, itemId: string): void {
@@ -67,6 +67,31 @@ export function buyItem(s: GameState, itemId: string, quantity = 1): void {
       if (!canAfford(s.gold, item)) return
       s.gold -= item.price
       s.runItems = [...s.runItems, itemId]
+      if (itemId === 'air-balloon') {
+        s.airBalloon = { usesLeft: takeRng(s).int(AIR_BALLOON_USES_MIN, AIR_BALLOON_USES_MAX) }
+      }
+      markSold(s, itemId)
+      return
+    }
+    case 'instantGold': {
+      // Big Nugget: paga na hora (×1.5 com Amulet Coin). Preço normalmente 0.
+      if (!canAfford(s.gold, item)) return
+      s.gold -= item.price
+      s.gold += applyGoldBonus(effect.amount, s.runItems)
+      markSold(s, itemId)
+      return
+    }
+    case 'berry': {
+      if (!canAfford(s.gold, item, quantity)) return
+      s.gold -= item.price * quantity
+      addCharges(s, itemId, quantity)
+      markSold(s, itemId)
+      return
+    }
+    case 'egg': {
+      if (!canAfford(s.gold, item)) return
+      s.gold -= item.price
+      ;(s.eggs ??= []).push({ id: takeId(s, 'egg'), daysElapsed: 0 })
       markSold(s, itemId)
       return
     }
@@ -121,7 +146,7 @@ export function useRareCandy(s: GameState, pokemonId: string): void {
   if (!mon || mon.level >= LEVEL_MAX || !canAfford(s.gold, item)) return
   s.gold -= item.price
   const rng = takeRng(s)
-  const leveled = recomputeMaxHp(evolveToLevel({ ...mon, level: mon.level + 1 }, rng))
+  const leveled = recomputeMaxHp(evolveToLevel({ ...mon, level: mon.level + 1 }, rng, s.runItems.includes('everstone')))
   replaceMon(s, leveled)
   markSold(s, item.id)
 }
@@ -132,6 +157,7 @@ export function useRareCandy(s: GameState, pokemonId: string): void {
  */
 export function useMoonStone(s: GameState, pokemonId: string): void {
   const item = getItem('moon-stone')
+  if (s.runItems.includes('everstone')) return // Everstone impede toda evolução
   if (s.today.purchasedItems.includes(item.id)) return
   const fromRoster = s.roster.find((p) => p.id === pokemonId)
   const target = fromRoster ?? s.box.find((p) => p.id === pokemonId)
@@ -159,6 +185,19 @@ function consumeItem(s: GameState, itemId: string): boolean {
  */
 export function applyItem(s: GameState, itemId: string, targetId: string): void {
   const effect = getItem(itemId).effect
+  if (effect.kind === 'berry') {
+    const target = findMon(s, targetId)
+    if (!target || target.currentHp <= 0) return // não usa em desmaiado
+    if (!consumeItem(s, itemId)) return
+    const attr = effect.attr
+    const bumped = recomputeMaxHp({
+      ...target,
+      permaBonus: { ...target.permaBonus, [attr]: (target.permaBonus?.[attr] ?? 0) + effect.statAmount },
+    })
+    const restored = heal(bumped, Math.ceil(bumped.maxHp * effect.healPct))
+    replaceMon(s, restored)
+    return
+  }
   if (effect.kind !== 'heal' && effect.kind !== 'revive') return
   if (effect.scope === 'team') {
     if (!applyTeamItem(s, effect.kind)) return

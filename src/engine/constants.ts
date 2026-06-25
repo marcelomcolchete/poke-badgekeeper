@@ -68,8 +68,8 @@ export const SHOP_SEED_SALT = 0x53686f70 // 'Shop'
 /** Chance-base de um Pokémon nascer shiny (iniciais, captura por candidato). */
 export const SHINY_CHANCE = 0.01
 
-/** Shiny Charm (item): bônus aditivo na chance de shiny enquanto possuído (0.01 → 0.05). */
-export const SHINY_CHARM_BONUS = 0.04
+/** Shiny Charm (item): bônus aditivo na chance de shiny enquanto possuído (0.01 → 0.20). */
+export const SHINY_CHARM_BONUS = 0.19
 
 /** Sub-seed dedicado da rolagem de shiny — isola-a das demais sequências de RNG. */
 export const SHINY_SEED_SALT = 0x5417
@@ -248,6 +248,14 @@ export const DRAFT_CHOICES = 3
  * potentialHeatCount. A migração inicia heat vazio e a previsão de calor zerada (recalculados no
  * próximo setupDay).
  * v40: clock.daySpeed (última velocidade de jogo escolhida pelo jogador, 1/2/3) — o abrir de cada
- * dia reabre o relógio nela em vez de voltar ao 1×. Opcional (ausente = 1×); migração passthrough. */
-export const SAVE_VERSION = 40
+ * dia reabre o relógio nela em vez de voltar ao 1×. Opcional (ausente = 1×); migração passthrough.
+ * v41: Poke Egg + Air Balloon. s.eggs (IncubatingEgg[]), s.airBalloon ({usesLeft}|null) e
+ * s.pendingHatches (HatchResult[]). A migração inicia os três com os defaults vazios/nulos. */
+export const SAVE_VERSION = 41
 export const SAVE_KEY = 'poke-badgekeeper:save'
+
+/** Poke Egg: dias de incubação até chocar (0/3 → 1/3 → 2/3 → choca). */
+export const EGG_INCUBATION_DAYS = 3
+/** Air Balloon: faixa de usos (missões) antes de estourar. */
+export const AIR_BALLOON_USES_MIN = 20
+export const AIR_BALLOON_USES_MAX = 30

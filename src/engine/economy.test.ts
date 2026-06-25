@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { getItem } from '../data/items.ts'
-import { buyItem, canAfford, goldForDefense, goldForMart, totalDefenseGold } from './economy.ts'
+import {
+  applyGoldBonus,
+  buyItem,
+  canAfford,
+  goldForDefense,
+  goldForMart,
+  totalDefenseGold,
+} from './economy.ts'
 import { makeAttrs, makeMon } from './testkit.ts'
 
 describe('goldForDefense (PLAN §4.6)', () => {
@@ -67,5 +74,15 @@ describe('mercado (PLAN §4.6)', () => {
     const inv = [{ itemId: 'potion', quantity: 1 }]
     expect(() => buyItem(10, inv, 'potion')).toThrow()
     expect(inv).toEqual([{ itemId: 'potion', quantity: 1 }])
+  })
+})
+
+describe('applyGoldBonus', () => {
+  it('sem amulet-coin não muda o valor', () => {
+    expect(applyGoldBonus(200, [])).toBe(200)
+  })
+  it('amulet-coin dá +50% (arredondado)', () => {
+    expect(applyGoldBonus(200, ['amulet-coin'])).toBe(300)
+    expect(applyGoldBonus(101, ['amulet-coin'])).toBe(152) // round(151.5)
   })
 })

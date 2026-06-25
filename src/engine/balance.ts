@@ -347,6 +347,8 @@ export const STATIC_MOVE_PER_SEC_L2 = 0.10
 export const STATIC_MOVE_CAP_L2 = 1.0
 /** Quick Feet: bônus aditivo de velocidade de viagem quando despachado sozinho (+100% → ×2). */
 export const QUICK_FEET_SPEED_BONUS = 1
+/** Silver Powder: +50% de velocidade de viagem por Pokémon do tipo inseto no esquadrão. */
+export const SILVER_POWDER_SPEED_PER_BUG = 0.5
 /** Regenerator: vida recuperada por Pokémon derrotado em batalha. */
 export const REGENERATOR_HEAL_PER_WIN = 1
 /** Natural Cure: vida recuperada ao sair em missão. */
@@ -430,6 +432,20 @@ export const DRY_SKIN_MISSION_BONUS_L2 = 0.25
 
 // ---- Sistema de Itens (PLAN — Itens) ----
 
+/** Amulet Coin: +50% de ouro de todas as fontes. */
+export const AMULET_COIN_GOLD_MULT = 1.5
+/** Big Nugget: ouro instantâneo concedido na compra. */
+export const BIG_NUGGET_GOLD = 200
+
+/** Grip Claw: bônus fixo de Batalha em duelos de defesa. */
+export const GRIP_CLAW_BATTLE_FLAT = 5
+/** Sticky Barb: custo de HP por duelo e redução do poder do oponente. */
+export const STICKY_BARB_HP_COST = 1
+export const STICKY_BARB_ENEMY_MULT = 0.75
+
+/** Everstone: multiplicador de XP enquanto possuído (e impede toda evolução). */
+export const EVERSTONE_XP_MULT = 2
+
 /** x_*: quanto cada item de atributo soma a todo o time no dia. */
 export const STAT_BUFF_AMOUNT = 5
 /** Eviolite: multiplicador de missão p/ Pokémon que ainda não chegaram à última evolução. */
@@ -446,8 +462,17 @@ export const MYSTIC_WATER_BATTLE_MULT = 1.5
 export const DRAGON_FANG_BATTLE_MULT = 1.5
 /** Magnet: +50% em batalhas para Pokémon do tipo Elétrico. */
 export const MAGNET_BATTLE_MULT = 1.5
+/** Itens de cidade: +50% em batalhas para Pokémon do tipo correspondente. */
+export const GRASSY_SEED_BATTLE_MULT = 1.5
+export const BLACK_SLUDGE_BATTLE_MULT = 1.5
+export const TWISTED_SPOON_BATTLE_MULT = 1.5
+export const CHARCOAL_BATTLE_MULT = 1.5
 /** Fossil Stone: +50% em batalhas para Pokémon fósseis (Omanyte/Omastar/Kabuto/Kabutops/Aerodactyl). */
 export const FOSSIL_STONE_BATTLE_MULT = 1.5
+/** Lentes de cidade: +50% de poder do time num tipo específico de missão. */
+export const WISE_GLASSES_MISSION_MULT = 1.5
+export const ZOOM_LENS_MISSION_MULT = 1.5
+export const WIDE_LENS_MISSION_MULT = 1.5
 /** Electirizer: +50% no sucesso da próxima missão por raio sofrido (acumula por carga). */
 export const ELECTIRIZER_MISSION_BONUS = 0.5
 /** Exp Share: fração da XP de um Pokémon repassada ao resto do time. */

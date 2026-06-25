@@ -61,3 +61,5 @@ export type GameAction =
   | { type: 'COMPLETE_THEFT_BATTLE' }
   /** Resolve a escolha de Habilidade Secreta do Destaque na tela de resumo (Fase 2). */
   | { type: 'CHOOSE_SECRET'; slot: 0 | 1; level: 1 | 2 }
+  /** Fecha o modal de eclosão do ovo (remove a eclosão da frente da fila). */
+  | { type: 'DISMISS_HATCH' }

@@ -5,9 +5,14 @@ import type { ItemData } from '../data/types.ts'
 import type { ItemStack } from './state.ts'
 import { getItem } from '../data/items.ts'
 import { ATTR_MAX } from './constants.ts'
-import { GOLD_BASE_PER_DEFENSE } from './balance.ts'
+import { AMULET_COIN_GOLD_MULT, GOLD_BASE_PER_DEFENSE } from './balance.ts'
 import { effectiveAttr } from './attributes.ts'
 import { average } from './math.ts'
+
+/** Aplica o bônus de ouro de itens (Amulet Coin: +50%) sobre um valor já calculado. */
+export function applyGoldBonus(amount: number, runItems: readonly string[]): number {
+  return Math.round(amount * (runItems.includes('amulet-coin') ? AMULET_COIN_GOLD_MULT : 1))
+}
 
 /** Ouro de uma defesa vencida = ouroBase · (1 + médiaCarisma/60) — PLAN §4.6. */
 export function goldForDefense(squad: readonly Pokemon[]): number {

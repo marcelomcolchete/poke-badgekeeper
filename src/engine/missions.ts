@@ -41,10 +41,12 @@ import {
   axisMin,
   hexagonArea,
   isFainted,
+  mapAttrs,
   teamAxisSum,
   teamSum,
   zeroAttrs,
 } from './attributes.ts'
+import { missionTypeItemMultiplier } from './itemEffects.ts'
 import {
   damageTaken,
   leafGuardAbsorberId,
@@ -174,10 +176,13 @@ export function missionSuccessProbability(team: readonly Pokemon[], requirement:
 export function missionSuccessProbabilityCtx(ctx: MissionSecretCtx, requirement: Attrs): number {
   const requiredArea = hexagonArea(requirement)
   if (requiredArea <= 0) return 1
-  const intersection = hexagonArea(axisMin(teamSecretSum(ctx), requirement))
+  const summed = teamSecretSum(ctx)
+  // Lentes de cidade: +50% de poder do time no tipo de missão correspondente.
+  const typeMult = missionTypeItemMultiplier(ctx.template.id, ctx.runItems)
+  const boosted = typeMult === 1 ? summed : mapAttrs((k) => summed[k] * typeMult)
+  const intersection = hexagonArea(axisMin(boosted, requirement))
   const base = clamp(intersection / requiredArea, 0, 1)
-  // Vital Spirit: o time tenta a missão de novo ao falhar (uma 2ª tentativa) → a chance
-  // efetiva de sucesso vira 1 − (1 − p)². O dano em falha continua o do dia (inalterado).
+  // Vital Spirit: segunda tentativa independente → P_falha = (1−base)². Equivale a ter duas chances.
   return teamHasVitalSpirit(ctx.team) ? 1 - (1 - base) ** 2 : base
 }
 
@@ -270,7 +275,7 @@ export function travelRoute(
   team: readonly Pokemon[],
   runItems: readonly string[] = [],
 ): { flying: boolean; surfing: boolean; path: string[]; distance: number } {
-  if (teamFlies(team)) {
+  if (teamFlies(team, runItems)) {
     const path = [gym, node]
     return { flying: true, surfing: false, path, distance: pathDistance(graph, path) }
   }

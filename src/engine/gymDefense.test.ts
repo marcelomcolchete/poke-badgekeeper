@@ -687,6 +687,28 @@ describe('Tinted Lens', () => {
   })
 })
 
+describe('itens de duelo', () => {
+  it('grip-claw: +5 de Batalha aumenta a chance de vitória', () => {
+    // batalha efetiva padrão = 20; enemy 30 → sem item: 20/30 ≈ 0.667, com item: 25/30 ≈ 0.833
+    const you = makeMon({ baseAttrs: makeAttrs({ batalha: 20 }) })
+    const enemy: EnemyUnit = { battle: 30, types: ['normal'] }
+    const semItem = resolveDefense(createRng(1), [you], [enemy], { runItems: [] })
+    const comItem = resolveDefense(createRng(1), [you], [enemy], { runItems: ['grip-claw'] })
+    // Com +5 de Batalha, pWin do primeiro duelo é maior.
+    expect(comItem.duels[0]!.pWin).toBeGreaterThan(semItem.duels[0]!.pWin)
+  })
+  it('sticky-barb: reduz o poder do oponente (pWin maior) e custa 1 HP por duelo', () => {
+    // batalha efetiva padrão = 20; enemy 30 → sem item: 20/30 ≈ 0.667, com item: 20/22.5 ≈ 0.889
+    const you = makeMon({ baseAttrs: makeAttrs({ batalha: 20 }) })
+    const enemy: EnemyUnit = { battle: 30, types: ['normal'] }
+    const semItem = resolveDefense(createRng(2), [you], [enemy], { runItems: [] })
+    const comItem = resolveDefense(createRng(2), [you], [enemy], { runItems: ['sticky-barb'] })
+    expect(comItem.duels[0]!.pWin).toBeGreaterThan(semItem.duels[0]!.pWin)
+    // O Pokémon perde ao menos 1 HP ao entrar no duelo (sticky-barb custa 1 HP ao entrar).
+    expect(comItem.squad[0]!.currentHp).toBeLessThan(you.currentHp)
+  })
+})
+
 describe('Leaf Guard L2 — defesa de ginásio', () => {
   // Tangela(114): par = ['sa-regenerator','sa-leaf-guard'] → Leaf Guard slot 1.
   // Aliado fraco (batalha 0) perde 1 duelo e tomaria 4; o portador L2 absorve ceil(4/2)=2.

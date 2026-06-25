@@ -206,6 +206,22 @@ describe('saveLoad (PLAN §5)', () => {
     expect(loaded!.weather.forecast.sandstormChancePercent).toBe(0)
   })
 
+  it('migra v40 → v41: eggs/airBalloon/pendingHatches ausentes recebem defaults', () => {
+    const base = autoSeedRun(42) as unknown as Record<string, unknown>
+    // Simula save v40: sem os três campos novos.
+    const v40 = {
+      version: 40,
+      savedAtMs: 0,
+      state: { ...base, eggs: undefined, airBalloon: undefined, pendingHatches: undefined },
+    }
+    localStorage.setItem(SAVE_KEY, JSON.stringify(v40))
+    const loaded = loadGame()
+    expect(loaded).not.toBeNull()
+    expect(loaded!.eggs).toEqual([])
+    expect(loaded!.airBalloon).toBeNull()
+    expect(loaded!.pendingHatches).toEqual([])
+  })
+
   it('clearSave remove o save', () => {
     saveGame(autoSeedRun(1), 0)
     clearSave()

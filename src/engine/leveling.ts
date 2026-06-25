@@ -134,7 +134,8 @@ export function createPokemon(spec: NewPokemonSpec): Pokemon {
  * espécie tem mais de um alvo (ex.: Eevee), sorteia um deles via `rng`; sem `rng`,
  * usa o primeiro alvo (determinístico — usado em testes/contextos sem aleatoriedade).
  */
-export function evolveToLevel(p: Pokemon, rng?: Rng): Pokemon {
+export function evolveToLevel(p: Pokemon, rng?: Rng, blockEvolution = false): Pokemon {
+  if (blockEvolution) return p
   let current = p
   for (;;) {
     const evo = getSpecies(current.speciesId).evolvesTo
@@ -184,7 +185,7 @@ export function rarityXpRate(speciesId: number): number {
  * Acrescenta XP (escalado pela raridade), sobe de nível enquanto houver limiar (até
  * 10) e aplica evoluções. NÃO aloca os pontos do level-up (ficam pendentes) — PLAN §4.1.
  */
-export function addXp(p: Pokemon, amount: number, rng?: Rng): XpResult {
+export function addXp(p: Pokemon, amount: number, rng?: Rng, blockEvolution = false): XpResult {
   // Raridade (mais raro sobe devagar) e corações (cada um +10% de XP, teto +50%) escalam o ganho.
   const gained = Math.max(0, Math.floor(amount * rarityXpRate(p.speciesId) * heartXpMultiplier(p.hearts)))
   let xp = p.xp + gained
@@ -193,6 +194,6 @@ export function addXp(p: Pokemon, amount: number, rng?: Rng): XpResult {
     xp -= xpToNext(level)
     level += 1
   }
-  const pokemon = evolveToLevel({ ...p, xp, level }, rng)
+  const pokemon = evolveToLevel({ ...p, xp, level }, rng, blockEvolution)
   return { pokemon, levelsGained: level - p.level }
 }
