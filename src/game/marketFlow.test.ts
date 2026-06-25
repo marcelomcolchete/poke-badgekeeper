@@ -25,6 +25,17 @@ describe('Poke Egg', () => {
   })
 })
 
+describe('air-balloon', () => {
+  it('compra fixa usos em [20,30] e adiciona à run', () => {
+    const s = createInitialState(1)
+    s.gold = 2000
+    buyItem(s, 'air-balloon')
+    expect(s.runItems).toContain('air-balloon')
+    expect(s.airBalloon!.usesLeft).toBeGreaterThanOrEqual(20)
+    expect(s.airBalloon!.usesLeft).toBeLessThanOrEqual(30)
+  })
+})
+
 describe('berry (petaya = batalha)', () => {
   it('compra vai pro inventário e o uso cura 25% + dá +2 permanente de batalha', () => {
     const s = stateWithMon()

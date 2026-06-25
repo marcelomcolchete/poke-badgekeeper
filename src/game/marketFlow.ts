@@ -8,7 +8,7 @@ import type { GameState } from '../engine/state.ts'
 import { getItem } from '../data/items.ts'
 import { nextBall } from '../data/balls.ts'
 import { applyGoldBonus, canAfford } from '../engine/economy.ts'
-import { LEVEL_MAX } from '../engine/constants.ts'
+import { AIR_BALLOON_USES_MAX, AIR_BALLOON_USES_MIN, LEVEL_MAX } from '../engine/constants.ts'
 import { heal, recomputeMaxHp } from '../engine/attributes.ts'
 import { getSpecies } from '../data/pokemon/index.ts'
 import {
@@ -67,6 +67,9 @@ export function buyItem(s: GameState, itemId: string, quantity = 1): void {
       if (!canAfford(s.gold, item)) return
       s.gold -= item.price
       s.runItems = [...s.runItems, itemId]
+      if (itemId === 'air-balloon') {
+        s.airBalloon = { usesLeft: takeRng(s).int(AIR_BALLOON_USES_MIN, AIR_BALLOON_USES_MAX) }
+      }
       markSold(s, itemId)
       return
     }

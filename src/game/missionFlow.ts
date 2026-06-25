@@ -114,6 +114,16 @@ export function acceptMission(s: GameState, missionId: string, teamIds: string[]
   // já bloqueia, mas a guarda evita uma viagem instantânea por engano. Voo/Sniper nunca dão [].
   if (outbound.path.length === 0) return
   const inbound = travelRoute(graph, mission.node, city.siteNodes.gym, team, s.runItems)
+  // Air Balloon: cada missão despachada gasta 1 uso; estoura (some) ao zerar.
+  if (s.airBalloon) {
+    const usesLeft = s.airBalloon.usesLeft - 1
+    if (usesLeft <= 0) {
+      s.airBalloon = null
+      s.runItems = s.runItems.filter((id) => id !== 'air-balloon')
+    } else {
+      s.airBalloon = { usesLeft }
+    }
+  }
   const outMs = weatherTravelMs(s.weather, now, outbound.distance, team, s.runItems, s.today.electrified)
   // Sniper L1: dobra a duração de execução (atua do ginásio, mas demora mais). L2 normal.
   const baseExecution = executionMs(team, template.baseExecutionMs)

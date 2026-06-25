@@ -366,6 +366,15 @@ export const ITEMS: ItemData[] = [
     sprite: sprite('poke-egg'),
     effect: { kind: 'egg' },
   },
+  {
+    id: 'air-balloon',
+    name: 'Air Balloon',
+    type: 'passive',
+    price: 1200,
+    description: 'Todo o time voa (rota direta) até o balão estourar, após 20–30 missões.',
+    sprite: sprite('air-balloon'),
+    effect: { kind: 'passive' },
+  },
 ]
 
 const ITEMS_BY_ID: Map<string, ItemData> = new Map(ITEMS.map((i) => [i.id, i]))
@@ -419,7 +428,7 @@ export const CITY_ITEM_IDS: Record<number, string[]> = {
   3: ['grassy-seed'],
   4: ['black-sludge', 'big-nugget', 'sticky-barb'],
   5: ['twisted-spoon', 'wise-glasses', 'full-incense'],
-  6: ['charcoal', 'zoom-lens'],
+  6: ['charcoal', 'zoom-lens', 'air-balloon'],
   7: ['wide-lens', 'amulet-coin', 'grip-claw'],
 }
 

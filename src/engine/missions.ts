@@ -274,7 +274,7 @@ export function travelRoute(
   team: readonly Pokemon[],
   runItems: readonly string[] = [],
 ): { flying: boolean; surfing: boolean; path: string[]; distance: number } {
-  if (teamFlies(team)) {
+  if (teamFlies(team, runItems)) {
     const path = [gym, node]
     return { flying: true, surfing: false, path, distance: pathDistance(graph, path) }
   }

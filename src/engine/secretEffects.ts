@@ -469,7 +469,8 @@ export function teamHasFly(team: readonly Pokemon[]): boolean {
  * O time VOA nesta tarefa? Voa em linha reta do ginásio até o ponto (caminho bem menor). Por
  * padrão o voador precisa estar SOZINHO; com Fly+ (sa-fly nível 2) o voo funciona com o time inteiro.
  */
-export function teamFlies(team: readonly Pokemon[]): boolean {
+export function teamFlies(team: readonly Pokemon[], runItems: readonly string[] = []): boolean {
+  if (runItems.includes('air-balloon')) return true
   if (!teamHasFly(team)) return false
   return team.length === 1 || team.some((p) => secretLevelOf(p, 'sa-fly') === 2)
 }
@@ -550,7 +551,7 @@ export function teamTravelSpeedMultiplier(
       speed += elecLevel === 2 ? VOLT_ABSORB_BONUS_L2 : VOLT_ABSORB_BONUS_L1
     }
   }
-  if (teamFlies(team)) speed += FLY_SPEED_BONUS
+  if (teamFlies(team, runItems)) speed += FLY_SPEED_BONUS
   // Quick Feet: +100% de velocidade quando despachado sozinho.
   if (teamHasQuickFeet(team)) speed += QUICK_FEET_SPEED_BONUS
   // Lagging Tail: time mais lento nas viagens de missão (multiplicativo sobre a velocidade).
