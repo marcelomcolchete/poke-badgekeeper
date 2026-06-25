@@ -26,19 +26,14 @@ export function xpMultiplierLabel(hearts: number): string {
 export function Hearts({ value }: { value: number | undefined }) {
   const hearts = heartsOf(value)
   const pct = `${(hearts / HEARTS_MAX) * 100}%`
-  const label = xpMultiplierLabel(hearts)
   const full = hearts === HEARTS_MAX
   const onClass = full ? `${styles.heartsOn} ${styles.heartsGold}` : styles.heartsOn
   return (
-    <span
-      className={styles.hearts}
-      aria-label={`${hearts} de ${HEARTS_MAX} corações — ×${label} de XP`}
-    >
+    <span className={styles.hearts} aria-label={`${hearts} de ${HEARTS_MAX} corações`}>
       <span className={styles.heartsOff}>{'♥'.repeat(HEARTS_MAX)}</span>
       <span className={onClass} style={{ width: pct }}>
         {'♥'.repeat(HEARTS_MAX)}
       </span>
-      <span className={styles.heartsXp} aria-hidden="true">{`×${label} XP`}</span>
     </span>
   )
 }
