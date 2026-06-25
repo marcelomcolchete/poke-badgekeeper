@@ -348,6 +348,15 @@ export const ITEMS: ItemData[] = [
   berryItem('aguav-berry', 'Aguav Berry', 'agilidade', 'Agilidade'),
   berryItem('sitrus-berry', 'Sitrus Berry', 'resistencia', 'Resistência'),
   berryItem('rawst-berry', 'Rawst Berry', 'percepcao', 'Percepção'),
+  {
+    id: 'everstone',
+    name: 'Everstone',
+    type: 'passive',
+    price: 700,
+    description: 'Seus Pokémon não evoluem, mas ganham o dobro de experiência.',
+    sprite: sprite('everstone'),
+    effect: { kind: 'passive' },
+  },
 ]
 
 const ITEMS_BY_ID: Map<string, ItemData> = new Map(ITEMS.map((i) => [i.id, i]))
@@ -383,6 +392,7 @@ export const GLOBAL_ITEM_IDS: string[] = [
   'premier-ball',
   'shiny-charm',
   'moon-stone',
+  'everstone',
   'petaya-berry',
   'leppa-berry',
   'golden-nanab-berry',

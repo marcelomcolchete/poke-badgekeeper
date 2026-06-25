@@ -441,6 +441,9 @@ export const GRIP_CLAW_BATTLE_FLAT = 5
 export const STICKY_BARB_HP_COST = 1
 export const STICKY_BARB_ENEMY_MULT = 0.75
 
+/** Everstone: multiplicador de XP enquanto possuído (e impede toda evolução). */
+export const EVERSTONE_XP_MULT = 2
+
 /** x_*: quanto cada item de atributo soma a todo o time no dia. */
 export const STAT_BUFF_AMOUNT = 5
 /** Eviolite: multiplicador de missão p/ Pokémon que ainda não chegaram à última evolução. */

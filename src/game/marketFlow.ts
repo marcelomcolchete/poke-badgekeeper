@@ -136,7 +136,7 @@ export function useRareCandy(s: GameState, pokemonId: string): void {
   if (!mon || mon.level >= LEVEL_MAX || !canAfford(s.gold, item)) return
   s.gold -= item.price
   const rng = takeRng(s)
-  const leveled = recomputeMaxHp(evolveToLevel({ ...mon, level: mon.level + 1 }, rng))
+  const leveled = recomputeMaxHp(evolveToLevel({ ...mon, level: mon.level + 1 }, rng, s.runItems.includes('everstone')))
   replaceMon(s, leveled)
   markSold(s, item.id)
 }
@@ -147,6 +147,7 @@ export function useRareCandy(s: GameState, pokemonId: string): void {
  */
 export function useMoonStone(s: GameState, pokemonId: string): void {
   const item = getItem('moon-stone')
+  if (s.runItems.includes('everstone')) return // Everstone impede toda evolução
   if (s.today.purchasedItems.includes(item.id)) return
   const fromRoster = s.roster.find((p) => p.id === pokemonId)
   const target = fromRoster ?? s.box.find((p) => p.id === pokemonId)
