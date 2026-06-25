@@ -38,7 +38,7 @@ function collectEntries(state: GameState): Entry[] {
   for (const stack of state.inventory) {
     const item = findItem(stack.itemId)
     if (!item || stack.quantity <= 0) continue
-    const usable = item.effect.kind === 'heal' || item.effect.kind === 'revive'
+    const usable = item.effect.kind === 'heal' || item.effect.kind === 'revive' || item.effect.kind === 'berry'
     entries.push({
       key: `inv-${item.id}`,
       sprite: item.sprite,
@@ -72,9 +72,10 @@ function collectEntries(state: GameState): Entry[] {
   return entries
 }
 
-/** Pokémon elegíveis para o item de escopo single (heal: feridos; revive: desmaiados). */
+/** Pokémon elegíveis para o item de escopo single (heal: feridos; revive: desmaiados; berry: vivos). */
 function eligibleTargets(state: GameState, item: ItemData) {
   if (item.effect.kind === 'revive') return state.roster.filter((p) => p.currentHp <= 0)
+  if (item.effect.kind === 'berry') return state.roster.filter((p) => p.currentHp > 0)
   return state.roster.filter((p) => p.currentHp > 0 && p.currentHp < p.maxHp)
 }
 
@@ -93,6 +94,10 @@ export function ItemsBar({ state, dispatch, label = 'ITENS' }: Props) {
 
   const onUse = (item: ItemData): void => {
     if (!dispatch) return
+    if (item.effect.kind === 'berry') {
+      setPicking(item)
+      return
+    }
     if (item.effect.kind !== 'heal' && item.effect.kind !== 'revive') return
     if (item.effect.scope === 'team') {
       dispatch({ type: 'USE_ITEM', itemId: item.id, targetId: '' })

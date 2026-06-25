@@ -78,6 +78,13 @@ export function buyItem(s: GameState, itemId: string, quantity = 1): void {
       markSold(s, itemId)
       return
     }
+    case 'berry': {
+      if (!canAfford(s.gold, item, quantity)) return
+      s.gold -= item.price * quantity
+      addCharges(s, itemId, quantity)
+      markSold(s, itemId)
+      return
+    }
     case 'rareCandy':
       // Precisa de um alvo escolhido na compra → tratado por useRareCandy (ação dedicada).
       return
@@ -167,6 +174,19 @@ function consumeItem(s: GameState, itemId: string): boolean {
  */
 export function applyItem(s: GameState, itemId: string, targetId: string): void {
   const effect = getItem(itemId).effect
+  if (effect.kind === 'berry') {
+    const target = findMon(s, targetId)
+    if (!target || target.currentHp <= 0) return // não usa em desmaiado
+    if (!consumeItem(s, itemId)) return
+    const attr = effect.attr
+    const bumped = recomputeMaxHp({
+      ...target,
+      permaBonus: { ...target.permaBonus, [attr]: (target.permaBonus?.[attr] ?? 0) + effect.statAmount },
+    })
+    const restored = heal(bumped, Math.ceil(bumped.maxHp * effect.healPct))
+    replaceMon(s, restored)
+    return
+  }
   if (effect.kind !== 'heal' && effect.kind !== 'revive') return
   if (effect.scope === 'team') {
     if (!applyTeamItem(s, effect.kind)) return

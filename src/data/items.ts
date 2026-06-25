@@ -24,6 +24,19 @@ function statItem(id: string, name: string, attr: AttrKey, label: string): ItemD
   }
 }
 
+/** Berry: cura 25% do HP e dá +2 PERMANENTE num atributo (uso único, alvo vivo). */
+function berryItem(id: string, name: string, attr: AttrKey, label: string): ItemData {
+  return {
+    id,
+    name,
+    type: 'consumable',
+    price: 100,
+    description: `Cura 25% do HP e dá +2 de ${label} (permanente) a um Pokémon.`,
+    sprite: sprite(id),
+    effect: { kind: 'berry', attr, healPct: 0.25, statAmount: 2 },
+  }
+}
+
 export const ITEMS: ItemData[] = [
   {
     id: 'potion',
@@ -329,6 +342,12 @@ export const ITEMS: ItemData[] = [
     sprite: sprite('grip-claw'),
     effect: { kind: 'passive' },
   },
+  berryItem('petaya-berry', 'Petaya Berry', 'batalha', 'Batalha'),
+  berryItem('leppa-berry', 'Leppa Berry', 'inteligencia', 'Inteligência'),
+  berryItem('golden-nanab-berry', 'Golden Nanab Berry', 'carisma', 'Carisma'),
+  berryItem('aguav-berry', 'Aguav Berry', 'agilidade', 'Agilidade'),
+  berryItem('sitrus-berry', 'Sitrus Berry', 'resistencia', 'Resistência'),
+  berryItem('rawst-berry', 'Rawst Berry', 'percepcao', 'Percepção'),
 ]
 
 const ITEMS_BY_ID: Map<string, ItemData> = new Map(ITEMS.map((i) => [i.id, i]))
@@ -364,6 +383,12 @@ export const GLOBAL_ITEM_IDS: string[] = [
   'premier-ball',
   'shiny-charm',
   'moon-stone',
+  'petaya-berry',
+  'leppa-berry',
+  'golden-nanab-berry',
+  'aguav-berry',
+  'sitrus-berry',
+  'rawst-berry',
 ]
 
 /** Itens EXTRAS por cidade (índice de CITIES). */
