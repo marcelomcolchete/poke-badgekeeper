@@ -302,6 +302,24 @@ export const ITEMS: ItemData[] = [
     sprite: sprite('big-nugget'),
     effect: { kind: 'instantGold', amount: BIG_NUGGET_GOLD },
   },
+  {
+    id: 'sticky-barb',
+    name: 'Sticky Barb',
+    type: 'passive',
+    price: 600,
+    description: 'Em cada duelo de defesa, seu Pokémon perde 1 de vida e o oponente perde 25% do poder.',
+    sprite: sprite('sticky-barb'),
+    effect: { kind: 'passive' },
+  },
+  {
+    id: 'grip-claw',
+    name: 'Grip Claw',
+    type: 'passive',
+    price: 500,
+    description: 'Pokémon ganham +5 de poder em batalhas de defesa.',
+    sprite: sprite('grip-claw'),
+    effect: { kind: 'passive' },
+  },
 ]
 
 const ITEMS_BY_ID: Map<string, ItemData> = new Map(ITEMS.map((i) => [i.id, i]))
@@ -345,10 +363,10 @@ export const CITY_ITEM_IDS: Record<number, string[]> = {
   1: ['mystic-water', 'surfboard', 'fresh-water'],
   2: ['electirizer', 'dragon-fang', 'magnet'],
   3: ['grassy-seed'],
-  4: ['black-sludge', 'big-nugget'],
+  4: ['black-sludge', 'big-nugget', 'sticky-barb'],
   5: ['twisted-spoon', 'wise-glasses'],
   6: ['charcoal', 'zoom-lens'],
-  7: ['wide-lens', 'amulet-coin'],
+  7: ['wide-lens', 'amulet-coin', 'grip-claw'],
 }
 
 /** Subconjunto do qual ao menos 1 item SEMPRE aparece no mercado (potion/revive/x_*). */

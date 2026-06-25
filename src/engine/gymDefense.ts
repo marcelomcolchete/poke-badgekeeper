@@ -24,6 +24,7 @@ import {
   DEFENSE_SQUAD_MAX,
   DEFENSE_SQUAD_MAX_SQRT_BASE,
   DEFENSE_SQUAD_MIN_SLOPE,
+  GRIP_CLAW_BATTLE_FLAT,
   MEDAL_FULL_DAY,
   MEDAL_OPEN_CHANCE,
   MEDAL_OPEN_DAY,
@@ -35,6 +36,8 @@ import {
   PRESSURE_ENEMY_MULT_L2,
   REGENERATOR_HEAL_PER_WIN,
   RIVAL_EVOLUTION_DAYS,
+  STICKY_BARB_ENEMY_MULT,
+  STICKY_BARB_HP_COST,
   TINTED_LENS_BATTLE_MULT_L1,
   TINTED_LENS_BATTLE_MULT_L2,
 } from './balance.ts'
@@ -55,7 +58,7 @@ import {
   rivalryBattleBonus,
   rolloutBattleBonus,
 } from './secretEffects.ts'
-import { itemBattleMultiplier } from './itemEffects.ts'
+import { hasRunItem, itemBattleMultiplier } from './itemEffects.ts'
 import { attrRank, type Rank } from './ranking.ts'
 import { rollGender } from './gender.ts'
 import { clamp } from './math.ts'
@@ -324,10 +327,24 @@ export function resolveDefense(
         frontWins = 0 // novo lutador na frente: zera a sequência do Rollout
       }
     }
-    const you = result[yours] as Pokemon
+    let you = result[yours] as Pokemon
+    // Sticky Barb: ao ENTRAR no duelo, seu Pokémon perde 1 de vida (pode desmaiar).
+    if (hasRunItem(runItems, 'sticky-barb')) {
+      const afterBarb = applyDamage(you, STICKY_BARB_HP_COST)
+      result[yours] = afterBarb
+      you = afterBarb
+      if (you.currentHp <= 0) {
+        // Desmaiou pela Sticky Barb antes de lutar: passa a vez.
+        yours += 1
+        frontWins = 0
+        continue
+      }
+    }
     let yourEff = effectiveBattle(you, enemy.types)
     // Itens passivos (Thick Club p/ Ground, Lagging Tail p/ todos) na Batalha do seu lado.
     yourEff *= itemBattleMultiplier(you, runItems)
+    // Grip Claw: bônus fixo de Batalha em duelos.
+    if (hasRunItem(runItems, 'grip-claw')) yourEff += GRIP_CLAW_BATTLE_FLAT
     // Hustle: bônus fixo de Batalha em batalhas.
     yourEff *= 1 + hustleBattleBonus(you)
     // Rivalidade: vantagem contra oponente do mesmo gênero.
@@ -350,6 +367,8 @@ export function resolveDefense(
     // Pressure (squad-wide, aplicado UMA VEZ no início): reduz a Batalha de TODOS os inimigos.
     let enemyEff = enemy.battle * typeAdvantageMultiplier(enemy.types, you.types)
     enemyEff *= enemyPressureMult
+    // Sticky Barb: reduz o poder do oponente em 25%.
+    if (hasRunItem(runItems, 'sticky-barb')) enemyEff *= STICKY_BARB_ENEMY_MULT
     // Auto-win: Thick Fat+ (L2) vs Gelo; Ice Body+ (L2) vs Fogo.
     let pWin = duelWinProbability(yourEff, enemyEff)
     if (

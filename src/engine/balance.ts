@@ -435,6 +435,12 @@ export const AMULET_COIN_GOLD_MULT = 1.5
 /** Big Nugget: ouro instantâneo concedido na compra. */
 export const BIG_NUGGET_GOLD = 200
 
+/** Grip Claw: bônus fixo de Batalha em duelos de defesa. */
+export const GRIP_CLAW_BATTLE_FLAT = 5
+/** Sticky Barb: custo de HP por duelo e redução do poder do oponente. */
+export const STICKY_BARB_HP_COST = 1
+export const STICKY_BARB_ENEMY_MULT = 0.75
+
 /** x_*: quanto cada item de atributo soma a todo o time no dia. */
 export const STAT_BUFF_AMOUNT = 5
 /** Eviolite: multiplicador de missão p/ Pokémon que ainda não chegaram à última evolução. */
