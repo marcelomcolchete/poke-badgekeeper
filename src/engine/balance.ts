@@ -347,6 +347,8 @@ export const STATIC_MOVE_PER_SEC_L2 = 0.10
 export const STATIC_MOVE_CAP_L2 = 1.0
 /** Quick Feet: bônus aditivo de velocidade de viagem quando despachado sozinho (+100% → ×2). */
 export const QUICK_FEET_SPEED_BONUS = 1
+/** Silver Powder: +50% de velocidade de viagem por Pokémon do tipo inseto no esquadrão. */
+export const SILVER_POWDER_SPEED_PER_BUG = 0.5
 /** Regenerator: vida recuperada por Pokémon derrotado em batalha. */
 export const REGENERATOR_HEAL_PER_WIN = 1
 /** Natural Cure: vida recuperada ao sair em missão. */

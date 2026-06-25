@@ -47,6 +47,7 @@ import {
   ROLLOUT_START_L2,
   SHELL_ARMOR_DIVISOR_L1,
   SHELL_ARMOR_DIVISOR_L2,
+  SILVER_POWDER_SPEED_PER_BUG,
   SWIFT_SWIM_MISSION_BONUS_L2,
   TORRENT_MISSION_MULT_L1,
   TORRENT_MISSION_MULT_L2,
@@ -554,6 +555,10 @@ export function teamTravelSpeedMultiplier(
   if (teamFlies(team, runItems)) speed += FLY_SPEED_BONUS
   // Quick Feet: +100% de velocidade quando despachado sozinho.
   if (teamHasQuickFeet(team)) speed += QUICK_FEET_SPEED_BONUS
+  // Silver Powder: +50% de velocidade por Pokémon inseto no esquadrão (acumula).
+  if (runItems.includes('silver-powder')) {
+    speed += SILVER_POWDER_SPEED_PER_BUG * team.filter((p) => p.types.includes('bug')).length
+  }
   // Lagging Tail: time mais lento nas viagens de missão (multiplicativo sobre a velocidade).
   speed *= itemTravelSpeedMultiplier(runItems)
   return Math.max(speed, 0.0001)

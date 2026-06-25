@@ -375,6 +375,24 @@ export const ITEMS: ItemData[] = [
     sprite: sprite('air-balloon'),
     effect: { kind: 'passive' },
   },
+  {
+    id: 'silver-powder',
+    name: 'Silver Powder',
+    type: 'passive',
+    price: 800,
+    description: 'Pokémon do tipo Inseto viajam +50% mais rápido (acumula por inseto no esquadrão).',
+    sprite: sprite('silver-powder'),
+    effect: { kind: 'passive' },
+  },
+  {
+    id: 'fertilizer',
+    name: 'Fertilizer',
+    type: 'passive',
+    price: 400,
+    description: 'Todo dia você recebe uma berry aleatória.',
+    sprite: sprite('fertilizer'),
+    effect: { kind: 'passive' },
+  },
 ]
 
 const ITEMS_BY_ID: Map<string, ItemData> = new Map(ITEMS.map((i) => [i.id, i]))
@@ -425,7 +443,7 @@ export const CITY_ITEM_IDS: Record<number, string[]> = {
   0: ['lagging-tail', 'thick-club', 'fossil-stone'],
   1: ['mystic-water', 'surfboard', 'fresh-water'],
   2: ['electirizer', 'dragon-fang', 'magnet'],
-  3: ['grassy-seed'],
+  3: ['grassy-seed', 'fertilizer', 'silver-powder'],
   4: ['black-sludge', 'big-nugget', 'sticky-barb'],
   5: ['twisted-spoon', 'wise-glasses', 'full-incense'],
   6: ['charcoal', 'zoom-lens', 'air-balloon'],

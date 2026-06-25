@@ -790,3 +790,14 @@ describe('habilidades de calor', () => {
     expect(hasChlorophyll(plain())).toBe(false)
   })
 })
+
+describe('silver-powder', () => {
+  it('+50% de velocidade por inseto no esquadrão', () => {
+    const bug = makeMon({ speciesId: 10, types: ['bug'] })
+    const base = teamTravelSpeedMultiplier([bug], [])
+    const um = teamTravelSpeedMultiplier([bug], ['silver-powder'])
+    const dois = teamTravelSpeedMultiplier([bug, bug], ['silver-powder'])
+    expect(um).toBeCloseTo(base + 0.5)
+    expect(dois).toBeCloseTo(base + 1.0)
+  })
+})
