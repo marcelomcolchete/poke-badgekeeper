@@ -50,6 +50,11 @@ export interface ClockState {
   dayElapsedMs: number
   dayLengthMs: number
   speed: GameSpeed
+  /**
+   * Última velocidade de JOGO escolhida pelo jogador (1/2/3, nunca a pausa 0). O abrir de cada
+   * dia (setupDay) reabre o relógio nesta velocidade em vez de voltar sempre ao 1×. Ausente = 1×.
+   */
+  daySpeed?: GameSpeed
 }
 
 export interface GymInfo {

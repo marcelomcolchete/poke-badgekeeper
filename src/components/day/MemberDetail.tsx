@@ -60,7 +60,10 @@ export function MemberDetail({ state, dispatch, pokemonId, onClose }: Props) {
 
         <div className={styles.heartsLine}>
           <Hearts value={mon.hearts} />
-          <span className={styles.heartsHint}>Afinidade — cada coração dá +10% de XP (máx +50%).</span>
+          <span className={styles.heartsHint}>
+            Afinidade — 3♥ é o neutro (×1 XP); cada coração acima dobra o XP ganho, cada um abaixo
+            corta pela metade.
+          </span>
         </div>
 
         {mon.nature && (

@@ -246,6 +246,8 @@ export const DRAFT_CHOICES = 3
  * secretCount. Limpa today.secretUnlock (formato incompatível) → null.
  * v38: efeito Calor. WeatherSchedule ganha `heat` e a previsão ganha heatChancePercent/
  * potentialHeatCount. A migração inicia heat vazio e a previsão de calor zerada (recalculados no
- * próximo setupDay). */
-export const SAVE_VERSION = 39
+ * próximo setupDay).
+ * v40: clock.daySpeed (última velocidade de jogo escolhida pelo jogador, 1/2/3) — o abrir de cada
+ * dia reabre o relógio nela em vez de voltar ao 1×. Opcional (ausente = 1×); migração passthrough. */
+export const SAVE_VERSION = 40
 export const SAVE_KEY = 'poke-badgekeeper:save'

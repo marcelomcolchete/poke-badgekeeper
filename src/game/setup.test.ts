@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../engine/state.ts'
-import { applySpore, autoSeedRun, startRun } from './setup.ts'
+import { applySpore, autoSeedRun, setupDay, startRun } from './setup.ts'
+import { setSpeed } from './phaseFlow.ts'
 import { shinyFor } from '../engine/shiny.ts'
 import { getCity } from '../data/cities.ts'
 import { makeAttrs, makeMon } from '../engine/testkit.ts'
@@ -57,5 +58,28 @@ describe('applySpore', () => {
     applySpore(s)
     expect(s.roster[0]!.secretBuffs).toBeUndefined()
     expect(s.roster[0]!.dayBuffs).toBeUndefined()
+  })
+})
+
+describe('velocidade do relógio entre dias', () => {
+  it('setSpeed lembra a velocidade de jogo (1/2/3) mas ignora a pausa (0)', () => {
+    const s = autoSeedRun(1)
+    setSpeed(s, 3)
+    expect(s.clock.daySpeed).toBe(3)
+    setSpeed(s, 0) // pausa não sobrescreve a preferência
+    expect(s.clock.daySpeed).toBe(3)
+  })
+
+  it('setupDay reabre o relógio na velocidade do dia anterior', () => {
+    const s = autoSeedRun(1)
+    setSpeed(s, 3)
+    setupDay(s)
+    expect(s.clock.speed).toBe(3)
+  })
+
+  it('setupDay cai em 1× quando nunca houve velocidade de jogo (1º dia)', () => {
+    const s = autoSeedRun(1)
+    setupDay(s)
+    expect(s.clock.speed).toBe(1)
   })
 })

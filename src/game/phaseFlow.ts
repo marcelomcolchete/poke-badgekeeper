@@ -34,6 +34,8 @@ import {
 
 export function setSpeed(s: GameState, speed: GameSpeed): void {
   s.clock.speed = speed
+  // Lembra a velocidade de JOGO (pausa não conta) para reabrir o próximo dia nela (setupDay).
+  if (speed > 0) s.clock.daySpeed = speed
 }
 
 /** Avança a fase atual do dia (PLAN §3). */

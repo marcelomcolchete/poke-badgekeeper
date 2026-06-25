@@ -159,7 +159,8 @@ export function setupDay(s: GameState): void {
   applyForewarn(s)
   applySpore(s)
   s.clock.dayElapsedMs = 0
-  s.clock.speed = 1
+  // Reabre o relógio na velocidade de jogo do dia anterior (mantém o ritmo do jogador); 1× no 1º dia.
+  s.clock.speed = s.clock.daySpeed ?? 1
 }
 
 /**

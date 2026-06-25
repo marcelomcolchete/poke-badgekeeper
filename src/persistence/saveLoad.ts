@@ -547,6 +547,12 @@ function migrate(file: Partial<SaveFile>): SaveFile | null {
     version = 39
   }
 
+  // v39 → v40: clock.daySpeed (última velocidade de jogo escolhida) é opcional — ausente = 1× no
+  // próximo dia. Nada a preencher; só passa.
+  if (version === 39) {
+    version = 40
+  }
+
   if (version !== SAVE_VERSION) return null
   return { version, savedAtMs: (file as SaveFile).savedAtMs, state } as unknown as SaveFile
 }
