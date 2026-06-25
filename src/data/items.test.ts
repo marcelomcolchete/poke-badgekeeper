@@ -15,7 +15,7 @@ describe('catálogo de itens', () => {
     expect(new Set(ids).size).toBe(ids.length)
     for (const item of ITEMS) {
       expect(item.sprite).toBe(`/sprites/itens/${item.id}.png`)
-      expect(item.price).toBeGreaterThan(0)
+      expect(item.price).toBeGreaterThanOrEqual(0) // big-nugget é grátis (price 0)
       expect(['consumable', 'passive']).toContain(item.type)
     }
   })
