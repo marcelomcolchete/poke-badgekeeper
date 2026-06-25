@@ -257,6 +257,33 @@ export const ITEMS: ItemData[] = [
     sprite: sprite('charcoal'),
     effect: { kind: 'passive' },
   },
+  {
+    id: 'wise-glasses',
+    name: 'Wise Glasses',
+    type: 'passive',
+    price: 1000,
+    description: '+50% de poder do time em missões de Ensino (estudo).',
+    sprite: sprite('wise-glasses'),
+    effect: { kind: 'passive' },
+  },
+  {
+    id: 'zoom-lens',
+    name: 'Zoom Lens',
+    type: 'passive',
+    price: 1000,
+    description: '+50% de poder do time em missões de Escolta.',
+    sprite: sprite('zoom-lens'),
+    effect: { kind: 'passive' },
+  },
+  {
+    id: 'wide-lens',
+    name: 'Wide Lens',
+    type: 'passive',
+    price: 1000,
+    description: '+50% de poder do time em missões de Investigação.',
+    sprite: sprite('wide-lens'),
+    effect: { kind: 'passive' },
+  },
 ]
 
 const ITEMS_BY_ID: Map<string, ItemData> = new Map(ITEMS.map((i) => [i.id, i]))
@@ -301,9 +328,9 @@ export const CITY_ITEM_IDS: Record<number, string[]> = {
   2: ['electirizer', 'dragon-fang', 'magnet'],
   3: ['grassy-seed'],
   4: ['black-sludge'],
-  5: ['twisted-spoon'],
-  6: ['charcoal'],
-  7: [],
+  5: ['twisted-spoon', 'wise-glasses'],
+  6: ['charcoal', 'zoom-lens'],
+  7: ['wide-lens'],
 }
 
 /** Subconjunto do qual ao menos 1 item SEMPRE aparece no mercado (potion/revive/x_*). */

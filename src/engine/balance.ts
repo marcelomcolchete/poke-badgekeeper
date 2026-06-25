@@ -453,6 +453,10 @@ export const TWISTED_SPOON_BATTLE_MULT = 1.5
 export const CHARCOAL_BATTLE_MULT = 1.5
 /** Fossil Stone: +50% em batalhas para Pokémon fósseis (Omanyte/Omastar/Kabuto/Kabutops/Aerodactyl). */
 export const FOSSIL_STONE_BATTLE_MULT = 1.5
+/** Lentes de cidade: +50% de poder do time num tipo específico de missão. */
+export const WISE_GLASSES_MISSION_MULT = 1.5
+export const ZOOM_LENS_MISSION_MULT = 1.5
+export const WIDE_LENS_MISSION_MULT = 1.5
 /** Electirizer: +50% no sucesso da próxima missão por raio sofrido (acumula por carga). */
 export const ELECTIRIZER_MISSION_BONUS = 0.5
 /** Exp Share: fração da XP de um Pokémon repassada ao resto do time. */

@@ -4,6 +4,7 @@ import {
   itemBattleMultiplier,
   itemMissionMultiplier,
   itemTravelSpeedMultiplier,
+  missionTypeItemMultiplier,
   notFinalEvolution,
 } from './itemEffects.ts'
 import { makeMon } from './testkit.ts'
@@ -83,5 +84,20 @@ describe('itemTravelSpeedMultiplier', () => {
   it('Lagging Tail deixa 50% mais lento; sem ele = 1', () => {
     expect(itemTravelSpeedMultiplier([])).toBe(1)
     expect(itemTravelSpeedMultiplier(['lagging-tail'])).toBeCloseTo(0.5)
+  })
+})
+
+describe('missionTypeItemMultiplier', () => {
+  it('wise-glasses: +50% só em Ensino', () => {
+    expect(missionTypeItemMultiplier('ensino', ['wise-glasses'])).toBeCloseTo(1.5)
+    expect(missionTypeItemMultiplier('escolta', ['wise-glasses'])).toBe(1)
+  })
+  it('zoom-lens: +50% só em Escolta; wide-lens: só em Investigação', () => {
+    expect(missionTypeItemMultiplier('escolta', ['zoom-lens'])).toBeCloseTo(1.5)
+    expect(missionTypeItemMultiplier('investigacao', ['wide-lens'])).toBeCloseTo(1.5)
+    expect(missionTypeItemMultiplier('ensino', ['zoom-lens'])).toBe(1)
+  })
+  it('sem item = 1', () => {
+    expect(missionTypeItemMultiplier('ensino', [])).toBe(1)
   })
 })

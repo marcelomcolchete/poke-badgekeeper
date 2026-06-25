@@ -19,6 +19,9 @@ import {
   MYSTIC_WATER_BATTLE_MULT,
   THICK_CLUB_BATTLE_MULT,
   TWISTED_SPOON_BATTLE_MULT,
+  WIDE_LENS_MISSION_MULT,
+  WISE_GLASSES_MISSION_MULT,
+  ZOOM_LENS_MISSION_MULT,
 } from './balance.ts'
 
 /** Espécies fósseis (Omanyte/Omastar/Kabuto/Kabutops/Aerodactyl) — alvo da Fossil Stone. */
@@ -96,4 +99,17 @@ export function itemBattleMultiplier(p: Pokemon, runItems: readonly string[]): n
 /** Multiplicador de VELOCIDADE de viagem vindo de itens (Lagging Tail deixa 50% mais lento). */
 export function itemTravelSpeedMultiplier(runItems: readonly string[]): number {
   return hasRunItem(runItems, 'lagging-tail') ? LAGGING_TAIL_TRAVEL_MULT : 1
+}
+
+/**
+ * Multiplicador de poder do time vindo de itens ligados a UM tipo de missão (1 = sem efeito):
+ *  - Wise Glasses: +50% em Ensino (estudo).
+ *  - Zoom Lens: +50% em Escolta (resistência/escolta).
+ *  - Wide Lens: +50% em Investigação.
+ */
+export function missionTypeItemMultiplier(templateId: string, runItems: readonly string[]): number {
+  if (hasRunItem(runItems, 'wise-glasses') && templateId === 'ensino') return WISE_GLASSES_MISSION_MULT
+  if (hasRunItem(runItems, 'zoom-lens') && templateId === 'escolta') return ZOOM_LENS_MISSION_MULT
+  if (hasRunItem(runItems, 'wide-lens') && templateId === 'investigacao') return WIDE_LENS_MISSION_MULT
+  return 1
 }
