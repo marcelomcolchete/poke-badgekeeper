@@ -56,28 +56,27 @@ export function MemberDetail({ state, dispatch, pokemonId, onClose }: Props) {
       <div className={styles.body}>
         <PokemonCard pokemon={mon} />
 
-        <div className={styles.heartsLine}>
-          <Hearts value={mon.hearts} />
-          <span className={styles.heartsHint}>
-            Quanto maior a afinidade do seu pokémon mais experiência é recebida em missões e
-            batalhas.
-          </span>
-        </div>
-
-        {mon.nature && (
-          <div className={styles.natureLine}>
-            <span className={styles.natureName}>{NATURE_LABEL_PT[mon.nature]}</span>
-            {natureEntry?.boosted && (
-              <span className={styles.natureBoosted}>+ {ATTR_SHORT_PT[natureEntry.boosted]}</span>
-            )}
-            {natureEntry?.reduced && (
-              <span className={styles.natureReduced}>− {ATTR_SHORT_PT[natureEntry.reduced]}</span>
-            )}
-            {!natureEntry?.boosted && !natureEntry?.reduced && (
-              <span className={styles.natureNeutral}>(neutra)</span>
-            )}
+        <div className={styles.infoRow}>
+          <div className={styles.infoBox}>
+            <span className={styles.infoLabel}>Afinidade</span>
+            <Hearts value={mon.hearts} />
           </div>
-        )}
+
+          {mon.nature && (
+            <div className={styles.infoBox}>
+              <span className={styles.natureName}>{NATURE_LABEL_PT[mon.nature]}</span>
+              {natureEntry?.boosted && (
+                <span className={styles.natureBoosted}>+ {ATTR_SHORT_PT[natureEntry.boosted]}</span>
+              )}
+              {natureEntry?.reduced && (
+                <span className={styles.natureReduced}>− {ATTR_SHORT_PT[natureEntry.reduced]}</span>
+              )}
+              {!natureEntry?.boosted && !natureEntry?.reduced && (
+                <span className={styles.natureNeutral}>(neutra)</span>
+              )}
+            </div>
+          )}
+        </div>
 
         {secretLine && (
           <div className={styles.secret}>
