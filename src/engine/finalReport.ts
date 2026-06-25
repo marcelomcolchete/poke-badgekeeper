@@ -57,8 +57,8 @@ export interface FinalReportMvp {
   rank: Rank
   missions: number
   defeats: number
-  /** Nível da medalha da Habilidade Secreta (0 = nenhuma, 1 Bronze, 2 Prata, 3 Ouro). */
-  medalIndex: number
+  /** Níveis das Habilidades Secretas ativas (em ordem de slot): 1 = Prata, 2 = Ouro. Uma medalha cada. */
+  secretMedals: (1 | 2)[]
 }
 
 /** Carrasco: a espécie inimiga que mais venceu duelos contra o seu time. */
@@ -151,7 +151,10 @@ export function buildFinalReport(state: GameState, outcome: EndOutcome): FinalRe
         rank: pokemonRank(mon),
         missions: use.missions,
         defeats: use.defeats,
-        medalIndex: mon.secretPicks?.length ?? 0,
+        secretMedals: (mon.secretPicks ?? [])
+          .slice()
+          .sort((a, b) => a.slot - b.slot)
+          .map((p) => p.level),
       }
     })
 

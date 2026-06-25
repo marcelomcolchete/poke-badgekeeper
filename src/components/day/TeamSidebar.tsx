@@ -21,7 +21,8 @@ import {
   RANK_COLOR,
   RARITY_COLOR,
   RARITY_LABEL_PT,
-  SECRET_MEDAL,
+  SECRET_LEVEL_LABEL,
+  SECRET_LEVEL_MEDAL,
   STATUS_LABEL_PT,
 } from '../common/visual.ts'
 import { displayNameOf, genderColor, genderSymbol } from '../common/naming.ts'
@@ -177,7 +178,11 @@ export function TeamSidebar({ state, onSelect }: Props) {
                     {pending > 0 && <span className={styles.badge}>+{pending}</span>}
                     {secretActive && (
                       <span className={styles.secretBadge} title={secretTip} aria-label={secretTip}>
-                        {SECRET_MEDAL[secretCount]}
+                        {secrets.map(({ id, level }) => (
+                          <span key={id} aria-label={SECRET_LEVEL_LABEL[level]}>
+                            {SECRET_LEVEL_MEDAL[level]}
+                          </span>
+                        ))}
                       </span>
                     )}
                     {willLevelUp && (
