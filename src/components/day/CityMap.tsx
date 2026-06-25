@@ -25,7 +25,7 @@ import { isSanding } from '../../engine/sand.ts'
 import { activeStrikeCirclesAt } from '../../engine/storm.ts'
 import { teamIsSpeedy } from '../../engine/secretEffects.ts'
 import { clamp } from '../../engine/math.ts'
-import { missionTravelerPos, searchTravelerPos, returnTravelerPos, theftPos, chaserPositionsAt } from '../../engine/travelerPositions.ts'
+import { missionTravelerPos, searchTravelerPos, returnTravelerPos, theftPos, chaserPositionsAt, travelCtxFor } from '../../engine/travelerPositions.ts'
 import styles from './CityMap.module.css'
 
 /** Missões que aparecem no mapa: disponíveis e as já aceitas (em trânsito/ação/volta) — #4. */
@@ -237,7 +237,7 @@ function MapTravelers({ state, graph, now, onTheft }: { state: GameState; graph:
   return (
     <>
       {state.missions.map((m) => {
-        const pos = missionTravelerPos(graph, m, now)
+        const pos = missionTravelerPos(graph, m, now, travelCtxFor(state, m.teamIds))
         if (!pos) return null
         // Buff de velocidade do time (Weak Armor/Fly) → aura piscando ao redor.
         const team = m.teamIds
@@ -260,7 +260,7 @@ function MapTravelers({ state, graph, now, onTheft }: { state: GameState; graph:
         )
       })}
       {state.captureSearches.map((c) => {
-        const pos = searchTravelerPos(graph, c, now)
+        const pos = searchTravelerPos(graph, c, now, travelCtxFor(state, [c.searcherId]))
         if (!pos) return null
         const paralyzed = !!c.paralyzeHold && now < c.paralyzeHold.untilMs
         return (
@@ -268,7 +268,7 @@ function MapTravelers({ state, graph, now, onTheft }: { state: GameState; graph:
         )
       })}
       {state.captureReturns.map((r) => {
-        const pos = returnTravelerPos(graph, r, now)
+        const pos = returnTravelerPos(graph, r, now, travelCtxFor(state, [r.searcherId]))
         const paralyzed = !!r.paralyzeHold && now < r.paralyzeHold.untilMs
         return (
           <TravelerGroup key={`r-${r.searcherId}`} pos={pos} ids={[r.searcherId]} roster={state.roster} flying={r.flying} surfing={r.surfing} paralyzed={paralyzed} />

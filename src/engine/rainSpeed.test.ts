@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { makeMon } from './testkit.ts'
 import { graphTravelMs } from './missions.ts'
 import { SWIFT_SWIM_RAIN_BONUS, HEAT_SLOW_FACTOR } from './balance.ts'
-import { weatherTravelMs, instantWeatherSpeed } from './rainSpeed.ts'
+import { weatherTravelMs, instantWeatherSpeed, weatherTravelFraction } from './rainSpeed.ts'
 import { teamTravelSpeedMultiplier } from './secretEffects.ts'
 import { emptyWeatherSchedule, type WeatherSchedule } from './weather.ts'
 
@@ -99,6 +99,33 @@ describe('weatherTravelMs — Calor', () => {
     const hotMs = Math.floor(need / 10) // janela curta no início
     // Durante o calor cobre hotMs·0.2 do progresso; resto a ×1. Tempo = hotMs + (need − 0.2·hotMs).
     expect(weatherTravelMs(heatUntil(hotMs), 0, DIST, team)).toBeCloseTo(need + 0.8 * hotMs)
+  })
+})
+
+describe('weatherTravelFraction — posição visual sob calor', () => {
+  const team = [noone()]
+  const need = graphTravelMs(DIST, team, 1)
+
+  it('sem clima → fração linear no tempo', () => {
+    expect(weatherTravelFraction(emptyWeatherSchedule(), 0, need, need / 2, team)).toBeCloseTo(0.5)
+  })
+
+  it('chega a 1 exatamente na chegada (extremos sincronizados)', () => {
+    const hotMs = Math.floor(need / 10)
+    const arrive = need + 0.8 * hotMs // = weatherTravelMs(heatUntil(hotMs), ...)
+    expect(weatherTravelFraction(heatUntil(hotMs), 0, arrive, 0, team)).toBeCloseTo(0)
+    expect(weatherTravelFraction(heatUntil(hotMs), 0, arrive, arrive, team)).toBeCloseTo(1)
+  })
+
+  it('a velocidade volta ao normal quando o calor acaba (anda mais depois que durante)', () => {
+    const hotMs = Math.floor(need / 10)
+    const arrive = need + 0.8 * hotMs
+    const dt = Math.floor(hotMs / 2)
+    // Progresso de distância numa mesma janela dt: durante o calor (×0.2) vs logo após (×1).
+    const duringHeat = weatherTravelFraction(heatUntil(hotMs), 0, arrive, dt, team)
+    const afterStart = weatherTravelFraction(heatUntil(hotMs), 0, arrive, hotMs, team)
+    const afterEnd = weatherTravelFraction(heatUntil(hotMs), 0, arrive, hotMs + dt, team)
+    expect(afterEnd - afterStart).toBeGreaterThan(duringHeat)
   })
 })
 

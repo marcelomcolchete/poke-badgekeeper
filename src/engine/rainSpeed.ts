@@ -4,6 +4,7 @@
 
 import type { Pokemon } from '../types/index.ts'
 import { SWIFT_SWIM_RAIN_BONUS, HEAT_SLOW_FACTOR } from './balance.ts'
+import { clamp } from './math.ts'
 import { graphTravelMs } from './missions.ts'
 import {
   teamHasSwiftSwim,
@@ -65,6 +66,65 @@ export function instantWeatherSpeed(
     (hot ? teamHeatSpeedBonus(team) : 0) +
     (raining && teamHasSwiftSwim(team) ? SWIFT_SWIM_RAIN_BONUS : 0)
   return Math.max(rate, 0.0001)
+}
+
+/** Velocidade (unidades de progresso por ms) de um trecho, dada a base + flags de chuva/calor. */
+function segmentRate(
+  seg: SpeedSegment,
+  baseMult: number,
+  immune: boolean,
+  heatBonus: number,
+  swift: boolean,
+): number {
+  const heatFactor = seg.hot && !immune ? HEAT_SLOW_FACTOR : 1
+  return Math.max(
+    baseMult * heatFactor +
+      (seg.hot ? heatBonus : 0) +
+      (seg.raining && swift ? SWIFT_SWIM_RAIN_BONUS : 0),
+    0.0001,
+  )
+}
+
+/**
+ * Fração [0,1] da DISTÂNCIA já percorrida numa perna [startMs, endMs] em `nowMs`, integrando o
+ * clima — usada na POSIÇÃO do sprite no mapa (engine/travelerPositions). Como o tempo total da
+ * perna (endMs−startMs) já embute o slowdown do calor, interpolar linear faria o sprite andar na
+ * velocidade MÉDIA e nunca voltar ao normal quando o calor acaba. Aqui o progresso = razão das
+ * integrais de velocidade (∫start→now / ∫start→end): anda devagar no calor e acelera depois, e
+ * casa exatamente nos extremos (0 na partida, 1 na chegada). Sem clima relevante → linear no tempo.
+ */
+export function weatherTravelFraction(
+  schedule: WeatherSchedule,
+  startMs: number,
+  endMs: number,
+  nowMs: number,
+  team: readonly Pokemon[],
+  runItems: readonly string[] = [],
+  electrified?: Record<string, 1 | 2>,
+): number {
+  if (endMs <= startMs) return 1
+  if (nowMs <= startMs) return 0
+  if (nowMs >= endMs) return 1
+  const baseMult = teamTravelSpeedMultiplier(team, runItems, electrified)
+  const immune = teamImmuneToHeat(team)
+  const heatBonus = teamHeatSpeedBonus(team)
+  const swift = teamHasSwiftSwim(team)
+  const segs = speedSegments(schedule, startMs)
+  // Progresso acumulado (∫ rate dt) de startMs até `until`, somando trecho a trecho.
+  const integrate = (until: number): number => {
+    let acc = 0
+    for (const seg of segs) {
+      const a = seg.start
+      const b = Math.min(seg.end, until)
+      if (b <= a) break // trechos seguintes começam ≥ until
+      acc += (b - a) * segmentRate(seg, baseMult, immune, heatBonus, swift)
+      if (seg.end >= until) break
+    }
+    return acc
+  }
+  const total = integrate(endMs)
+  if (total <= 0) return clamp((nowMs - startMs) / (endMs - startMs), 0, 1)
+  return clamp(integrate(nowMs) / total, 0, 1)
 }
 
 /**
