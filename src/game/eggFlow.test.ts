@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { createInitialState } from '../engine/state.ts'
 import { EGG_INCUBATION_DAYS } from '../engine/constants.ts'
 import { incubateEggs } from './eggFlow.ts'
+import { reducer } from './reducer.ts'
 
 describe('incubateEggs', () => {
   it('avança a incubação e eclode no 3º dia, indo pro time quando há vaga', () => {
@@ -24,5 +25,18 @@ describe('incubateEggs', () => {
     incubateEggs(s)
     expect(s.box).toHaveLength(1)
     expect(s.pendingHatches[0]!.toTeam).toBe(false)
+  })
+})
+
+describe('DISMISS_HATCH', () => {
+  it('remove a primeira eclosão da fila', () => {
+    let s = createInitialState(1)
+    s.pendingHatches = [
+      { pokemon: { id: 'a' } as never, toTeam: true },
+      { pokemon: { id: 'b' } as never, toTeam: false },
+    ]
+    s = reducer(s, { type: 'DISMISS_HATCH' })
+    expect(s.pendingHatches).toHaveLength(1)
+    expect(s.pendingHatches[0]!.pokemon.id).toBe('b')
   })
 })

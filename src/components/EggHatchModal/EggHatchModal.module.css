@@ -1,0 +1,5 @@
+.body { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 8px; }
+.sprite { width: 96px; height: 96px; image-rendering: pixelated; }
+.name { font-weight: 700; margin: 0; }
+.dest { margin: 0; opacity: 0.85; }
+.ok { padding: 8px 24px; cursor: pointer; }
