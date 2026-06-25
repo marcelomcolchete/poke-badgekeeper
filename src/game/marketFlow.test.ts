@@ -4,6 +4,7 @@ import { effectiveAttr } from '../engine/attributes.ts'
 import { createPokemon } from '../engine/leveling.ts'
 import { createRng } from '../engine/rng.ts'
 import { buyItem, applyItem } from './marketFlow.ts'
+import { buyItem as buyItem2 } from './marketFlow.ts'
 
 function stateWithMon() {
   const s = createInitialState(1)
@@ -12,6 +13,17 @@ function stateWithMon() {
   s.gold = 1000
   return s
 }
+
+describe('Poke Egg', () => {
+  it('compra adiciona um ovo incubando com daysElapsed 0', () => {
+    const s = createInitialState(1)
+    s.gold = 1000
+    buyItem2(s, 'poke-egg')
+    expect(s.eggs).toHaveLength(1)
+    expect(s.eggs[0]!.daysElapsed).toBe(0)
+    expect(s.gold).toBe(500)
+  })
+})
 
 describe('berry (petaya = batalha)', () => {
   it('compra vai pro inventário e o uso cura 25% + dá +2 permanente de batalha', () => {

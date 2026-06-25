@@ -340,6 +340,20 @@ export interface ItemStack {
   quantity: number
 }
 
+/** Ovo (Poke Egg) chocando: incuba EGG_INCUBATION_DAYS dias e eclode no avanço de dia. */
+export interface IncubatingEgg {
+  id: string
+  /** Dias já passados (0→3). Eclode ao atingir EGG_INCUBATION_DAYS. */
+  daysElapsed: number
+}
+
+/** Eclosão aguardando o modal (fila em pendingHatches). */
+export interface HatchResult {
+  pokemon: Pokemon
+  /** true = entrou no time; false = foi pro Computador (PC). */
+  toTeam: boolean
+}
+
 export interface Approval {
   /** Estrelas de missões (0–5, passo 0,5). */
   missionStars: number
@@ -528,6 +542,12 @@ export interface GameState {
   inventory: ItemStack[]
   /** Itens/passivas permanentes da run. */
   runItems: string[]
+  /** Ovos (Poke Egg) chocando — incubam por dia e eclodem no avanço de dia. */
+  eggs: IncubatingEgg[]
+  /** Air Balloon: usos restantes antes de estourar (null = sem balão ativo). */
+  airBalloon: { usesLeft: number } | null
+  /** Eclosões aguardando exibição no modal (uma por vez). */
+  pendingHatches: HatchResult[]
   /**
    * Electirizer: cargas de "próxima missão" acumuladas por Pokémon (raios sofridos), aguardando
    * despacho. Persiste até ser consumida (snapshot em acceptMission). Vazio = sem cargas pendentes.
@@ -618,6 +638,9 @@ export function createInitialState(seed: number): GameState {
     gold: STARTING_GOLD,
     inventory: [],
     runItems: [],
+    eggs: [],
+    airBalloon: null,
+    pendingHatches: [],
     electirizerCharges: {},
     today: emptyTally(),
     lifetime: emptyLifetime(),

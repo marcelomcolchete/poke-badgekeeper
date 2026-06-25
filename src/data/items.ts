@@ -357,6 +357,15 @@ export const ITEMS: ItemData[] = [
     sprite: sprite('everstone'),
     effect: { kind: 'passive' },
   },
+  {
+    id: 'poke-egg',
+    name: 'Poke Egg',
+    type: 'consumable',
+    price: 500,
+    description: 'Choca em 3 dias e revela um Pokémon de 1º estágio (rank B–S; pode ser shiny).',
+    sprite: sprite('poke-egg'),
+    effect: { kind: 'egg' },
+  },
 ]
 
 const ITEMS_BY_ID: Map<string, ItemData> = new Map(ITEMS.map((i) => [i.id, i]))
@@ -399,6 +408,7 @@ export const GLOBAL_ITEM_IDS: string[] = [
   'aguav-berry',
   'sitrus-berry',
   'rawst-berry',
+  'poke-egg',
 ]
 
 /** Itens EXTRAS por cidade (índice de CITIES). */

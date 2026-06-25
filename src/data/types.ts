@@ -151,6 +151,7 @@ export type ItemEffect =
   | { kind: 'moonStone' }
   | { kind: 'instantGold'; amount: number }
   | { kind: 'berry'; attr: AttrKey; healPct: number; statAmount: number }
+  | { kind: 'egg' }
 
 export interface ItemData {
   id: string

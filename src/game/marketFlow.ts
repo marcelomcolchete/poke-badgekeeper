@@ -17,7 +17,7 @@ import {
   evolveToLevel,
   pendingPoints,
 } from '../engine/leveling.ts'
-import { findMon, replaceMon, takeRng } from './runtime.ts'
+import { findMon, replaceMon, takeId, takeRng } from './runtime.ts'
 
 /** Marca um item como vendido hoje (vira "VENDIDO" no mercado — 1 compra por slot/dia). */
 function markSold(s: GameState, itemId: string): void {
@@ -82,6 +82,13 @@ export function buyItem(s: GameState, itemId: string, quantity = 1): void {
       if (!canAfford(s.gold, item, quantity)) return
       s.gold -= item.price * quantity
       addCharges(s, itemId, quantity)
+      markSold(s, itemId)
+      return
+    }
+    case 'egg': {
+      if (!canAfford(s.gold, item)) return
+      s.gold -= item.price
+      ;(s.eggs ??= []).push({ id: takeId(s, 'egg'), daysElapsed: 0 })
       markSold(s, itemId)
       return
     }

@@ -251,3 +251,9 @@ export const DRAFT_CHOICES = 3
  * dia reabre o relógio nela em vez de voltar ao 1×. Opcional (ausente = 1×); migração passthrough. */
 export const SAVE_VERSION = 40
 export const SAVE_KEY = 'poke-badgekeeper:save'
+
+/** Poke Egg: dias de incubação até chocar (0/3 → 1/3 → 2/3 → choca). */
+export const EGG_INCUBATION_DAYS = 3
+/** Air Balloon: faixa de usos (missões) antes de estourar. */
+export const AIR_BALLOON_USES_MIN = 20
+export const AIR_BALLOON_USES_MAX = 30

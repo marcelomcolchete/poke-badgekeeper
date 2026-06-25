@@ -12,6 +12,7 @@ import type { GameState } from '../../engine/state.ts'
 import type { GameAction } from '../../game/actions.ts'
 import type { ItemData } from '../../data/types.ts'
 import { ITEMS, findItem } from '../../data/items.ts'
+import { EGG_INCUBATION_DAYS } from '../../engine/constants.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
 import { Overlay } from './Overlay.tsx'
 import { displayNameOf } from './naming.ts'
@@ -67,6 +68,16 @@ function collectEntries(state: GameState): Entry[] {
     const item = findItem(id)
     if (!item) continue
     entries.push({ key: `run-${id}`, sprite: item.sprite, title: `${item.name} — ${item.description}`, badge: null })
+  }
+
+  // Ovos chocando (Poke Egg) — só leitura, mostra o progresso N/3.
+  for (const egg of state.eggs ?? []) {
+    entries.push({
+      key: `egg-${egg.id}`,
+      sprite: '/sprites/itens/poke-egg.png',
+      title: `Poke Egg — chocando ${egg.daysElapsed}/${EGG_INCUBATION_DAYS}`,
+      badge: `${egg.daysElapsed}/${EGG_INCUBATION_DAYS}`,
+    })
   }
 
   return entries
