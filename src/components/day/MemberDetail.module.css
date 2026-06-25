@@ -30,12 +30,13 @@
   flex: 1;
 }
 
-/* A fonte VT323 desenha o ♥ no alto da caixa de linha (tinta ~14px..18px de 18px),
-   então o flex centraliza a caixa mas a tinta fica acima do meio. translateY desce a
-   tinta até o centro óptico do rótulo — valor calibrado na fonte real (1,5px @ 18px). */
+/* A fonte VT323 desenha o ♥ BAIXO na caixa de linha (tinta ~8px..18px de 18px, com vão
+   vazio no topo), então o flex centraliza a caixa mas a tinta fica abaixo do meio e quase
+   encosta na borda inferior. translateY SOBE a tinta até o centro óptico do rótulo
+   'Afinidade' — valor medido na fonte real (−4px @ 18px). */
 .affinityHearts {
   display: inline-flex;
-  transform: translateY(1.5px);
+  transform: translateY(-4px);
 }
 
 .natureName {
