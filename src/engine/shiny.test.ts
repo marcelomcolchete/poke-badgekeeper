@@ -49,9 +49,10 @@ describe('spotHasShiny', () => {
 })
 
 describe('shiny charm', () => {
-  it('shinyChance soma +4% quando o item está na run', () => {
+  it('shinyChance soma +19% quando o item está na run', () => {
     expect(shinyChance([])).toBeCloseTo(SHINY_CHANCE)
-    expect(shinyChance(['shiny-charm'])).toBeCloseTo(SHINY_CHANCE + SHINY_CHARM_BONUS)
+    expect(shinyChance(['shiny-charm'])).toBeCloseTo(SHINY_CHANCE + 0.19)
+    expect(shinyChance(['shiny-charm'])).toBeCloseTo(0.2)
   })
 
   it('é monotônico: tudo que era shiny a 1% segue shiny a 5%', () => {

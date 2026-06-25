@@ -68,8 +68,8 @@ export const SHOP_SEED_SALT = 0x53686f70 // 'Shop'
 /** Chance-base de um Pokémon nascer shiny (iniciais, captura por candidato). */
 export const SHINY_CHANCE = 0.01
 
-/** Shiny Charm (item): bônus aditivo na chance de shiny enquanto possuído (0.01 → 0.05). */
-export const SHINY_CHARM_BONUS = 0.04
+/** Shiny Charm (item): bônus aditivo na chance de shiny enquanto possuído (0.01 → 0.20). */
+export const SHINY_CHARM_BONUS = 0.19
 
 /** Sub-seed dedicado da rolagem de shiny — isola-a das demais sequências de RNG. */
 export const SHINY_SEED_SALT = 0x5417
