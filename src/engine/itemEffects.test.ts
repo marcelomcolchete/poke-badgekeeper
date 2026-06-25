@@ -63,6 +63,22 @@ describe('itemBattleMultiplier', () => {
   })
 })
 
+describe('itemBattleMultiplier — boosts por tipo novos', () => {
+  it('Grassy Seed: +50% para Grama', () => {
+    const grass = makeMon({ speciesId: BULBASAUR }) // Bulbasaur é grass/poison
+    expect(itemBattleMultiplier(grass, ['grassy-seed'])).toBeCloseTo(1.5)
+  })
+  it('Black Sludge: +50% para Veneno', () => {
+    const poison = makeMon({ speciesId: BULBASAUR }) // grass/poison
+    expect(itemBattleMultiplier(poison, ['black-sludge'])).toBeCloseTo(1.5)
+  })
+  it('não afeta tipos diferentes', () => {
+    const fireMon = makeMon({ speciesId: 4 }) // Charmander é fire
+    expect(itemBattleMultiplier(fireMon, ['grassy-seed'])).toBe(1)
+    expect(itemBattleMultiplier(fireMon, ['charcoal'])).toBeCloseTo(1.5)
+  })
+})
+
 describe('itemTravelSpeedMultiplier', () => {
   it('Lagging Tail deixa 50% mais lento; sem ele = 1', () => {
     expect(itemTravelSpeedMultiplier([])).toBe(1)

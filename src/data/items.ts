@@ -221,6 +221,42 @@ export const ITEMS: ItemData[] = [
     sprite: sprite('moon-stone'),
     effect: { kind: 'moonStone' },
   },
+  {
+    id: 'grassy-seed',
+    name: 'Grassy Seed',
+    type: 'passive',
+    price: 1000,
+    description: 'Pokémon do tipo Grama ganham +50% em batalhas.',
+    sprite: sprite('grassy-seed'),
+    effect: { kind: 'passive' },
+  },
+  {
+    id: 'black-sludge',
+    name: 'Black Sludge',
+    type: 'passive',
+    price: 1000,
+    description: 'Pokémon do tipo Venenoso ganham +50% em batalhas.',
+    sprite: sprite('black-sludge'),
+    effect: { kind: 'passive' },
+  },
+  {
+    id: 'twisted-spoon',
+    name: 'Twisted Spoon',
+    type: 'passive',
+    price: 1000,
+    description: 'Pokémon do tipo Psíquico ganham +50% em batalhas.',
+    sprite: sprite('twisted-spoon'),
+    effect: { kind: 'passive' },
+  },
+  {
+    id: 'charcoal',
+    name: 'Charcoal',
+    type: 'passive',
+    price: 1000,
+    description: 'Pokémon do tipo Fogo ganham +50% em batalhas.',
+    sprite: sprite('charcoal'),
+    effect: { kind: 'passive' },
+  },
 ]
 
 const ITEMS_BY_ID: Map<string, ItemData> = new Map(ITEMS.map((i) => [i.id, i]))
@@ -258,11 +294,16 @@ export const GLOBAL_ITEM_IDS: string[] = [
   'moon-stone',
 ]
 
-/** Itens EXTRAS por cidade (índice de CITIES): Pewter (0), Cerulean (1) e Vermilion (2). */
+/** Itens EXTRAS por cidade (índice de CITIES). */
 export const CITY_ITEM_IDS: Record<number, string[]> = {
   0: ['lagging-tail', 'thick-club', 'fossil-stone'],
   1: ['mystic-water', 'surfboard', 'fresh-water'],
   2: ['electirizer', 'dragon-fang', 'magnet'],
+  3: ['grassy-seed'],
+  4: ['black-sludge'],
+  5: ['twisted-spoon'],
+  6: ['charcoal'],
+  7: [],
 }
 
 /** Subconjunto do qual ao menos 1 item SEMPRE aparece no mercado (potion/revive/x_*). */

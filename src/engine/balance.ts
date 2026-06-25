@@ -446,6 +446,11 @@ export const MYSTIC_WATER_BATTLE_MULT = 1.5
 export const DRAGON_FANG_BATTLE_MULT = 1.5
 /** Magnet: +50% em batalhas para Pokémon do tipo Elétrico. */
 export const MAGNET_BATTLE_MULT = 1.5
+/** Itens de cidade: +50% em batalhas para Pokémon do tipo correspondente. */
+export const GRASSY_SEED_BATTLE_MULT = 1.5
+export const BLACK_SLUDGE_BATTLE_MULT = 1.5
+export const TWISTED_SPOON_BATTLE_MULT = 1.5
+export const CHARCOAL_BATTLE_MULT = 1.5
 /** Fossil Stone: +50% em batalhas para Pokémon fósseis (Omanyte/Omastar/Kabuto/Kabutops/Aerodactyl). */
 export const FOSSIL_STONE_BATTLE_MULT = 1.5
 /** Electirizer: +50% no sucesso da próxima missão por raio sofrido (acumula por carga). */
