@@ -6,6 +6,7 @@ import { getSpecies } from '../data/pokemon/index.ts'
 import {
   captureAvailable,
   captureWild,
+  effectiveCaptureChoices,
   rollCandidates,
   rollEncounter,
   rosterIsFull,
@@ -88,6 +89,20 @@ describe('rollCandidates / rollEncounter (PLAN §4.5)', () => {
       expect(level).toBeLessThanOrEqual(LEVEL_MAX)
       expect(level).toBeGreaterThanOrEqual(s.minWildLevel) // elegível para o próprio nível
     })
+  })
+})
+
+describe('effectiveCaptureChoices', () => {
+  it('2 sem item, 3 com full-incense', () => {
+    expect(effectiveCaptureChoices([])).toBe(2)
+    expect(effectiveCaptureChoices(['full-incense'])).toBe(3)
+  })
+})
+
+describe('rollCandidates com choices custom', () => {
+  it('respeita o número pedido', () => {
+    const candidates = rollCandidates(createRng(7), GYM_TYPES, 5, ALL_RARITIES, 3)
+    expect(candidates.length).toBeLessThanOrEqual(3)
   })
 })
 

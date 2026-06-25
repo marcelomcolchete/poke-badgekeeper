@@ -6,7 +6,7 @@ import type { GameState } from '../engine/state.ts'
 import type { CaptureReturn, CaptureSearch } from '../engine/state.ts'
 import { markActive } from '../engine/state.ts'
 import { getCity } from '../data/cities.ts'
-import { rollEncounter, rosterIsFull, searchMs } from '../engine/capture.ts'
+import { effectiveCaptureChoices, rollEncounter, rosterIsFull, searchMs } from '../engine/capture.ts'
 import { HEARTS_MAX, MAX_ROSTER_SIZE } from '../engine/constants.ts'
 import { maxRarityIndexForBall } from '../data/balls.ts'
 import { effectiveAttr } from '../engine/attributes.ts'
@@ -140,7 +140,7 @@ export function readySearch(s: GameState, search: CaptureSearch): void {
   const searcher = findMon(s, search.searcherId)
   const maxRarityIndex = maxRarityIndexForBall(s.run.ballLevel)
   const searcherPerception = searcher ? effectiveAttr(searcher, 'percepcao') : 0
-  const encounter = rollEncounter(takeRng(s), s.gym.types, s.run.day, maxRarityIndex)
+  const encounter = rollEncounter(takeRng(s), s.gym.types, s.run.day, maxRarityIndex, effectiveCaptureChoices(s.runItems))
   // Um seed estável por candidato: o card do preview já mostra natureza/IVs/rank reais
   // e a captura recria o MESMO Pokémon a partir desse seed (com o mesmo centro de rank).
   const seedRng = takeRng(s)

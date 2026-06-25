@@ -312,6 +312,15 @@ export const ITEMS: ItemData[] = [
     effect: { kind: 'passive' },
   },
   {
+    id: 'full-incense',
+    name: 'Full Incense',
+    type: 'passive',
+    price: 800,
+    description: 'A exploração atrai +1 Pokémon (de 2 para 3 candidatos).',
+    sprite: sprite('full-incense'),
+    effect: { kind: 'passive' },
+  },
+  {
     id: 'grip-claw',
     name: 'Grip Claw',
     type: 'passive',
@@ -364,7 +373,7 @@ export const CITY_ITEM_IDS: Record<number, string[]> = {
   2: ['electirizer', 'dragon-fang', 'magnet'],
   3: ['grassy-seed'],
   4: ['black-sludge', 'big-nugget', 'sticky-barb'],
-  5: ['twisted-spoon', 'wise-glasses'],
+  5: ['twisted-spoon', 'wise-glasses', 'full-incense'],
   6: ['charcoal', 'zoom-lens'],
   7: ['wide-lens', 'amulet-coin', 'grip-claw'],
 }

@@ -82,15 +82,21 @@ function rollOne(
   return pool.length > 0 ? pickByRarity(rng, pool) : null
 }
 
+/** Quantos candidatos a exploração atrai: 2, ou 3 com Full Incense. */
+export function effectiveCaptureChoices(runItems: readonly string[]): number {
+  return CAPTURE_CHOICES + (runItems.includes('full-incense') ? 1 : 0)
+}
+
 /** Sorteia 3 candidatos dos tipos do ginásio (podem repetir espécies do roster) — PLAN §4.5. */
 export function rollCandidates(
   rng: Rng,
   gymTypes: readonly PokemonType[],
   level: number,
   maxRarityIndex: number,
+  choices: number = CAPTURE_CHOICES,
 ): Species[] {
   const out: Species[] = []
-  for (let i = 0; i < CAPTURE_CHOICES; i++) {
+  for (let i = 0; i < choices; i++) {
     const species = rollOne(rng, gymTypes, level, maxRarityIndex)
     if (species) out.push(species)
   }
@@ -131,8 +137,9 @@ export function rollEncounter(
   gymTypes: readonly PokemonType[],
   day: number,
   maxRarityIndex: number,
+  choices: number = CAPTURE_CHOICES,
 ): Encounter {
-  const levels = rollCandidateLevels(rng, day, CAPTURE_CHOICES)
+  const levels = rollCandidateLevels(rng, day, choices)
   const candidates: Species[] = []
   const candidateLevels: number[] = []
   for (const level of levels) {
