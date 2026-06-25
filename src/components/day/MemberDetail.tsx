@@ -60,7 +60,10 @@ export function MemberDetail({ state, dispatch, pokemonId, onClose }: Props) {
 
         <div className={styles.heartsLine}>
           <Hearts value={mon.hearts} />
-          <span className={styles.heartsHint}>Quanto mais coração mais experiência é ganha.</span>
+          <span className={styles.heartsHint}>
+            Quanto maior a afinidade do seu pokémon mais experiência é recebida em missões e
+            batalhas.
+          </span>
         </div>
 
         {mon.nature && (
