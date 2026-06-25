@@ -7,7 +7,7 @@ import type { AttrKey, Attrs, Pokemon } from '../types/index.ts'
 import type { GameState } from '../engine/state.ts'
 import { getItem } from '../data/items.ts'
 import { nextBall } from '../data/balls.ts'
-import { canAfford } from '../engine/economy.ts'
+import { applyGoldBonus, canAfford } from '../engine/economy.ts'
 import { LEVEL_MAX } from '../engine/constants.ts'
 import { heal, recomputeMaxHp } from '../engine/attributes.ts'
 import { getSpecies } from '../data/pokemon/index.ts'
@@ -67,6 +67,14 @@ export function buyItem(s: GameState, itemId: string, quantity = 1): void {
       if (!canAfford(s.gold, item)) return
       s.gold -= item.price
       s.runItems = [...s.runItems, itemId]
+      markSold(s, itemId)
+      return
+    }
+    case 'instantGold': {
+      // Big Nugget: paga na hora (×1.5 com Amulet Coin). Preço normalmente 0.
+      if (!canAfford(s.gold, item)) return
+      s.gold -= item.price
+      s.gold += applyGoldBonus(effect.amount, s.runItems)
       markSold(s, itemId)
       return
     }

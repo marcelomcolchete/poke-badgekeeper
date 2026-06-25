@@ -20,7 +20,7 @@ import {
   STATIC_MOVE_CAP_L2,
   STATIC_MOVE_PER_SEC_L2,
 } from '../engine/balance.ts'
-import { goldForMart } from '../engine/economy.ts'
+import { applyGoldBonus, goldForMart } from '../engine/economy.ts'
 import {
   executionMs,
   missionSuccessProbabilityCtx,
@@ -414,7 +414,7 @@ function applyMissionSecretRuntime(
 /** Recompensas de sucesso do template: ouro (Pokemart), escalado pelo Carisma do time (até 2×). */
 function applyMissionRewards(s: GameState, template: MissionTemplate, team: readonly Pokemon[]): void {
   if (template.goldOnSuccess) {
-    const gold = goldForMart(team, template.goldOnSuccess)
+    const gold = applyGoldBonus(goldForMart(team, template.goldOnSuccess), s.runItems)
     s.gold += gold
     s.today.goldEarned += gold
   }

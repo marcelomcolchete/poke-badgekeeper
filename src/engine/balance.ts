@@ -430,6 +430,11 @@ export const DRY_SKIN_MISSION_BONUS_L2 = 0.25
 
 // ---- Sistema de Itens (PLAN — Itens) ----
 
+/** Amulet Coin: +50% de ouro de todas as fontes. */
+export const AMULET_COIN_GOLD_MULT = 1.5
+/** Big Nugget: ouro instantâneo concedido na compra. */
+export const BIG_NUGGET_GOLD = 200
+
 /** x_*: quanto cada item de atributo soma a todo o time no dia. */
 export const STAT_BUFF_AMOUNT = 5
 /** Eviolite: multiplicador de missão p/ Pokémon que ainda não chegaram à última evolução. */

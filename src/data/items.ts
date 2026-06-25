@@ -5,7 +5,7 @@
 import type { AttrKey } from '../types/index.ts'
 import { createRng, deriveSeed } from '../engine/rng.ts'
 import { SHOP_SEED_SALT } from '../engine/constants.ts'
-import { STAT_BUFF_AMOUNT } from '../engine/balance.ts'
+import { BIG_NUGGET_GOLD, STAT_BUFF_AMOUNT } from '../engine/balance.ts'
 import { BALL_MAX_LEVEL } from './balls.ts'
 import type { ItemData } from './types.ts'
 
@@ -284,6 +284,24 @@ export const ITEMS: ItemData[] = [
     sprite: sprite('wide-lens'),
     effect: { kind: 'passive' },
   },
+  {
+    id: 'amulet-coin',
+    name: 'Amulet Coin',
+    type: 'passive',
+    price: 800,
+    description: 'Receba +50% de ouro de todas as fontes.',
+    sprite: sprite('amulet-coin'),
+    effect: { kind: 'passive' },
+  },
+  {
+    id: 'big-nugget',
+    name: 'Big Nugget',
+    type: 'consumable',
+    price: 0,
+    description: 'Ao comprar, receba 200 de ouro na hora.',
+    sprite: sprite('big-nugget'),
+    effect: { kind: 'instantGold', amount: BIG_NUGGET_GOLD },
+  },
 ]
 
 const ITEMS_BY_ID: Map<string, ItemData> = new Map(ITEMS.map((i) => [i.id, i]))
@@ -327,10 +345,10 @@ export const CITY_ITEM_IDS: Record<number, string[]> = {
   1: ['mystic-water', 'surfboard', 'fresh-water'],
   2: ['electirizer', 'dragon-fang', 'magnet'],
   3: ['grassy-seed'],
-  4: ['black-sludge'],
+  4: ['black-sludge', 'big-nugget'],
   5: ['twisted-spoon', 'wise-glasses'],
   6: ['charcoal', 'zoom-lens'],
-  7: ['wide-lens'],
+  7: ['wide-lens', 'amulet-coin'],
 }
 
 /** Subconjunto do qual ao menos 1 item SEMPRE aparece no mercado (potion/revive/x_*). */

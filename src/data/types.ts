@@ -149,6 +149,7 @@ export type ItemEffect =
   | { kind: 'rareCandy' }
   | { kind: 'premierBall' }
   | { kind: 'moonStone' }
+  | { kind: 'instantGold'; amount: number }
 
 export interface ItemData {
   id: string
