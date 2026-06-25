@@ -103,8 +103,23 @@ export const RARITY_COLOR: Record<Rarity, string> = {
 /** Tier de medalha do invasor → nível numérico das tabelas de medalha (Bronze/Prata/Ouro). */
 export const MEDAL_TIER_RANK = { bronze: 1, silver: 2, gold: 3 } as const
 
-/** Medalha (emoji) por nível da Habilidade Secreta: 1 Bronze, 2 Prata, 3 Ouro. */
+/** Medalha (emoji) por tier de medalha de invasor: 1 Bronze, 2 Prata, 3 Ouro. */
 export const SECRET_MEDAL: Record<number, string> = { 1: '🥉', 2: '🥈', 3: '🥇' }
+
+/**
+ * Medalha da Habilidade Secreta por NÍVEL do indivíduo (1 = Prata, 2 = Ouro). Uma medalha por
+ * habilidade ativa; bronze não aparece em habilidades secretas (só no sistema de invasores).
+ */
+export const SECRET_LEVEL_MEDAL: Record<1 | 2, string> = { 1: '🥈', 2: '🥇' }
+
+/** Rótulo do nível da medalha da Habilidade Secreta (acessibilidade / tooltip). */
+export const SECRET_LEVEL_LABEL: Record<1 | 2, string> = { 1: 'Prata', 2: 'Ouro' }
+
+/** Cor de acento por nível da Habilidade Secreta (Prata/Ouro) — uso em bordas/medalhas. */
+export const SECRET_LEVEL_COLOR: Record<1 | 2, string> = { 1: '#c7ced8', 2: '#e8b923' }
+
+/** Tom legível como TEXTO sobre fundo claro (creme) por nível (Prata/Ouro). */
+export const SECRET_LEVEL_INK: Record<1 | 2, string> = { 1: '#7c8794', 2: '#b08808' }
 
 /** Rótulo do nível da medalha (acessibilidade / tooltip). */
 export const SECRET_TIER_LABEL: Record<number, string> = { 1: 'Bronze', 2: 'Prata', 3: 'Ouro' }

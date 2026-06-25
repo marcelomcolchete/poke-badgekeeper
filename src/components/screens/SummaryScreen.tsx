@@ -17,7 +17,7 @@ import type { SecretId } from '../../data/secretAbilities.ts'
 import type { Pokemon } from '../../types/index.ts'
 import { Textbox } from '../Textbox/Textbox.tsx'
 import { TypeBadge } from '../common/TypeBadge.tsx'
-import { SECRET_MEDAL } from '../common/visual.ts'
+import { SECRET_LEVEL_MEDAL } from '../common/visual.ts'
 import { displayNameOf, genderColor, genderSymbol } from '../common/naming.ts'
 import styles from './SummaryScreen.module.css'
 
@@ -144,7 +144,7 @@ export function SummaryScreen({ state, dispatch, onRestart }: Props) {
           />
           <div className={styles.secretRevealText}>
             <span className={styles.secretRevealBadge}>
-              {SECRET_MEDAL[unlock.slot + 1]} HABILIDADE SECRETA — {unlock.level === 2 ? 'NÍVEL 2' : 'DESBLOQUEADA'}
+              {SECRET_LEVEL_MEDAL[unlock.level]} HABILIDADE SECRETA — {unlock.level === 2 ? 'NÍVEL 2' : 'DESBLOQUEADA'}
             </span>
             <span className={styles.secretRevealName}>
               {unlockedAbility.name}{unlock.level === 2 ? '+' : ''}

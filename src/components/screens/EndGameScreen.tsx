@@ -11,7 +11,14 @@ import { buildFinalReport, type EndOutcome, type PurchasedEntry } from '../../en
 import type { Rank } from '../../engine/ranking.ts'
 import { getSpecies } from '../../data/pokemon/index.ts'
 import { Hearts } from '../common/Hearts.tsx'
-import { MEDAL_TIER_RANK, RANK_COLOR, SECRET_MEDAL, SECRET_TIER_LABEL } from '../common/visual.ts'
+import {
+  MEDAL_TIER_RANK,
+  RANK_COLOR,
+  SECRET_LEVEL_LABEL,
+  SECRET_LEVEL_MEDAL,
+  SECRET_MEDAL,
+  SECRET_TIER_LABEL,
+} from '../common/visual.ts'
 import { displayNameOf } from '../common/naming.ts'
 import { Stars } from '../common/Stars.tsx'
 import {
@@ -345,14 +352,15 @@ function TopTeam({ team }: { team: Report['topTeam'] }) {
                 <div className={styles.topInfo}>
                   <span className={styles.topName}>
                     {displayNameOf(m.pokemon)}
-                    {m.medalIndex > 0 && (
+                    {m.secretMedals.map((level, mi) => (
                       <span
+                        key={mi}
                         className={styles.topMedal}
-                        title={`Habilidade Secreta ${SECRET_TIER_LABEL[m.medalIndex]}`}
+                        title={`Habilidade Secreta ${SECRET_LEVEL_LABEL[level]}`}
                       >
-                        {SECRET_MEDAL[m.medalIndex]}
+                        {SECRET_LEVEL_MEDAL[level]}
                       </span>
-                    )}
+                    ))}
                   </span>
                   <span className={styles.topDeeds}>
                     🎯 <b>{m.missions}</b> · ⚔️ <b>{m.defeats}</b>

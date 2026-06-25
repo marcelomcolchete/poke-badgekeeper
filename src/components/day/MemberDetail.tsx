@@ -1,5 +1,5 @@
 // Detalhe de um Pokémon do time (aberto a partir da coluna esquerda na fase Dia):
-// card completo + distribuir pontos de level-up + usar Potion/Revive.
+// card completo + distribuir pontos de level-up + usar Revive.
 
 import type { Dispatch } from 'react'
 import { ATTR_KEYS } from '../../types/index.ts'
@@ -20,10 +20,10 @@ import { Hearts } from '../common/Hearts.tsx'
 import {
   ATTR_SHORT_PT,
   gainTier,
-  SECRET_MEDAL,
-  SECRET_MEDAL_COLOR,
-  SECRET_MEDAL_INK,
-  SECRET_TIER_LABEL,
+  SECRET_LEVEL_COLOR,
+  SECRET_LEVEL_INK,
+  SECRET_LEVEL_LABEL,
+  SECRET_LEVEL_MEDAL,
 } from '../common/visual.ts'
 import { displayNameOf } from '../common/naming.ts'
 import styles from './MemberDetail.module.css'
@@ -48,9 +48,7 @@ export function MemberDetail({ state, dispatch, pokemonId, onClose }: Props) {
   const secretLine = secretLineFor(mon.speciesId) // [id0, id1] | null
   const secrets = activeSecrets(mon)
   const secretCount = secrets.length // 0..2
-  const hurt = mon.currentHp > 0 && mon.currentHp < mon.maxHp
   const fainted = mon.currentHp <= 0
-  const potions = count(state, 'potion')
   const revives = count(state, 'revive')
 
   return (
@@ -93,7 +91,7 @@ export function MemberDetail({ state, dispatch, pokemonId, onClose }: Props) {
                 const pick = secrets.find((s) => s.id === id)
                 const unlocked = pick !== undefined
                 const level = pick?.level ?? 1
-                const tier = i + 1 // 1 = Bronze, 2 = Prata
+                // Medalha pelo NÍVEL: prata (1) / ouro (2). Bloqueada = sem tier (cadeado).
                 const tierClass = [
                   styles.secretTier,
                   unlocked ? styles.secretTierReached : styles.secretTierLocked,
@@ -109,21 +107,21 @@ export function MemberDetail({ state, dispatch, pokemonId, onClose }: Props) {
                   <li
                     key={`${id}-${i}`}
                     className={tierClass}
-                    // Borda da linha na cor da medalha (bronze/prata) quando desbloqueada.
-                    style={unlocked ? { borderColor: SECRET_MEDAL_COLOR[tier] } : undefined}
+                    // Borda da linha na cor da medalha (prata/ouro) quando desbloqueada.
+                    style={unlocked ? { borderColor: SECRET_LEVEL_COLOR[level] } : undefined}
                   >
                     <span
                       className={styles.secretTierMedal}
-                      title={SECRET_TIER_LABEL[tier]}
-                      aria-label={SECRET_TIER_LABEL[tier]}
+                      title={unlocked ? SECRET_LEVEL_LABEL[level] : 'Bloqueada'}
+                      aria-label={unlocked ? SECRET_LEVEL_LABEL[level] : 'Bloqueada'}
                     >
-                      {SECRET_MEDAL[tier]}
+                      {unlocked ? SECRET_LEVEL_MEDAL[level] : '🔒'}
                     </span>
                     <span className={styles.secretTierBody}>
                       {/* Nome na cor da medalha; "ATIVA"/"NÍVEL 2" abaixo do nome. */}
                       <span
                         className={styles.secretTierName}
-                        style={unlocked ? { color: SECRET_MEDAL_INK[tier] } : undefined}
+                        style={unlocked ? { color: SECRET_LEVEL_INK[level] } : undefined}
                       >
                         {unlocked ? `${kind.name}${level === 2 ? '+' : ''}` : kind.name}
                       </span>
@@ -192,18 +190,8 @@ export function MemberDetail({ state, dispatch, pokemonId, onClose }: Props) {
           </div>
         )}
 
-        {(hurt || fainted) && (
+        {fainted && (
           <div className={styles.items}>
-            {hurt && (
-              <button
-                type="button"
-                className={styles.itemBtn}
-                disabled={potions <= 0}
-                onClick={() => dispatch({ type: 'USE_ITEM', itemId: 'potion', targetId: mon.id })}
-              >
-                Potion ({potions})
-              </button>
-            )}
             {fainted && (
               <button
                 type="button"

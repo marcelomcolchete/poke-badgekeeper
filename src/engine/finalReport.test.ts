@@ -80,7 +80,7 @@ describe('buildFinalReport', () => {
     expect(r.topTeam.map((m) => m.pokemon.id)).toEqual(['a', 'b']) // 'c' não somou feitos
     expect(r.topTeam[0]?.missions).toBe(31)
     expect(r.topTeam[0]?.defeats).toBe(11)
-    expect(r.topTeam[0]?.medalIndex).toBe(2)
+    expect(r.topTeam[0]?.secretMedals).toEqual([1, 1]) // dois picks nível 1 → duas pratas
   })
 
   it('carrasco = espécie que mais venceu seu time (lifetime + today)', () => {
