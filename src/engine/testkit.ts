@@ -57,7 +57,6 @@ export function makeMon(overrides: Partial<Pokemon> = {}): Pokemon {
     nickname: overrides.nickname ?? null,
     nature: overrides.nature ?? null,
   }
-
   const maxHp = overrides.maxHp ?? maxHpOf(draft)
   const currentHp = overrides.currentHp ?? maxHp
   return { ...draft, maxHp, currentHp }

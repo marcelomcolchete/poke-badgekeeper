@@ -182,6 +182,7 @@ export function missionSuccessProbabilityCtx(ctx: MissionSecretCtx, requirement:
   const boosted = typeMult === 1 ? summed : mapAttrs((k) => summed[k] * typeMult)
   const intersection = hexagonArea(axisMin(boosted, requirement))
   const base = clamp(intersection / requiredArea, 0, 1)
+  // Vital Spirit: segunda tentativa independente → P_falha = (1−base)². Equivale a ter duas chances.
   return teamHasVitalSpirit(ctx.team) ? 1 - (1 - base) ** 2 : base
 }
 

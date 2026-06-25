@@ -87,7 +87,7 @@ export function effectiveCaptureChoices(runItems: readonly string[]): number {
   return CAPTURE_CHOICES + (runItems.includes('full-incense') ? 1 : 0)
 }
 
-/** Sorteia 3 candidatos dos tipos do ginásio (podem repetir espécies do roster) — PLAN §4.5. */
+/** Sorteia `choices` candidatos dos tipos do ginásio (podem repetir espécies do roster) — PLAN §4.5. */
 export function rollCandidates(
   rng: Rng,
   gymTypes: readonly PokemonType[],

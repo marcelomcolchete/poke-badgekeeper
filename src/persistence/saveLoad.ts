@@ -553,6 +553,12 @@ function migrate(file: Partial<SaveFile>): SaveFile | null {
     version = 40
   }
 
+  // v40 → v41: Poke Egg + Air Balloon. Inicia eggs/pendingHatches vazios e airBalloon nulo.
+  if (version === 40) {
+    state = { eggs: [], airBalloon: null, pendingHatches: [], ...state }
+    version = 41
+  }
+
   if (version !== SAVE_VERSION) return null
   return { version, savedAtMs: (file as SaveFile).savedAtMs, state } as unknown as SaveFile
 }

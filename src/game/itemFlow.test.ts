@@ -247,7 +247,7 @@ describe('Fast Ball', () => {
 
 describe('Everstone', () => {
   it('dobra o XP e impede a evolução natural', () => {
-    const base = createPokemon({ id: 'p1', speciesId: 1, level: 5, rng: createRng(1) }) // Bulbasaur evolui no 6
+    const base = createPokemon({ id: 'p1', speciesId: 1, level: 5, rng: createRng(1) }) // Bulbasaur evolui no 16
     const s = createInitialState(1)
     s.roster = [base]
     s.runItems = ['everstone']

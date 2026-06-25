@@ -248,8 +248,10 @@ export const DRAFT_CHOICES = 3
  * potentialHeatCount. A migração inicia heat vazio e a previsão de calor zerada (recalculados no
  * próximo setupDay).
  * v40: clock.daySpeed (última velocidade de jogo escolhida pelo jogador, 1/2/3) — o abrir de cada
- * dia reabre o relógio nela em vez de voltar ao 1×. Opcional (ausente = 1×); migração passthrough. */
-export const SAVE_VERSION = 40
+ * dia reabre o relógio nela em vez de voltar ao 1×. Opcional (ausente = 1×); migração passthrough.
+ * v41: Poke Egg + Air Balloon. s.eggs (IncubatingEgg[]), s.airBalloon ({usesLeft}|null) e
+ * s.pendingHatches (HatchResult[]). A migração inicia os três com os defaults vazios/nulos. */
+export const SAVE_VERSION = 41
 export const SAVE_KEY = 'poke-badgekeeper:save'
 
 /** Poke Egg: dias de incubação até chocar (0/3 → 1/3 → 2/3 → choca). */

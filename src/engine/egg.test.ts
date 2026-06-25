@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { createRng } from './rng.ts'
 import { hatchEgg, rollEggRankIndex } from './egg.ts'
-import { getSpecies } from '../data/pokemon/index.ts'
+import { baseStageSpecies, getSpecies } from '../data/pokemon/index.ts'
 import { pokemonRankIndex } from './ranking.ts'
 
 describe('rollEggRankIndex', () => {
@@ -19,6 +19,7 @@ describe('hatchEgg', () => {
       const mon = hatchEgg(createRng(seed), `p${seed}`, [])
       // Espécie base: nenhuma forma evolui PARA ela (é forma inicial).
       expect(getSpecies(mon.speciesId)).toBeDefined()
+      expect(baseStageSpecies()).toContain(mon.speciesId)
       expect(mon.level).toBe(1)
     }
   })
