@@ -30,6 +30,13 @@
   flex: 1;
 }
 
+/* O glifo ♥ deixa espaço vazio na base da caixa de linha, então a tinta fica
+   acima do centro. Desce 2px para centralizar opticamente com o rótulo. */
+.affinityHearts {
+  display: inline-flex;
+  transform: translateY(2px);
+}
+
 .natureName {
   color: var(--c-ink-muted);
   flex: 1;

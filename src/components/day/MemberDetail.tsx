@@ -59,7 +59,9 @@ export function MemberDetail({ state, dispatch, pokemonId, onClose }: Props) {
         <div className={styles.infoRow}>
           <div className={styles.infoBox}>
             <span className={styles.infoLabel}>Afinidade</span>
-            <Hearts value={mon.hearts} />
+            <span className={styles.affinityHearts}>
+              <Hearts value={mon.hearts} />
+            </span>
           </div>
 
           {mon.nature && (
